@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <!--
+      Fragment dung chung: header (navbar Bootstrap) va footer.
+      Cac trang khac chen bang: <div th:replace="~{fragments/layout :: header}"></div>
+      Dung sec:authorize de an/hien menu theo trang thai dang nhap (can dependency
+      thymeleaf-extras-springsecurity6 da them trong pom.xml).
+    -->
+</head>
+<body>
+
+<div th:fragment="header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" th:href="@{/}">UTEExpress</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Trang chủ</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/tra-cuu}">Tra cứu vận đơn</a></li>
+
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" th:href="@{/nguoi-dung/tao-don}">Tạo đơn</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" th:href="@{/nguoi-dung/don-hang}">Đơn hàng của tôi</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <span class="nav-link text-light-emphasis" sec:authentication="name"></span>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-light">Đăng xuất</button>
+                        </form>
+                    </li>
+
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link" th:href="@{/dang-ky}">Đăng ký</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link" th:href="@{/dang-nhap}">Đăng nhập</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div th:fragment="footer">
+    <footer class="bg-dark text-light text-center py-3 mt-5">
+        <small>UTEExpress &middot; Do an Lap trinh Web WEBPR330479 &middot; HCMUTE</small>
+    </footer>
+</div>
+
+</body>
+</html>
