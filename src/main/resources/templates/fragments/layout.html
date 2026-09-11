@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!--
+      Fragment dung chung: header (navbar Bootstrap) va footer.
+      Cac trang khac chen bang: <div th:replace="~{fragments/layout :: header}"></div>
+    -->
+</head>
+<body>
+
+<div th:fragment="header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" th:href="@{/}">UTEExpress</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Trang chu</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Tra cuu van don</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/dang-nhap}">Dang nhap</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div th:fragment="footer">
+    <footer class="bg-dark text-light text-center py-3 mt-5">
+        <small>UTEExpress &middot; Do an Lap trinh Web WEBPR330479 &middot; HCMUTE</small>
+    </footer>
+</div>
+
+</body>
+</html>

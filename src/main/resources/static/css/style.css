@@ -1,0 +1,5 @@
+/* Style rieng cua UTEExpress - ke thua Bootstrap 5, chi ghi de nhung gi can thiet */
+
+.navbar-brand {
+    letter-spacing: 0.02em;
+}
