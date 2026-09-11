@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AdminController {
 
     @GetMapping("/trang-chu")
-    public String trangChuAdmin() {
+    public String dashboard() {
         // Dung chung template voi Manager luc dau, tach rieng khi can giao dien khac biet
         return "manager/dashboard";
     }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ManagerController {
 
     @GetMapping("/trang-chu")
-    public String trangChuManager() {
+    public String dashboard() {
         return "manager/dashboard";
     }
 

@@ -17,33 +17,34 @@
             UTEExpress ket noi nguoi gui va nguoi nhan tren toan quoc.
             Tao don, theo doi hanh trinh va nhan hang chi trong vai buoc.
         </p>
-        <a th:href="@{/dang-nhap}" class="btn btn-primary btn-lg">Tao don ngay</a>
+        <a th:href="@{/dang-ky}" class="btn btn-primary btn-lg">Tạo đơn ngay</a>
+        <a th:href="@{/tra-cuu}" class="btn btn-outline-secondary btn-lg">Tra cứu vận đơn</a>
     </div>
 
     <div class="row g-4">
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Tra cuu van don</h5>
-                    <!-- TODO (TV1): form nhap ma tracking, goi /api/tracking/{ma} -->
-                    <p class="card-text text-muted">Nhap ma van don de xem trang thai giao hang.</p>
+                    <h5 class="card-title">Tra cứu vận đơn</h5>
+                    <p class="card-text text-muted">Nhập mã vận đơn để xem trạng thái giao hàng - không cần đăng nhập.</p>
+                    <a th:href="@{/tra-cuu}" class="btn btn-sm btn-outline-primary">Tra cứu ngay</a>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Bang gia cuoc tham khao</h5>
+                    <h5 class="card-title">Bảng giá cước tham khảo</h5>
                     <!-- TODO (TV1): bang gia theo khu vuc / khoi luong / loai dich vu -->
-                    <p class="card-text text-muted">Dang cap nhat.</p>
+                    <p class="card-text text-muted">Tiêu chuẩn: 15.000đ + 3.000đ/kg &middot; Nhanh: 25.000đ + 3.000đ/kg &middot; Hỏa tốc: 40.000đ + 3.000đ/kg</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Dich vu</h5>
-                    <p class="card-text text-muted">Giao tieu chuan &middot; Giao nhanh &middot; Giao hoa toc</p>
+                    <h5 class="card-title">Dịch vụ</h5>
+                    <p class="card-text text-muted">Giao tiêu chuẩn &middot; Giao nhanh &middot; Giao hỏa tốc</p>
                 </div>
             </div>
         </div>

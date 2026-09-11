@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <!--
       Fragment dung chung: header (navbar Bootstrap) va footer.
       Cac trang khac chen bang: <div th:replace="~{fragments/layout :: header}"></div>
+      Dung sec:authorize de an/hien menu theo trang thai dang nhap (can dependency
+      thymeleaf-extras-springsecurity6 da them trong pom.xml).
     -->
 </head>
 <body>
@@ -17,9 +19,30 @@
             </button>
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Trang chu</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Tra cuu van don</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/dang-nhap}">Dang nhap</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/}">Trang chủ</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/tra-cuu}">Tra cứu vận đơn</a></li>
+
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" th:href="@{/nguoi-dung/tao-don}">Tạo đơn</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" th:href="@{/nguoi-dung/don-hang}">Đơn hàng của tôi</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <span class="nav-link text-light-emphasis" sec:authentication="name"></span>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-light">Đăng xuất</button>
+                        </form>
+                    </li>
+
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link" th:href="@{/dang-ky}">Đăng ký</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link" th:href="@{/dang-nhap}">Đăng nhập</a>
+                    </li>
                 </ul>
             </div>
         </div>

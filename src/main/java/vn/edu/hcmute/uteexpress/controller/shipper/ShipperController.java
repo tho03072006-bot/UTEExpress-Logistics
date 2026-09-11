@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ShipperController {
 
     @GetMapping("/trang-chu")
-    public String trangChuShipper() {
+    public String dashboard() {
         return "shipper/dashboard";
     }
 

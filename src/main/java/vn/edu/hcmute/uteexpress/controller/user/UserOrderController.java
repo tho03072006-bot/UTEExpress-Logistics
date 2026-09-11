@@ -1,29 +1,60 @@
 package vn.edu.hcmute.uteexpress.controller.user;
 
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
+import vn.edu.hcmute.uteexpress.service.OrderService;
 
 /**
  * Vai tro User (nguoi gui hang) - muc 03 ke hoach, TV1 phu trach.
- * Cac chuc nang can lam theo ban phan cong:
- *  - Tao don gui hang (nhap nguoi gui/nhan, khoi luong, chon dich vu, tinh cuoc tu dong)
- *  - Quan ly dia chi da luu, gio don cho xac nhan
- *  - Thanh toan cuoc (COD/VNPay/Momo)
- *  - Theo doi don theo trang thai + nhan cap nhat realtime (WebSocket)
- *  - Lich su don co filter, danh gia dich vu, ap ma giam gia
+ * Da lam trong ban demo co ban: tao don gui hang, xem lich su don cua minh.
+ * Con lai (dia chi da luu, gio don, thanh toan COD/VNPay/Momo, danh gia dich vu,
+ * theo doi realtime qua WebSocket, ap ma giam gia) - lam tiep theo dung mau nay.
  */
 @Controller
 @RequestMapping("/nguoi-dung")
 public class UserOrderController {
 
+    private final OrderService orderService;
+
+    public UserOrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
     @GetMapping("/trang-chu")
-    public String trangChuUser() {
-        // TODO: doi sang dashboard that khi co du lieu don hang
+    public String dashboard(Authentication authentication, Model model) {
+        model.addAttribute("username", authentication.getName());
+        model.addAttribute("orderCount", orderService.findOrdersOfUser(authentication.getName()).size());
         return "user/dashboard";
     }
 
-    // TODO: @GetMapping("/tao-don"), @PostMapping("/tao-don")
-    // TODO: @GetMapping("/don-hang") - lich su + filter theo trang thai
-    // TODO: @GetMapping("/dia-chi") - quan ly dia chi lay/giao da luu
+    @GetMapping("/tao-don")
+    public String createOrderForm(Model model) {
+        model.addAttribute("form", new OrderCreateRequest());
+        return "user/order-form";
+    }
+
+    @PostMapping("/tao-don")
+    public String createOrder(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
+                               Authentication authentication, Model model) {
+        if (bindingResult.hasErrors()) {
+            return "user/order-form";
+        }
+        var order = orderService.createOrder(form, authentication.getName());
+        model.addAttribute("order", order);
+        return "user/order-created";
+    }
+
+    @GetMapping("/don-hang")
+    public String orderHistory(Authentication authentication, Model model) {
+        model.addAttribute("orders", orderService.findOrdersOfUser(authentication.getName()));
+        return "user/order-list";
+    }
 }

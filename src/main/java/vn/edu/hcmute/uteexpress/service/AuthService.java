@@ -1,17 +1,17 @@
 package vn.edu.hcmute.uteexpress.service;
 
 /**
- * Chuc nang chung: dang ky + OTP email, dang nhap, quen mat khau + OTP email.
- * TODO: hien thuc trong AuthServiceImpl - day la nen tang ca nhom dung chung,
- * nen uu tien lam xong o Tuan 2 theo ke hoach truoc khi tach nhanh feature rieng.
+ * Chuc nang chung: dang ky + OTP email, dang nhap (do Spring Security xu ly),
+ * quen mat khau + OTP email.
  */
 public interface AuthService {
 
-    void dangKy(String username, String rawPassword, String email);
+    /** Tao tai khoan moi (chua kich hoat) va gui OTP xac thuc qua email. */
+    void register(String username, String rawPassword, String email, String fullName);
 
-    boolean xacThucOtp(String username, String otpCode);
+    /** Kiem tra OTP dang ky, neu dung thi kich hoat tai khoan (enabled = true). */
+    boolean verifyOtp(String username, String otpCode);
 
-    void guiOtpQuenMatKhau(String email);
-
-    void datLaiMatKhau(String email, String otpCode, String matKhauMoi);
+    // TODO: sendForgotPasswordOtp(String email) + resetPassword(...) - chua lam trong ban demo nay,
+    // se hoan thien theo cung mau voi register()/verifyOtp() o tren.
 }

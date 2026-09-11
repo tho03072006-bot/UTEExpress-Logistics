@@ -11,12 +11,10 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * Cau hinh Spring Security cho toan he thong.
  *
- * LUU Y QUAN TRONG (doc truoc khi sua):
- * - Cau hinh nay dang o che do "mo" (permitAll toan bo) de ca nhom co the
- *   chay thu tung trang ngay tu dau, KHONG phai cau hinh cuoi cung.
- * - Khi lam xong dang nhap/dang ky (Tuan 2 theo ke hoach), nguoi phu trach
- *   phai thay authorizeHttpRequests ben duoi bang phan quyen that theo role
- *   (USER, SHIPPER, MANAGER, ADMIN) va bat lai CSRF cho cac form khong phai API.
+ * Da bat dang nhap that (UserDetailsServiceImpl doc tu bang app_user) nen tu day
+ * "/nguoi-dung/**" bat buoc dang nhap. Cac vai tro Shipper/Manager/Admin van dang
+ * permitAll tam thoi (chua co du lieu that de test) - siet lai khi TV2/TV3 lam xong
+ * dang nhap phan quyen theo role cho phan cua minh.
  */
 @Configuration
 @EnableWebSecurity
@@ -32,13 +30,21 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/dang-ky", "/dang-nhap",
+                .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
                         "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
-                // TODO: thay dong duoi bang phan quyen that cho tung role khi lam xong dang nhap
-                .anyRequest().permitAll()
+                .requestMatchers("/nguoi-dung/**").authenticated()
+                // TODO (TV2, TV3): doi 2 dong duoi thanh .hasRole("SHIPPER") / .hasRole("MANAGER", "ADMIN")
+                // khi da lam xong dang nhap that cho vai tro cua minh.
+                .requestMatchers("/shipper/**", "/manager/**", "/admin/**").permitAll()
+                .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/dang-nhap")
+                .defaultSuccessUrl("/nguoi-dung/trang-chu", false)
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/")
                 .permitAll()
             )
             // Tam tat CSRF de nhom de test cac API (vd tra cuu van don) trong luc build.
