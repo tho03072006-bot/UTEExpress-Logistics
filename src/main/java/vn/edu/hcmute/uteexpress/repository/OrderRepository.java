@@ -13,6 +13,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findBySender(AppUser sender);
 
+    List<Order> findBySenderAndStatus(AppUser sender, Order.OrderStatus status);
+
     List<Order> findByShipper(AppUser shipper);
 
     List<Order> findByStatus(Order.OrderStatus status);

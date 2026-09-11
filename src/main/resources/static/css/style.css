@@ -1,5 +1,144 @@
-/* Style rieng cua UTEExpress - ke thua Bootstrap 5, chi ghi de nhung gi can thiet */
+/*
+ * Style rieng cua UTEExpress - ke thua Bootstrap 5, chi ghi de nhung gi can thiet.
+ * Bang mau lay dung theo logo truong HCMUTE: chi xanh duong #0072BC + trang + xam trung tinh
+ * (khong dung mau do cua ngon lua trong logo - do khong hop de lam mau nen/nut bam).
+ * Doi cac bien --ute-* nay neu truong doi bo nhan dien - toan bo site an theo day,
+ * khong can sua lai tung file template.
+ */
 
-.navbar-brand {
+:root {
+    --ute-blue: #0072BC;
+    --ute-blue-dark: #00579A;
+    --ute-blue-darker: #003B68;
+    --ute-blue-mid: #3B93CE;
+    --ute-blue-soft: #E7F2FA;
+    --ute-ink: #0B2540;
+    --ute-gray: #6B7A8F;
+    --ute-gray-soft: #EDF1F5;
+
+    /* Ghi de bien mau cua Bootstrap 5.3 - cascade tu dong vao btn-primary, text-primary,
+       bg-primary, border-primary, link-primary,... nen khong can sua lai tung class. */
+    --bs-primary: var(--ute-blue);
+    --bs-primary-rgb: 0, 114, 188;
+    --bs-link-color: var(--ute-blue);
+    --bs-link-color-rgb: 0, 114, 188;
+    --bs-link-hover-color: var(--ute-blue-dark);
+}
+
+body {
+    color: var(--ute-ink);
+}
+
+/* ----- Navbar thuong hieu HCMUTE: xanh phang, khong vien do ----- */
+.navbar-ute {
+    background-color: var(--ute-blue) !important;
+}
+.navbar-ute .navbar-brand {
+    color: #fff;
     letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.navbar-ute .navbar-brand .brand-dot {
+    display: inline-block;
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: #fff;
+}
+.navbar-ute .nav-link {
+    color: rgba(255, 255, 255, 0.92);
+}
+.navbar-ute .nav-link:hover,
+.navbar-ute .nav-link:focus {
+    color: #fff;
+}
+.navbar-ute .nav-link.text-light-emphasis {
+    color: #fff !important;
+    font-weight: 600;
+}
+.navbar-ute .btn-outline-light:hover {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--ute-blue);
+}
+.navbar-ute .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ----- Nut & thanh nhan ----- */
+.btn-primary {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--ute-blue-dark);
+    border-color: var(--ute-blue-dark);
+}
+.btn-outline-primary {
+    color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.btn-outline-primary:hover {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+/* Nut nhan manh tren nen xanh (vd CTA o hero) - trang + chu xanh, khong dung mau do */
+.btn-accent {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--ute-blue);
+    font-weight: 600;
+}
+.btn-accent:hover {
+    background-color: var(--ute-blue-soft);
+    border-color: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+}
+
+/* ----- Hero trang chu ----- */
+.hero-ute {
+    background: linear-gradient(120deg, var(--ute-blue) 0%, var(--ute-blue-dark) 100%);
+    color: #fff;
+    border-radius: .75rem;
+}
+.hero-ute .text-muted-on-blue {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* ----- Badge trang thai don hang: cac sac do xanh + xam trung tinh, khong dung do/vang/luc -----
+   Dam dan theo tien do: xam (cho lay) -> xanh nhat -> xanh vua -> xanh dam (hoan tat).
+   Huy/hoan tra dung xam dam thay vi do de giu dung theo bo nhan dien. */
+.badge-status-pending_pickup { background-color: var(--ute-gray); color: #fff; }
+.badge-status-picked_up { background-color: var(--ute-blue-soft); color: var(--ute-blue-dark); }
+.badge-status-in_transit { background-color: var(--ute-blue-mid); color: #fff; }
+.badge-status-delivered { background-color: var(--ute-blue-darker); color: #fff; }
+.badge-status-cancelled,
+.badge-status-returned { background-color: #DCE1E8; color: var(--ute-ink); }
+
+/* ----- Thong bao (flash message) - dung sac xanh, khong dung do/luc mac dinh cua Bootstrap ----- */
+.alert-success {
+    background-color: var(--ute-blue-soft);
+    border-color: var(--ute-blue-mid);
+    color: var(--ute-blue-dark);
+}
+.alert-danger {
+    background-color: var(--ute-gray-soft);
+    border-color: var(--ute-gray);
+    color: var(--ute-ink);
+}
+
+/* ----- Footer ----- */
+.footer-ute {
+    background-color: var(--ute-ink);
+}
+
+/* ----- Lien ket ----- */
+a {
+    color: var(--ute-blue);
+}
+a:hover {
+    color: var(--ute-blue-dark);
 }

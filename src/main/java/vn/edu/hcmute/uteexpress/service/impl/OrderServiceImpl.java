@@ -56,14 +56,38 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Order> findOrdersOfUser(String username) {
+        return findOrdersOfUser(username, null);
+    }
+
+    @Override
+    public List<Order> findOrdersOfUser(String username, Order.OrderStatus statusFilter) {
         AppUser sender = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + username));
-        return orderRepository.findBySender(sender);
+        if (statusFilter == null) {
+            return orderRepository.findBySender(sender);
+        }
+        return orderRepository.findBySenderAndStatus(sender, statusFilter);
     }
 
     @Override
     public Optional<Order> findByTrackingCode(String trackingCode) {
         return orderRepository.findByTrackingCode(trackingCode);
+    }
+
+    @Override
+    public void cancelOrder(Long orderId, String username) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Khong tim thay don hang: " + orderId));
+
+        if (!order.getSender().getUsername().equals(username)) {
+            throw new IllegalStateException("Ban khong co quyen huy don hang nay");
+        }
+        if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP) {
+            throw new IllegalStateException("Chi co the huy don khi con dang cho lay hang (PENDING_PICKUP)");
+        }
+
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        orderRepository.save(order);
     }
 
     /**
