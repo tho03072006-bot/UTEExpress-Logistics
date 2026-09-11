@@ -142,3 +142,19 @@ a {
 a:hover {
     color: var(--ute-blue-dark);
 }
+
+/* ----- So dia chi da luu (TV1 - viec 1) -----
+   Dung lai dung bo mau xanh HCMUTE: the dia chi mac dinh duoc vien xanh + nen xanh nhat
+   de noi bat hon cac the con lai, khong dung mau do/vang/luc de danh dau. */
+.badge-ute {
+    background-color: var(--ute-blue);
+    color: #fff;
+    font-weight: 600;
+}
+.address-card {
+    border-color: var(--ute-gray-soft);
+}
+.address-card-default {
+    border-color: var(--ute-blue);
+    background-color: var(--ute-blue-soft);
+}

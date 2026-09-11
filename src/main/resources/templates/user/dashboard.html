@@ -14,12 +14,13 @@
     <h2>Xin chào, <span th:text="${username}">user</span></h2>
     <p class="text-muted">Bạn đang có <strong th:text="${orderCount}">0</strong> đơn gửi hàng.</p>
 
-    <div class="d-flex gap-2 mt-4">
+    <div class="d-flex flex-wrap gap-2 mt-4">
         <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">+ Tạo đơn gửi hàng</a>
         <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Xem đơn hàng của tôi</a>
+        <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Sổ địa chỉ</a>
     </div>
 
-    <!-- TODO (TV1): them quan ly dia chi da luu, danh gia dich vu, ma giam gia... -->
+    <!-- TODO (TV1): them danh gia dich vu, ma giam gia... -->
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>
