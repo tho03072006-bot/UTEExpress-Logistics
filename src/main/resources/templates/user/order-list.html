@@ -1,82 +1,101 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head>
-    <meta charset="UTF-8">
     <title>Đơn hàng của tôi - UTEExpress</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<div th:replace="~{fragments/layout :: header}"></div>
-
-<main class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<section>
+<div class="ute-page-head">
+    <div>
         <h2>Đơn hàng của tôi</h2>
-        <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">+ Tạo đơn mới</a>
+        <p>Theo dõi trạng thái giao hàng và tình trạng thanh toán của từng vận đơn.</p>
     </div>
+    <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Tạo đơn mới
+    </a>
+</div>
 
-    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
-    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-    <!-- Filter theo trang thai - giu nguyen status da chon tren URL khi submit -->
-    <form th:action="@{/nguoi-dung/don-hang}" method="get" class="row g-2 align-items-center mb-4">
-        <div class="col-auto">
-            <label for="statusFilter" class="col-form-label">Lọc theo trạng thái:</label>
-        </div>
-        <div class="col-auto">
-            <select id="statusFilter" name="status" class="form-select" onchange="this.form.submit()">
-                <option value="" th:selected="${selectedStatus == null}">Tất cả</option>
-                <option th:each="s : ${statusValues}"
-                        th:value="${s}"
-                        th:text="${s}"
-                        th:selected="${s == selectedStatus}"></option>
-            </select>
-        </div>
-        <div class="col-auto" th:if="${selectedStatus != null}">
-            <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-sm btn-outline-secondary">Xoá lọc</a>
-        </div>
-    </form>
+<!-- Filter theo trang thai - giu nguyen status da chon tren URL khi submit -->
+<form th:action="@{/nguoi-dung/don-hang}" method="get" class="ute-panel row g-2 align-items-center mb-3">
+    <div class="col-auto">
+        <label for="statusFilter" class="col-form-label">Lọc theo trạng thái:</label>
+    </div>
+    <div class="col-auto">
+        <select id="statusFilter" name="status" class="form-select" onchange="this.form.submit()">
+            <option value="" th:selected="${selectedStatus == null}">Tất cả</option>
+            <option th:each="s : ${statusValues}"
+                    th:value="${s}"
+                    th:text="${s}"
+                    th:selected="${s == selectedStatus}"></option>
+        </select>
+    </div>
+    <div class="col-auto" th:if="${selectedStatus != null}">
+        <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-sm btn-outline-secondary">Xoá lọc</a>
+    </div>
+</form>
 
-    <div th:if="${#lists.isEmpty(orders)}" class="text-muted">Chưa có đơn hàng nào.</div>
+<div th:if="${#lists.isEmpty(orders)}" class="ute-panel text-muted">
+    Chưa có đơn hàng nào. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn đầu tiên</a> để bắt đầu.
+</div>
 
-    <table class="table align-middle" th:unless="${#lists.isEmpty(orders)}">
-        <thead>
-            <tr>
-                <th>Mã vận đơn</th>
-                <th>Người nhận</th>
-                <th>Dịch vụ</th>
-                <th>Cước phí</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="order : ${orders}">
-                <td th:text="${order.trackingCode}">-</td>
-                <td th:text="${order.receiverName}">-</td>
-                <td th:text="${order.serviceType}">-</td>
-                <td><span th:replace="~{fragments/layout :: money(${order.shippingFee})}">0 đ</span></td>
-                <td>
-                    <span class="badge"
-                          th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"
-                          th:text="${order.status}">-</span>
-                </td>
-                <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</td>
-                <td>
+<div class="ute-panel ute-panel-flush table-responsive" th:unless="${#lists.isEmpty(orders)}">
+<table class="table align-middle mb-0">
+    <thead>
+        <tr>
+            <th>Mã vận đơn</th>
+            <th>Người nhận</th>
+            <th>Dịch vụ</th>
+            <th>Cước phí</th>
+            <th>Thanh toán</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="order : ${orders}">
+            <td th:text="${order.trackingCode}">-</td>
+            <td th:text="${order.receiverName}">-</td>
+            <td th:text="${order.serviceType}">-</td>
+            <td><span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span></td>
+            <td th:with="payment=${payments.get(order.id)}">
+                <span th:if="${payment == null}" class="text-muted">-</span>
+                <span th:if="${payment != null}" class="badge"
+                      th:classappend="${'badge-payment-' + #strings.toLowerCase(payment.status.name())}"
+                      th:text="${payment.status.displayName}">-</span>
+                <div class="text-muted small" th:if="${payment != null}" th:text="${payment.method.displayName}">-</div>
+            </td>
+            <td>
+                <span class="badge"
+                      th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"
+                      th:text="${order.status}">-</span>
+            </td>
+            <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</td>
+            <td>
+                <div class="d-flex flex-wrap gap-2" th:with="payment=${payments.get(order.id)}">
+                    <!-- Chi don tra truoc bang vi va chua thanh toan moi hien nut nay -->
+                    <a th:if="${payment != null and payment.method.onlineWallet and payment.status.name() == 'UNPAID'}"
+                       th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}"
+                       class="btn btn-sm btn-outline-primary">Thanh toán</a>
+
                     <!-- Chi cho huy khi don con dang PENDING_PICKUP (chua ai lay hang) -->
                     <form th:if="${order.status.name() == 'PENDING_PICKUP'}"
                           th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}"
-                          method="post" class="d-inline">
+                          method="post">
                         <button type="submit" class="btn btn-sm btn-outline-secondary">Huỷ đơn</button>
                     </form>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</main>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+</section>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
 </body>
 </html>

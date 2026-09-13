@@ -24,6 +24,8 @@ public interface SavedAddressRepository extends JpaRepository<SavedAddress, Long
     Optional<SavedAddress> findFirstByUserAndAddressTypeAndDefaultAddressTrue(
             AppUser user, SavedAddress.AddressType addressType);
 
+    long countByUser(AppUser user);
+
     long countByUserAndAddressType(AppUser user, SavedAddress.AddressType addressType);
 
     boolean existsByUserAndAddressTypeAndLabelIgnoreCase(

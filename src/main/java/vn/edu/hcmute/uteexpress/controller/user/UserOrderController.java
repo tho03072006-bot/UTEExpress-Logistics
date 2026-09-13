@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.service.OrderDraftService;
+import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
@@ -34,18 +36,30 @@ public class UserOrderController {
     private final OrderService orderService;
     private final SavedAddressService savedAddressService;
     private final OrderDraftService orderDraftService;
+    private final OrderPaymentService orderPaymentService;
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
-                               OrderDraftService orderDraftService) {
+                               OrderDraftService orderDraftService,
+                               OrderPaymentService orderPaymentService) {
         this.orderService = orderService;
         this.savedAddressService = savedAddressService;
         this.orderDraftService = orderDraftService;
+        this.orderPaymentService = orderPaymentService;
+    }
+
+    /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
+    @ModelAttribute("paymentMethods")
+    public OrderPayment.PaymentMethod[] paymentMethods() {
+        return OrderPayment.PaymentMethod.values();
     }
 
     @GetMapping("/trang-chu")
     public String dashboard(Authentication authentication, Model model) {
-        model.addAttribute("username", authentication.getName());
-        model.addAttribute("orderCount", orderService.findOrdersOfUser(authentication.getName()).size());
+        String username = authentication.getName();
+        model.addAttribute("username", username);
+        model.addAttribute("orderCount", orderService.findOrdersOfUser(username).size());
+        model.addAttribute("addressCount", savedAddressService.countOfUser(username));
+        model.addAttribute("unpaidCount", orderPaymentService.countUnpaidOfUser(username));
         return "user/dashboard";
     }
 
@@ -65,7 +79,15 @@ public class UserOrderController {
             return "user/order-form";
         }
         var order = orderService.createOrder(form, authentication.getName());
+
+        // Tra bang vi dien tu thi dua thang sang trang thanh toan (gia lap) giong cac san that,
+        // con COD thi thu tien luc giao nen chi can hien man hinh tao don thanh cong.
+        if (form.getPaymentMethod() != null && form.getPaymentMethod().isOnlineWallet()) {
+            return "redirect:/nguoi-dung/thanh-toan/" + order.getId();
+        }
+
         model.addAttribute("order", order);
+        model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
         return "user/order-created";
     }
 
@@ -97,6 +119,7 @@ public class UserOrderController {
     public String orderHistory(@RequestParam(name = "status", required = false) Order.OrderStatus status,
                                 Authentication authentication, Model model) {
         model.addAttribute("orders", orderService.findOrdersOfUser(authentication.getName(), status));
+        model.addAttribute("payments", orderPaymentService.findPaymentsOfUser(authentication.getName()));
         model.addAttribute("statusValues", Order.OrderStatus.values());
         model.addAttribute("selectedStatus", status);
         return "user/order-list";
@@ -107,7 +130,7 @@ public class UserOrderController {
                                RedirectAttributes redirectAttributes) {
         try {
             orderService.cancelOrder(id, authentication.getName());
-            redirectAttributes.addFlashAttribute("message", "Da huy don hang thanh cong.");
+            redirectAttributes.addFlashAttribute("message", "Đã huỷ đơn hàng thành công.");
         } catch (IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }

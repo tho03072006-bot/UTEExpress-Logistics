@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Thanh toán cước - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow-sm">
+<!--
+  Ghi ro day la trang gia lap ngay tren dau trang: nguoi cham, ban trong nhom hay bat ky ai
+  mo trang nay deu phai biet ngay khong co giao dich that nao xay ra. Khong dung logo,
+  mau sac hay ten thuong hieu cua VNPay/MoMo - chi goi ten phuong thuc bang chu.
+-->
+<div class="payment-simulation-banner mb-4">
+    <strong>Trang thanh toán mô phỏng</strong>
+    <p class="mb-0 small">
+        Đây là màn hình giả lập phục vụ đồ án môn học Lập trình Web. Hệ thống
+        <strong>không kết nối tới cổng thanh toán thật</strong>, không gửi dữ liệu ra ngoài
+        và không phát sinh giao dịch tiền thật. Bấm xác nhận chỉ để diễn lại luồng nghiệp vụ.
+    </p>
+</div>
+
+<h2 class="mb-4">Thanh toán cước vận chuyển</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Mã vận đơn</span>
+            <strong th:text="${order.trackingCode}">UTE00000000</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Người nhận</span>
+            <span th:text="${order.receiverName}">-</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Phương thức</span>
+            <span th:text="${payment.method.displayName}">-</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fs-5">Số tiền cần trả</span>
+            <span class="fs-4 fw-bold">
+                <span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Da thanh toan roi thi khong hien nut nua, tranh tru tien (gia lap) hai lan -->
+<div th:if="${payment.status.name() == 'PAID'}" class="alert alert-success">
+    Đơn này đã thanh toán
+    <span th:if="${payment.paidAt != null}"
+          th:text="'lúc ' + ${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span>.
+    Mã giao dịch mô phỏng: <strong th:text="${payment.transactionRef}">-</strong>
+</div>
+
+<div th:unless="${payment.status.name() == 'PAID'}">
+    <form method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/xac-nhan'}">
+        <button type="submit" class="btn btn-primary w-100 py-2">Xác nhận đã thanh toán</button>
+    </form>
+    <p class="text-muted small mt-3 mb-0">
+        Chưa muốn trả ngay? Đơn vẫn được giữ ở trạng thái "Chưa thanh toán",
+        bạn có thể quay lại thanh toán bất cứ lúc nào từ trang đơn hàng.
+    </p>
+</div>
+
+<div class="d-flex gap-2 mt-4">
+    <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Về đơn hàng của tôi</a>
+</div>
+</section>
+
+</body>
+</html>

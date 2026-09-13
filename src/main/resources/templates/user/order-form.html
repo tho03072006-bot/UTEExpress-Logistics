@@ -1,135 +1,145 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head>
-    <meta charset="UTF-8">
     <title>Tạo đơn gửi hàng - UTEExpress</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<div th:replace="~{fragments/layout :: header}"></div>
+<section class="ute-narrow">
+<h2 class="mb-4">Tạo đơn gửi hàng</h2>
 
-<main class="container py-5" style="max-width: 640px;">
-    <h2 class="mb-4">Tạo đơn gửi hàng</h2>
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
-    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+<form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}">
+    <h5 class="mt-2">Người gửi</h5>
 
-    <form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}">
-        <h5 class="mt-2">Người gửi</h5>
+    <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
+    <div class="mb-3" th:if="${!#lists.isEmpty(senderAddresses)}">
+        <label class="form-label" for="senderAddressId">Chọn từ sổ địa chỉ</label>
+        <select th:field="*{senderAddressId}" class="form-select"
+                data-address-picker="sender"
+                data-fill-name="senderName"
+                data-fill-address="senderAddress">
+            <option value="">-- Nhập địa chỉ mới --</option>
+            <option th:each="address : ${senderAddresses}"
+                    th:value="${address.id}"
+                    th:attr="data-contact-name=${address.contactName},
+                             data-contact-phone=${address.contactPhone},
+                             data-address-line=${address.addressLine}"
+                    th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
+        </select>
+        <div class="form-text">
+            Địa chỉ mặc định đã được điền sẵn. Chọn địa chỉ khác hoặc sửa trực tiếp bên dưới đều được.
+        </div>
+    </div>
+    <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(senderAddresses)}">
+        Chưa có địa chỉ gửi hàng nào trong sổ.
+        <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
+        để những lần sau khỏi phải gõ lại.
+    </div>
 
-        <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
-        <div class="mb-3" th:if="${!#lists.isEmpty(senderAddresses)}">
-            <label class="form-label" for="senderAddressId">Chọn từ sổ địa chỉ</label>
-            <select th:field="*{senderAddressId}" class="form-select"
-                    data-address-picker="sender"
-                    data-fill-name="senderName"
-                    data-fill-address="senderAddress">
-                <option value="">-- Nhập địa chỉ mới --</option>
-                <option th:each="address : ${senderAddresses}"
-                        th:value="${address.id}"
-                        th:attr="data-contact-name=${address.contactName},
-                                 data-contact-phone=${address.contactPhone},
-                                 data-address-line=${address.addressLine}"
-                        th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
+    <div class="mb-3">
+        <label class="form-label" for="senderName">Tên người gửi</label>
+        <input type="text" th:field="*{senderName}" class="form-control">
+        <div class="text-danger small" th:if="${#fields.hasErrors('senderName')}" th:errors="*{senderName}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="senderAddress">Địa chỉ lấy hàng</label>
+        <input type="text" th:field="*{senderAddress}" class="form-control">
+        <div class="text-danger small" th:if="${#fields.hasErrors('senderAddress')}" th:errors="*{senderAddress}"></div>
+    </div>
+
+    <h5 class="mt-4">Người nhận</h5>
+
+    <!-- Cố ý KHÔNG điền sẵn người nhận: mỗi đơn thường gửi cho một người khác nhau -->
+    <div class="mb-3" th:if="${!#lists.isEmpty(receiverAddresses)}">
+        <label class="form-label" for="receiverAddressId">Chọn từ sổ địa chỉ</label>
+        <select th:field="*{receiverAddressId}" class="form-select"
+                data-address-picker="receiver"
+                data-fill-name="receiverName"
+                data-fill-phone="receiverPhone"
+                data-fill-address="receiverAddress">
+            <option value="">-- Nhập địa chỉ mới --</option>
+            <option th:each="address : ${receiverAddresses}"
+                    th:value="${address.id}"
+                    th:attr="data-contact-name=${address.contactName},
+                             data-contact-phone=${address.contactPhone},
+                             data-address-line=${address.addressLine}"
+                    th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
+        </select>
+    </div>
+    <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(receiverAddresses)}">
+        Chưa có địa chỉ người nhận nào trong sổ.
+        <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
+        để những lần sau khỏi phải gõ lại.
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="receiverName">Tên người nhận</label>
+        <input type="text" th:field="*{receiverName}" class="form-control">
+        <div class="text-danger small" th:if="${#fields.hasErrors('receiverName')}" th:errors="*{receiverName}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
+        <input type="text" th:field="*{receiverPhone}" class="form-control">
+        <div class="text-danger small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="receiverAddress">Địa chỉ giao hàng</label>
+        <input type="text" th:field="*{receiverAddress}" class="form-control">
+        <div class="text-danger small" th:if="${#fields.hasErrors('receiverAddress')}" th:errors="*{receiverAddress}"></div>
+    </div>
+
+    <h5 class="mt-4">Gói hàng</h5>
+    <div class="row">
+        <div class="col-6 mb-3">
+            <label class="form-label" for="weightKg">Khối lượng (kg)</label>
+            <input type="number" step="0.1" th:field="*{weightKg}" class="form-control">
+            <div class="text-danger small" th:if="${#fields.hasErrors('weightKg')}" th:errors="*{weightKg}"></div>
+        </div>
+        <div class="col-6 mb-3">
+            <label class="form-label" for="serviceType">Dịch vụ</label>
+            <select th:field="*{serviceType}" class="form-select">
+                <option value="STANDARD">Tiêu chuẩn (15.000đ + 3.000đ/kg)</option>
+                <option value="EXPRESS">Nhanh (25.000đ + 3.000đ/kg)</option>
+                <option value="SUPER_EXPRESS">Hỏa tốc (40.000đ + 3.000đ/kg)</option>
             </select>
-            <div class="form-text">
-                Địa chỉ mặc định đã được điền sẵn. Chọn địa chỉ khác hoặc sửa trực tiếp bên dưới đều được.
-            </div>
         </div>
-        <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(senderAddresses)}">
-            Chưa có địa chỉ gửi hàng nào trong sổ.
-            <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
-            để những lần sau khỏi phải gõ lại.
-        </div>
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label" for="senderName">Tên người gửi</label>
-            <input type="text" th:field="*{senderName}" class="form-control">
-            <div class="text-danger small" th:if="${#fields.hasErrors('senderName')}" th:errors="*{senderName}"></div>
+    <h5 class="mt-4">Thanh toán cước</h5>
+    <div class="mb-2">
+        <!-- Radio thay vi dropdown: 3 lua chon, hien het ra cho nguoi dung thay ngay -->
+        <div class="form-check" th:each="method : ${paymentMethods}">
+            <input type="radio" th:field="*{paymentMethod}" th:value="${method}" class="form-check-input">
+            <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
+                <span th:text="${method.displayName}">-</span>
+                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước, màn hình mô phỏng</span>
+                <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt cho shipper lúc nhận hàng</span>
+            </label>
         </div>
-        <div class="mb-3">
-            <label class="form-label" for="senderAddress">Địa chỉ lấy hàng</label>
-            <input type="text" th:field="*{senderAddress}" class="form-control">
-            <div class="text-danger small" th:if="${#fields.hasErrors('senderAddress')}" th:errors="*{senderAddress}"></div>
-        </div>
+        <div class="text-danger small" th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}"></div>
+    </div>
+    <div class="form-text mb-4">
+        VNPay và MoMo là bản mô phỏng phục vụ đồ án: hệ thống không kết nối cổng thanh toán thật
+        và không phát sinh giao dịch tiền thật.
+    </div>
 
-        <h5 class="mt-4">Người nhận</h5>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Gửi đơn ngay</button>
+        <!-- Cung mot form, chi doi dich submit: gom vao gio thay vi sinh van don ngay -->
+        <button type="submit" class="btn btn-outline-primary"
+                th:formaction="@{/nguoi-dung/tao-don/them-vao-gio}">Thêm vào giỏ đơn</button>
+        <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
+    </div>
+    <div class="form-text mt-2">
+        Gửi nhiều đơn cùng lúc: bấm "Thêm vào giỏ đơn" cho từng đơn, nhập xong hết thì mở
+        <a th:href="@{/nguoi-dung/gio-don}">giỏ đơn</a> và xác nhận một lần.
+    </div>
+</form>
+</section>
 
-        <!-- Cố ý KHÔNG điền sẵn người nhận: mỗi đơn thường gửi cho một người khác nhau -->
-        <div class="mb-3" th:if="${!#lists.isEmpty(receiverAddresses)}">
-            <label class="form-label" for="receiverAddressId">Chọn từ sổ địa chỉ</label>
-            <select th:field="*{receiverAddressId}" class="form-select"
-                    data-address-picker="receiver"
-                    data-fill-name="receiverName"
-                    data-fill-phone="receiverPhone"
-                    data-fill-address="receiverAddress">
-                <option value="">-- Nhập địa chỉ mới --</option>
-                <option th:each="address : ${receiverAddresses}"
-                        th:value="${address.id}"
-                        th:attr="data-contact-name=${address.contactName},
-                                 data-contact-phone=${address.contactPhone},
-                                 data-address-line=${address.addressLine}"
-                        th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
-            </select>
-        </div>
-        <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(receiverAddresses)}">
-            Chưa có địa chỉ người nhận nào trong sổ.
-            <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
-            để những lần sau khỏi phải gõ lại.
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="receiverName">Tên người nhận</label>
-            <input type="text" th:field="*{receiverName}" class="form-control">
-            <div class="text-danger small" th:if="${#fields.hasErrors('receiverName')}" th:errors="*{receiverName}"></div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
-            <input type="text" th:field="*{receiverPhone}" class="form-control">
-            <div class="text-danger small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="receiverAddress">Địa chỉ giao hàng</label>
-            <input type="text" th:field="*{receiverAddress}" class="form-control">
-            <div class="text-danger small" th:if="${#fields.hasErrors('receiverAddress')}" th:errors="*{receiverAddress}"></div>
-        </div>
-
-        <h5 class="mt-4">Gói hàng</h5>
-        <div class="row">
-            <div class="col-6 mb-3">
-                <label class="form-label" for="weightKg">Khối lượng (kg)</label>
-                <input type="number" step="0.1" th:field="*{weightKg}" class="form-control">
-                <div class="text-danger small" th:if="${#fields.hasErrors('weightKg')}" th:errors="*{weightKg}"></div>
-            </div>
-            <div class="col-6 mb-3">
-                <label class="form-label" for="serviceType">Dịch vụ</label>
-                <select th:field="*{serviceType}" class="form-select">
-                    <option value="STANDARD">Tiêu chuẩn (15.000đ + 3.000đ/kg)</option>
-                    <option value="EXPRESS">Nhanh (25.000đ + 3.000đ/kg)</option>
-                    <option value="SUPER_EXPRESS">Hỏa tốc (40.000đ + 3.000đ/kg)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="d-flex flex-wrap gap-2">
-            <button type="submit" class="btn btn-primary">Gửi đơn ngay</button>
-            <!-- Cung mot form, chi doi dich submit: gom vao gio thay vi sinh van don ngay -->
-            <button type="submit" class="btn btn-outline-primary"
-                    th:formaction="@{/nguoi-dung/tao-don/them-vao-gio}">Thêm vào giỏ đơn</button>
-            <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
-        </div>
-        <div class="form-text mt-2">
-            Gửi nhiều đơn cùng lúc: bấm "Thêm vào giỏ đơn" cho từng đơn, nhập xong hết thì mở
-            <a th:href="@{/nguoi-dung/gio-don}">giỏ đơn</a> và xác nhận một lần.
-        </div>
-    </form>
-</main>
-
-<div th:replace="~{fragments/layout :: footer}"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:src="@{/js/address-picker.js}"></script>
 </body>
 </html>

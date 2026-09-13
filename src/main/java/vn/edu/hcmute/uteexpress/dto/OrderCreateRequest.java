@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 
 /**
  * Du lieu nguoi dung nhap tu form "Tao don gui hang" (khong dung truc tiep
@@ -43,6 +44,9 @@ public class OrderCreateRequest {
 
     @NotNull(message = "Vui lòng chọn dịch vụ")
     private Order.ServiceType serviceType;
+
+    @NotNull(message = "Vui lòng chọn phương thức thanh toán")
+    private OrderPayment.PaymentMethod paymentMethod = OrderPayment.PaymentMethod.COD;
 
     public OrderCreateRequest() {
     }
@@ -119,5 +123,13 @@ public class OrderCreateRequest {
 
     public void setServiceType(Order.ServiceType serviceType) {
         this.serviceType = serviceType;
+    }
+
+    public OrderPayment.PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(OrderPayment.PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

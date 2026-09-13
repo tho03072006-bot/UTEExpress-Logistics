@@ -53,6 +53,12 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countOfUser(String username) {
+        return savedAddressRepository.countByUser(requireUser(username));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<SavedAddress> findDefaultOfType(String username, SavedAddress.AddressType addressType) {
         AppUser owner = requireUser(username);
         return savedAddressRepository.findFirstByUserAndAddressTypeAndDefaultAddressTrue(owner, addressType);

@@ -73,6 +73,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setReceiverAddress(request.getReceiverAddress().trim());
         draft.setWeightKg(request.getWeightKg());
         draft.setServiceType(request.getServiceType());
+        draft.setPaymentMethod(request.getPaymentMethod());
         draft.setEstimatedFee(orderService.estimateFee(request.getServiceType(), request.getWeightKg()));
 
         return draftOrderRepository.save(draft);
@@ -140,6 +141,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         request.setReceiverAddress(draft.getReceiverAddress());
         request.setWeightKg(draft.getWeightKg());
         request.setServiceType(draft.getServiceType());
+        request.setPaymentMethod(draft.getPaymentMethod());
         return request;
     }
 }

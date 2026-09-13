@@ -58,6 +58,11 @@ public class DraftOrder {
     @Column(name = "service_type", nullable = false, length = 20)
     private Order.ServiceType serviceType = Order.ServiceType.STANDARD;
 
+    /** Phương thức thanh toán đã chọn, giữ lại để lúc xác nhận tạo đúng bản ghi thanh toán. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 20)
+    private OrderPayment.PaymentMethod paymentMethod = OrderPayment.PaymentMethod.COD;
+
     /**
      * Cước tạm tính lúc thêm vào giỏ, chỉ để hiển thị cho người dùng ước lượng.
      * Lúc bấm xác nhận, cước được tính lại từ đầu nên nếu nhóm đổi bảng giá thì
@@ -147,6 +152,14 @@ public class DraftOrder {
 
     public void setServiceType(Order.ServiceType serviceType) {
         this.serviceType = serviceType;
+    }
+
+    public OrderPayment.PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(OrderPayment.PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
     public BigDecimal getEstimatedFee() {
