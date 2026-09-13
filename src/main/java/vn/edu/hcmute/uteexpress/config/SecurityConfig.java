@@ -34,9 +34,10 @@ public class SecurityConfig {
                         "/quen-mat-khau", "/dat-lai-mat-khau",
                         "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
                 .requestMatchers("/nguoi-dung/**").authenticated()
-                // TODO (TV2, TV3): doi 2 dong duoi thanh .hasRole("SHIPPER") / .hasRole("MANAGER", "ADMIN")
-                // khi da lam xong dang nhap that cho vai tro cua minh.
-                .requestMatchers("/shipper/**", "/manager/**", "/admin/**").permitAll()
+             // TV2: khu vuc shipper chi danh cho vai tro SHIPPER.
+             // TODO (TV3): bao ve khu vuc manager/admin khi chuc nang quan ly hoan thien.
+                .requestMatchers("/shipper/**").hasRole("SHIPPER")
+                .requestMatchers("/manager/**", "/admin/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
