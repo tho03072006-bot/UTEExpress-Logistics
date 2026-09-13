@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
@@ -45,6 +47,9 @@ class TrackingServiceImplTest {
 
     @Mock
     private DeliveryProofService deliveryProofService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private TrackingServiceImpl trackingService;
@@ -130,6 +135,8 @@ class TrackingServiceImplTest {
 
         assertEquals(newStatus, result.getStatus());
         verify(orderRepository).save(order);
+        verify(eventPublisher).publishEvent(
+                any(OrderStatusChangedEvent.class));
     }
 
     @Test
@@ -151,6 +158,7 @@ class TrackingServiceImplTest {
                         Order.OrderStatus.DELIVERED));
 
         verify(orderRepository, never()).save(order);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -170,6 +178,7 @@ class TrackingServiceImplTest {
                         Order.OrderStatus.PICKED_UP));
 
         verify(orderRepository, never()).save(any(Order.class));
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -192,6 +201,7 @@ class TrackingServiceImplTest {
 
         verify(deliveryProofService).hasCompleteProof(order);
         verify(orderRepository, never()).save(order);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -297,6 +307,7 @@ class TrackingServiceImplTest {
             Order.OrderStatus status) {
         Order order = new Order();
         order.setId(1L);
+        order.setTrackingCode("UTE64477413");
         order.setShipper(shipper);
         order.setStatus(status);
         return order;
