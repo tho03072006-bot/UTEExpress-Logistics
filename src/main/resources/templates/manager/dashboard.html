@@ -7,8 +7,51 @@
 <body>
 
 <section>
-<h2>Trang tổng quan (Manager) — đang xây dựng</h2>
-<p class="text-muted">Thay nội dung này bằng giao diện thật theo danh sách chức năng ở mục 03 kế hoạch.</p>
+<div class="ute-page-head">
+    <div>
+        <h2>Tổng quan quản lý</h2>
+        <p>Theo dõi nhanh tài khoản và đơn hàng trong hệ thống UTEExpress.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-people"></i></span>
+            <span class="ute-stat-value" th:text="${summary.totalUsers}">0</span>
+            <span class="ute-stat-label">Tổng tài khoản</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
+            <span class="ute-stat-value" th:text="${summary.totalOrders}">0</span>
+            <span class="ute-stat-label">Tổng đơn hàng</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-truck"></i></span>
+            <span class="ute-stat-value" th:text="${summary.totalShippers}">0</span>
+            <span class="ute-stat-label">Tài khoản Shipper</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-hourglass-split"></i></span>
+            <span class="ute-stat-value" th:text="${summary.pendingOrders}">0</span>
+            <span class="ute-stat-label">Đơn chờ lấy</span>
+        </div>
+    </div>
+</div>
+
+<div class="ute-panel p-4">
+    <h3 class="h5">Cấu trúc chức năng Manager/Admin</h3>
+    <p class="mb-0 text-muted">
+        Controller nhận yêu cầu, Service xử lý nghiệp vụ, Repository đọc dữ liệu,
+        DTO gom kết quả và Thymeleaf hiển thị ra giao diện.
+    </p>
+</div>
 </section>
 
 </body>
