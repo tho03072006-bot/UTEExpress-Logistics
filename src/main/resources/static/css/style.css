@@ -461,6 +461,45 @@ a:hover {
     padding: 1rem;
 }
 
+/* ===================== Ho so tai khoan (TV1) ===================== */
+/* Cap nhan - gia tri cho nhung thong tin chi doc (ten dang nhap, vai tro, ngay tao) */
+.ute-profile-label {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ute-gray);
+    margin-bottom: .15rem;
+}
+.ute-profile-value {
+    font-weight: 600;
+    color: var(--ute-ink);
+}
+.ute-profile-note {
+    margin-top: 1rem;
+    font-size: .85rem;
+    color: var(--ute-gray);
+}
+
+/* O nhap ma OTP: chu to, gian cach rong de doc lai tung so cho khoi nham 0 voi 8 */
+.ute-otp-input {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: .5em;
+    text-align: center;
+    padding-left: .5em;
+}
+
+/* Loi validation duoi o nhap.
+   Dung class rieng thay cho .text-danger cua Bootstrap vi bang mau cua de tai
+   chi cho phep xanh - trang - xam, khong duoc dung do. */
+.ute-field-error {
+    margin-top: .25rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--ute-blue-dark);
+}
+
 /* ===================== Man hinh nho ===================== */
 @media (max-width: 991.98px) {
     .ute-main-inner {

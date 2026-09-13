@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Tài khoản của tôi - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow">
+<div class="ute-page-head">
+    <div>
+        <h2>Tài khoản của tôi</h2>
+        <p>Xem và cập nhật thông tin liên hệ dùng cho các đơn gửi hàng của bạn.</p>
+    </div>
+    <a th:href="@{/nguoi-dung/tai-khoan/doi-mat-khau}" class="btn btn-outline-secondary">
+        <i class="bi bi-key"></i> Đổi mật khẩu
+    </a>
+</div>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<!-- Dải nhắc khi người dùng đã yêu cầu đổi email nhưng chưa nhập mã: không có nó thì
+     họ đóng tab giữa chừng rồi quay lại sẽ tưởng là email đã đổi xong. -->
+<div th:if="${pendingEmail}" class="alert alert-light d-flex flex-wrap align-items-center gap-2">
+    <i class="bi bi-envelope-check"></i>
+    <span>
+        Đang chờ xác thực email mới:
+        <strong th:text="${pendingEmail}">email@example.com</strong>
+    </span>
+    <a th:href="@{/nguoi-dung/tai-khoan/xac-thuc-email}" class="btn btn-sm btn-primary ms-auto">
+        Nhập mã xác thực
+    </a>
+</div>
+
+<!-- Thông tin không tự sửa được: đặt riêng ra ngoài form cho khỏi nhầm là ô nhập liệu -->
+<div class="ute-panel mb-4">
+    <div class="row g-3">
+        <div class="col-sm-4">
+            <div class="ute-profile-label">Tên đăng nhập</div>
+            <div class="ute-profile-value" th:text="${account.username}">thotest</div>
+        </div>
+        <div class="col-sm-4">
+            <div class="ute-profile-label">Vai trò</div>
+            <div class="ute-profile-value" th:text="${account.role}">USER</div>
+        </div>
+        <div class="col-sm-4">
+            <div class="ute-profile-label">Ngày tạo tài khoản</div>
+            <div class="ute-profile-value"
+                 th:text="${account.createdAt != null
+                           ? #temporals.format(account.createdAt, 'dd/MM/yyyy')
+                           : '—'}">01/01/2026</div>
+        </div>
+    </div>
+    <p class="ute-profile-note mb-0">
+        Tên đăng nhập và vai trò không tự đổi được. Cần thay đổi, vui lòng liên hệ quản trị viên.
+    </p>
+</div>
+
+<div class="ute-panel">
+    <h5 class="mb-3">Thông tin liên hệ</h5>
+
+    <form method="post" th:object="${form}" th:action="@{/nguoi-dung/tai-khoan/cap-nhat}">
+
+        <div class="mb-3">
+            <label class="form-label" for="fullName">Họ và tên</label>
+            <input type="text" id="fullName" th:field="*{fullName}" class="form-control"
+                   placeholder="Ví dụ: Nguyễn Văn Thọ">
+            <div class="ute-field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" th:field="*{email}" class="form-control"
+                   placeholder="ten@example.com">
+            <div class="form-text">
+                Email này cũng là địa chỉ nhận mã OTP khi bạn quên mật khẩu. Đổi sang địa chỉ khác thì
+                phải nhập mã xác thực gửi tới địa chỉ mới, email cũ vẫn giữ nguyên cho tới khi xác thực xong.
+            </div>
+            <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label" for="phone">Số điện thoại</label>
+            <input type="text" id="phone" th:field="*{phone}" class="form-control" placeholder="0901234567">
+            <div class="form-text">Shipper sẽ gọi vào số này khi đến lấy hàng.</div>
+            <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            <a th:href="@{/nguoi-dung/trang-chu}" class="btn btn-outline-secondary">Quay lại trang tổng quan</a>
+        </div>
+    </form>
+</div>
+</section>
+
+</body>
+</html>
