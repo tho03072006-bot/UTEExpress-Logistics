@@ -46,3 +46,7 @@ application-local.properties
 
 # Tep nguoi dung tai len khi chay thu (anh/video danh gia) - khong day len Git
 uploads/
+
+# File khoa tam cua Microsoft Word/Excel (~$ten-file.docx).
+# Word tu tao khi mo tai lieu va tu xoa khi dong - khong bao gio commit len Git.
+~$*
