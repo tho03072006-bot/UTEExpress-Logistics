@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<section>
+<section th:attr="data-tracking-code=${order.trackingCode}">
 <div class="ute-page-head">
     <div>
         <h2>Chi tiết đơn được phân công</h2>
@@ -31,6 +31,10 @@
      th:text="${error}">
 </div>
 
+<div id="realtimeStatusMessage"
+     class="alert alert-success d-none">
+</div>
+
 <div class="ute-panel mb-4">
     <div class="d-flex flex-wrap justify-content-between gap-3">
         <div>
@@ -50,6 +54,7 @@
         <div>
             <div class="text-muted small mb-1">Trạng thái</div>
             <span class="badge"
+                  data-order-status
                   th:classappend="${'badge-status-'
                       + #strings.toLowerCase(order.status.name())}">
                 <th:block th:switch="${order.status.name()}">
@@ -297,6 +302,9 @@
 </div>
 
 <script th:src="@{/js/delivery-proof.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script th:src="@{/js/tracking-realtime.js}"></script>
 </section>
 
 </body>

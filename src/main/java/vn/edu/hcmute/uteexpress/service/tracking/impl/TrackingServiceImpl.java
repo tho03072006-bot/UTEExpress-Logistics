@@ -4,9 +4,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
@@ -24,16 +26,19 @@ public class TrackingServiceImpl implements TrackingService {
     private final OrderRepository orderRepository;
     private final OrderPaymentService orderPaymentService;
     private final DeliveryProofService deliveryProofService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TrackingServiceImpl(
             AppUserRepository appUserRepository,
             OrderRepository orderRepository,
             OrderPaymentService orderPaymentService,
-            DeliveryProofService deliveryProofService) {
+            DeliveryProofService deliveryProofService,
+            ApplicationEventPublisher eventPublisher) {
         this.appUserRepository = appUserRepository;
         this.orderRepository = orderRepository;
         this.orderPaymentService = orderPaymentService;
         this.deliveryProofService = deliveryProofService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -93,7 +98,18 @@ public class TrackingServiceImpl implements TrackingService {
             markCodCollectedIfNecessary(savedOrder);
         }
 
+        publishStatusChanged(savedOrder);
+
         return savedOrder;
+    }
+
+    private void publishStatusChanged(Order order) {
+        eventPublisher.publishEvent(
+                new OrderStatusChangedEvent(
+                        order.getId(),
+                        order.getTrackingCode(),
+                        order.getStatus().name(),
+                        order.getUpdatedAt()));
     }
 
     private void markCodCollectedIfNecessary(Order order) {
