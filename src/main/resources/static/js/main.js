@@ -47,3 +47,31 @@
 
     document.addEventListener('DOMContentLoaded', highlightCurrentNavItem);
 })();
+
+/*
+ * Dem so ky tu o o nhan xet cua form danh gia dich vu (TV1 - viec 4).
+ * Chi la tro giup nhin thay ngay cho nguoi dung; rang buoc toi thieu 50 ky tu van duoc
+ * kiem tra that o phia may chu (ServiceReviewRequest) - khong tin vao kiem tra phia trinh duyet.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var textarea = document.getElementById('reviewContent');
+        var counter = document.getElementById('reviewCharCount');
+        if (!textarea || !counter) {
+            return;
+        }
+
+        var minLength = parseInt(textarea.getAttribute('data-min-length'), 10) || 0;
+
+        function update() {
+            var length = textarea.value.trim().length;
+            counter.textContent = length;
+            counter.classList.toggle('text-danger', length > 0 && length < minLength);
+        }
+
+        textarea.addEventListener('input', update);
+        update();
+    });
+})();

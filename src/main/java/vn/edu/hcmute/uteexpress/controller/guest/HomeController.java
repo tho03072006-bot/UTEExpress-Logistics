@@ -5,6 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.service.OrderService;
+import vn.edu.hcmute.uteexpress.service.ServiceReviewService;
 
 import java.util.Optional;
 
@@ -14,15 +15,21 @@ import java.util.Optional;
 @Controller
 public class HomeController {
 
-    private final OrderService orderService;
+    /** So danh gia hien o khoi "Khach hang noi gi" tren trang chu. */
+    private static final int HOME_REVIEW_LIMIT = 3;
 
-    public HomeController(OrderService orderService) {
+    private final OrderService orderService;
+    private final ServiceReviewService serviceReviewService;
+
+    public HomeController(OrderService orderService, ServiceReviewService serviceReviewService) {
         this.orderService = orderService;
+        this.serviceReviewService = serviceReviewService;
     }
 
     @GetMapping("/")
-    public String home() {
+    public String home(Model model) {
         // TODO (TV1): them bang gia cuoc tham khao theo khu vuc/khoi luong len trang nay
+        model.addAttribute("latestReviews", serviceReviewService.findLatestReviews(HOME_REVIEW_LIMIT));
         return "index";
     }
 

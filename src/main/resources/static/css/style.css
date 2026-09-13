@@ -556,3 +556,51 @@ a:hover {
 .ute-quick:hover .ute-quick-desc {
     color: var(--ute-blue-dark);
 }
+
+/* ===================== Danh gia dich vu (TV1 - viec 4) ===================== */
+/* Chon sao: xep input theo thu tu 5->1 trong HTML roi dung row-reverse de hien 1->5,
+   nho vay chon tieu chuan "~" lam sang duoc cac sao ben trai khi di chuot. */
+.ute-rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: .2rem;
+    font-size: 1.6rem;
+}
+.ute-rating input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.ute-rating label {
+    color: var(--ute-border);
+    cursor: pointer;
+    line-height: 1;
+}
+.ute-rating label:hover,
+.ute-rating label:hover ~ label,
+.ute-rating input:checked ~ label {
+    color: var(--ute-blue);
+}
+/* Vien focus cho nguoi dung ban phim - khong duoc mat dau hieu dang chon o dau */
+.ute-rating input:focus-visible + label {
+    outline: 2px solid var(--ute-blue-mid);
+    outline-offset: 2px;
+    border-radius: .2rem;
+}
+
+.ute-stars {
+    color: var(--ute-blue);
+    font-size: 1rem;
+    letter-spacing: .1rem;
+}
+
+.ute-review-media {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: .5rem;
+    border: 1px solid var(--ute-border);
+    display: block;
+}

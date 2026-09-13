@@ -77,11 +77,20 @@
             </td>
             <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</td>
             <td>
-                <div class="d-flex flex-wrap gap-2" th:with="payment=${payments.get(order.id)}">
+                <div class="d-flex flex-wrap gap-2"
+                     th:with="payment=${payments.get(order.id)}, review=${reviews.get(order.id)}">
                     <!-- Chi don tra truoc bang vi va chua thanh toan moi hien nut nay -->
                     <a th:if="${payment != null and payment.method.onlineWallet and payment.status.name() == 'UNPAID'}"
                        th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}"
                        class="btn btn-sm btn-outline-primary">Thanh toán</a>
+
+                    <!-- Chi danh gia duoc khi don da giao thanh cong va chua danh gia lan nao -->
+                    <a th:if="${order.status.name() == 'DELIVERED' and review == null}"
+                       th:href="@{'/nguoi-dung/danh-gia/' + ${order.id}}"
+                       class="btn btn-sm btn-outline-primary">Đánh giá</a>
+                    <span th:if="${review != null}" class="badge badge-ute align-self-center">
+                        Đã đánh giá <span th:text="${review.rating}">5</span>/5
+                    </span>
 
                     <!-- Chi cho huy khi don con dang PENDING_PICKUP (chua ai lay hang) -->
                     <form th:if="${order.status.name() == 'PENDING_PICKUP'}"
