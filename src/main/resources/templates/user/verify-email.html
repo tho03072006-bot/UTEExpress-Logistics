@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Xác thực email mới - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow-sm">
+<h2 class="mb-2">Xác thực email mới</h2>
+<p class="text-muted">
+    Chúng tôi vừa gửi mã gồm 6 chữ số tới
+    <strong th:text="${pendingEmail}">email@example.com</strong>.
+    Mở hộp thư đó và nhập mã vào ô bên dưới. Mã có hiệu lực trong 10 phút.
+</p>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<div class="ute-panel">
+    <form method="post" th:object="${form}" th:action="@{/nguoi-dung/tai-khoan/xac-thuc-email}">
+        <div class="mb-4">
+            <label class="form-label" for="otp">Mã xác thực</label>
+            <input type="text" id="otp" th:field="*{otp}" class="form-control ute-otp-input"
+                   maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+            <div class="ute-field-error" th:if="${#fields.hasErrors('otp')}" th:errors="*{otp}"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Xác nhận đổi email</button>
+    </form>
+</div>
+
+<!-- Hai nút này là hành động thay đổi dữ liệu nên phải là form POST, không dùng thẻ <a> -->
+<div class="d-flex gap-2 mt-3">
+    <form method="post" th:action="@{/nguoi-dung/tai-khoan/xac-thuc-email/gui-lai}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Gửi lại mã
+        </button>
+    </form>
+    <form method="post" th:action="@{/nguoi-dung/tai-khoan/xac-thuc-email/huy}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Huỷ đổi email</button>
+    </form>
+</div>
+
+<p class="ute-profile-note">
+    Không thấy thư? Kiểm tra thêm mục Spam / Thư rác. Nếu địa chỉ vừa nhập bị gõ sai,
+    hãy bấm "Huỷ đổi email" rồi nhập lại từ trang tài khoản - email hiện tại của bạn
+    vẫn đang được giữ nguyên.
+</p>
+</section>
+
+</body>
+</html>
