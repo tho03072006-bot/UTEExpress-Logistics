@@ -109,6 +109,17 @@
         </div>
     </div>
 
+    <h5 class="mt-4">Mã giảm giá</h5>
+    <div class="mb-4">
+        <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
+        <input type="text" th:field="*{promoCode}" class="form-control ute-promo-input"
+               placeholder="Ví dụ: UTE10" autocomplete="off">
+        <div class="form-text">
+            Để trống nếu không có mã. Mã sai hoặc hết hạn sẽ được báo ngay khi bấm tạo đơn,
+            đơn chưa bị tạo nên bạn sửa lại thoải mái.
+        </div>
+    </div>
+
     <h5 class="mt-4">Thanh toán cước</h5>
     <div class="mb-2">
         <!-- Radio thay vi dropdown: 3 lua chon, hien het ra cho nguoi dung thay ngay -->

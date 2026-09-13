@@ -10,6 +10,7 @@ import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.DraftOrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderDraftService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
+import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,13 +26,16 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     private final DraftOrderRepository draftOrderRepository;
     private final AppUserRepository appUserRepository;
     private final OrderService orderService;
+    private final PromoCodeService promoCodeService;
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
-                                 OrderService orderService) {
+                                 OrderService orderService,
+                                 PromoCodeService promoCodeService) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
         this.orderService = orderService;
+        this.promoCodeService = promoCodeService;
     }
 
     @Override
@@ -74,7 +78,15 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setWeightKg(request.getWeightKg());
         draft.setServiceType(request.getServiceType());
         draft.setPaymentMethod(request.getPaymentMethod());
-        draft.setEstimatedFee(orderService.estimateFee(request.getServiceType(), request.getWeightKg()));
+        draft.setPromoCode(request.getPromoCode());
+        BigDecimal fee = orderService.estimateFee(request.getServiceType(), request.getWeightKg());
+        draft.setEstimatedFee(fee);
+
+        // Kiem tra ma ngay luc them vao gio de bao som, thay vi de nguoi dung gom xong
+        // ca gio roi bam xac nhan moi biet ma sai. Luc xac nhan van kiem tra lai lan nua.
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
+            promoCodeService.requireUsableCode(request.getPromoCode(), fee);
+        }
 
         return draftOrderRepository.save(draft);
     }
@@ -142,6 +154,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         request.setWeightKg(draft.getWeightKg());
         request.setServiceType(draft.getServiceType());
         request.setPaymentMethod(draft.getPaymentMethod());
+        request.setPromoCode(draft.getPromoCode());
         return request;
     }
 }

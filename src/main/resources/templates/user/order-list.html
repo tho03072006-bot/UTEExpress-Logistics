@@ -69,6 +69,13 @@
                       th:classappend="${'badge-payment-' + #strings.toLowerCase(payment.status.name())}"
                       th:text="${payment.status.displayName}">-</span>
                 <div class="text-muted small" th:if="${payment != null}" th:text="${payment.method.displayName}">-</div>
+                <!-- Chi hien dong nay khi don co ap ma, de khong lam roi cac dong con lai -->
+                <div class="text-muted small" th:if="${payment != null and payment.hasDiscount()}">
+                    Thực trả
+                    <span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span>
+                    <span th:if="${payment.promoCode != null}"
+                          th:text="'(' + ${payment.promoCode.code} + ')'">(mã)</span>
+                </div>
             </td>
             <td>
                 <span class="badge"

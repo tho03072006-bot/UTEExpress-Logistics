@@ -82,7 +82,16 @@ public class UserOrderController {
             addSavedAddressesToModel(model, authentication.getName());
             return "user/order-form";
         }
-        var order = orderService.createOrder(form, authentication.getName());
+        Order order;
+        try {
+            order = orderService.createOrder(form, authentication.getName());
+        } catch (IllegalStateException ex) {
+            // Hay gap nhat o day la ma giam gia sai/het han - phai ve lai form kem loi
+            // de nguoi dung sua, khong de vang ra trang bao loi he thong.
+            addSavedAddressesToModel(model, authentication.getName());
+            model.addAttribute("error", ex.getMessage());
+            return "user/order-form";
+        }
 
         // Tra bang vi dien tu thi dua thang sang trang thanh toan (gia lap) giong cac san that,
         // con COD thi thu tien luc giao nen chi can hien man hinh tao don thanh cong.

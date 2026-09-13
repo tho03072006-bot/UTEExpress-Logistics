@@ -2,6 +2,9 @@ package vn.edu.hcmute.uteexpress.service;
 
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.entity.PromoCode;
+
+import java.math.BigDecimal;
 
 import java.util.Map;
 import java.util.Optional;
@@ -16,8 +19,15 @@ import java.util.Optional;
  */
 public interface OrderPaymentService {
 
-    /** Tạo bản ghi thanh toán ngay khi vận đơn được tạo, số tiền lấy theo cước của đơn. */
-    OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method);
+    /**
+     * Tạo bản ghi thanh toán ngay khi vận đơn được tạo.
+     * Số tiền phải trả = cước của đơn trừ đi phần giảm giá (nếu có áp mã).
+     *
+     * @param promoCode      mã đã áp, null nếu đơn không dùng mã nào
+     * @param discountAmount số tiền được giảm, null hoặc 0 nếu không giảm
+     */
+    OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method,
+                                PromoCode promoCode, BigDecimal discountAmount);
 
     Optional<OrderPayment> findByOrder(Order order);
 

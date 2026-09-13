@@ -64,6 +64,14 @@ public class DraftOrder {
     private OrderPayment.PaymentMethod paymentMethod = OrderPayment.PaymentMethod.COD;
 
     /**
+     * Mã giảm giá người dùng đã nhập, lưu nguyên chuỗi chứ không lưu khoá ngoại.
+     * Mã được kiểm tra lại lúc bấm xác nhận - nếu tới lúc đó mã đã hết hạn hay hết lượt
+     * thì người dùng được báo ngay, thay vì áp một mã không còn giá trị.
+     */
+    @Column(name = "promo_code", length = 30)
+    private String promoCode;
+
+    /**
      * Cước tạm tính lúc thêm vào giỏ, chỉ để hiển thị cho người dùng ước lượng.
      * Lúc bấm xác nhận, cước được tính lại từ đầu nên nếu nhóm đổi bảng giá thì
      * đơn thật vẫn ăn theo giá mới, không ăn theo giá cũ lưu trong giỏ.
@@ -160,6 +168,14 @@ public class DraftOrder {
 
     public void setPaymentMethod(OrderPayment.PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public String getPromoCode() {
+        return promoCode;
+    }
+
+    public void setPromoCode(String promoCode) {
+        this.promoCode = promoCode;
     }
 
     public BigDecimal getEstimatedFee() {

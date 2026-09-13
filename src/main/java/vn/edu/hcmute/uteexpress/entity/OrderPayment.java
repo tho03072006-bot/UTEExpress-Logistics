@@ -35,9 +35,25 @@ public class OrderPayment {
     @Column(nullable = false, length = 20)
     private PaymentStatus status = PaymentStatus.UNPAID;
 
-    /** Số tiền phải trả, chốt tại thời điểm tạo đơn (bằng cước phí của vận đơn). */
+    /**
+     * Số tiền THỰC TRẢ, chốt tại thời điểm tạo đơn = cước gốc của vận đơn trừ đi phần giảm giá.
+     * Cước gốc vẫn giữ nguyên ở Order.shippingFee để Shipper/Manager nhìn thấy giá thật.
+     */
     @Column(nullable = false, precision = 12, scale = 0)
     private BigDecimal amount;
+
+    /**
+     * Số tiền được giảm nhờ mã khuyến mãi. Để nullable (thay vì NOT NULL mặc định 0) vì bảng này
+     * đã có dữ liệu từ trước khi làm việc 5 - SQL Server không cho thêm cột NOT NULL vào bảng
+     * đang có dòng. Đọc ra thì coi null như bằng 0.
+     */
+    @Column(name = "discount_amount", precision = 12, scale = 0)
+    private BigDecimal discountAmount;
+
+    /** Mã giảm giá đã dùng, null nghĩa là đơn không áp mã nào. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "promo_code_id")
+    private PromoCode promoCode;
 
     /**
      * Mã giao dịch. Với ví điện tử mô phỏng thì đây là mã do hệ thống tự sinh,
@@ -100,6 +116,16 @@ public class OrderPayment {
     public OrderPayment() {
     }
 
+    /** Đơn này có được giảm giá không - tiện cho template khỏi kiểm tra null hai lần. */
+    public boolean hasDiscount() {
+        return discountAmount != null && discountAmount.signum() > 0;
+    }
+
+    /** Cước gốc trước khi giảm, lấy thẳng từ vận đơn. */
+    public BigDecimal getOriginalAmount() {
+        return order != null ? order.getShippingFee() : amount;
+    }
+
     // ----- Getter / Setter -----
 
     public Long getId() {
@@ -140,6 +166,22 @@ public class OrderPayment {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public PromoCode getPromoCode() {
+        return promoCode;
+    }
+
+    public void setPromoCode(PromoCode promoCode) {
+        this.promoCode = promoCode;
     }
 
     public String getTransactionRef() {
