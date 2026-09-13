@@ -1,11 +1,12 @@
 package vn.edu.hcmute.uteexpress.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import vn.edu.hcmute.uteexpress.entity.AppUser;
-import vn.edu.hcmute.uteexpress.entity.Order;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import vn.edu.hcmute.uteexpress.entity.AppUser;
+import vn.edu.hcmute.uteexpress.entity.Order;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
@@ -13,7 +14,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findBySender(AppUser sender);
 
-    List<Order> findBySenderAndStatus(AppUser sender, Order.OrderStatus status);
+    Optional<Order> findByIdAndShipper(Long id, AppUser shipper);
+
+    List<Order> findBySenderAndStatus(
+            AppUser sender, Order.OrderStatus status);
 
     List<Order> findByShipper(AppUser shipper);
 

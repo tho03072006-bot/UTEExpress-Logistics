@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title th:text="|Chi tiết ${order.trackingCode} - UTEExpress|">
+        Chi tiết đơn - UTEExpress
+    </title>
+</head>
+<body>
+
+<section>
+<div class="ute-page-head">
+    <div>
+        <h2>Chi tiết đơn được phân công</h2>
+        <p>Thông tin lấy hàng và giao hàng của Shipper.</p>
+    </div>
+
+    <a class="btn btn-outline-secondary"
+       th:href="@{/shipper/trang-chu}">
+        Quay lại danh sách
+    </a>
+</div>
+
+<div class="ute-panel mb-4">
+    <div class="d-flex flex-wrap justify-content-between gap-3">
+        <div>
+            <div class="text-muted small">Mã vận đơn</div>
+            <h3 class="mb-1" th:text="${order.trackingCode}">
+                UTE00000000
+            </h3>
+            <div class="text-muted">
+                Ngày tạo:
+                <span th:text="${#temporals.format(
+                        order.createdAt, 'dd/MM/yyyy HH:mm')}">
+                    -
+                </span>
+            </div>
+        </div>
+
+        <div>
+            <div class="text-muted small mb-1">Trạng thái</div>
+            <span class="badge"
+                  th:classappend="${'badge-status-'
+                      + #strings.toLowerCase(order.status.name())}">
+                <th:block th:switch="${order.status.name()}">
+                    <span th:case="'PENDING_PICKUP'">Chờ lấy hàng</span>
+                    <span th:case="'PICKED_UP'">Đã lấy hàng</span>
+                    <span th:case="'IN_TRANSIT'">Đang giao</span>
+                    <span th:case="'DELIVERED'">Giao thành công</span>
+                    <span th:case="'CANCELLED'">Đã hủy</span>
+                    <span th:case="'RETURNED'">Đã hoàn trả</span>
+                    <span th:case="*" th:text="${order.status}">-</span>
+                </th:block>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="ute-panel h-100">
+            <h4 class="mb-3">Thông tin lấy hàng</h4>
+
+            <div class="mb-3">
+                <div class="text-muted small">Người gửi</div>
+                <div th:text="${order.senderName}">Người gửi</div>
+            </div>
+
+            <div>
+                <div class="text-muted small">Địa chỉ lấy hàng</div>
+                <div th:text="${order.senderAddress}">
+                    Địa chỉ lấy hàng
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="ute-panel h-100">
+            <h4 class="mb-3">Thông tin giao hàng</h4>
+
+            <div class="mb-3">
+                <div class="text-muted small">Người nhận</div>
+                <div th:text="${order.receiverName}">Người nhận</div>
+            </div>
+
+            <div class="mb-3">
+                <div class="text-muted small">Số điện thoại</div>
+                <div th:text="${order.receiverPhone}">0900000000</div>
+            </div>
+
+            <div>
+                <div class="text-muted small">Địa chỉ giao hàng</div>
+                <div th:text="${order.receiverAddress}">
+                    Địa chỉ giao hàng
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ute-panel mt-4">
+    <h4 class="mb-3">Thông tin gói hàng</h4>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="text-muted small">Khối lượng</div>
+            <div th:text="|${order.weightKg} kg|">0 kg</div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="text-muted small">Dịch vụ</div>
+            <div th:switch="${order.serviceType.name()}">
+                <span th:case="'STANDARD'">Tiêu chuẩn</span>
+                <span th:case="'EXPRESS'">Nhanh</span>
+                <span th:case="'SUPER_EXPRESS'">Hỏa tốc</span>
+                <span th:case="*" th:text="${order.serviceType}">-</span>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="text-muted small">Phí vận chuyển</div>
+            <div>
+                <span th:replace="~{fragments/components
+                        :: money(${order.shippingFee})}">
+                    0 đ
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+</body>
+</html>
