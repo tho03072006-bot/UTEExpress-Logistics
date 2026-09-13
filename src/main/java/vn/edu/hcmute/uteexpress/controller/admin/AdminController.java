@@ -1,8 +1,10 @@
 package vn.edu.hcmute.uteexpress.controller.admin;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import vn.edu.hcmute.uteexpress.service.manager.ManagerDashboardService;
 
 /**
  * Vai tro Admin - muc 03 ke hoach, TV3 phu trach (ke thua quyen Manager + cau hinh he thong).
@@ -13,8 +15,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/admin")
 public class AdminController {
 
+    private final ManagerDashboardService managerDashboardService;
+
+    public AdminController(ManagerDashboardService managerDashboardService) {
+        this.managerDashboardService = managerDashboardService;
+    }
+
     @GetMapping("/trang-chu")
-    public String dashboard() {
+    public String dashboard(Model model) {
+        model.addAttribute("summary", managerDashboardService.getSummary());
         // Dung chung template voi Manager luc dau, tach rieng khi can giao dien khac biet
         return "manager/dashboard";
     }
