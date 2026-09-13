@@ -45,6 +45,40 @@
         </div>
     </div>
 </div>
+
+<!-- Danh gia that do nguoi gui viet sau khi don da giao xong (TV1 - viec 4) -->
+<section th:unless="${#lists.isEmpty(latestReviews)}" class="mt-5">
+    <h4 class="mb-1">Khách hàng nói gì về UTEExpress</h4>
+    <p class="text-muted">Đánh giá từ những người đã nhận hàng thành công.</p>
+
+    <div class="row g-3">
+        <div class="col-md-4" th:each="review : ${latestReviews}">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="ute-stars mb-2">
+                        <i class="bi" th:each="star : ${#numbers.sequence(1, 5)}"
+                           th:classappend="${star &lt;= review.rating} ? ' bi-star-fill' : ' bi-star'"></i>
+                    </div>
+                    <p class="card-text" th:text="${review.content}">Nội dung đánh giá</p>
+
+                    <div th:if="${review.hasMedia()}" class="mb-2">
+                        <img th:if="${review.mediaType.name() == 'IMAGE'}" class="ute-review-media"
+                             th:src="@{${review.mediaPath}}" alt="Ảnh đính kèm đánh giá">
+                        <video th:if="${review.mediaType.name() == 'VIDEO'}" class="ute-review-media"
+                               th:src="@{${review.mediaPath}}" controls muted></video>
+                    </div>
+
+                    <div class="text-muted small mt-auto">
+                        <!-- Chi hien ten, khong hien email hay ma van don cua nguoi khac -->
+                        <span th:text="${review.user.fullName != null ? review.user.fullName : review.user.username}">Khách hàng</span>
+                        &middot;
+                        <span th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">01/01/2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 </section>
 
 </body>

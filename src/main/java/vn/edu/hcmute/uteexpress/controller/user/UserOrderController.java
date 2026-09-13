@@ -20,6 +20,7 @@ import vn.edu.hcmute.uteexpress.service.OrderDraftService;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
+import vn.edu.hcmute.uteexpress.service.ServiceReviewService;
 
 /**
  * Vai tro User (nguoi gui hang) - muc 03 ke hoach, TV1 phu trach.
@@ -37,14 +38,17 @@ public class UserOrderController {
     private final SavedAddressService savedAddressService;
     private final OrderDraftService orderDraftService;
     private final OrderPaymentService orderPaymentService;
+    private final ServiceReviewService serviceReviewService;
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
                                OrderDraftService orderDraftService,
-                               OrderPaymentService orderPaymentService) {
+                               OrderPaymentService orderPaymentService,
+                               ServiceReviewService serviceReviewService) {
         this.orderService = orderService;
         this.savedAddressService = savedAddressService;
         this.orderDraftService = orderDraftService;
         this.orderPaymentService = orderPaymentService;
+        this.serviceReviewService = serviceReviewService;
     }
 
     /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
@@ -120,6 +124,7 @@ public class UserOrderController {
                                 Authentication authentication, Model model) {
         model.addAttribute("orders", orderService.findOrdersOfUser(authentication.getName(), status));
         model.addAttribute("payments", orderPaymentService.findPaymentsOfUser(authentication.getName()));
+        model.addAttribute("reviews", serviceReviewService.findReviewsOfUser(authentication.getName()));
         model.addAttribute("statusValues", Order.OrderStatus.values());
         model.addAttribute("selectedStatus", status);
         return "user/order-list";

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Đánh giá dịch vụ - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow">
+<div class="ute-page-head">
+    <div>
+        <h2>Đánh giá dịch vụ</h2>
+        <p>
+            Đơn <strong th:text="${order.trackingCode}">UTE00000000</strong>
+            &middot; giao tới <span th:text="${order.receiverName}">-</span>
+        </p>
+    </div>
+</div>
+
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<div class="ute-panel">
+    <!-- Co tep dinh kem nen form bat buoc phai la multipart/form-data -->
+    <form method="post" enctype="multipart/form-data" th:object="${form}"
+          th:action="@{'/nguoi-dung/danh-gia/' + ${order.id}}">
+
+        <div class="mb-4">
+            <label class="form-label d-block">Bạn hài lòng ở mức nào?</label>
+            <!-- Xep nguoc 5..1 de dung meo CSS ~ to lam sang cac sao ben trai khi di chuot -->
+            <div class="ute-rating">
+                <input type="radio" th:field="*{rating}" value="5" id="rating5">
+                <label for="rating5" title="Rất hài lòng"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" th:field="*{rating}" value="4" id="rating4">
+                <label for="rating4" title="Hài lòng"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" th:field="*{rating}" value="3" id="rating3">
+                <label for="rating3" title="Bình thường"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" th:field="*{rating}" value="2" id="rating2">
+                <label for="rating2" title="Chưa hài lòng"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" th:field="*{rating}" value="1" id="rating1">
+                <label for="rating1" title="Rất không hài lòng"><i class="bi bi-star-fill"></i></label>
+            </div>
+            <div class="text-danger small" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}"></div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="content">Nhận xét của bạn</label>
+            <textarea th:field="*{content}" class="form-control" rows="5" id="reviewContent"
+                      data-min-length="50"
+                      placeholder="Shipper giao đúng hẹn không, hàng còn nguyên vẹn không, thái độ phục vụ thế nào..."></textarea>
+            <div class="form-text">
+                Cần ít nhất <strong>50 ký tự</strong> — đã nhập
+                <span id="reviewCharCount">0</span> ký tự.
+            </div>
+            <div class="text-danger small" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label" for="mediaFile">Ảnh hoặc video (không bắt buộc)</label>
+            <input type="file" th:field="*{mediaFile}" class="form-control"
+                   accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm">
+            <div class="form-text">
+                Nhận ảnh (jpg, png, gif, webp) hoặc video (mp4, webm), tối đa 10 MB.
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+            <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Quay lại đơn hàng</a>
+        </div>
+    </form>
+</div>
+</section>
+
+</body>
+</html>
