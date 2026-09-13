@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 import vn.edu.hcmute.uteexpress.service.tracking.TrackingService;
 
 @Controller
@@ -21,20 +23,27 @@ import vn.edu.hcmute.uteexpress.service.tracking.TrackingService;
 public class ShipperController {
 
     private final TrackingService trackingService;
+    private final DeliveryProofService deliveryProofService;
 
-    public ShipperController(TrackingService trackingService) {
+    public ShipperController(
+            TrackingService trackingService,
+            DeliveryProofService deliveryProofService) {
         this.trackingService = trackingService;
+        this.deliveryProofService = deliveryProofService;
     }
 
     @GetMapping("/trang-chu")
-    public String dashboard(Authentication authentication, Model model) {
+    public String dashboard(
+            Authentication authentication,
+            Model model) {
         if (isAnonymous(authentication)) {
             return "redirect:/dang-nhap";
         }
 
         model.addAttribute(
                 "orders",
-                trackingService.findAssignedOrders(authentication.getName()));
+                trackingService.findAssignedOrders(
+                        authentication.getName()));
 
         return "shipper/dashboard";
     }
@@ -55,18 +64,61 @@ public class ShipperController {
         if (order.isEmpty()) {
             redirectAttributes.addFlashAttribute(
                     "error",
-                    "Không tìm thấy đơn hoặc đơn không được phân công cho bạn.");
+                    "Không tìm thấy đơn hoặc đơn không được "
+                            + "phân công cho bạn.");
             return "redirect:/shipper/trang-chu";
         }
 
-        model.addAttribute("order", order.get());
+        Order assignedOrder = order.get();
+
+        model.addAttribute("order", assignedOrder);
+        model.addAttribute(
+                "deliveryProof",
+                deliveryProofService.findByOrder(assignedOrder)
+                        .orElse(null));
+
         return "shipper/order-detail";
+    }
+
+    @PostMapping("/don/{id}/bang-chung")
+    public String saveDeliveryProof(
+            @PathVariable Long id,
+            @RequestParam("proofImage")
+                    MultipartFile proofImage,
+            @RequestParam(
+                    name = "signatureData",
+                    defaultValue = "")
+                    String signatureData,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        if (isAnonymous(authentication)) {
+            return "redirect:/dang-nhap";
+        }
+
+        try {
+            deliveryProofService.saveProof(
+                    id,
+                    authentication.getName(),
+                    proofImage,
+                    signatureData);
+
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "Đã lưu ảnh bằng chứng và chữ ký người nhận.");
+        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "error",
+                    exception.getMessage());
+        }
+
+        return "redirect:/shipper/don/" + id;
     }
 
     @PostMapping("/don/{id}/trang-thai")
     public String updateStatus(
             @PathVariable Long id,
-            @RequestParam("status") Order.OrderStatus newStatus,
+            @RequestParam("status")
+                    Order.OrderStatus newStatus,
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
         if (isAnonymous(authentication)) {
@@ -75,7 +127,10 @@ public class ShipperController {
 
         try {
             trackingService.updateStatus(
-                    id, authentication.getName(), newStatus);
+                    id,
+                    authentication.getName(),
+                    newStatus);
+
             redirectAttributes.addFlashAttribute(
                     "message",
                     "Cập nhật trạng thái đơn thành công.");

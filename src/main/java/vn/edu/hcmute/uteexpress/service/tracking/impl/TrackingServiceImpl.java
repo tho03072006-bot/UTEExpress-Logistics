@@ -13,6 +13,7 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
+import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 import vn.edu.hcmute.uteexpress.service.tracking.TrackingService;
 
 @Service
@@ -22,14 +23,17 @@ public class TrackingServiceImpl implements TrackingService {
     private final AppUserRepository appUserRepository;
     private final OrderRepository orderRepository;
     private final OrderPaymentService orderPaymentService;
+    private final DeliveryProofService deliveryProofService;
 
     public TrackingServiceImpl(
             AppUserRepository appUserRepository,
             OrderRepository orderRepository,
-            OrderPaymentService orderPaymentService) {
+            OrderPaymentService orderPaymentService,
+            DeliveryProofService deliveryProofService) {
         this.appUserRepository = appUserRepository;
         this.orderRepository = orderRepository;
         this.orderPaymentService = orderPaymentService;
+        this.deliveryProofService = deliveryProofService;
     }
 
     @Override
@@ -38,15 +42,19 @@ public class TrackingServiceImpl implements TrackingService {
 
         return orderRepository.findByShipper(shipper)
                 .stream()
-                .sorted(Comparator.comparing(Order::getCreatedAt).reversed())
+                .sorted(Comparator.comparing(
+                        Order::getCreatedAt).reversed())
                 .toList();
     }
 
     @Override
     public Optional<Order> findAssignedOrder(
-            Long orderId, String shipperUsername) {
+            Long orderId,
+            String shipperUsername) {
         AppUser shipper = findShipper(shipperUsername);
-        return orderRepository.findByIdAndShipper(orderId, shipper);
+
+        return orderRepository.findByIdAndShipper(
+                orderId, shipper);
     }
 
     @Override
@@ -60,7 +68,8 @@ public class TrackingServiceImpl implements TrackingService {
         Order order = orderRepository
                 .findByIdAndShipper(orderId, shipper)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Không tìm thấy đơn hoặc đơn không được phân công cho bạn"));
+                        "Không tìm thấy đơn hoặc đơn không được "
+                                + "phân công cho bạn."));
 
         if (!isValidTransition(order.getStatus(), newStatus)) {
             throw new IllegalStateException(
@@ -68,6 +77,13 @@ public class TrackingServiceImpl implements TrackingService {
                             + order.getStatus()
                             + " sang "
                             + newStatus);
+        }
+
+        if (newStatus == Order.OrderStatus.DELIVERED
+                && !deliveryProofService.hasCompleteProof(order)) {
+            throw new IllegalStateException(
+                    "Phải lưu ảnh bằng chứng và chữ ký người nhận "
+                            + "trước khi xác nhận giao thành công.");
         }
 
         order.setStatus(newStatus);
@@ -113,14 +129,14 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     private AppUser findShipper(String shipperUsername) {
-        AppUser shipper = appUserRepository.findByUsername(shipperUsername)
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Không tìm thấy tài khoản shipper"));
+        AppUser shipper = appUserRepository
+                .findByUsername(shipperUsername)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Không tìm thấy tài khoản Shipper."));
 
         if (shipper.getRole() != AppUser.Role.SHIPPER) {
             throw new IllegalStateException(
-                    "Tài khoản hiện tại không có vai trò SHIPPER");
+                    "Tài khoản hiện tại không có vai trò SHIPPER.");
         }
 
         return shipper;
