@@ -68,7 +68,7 @@ public class Order {
     }
 
     public enum OrderStatus {
-        PENDING_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, RETURNED
+        PENDING_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED, CANCELLED, RETURNED
     }
 
     public Order() {

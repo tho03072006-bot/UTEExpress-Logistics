@@ -8,7 +8,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.edu.hcmute.uteexpress.entity.Order;
@@ -59,6 +61,31 @@ public class ShipperController {
 
         model.addAttribute("order", order.get());
         return "shipper/order-detail";
+    }
+
+    @PostMapping("/don/{id}/trang-thai")
+    public String updateStatus(
+            @PathVariable Long id,
+            @RequestParam("status") Order.OrderStatus newStatus,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        if (isAnonymous(authentication)) {
+            return "redirect:/dang-nhap";
+        }
+
+        try {
+            trackingService.updateStatus(
+                    id, authentication.getName(), newStatus);
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "Cập nhật trạng thái đơn thành công.");
+        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "error",
+                    exception.getMessage());
+        }
+
+        return "redirect:/shipper/don/" + id;
     }
 
     private boolean isAnonymous(Authentication authentication) {
