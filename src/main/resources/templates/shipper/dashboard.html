@@ -2,13 +2,81 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head>
-    <title>Trang tong quan - UTEExpress</title>
+    <title>Đơn được phân công - UTEExpress</title>
 </head>
 <body>
 
 <section>
-<h2>Trang tổng quan (Shipper) — đang xây dựng</h2>
-<p class="text-muted">Thay nội dung này bằng giao diện thật theo danh sách chức năng ở mục 03 kế hoạch.</p>
+<div class="ute-page-head">
+    <div>
+        <h2>Đơn được phân công</h2>
+        <p>Theo dõi các đơn hàng bạn cần lấy và giao cho khách.</p>
+    </div>
+</div>
+
+<div th:if="${#lists.isEmpty(orders)}" class="ute-panel text-muted">
+    Hiện tại bạn chưa được phân công đơn hàng nào.
+</div>
+
+<div class="ute-panel ute-panel-flush table-responsive"
+     th:unless="${#lists.isEmpty(orders)}">
+    <table class="table align-middle mb-0">
+        <thead>
+        <tr>
+            <th>Mã vận đơn</th>
+            <th>Điểm lấy hàng</th>
+            <th>Người nhận</th>
+            <th>Địa chỉ giao</th>
+            <th>Dịch vụ</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="order : ${orders}">
+            <td>
+                <strong th:text="${order.trackingCode}">UTE00000000</strong>
+            </td>
+
+            <td>
+                <div th:text="${order.senderName}">Người gửi</div>
+                <small class="text-muted"
+                       th:text="${order.senderAddress}">Địa chỉ lấy hàng</small>
+            </td>
+
+            <td>
+                <div th:text="${order.receiverName}">Người nhận</div>
+                <small class="text-muted"
+                       th:text="${order.receiverPhone}">Số điện thoại</small>
+            </td>
+
+            <td th:text="${order.receiverAddress}">Địa chỉ giao hàng</td>
+
+            <td th:text="${order.serviceType}">STANDARD</td>
+
+            <td>
+                <span class="badge"
+                      th:classappend="${'badge-status-'
+                          + #strings.toLowerCase(order.status.name())}">
+                    <th:block th:switch="${order.status.name()}">
+                        <span th:case="'PENDING_PICKUP'">Chờ lấy hàng</span>
+                        <span th:case="'PICKED_UP'">Đã lấy hàng</span>
+                        <span th:case="'IN_TRANSIT'">Đang giao</span>
+                        <span th:case="'DELIVERED'">Giao thành công</span>
+                        <span th:case="'CANCELLED'">Đã hủy</span>
+                        <span th:case="'RETURNED'">Đã hoàn trả</span>
+                        <span th:case="*" th:text="${order.status}">-</span>
+                    </th:block>
+                </span>
+            </td>
+
+            <td th:text="${#temporals.format(
+                    order.createdAt, 'dd/MM/yyyy HH:mm')}">-</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
 </section>
 
 </body>
