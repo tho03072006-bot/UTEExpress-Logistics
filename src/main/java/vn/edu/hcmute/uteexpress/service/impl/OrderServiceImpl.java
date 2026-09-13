@@ -1,5 +1,7 @@
 package vn.edu.hcmute.uteexpress.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
@@ -114,6 +116,17 @@ public class OrderServiceImpl implements OrderService {
             return orderRepository.findBySender(sender);
         }
         return orderRepository.findBySenderAndStatus(sender, statusFilter);
+    }
+
+    @Override
+    public Page<Order> searchOrdersOfUser(String username, Order.OrderStatus statusFilter,
+                                          String keyword, Pageable pageable) {
+        AppUser sender = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + username));
+
+        // O tim kiem de trong thi coi nhu khong tim, khong phai tim chuoi rong.
+        String trimmed = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        return orderRepository.searchOrdersOfSender(sender, statusFilter, trimmed, pageable);
     }
 
     @Override

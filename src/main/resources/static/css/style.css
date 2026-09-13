@@ -618,3 +618,19 @@ a:hover {
     letter-spacing: normal;
     font-weight: 400;
 }
+
+/* ===================== Phan trang (TV1) ===================== */
+.pagination {
+    --bs-pagination-color: var(--ute-ink);
+    --bs-pagination-border-color: var(--ute-border);
+    --bs-pagination-hover-color: var(--ute-blue-dark);
+    --bs-pagination-hover-bg: var(--ute-blue-soft);
+    --bs-pagination-hover-border-color: var(--ute-border);
+    --bs-pagination-active-bg: var(--ute-blue);
+    --bs-pagination-active-border-color: var(--ute-blue);
+    --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.page-link {
+    border-radius: .4rem;
+    margin: 0 .12rem;
+}

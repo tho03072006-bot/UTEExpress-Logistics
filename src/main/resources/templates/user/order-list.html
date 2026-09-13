@@ -20,13 +20,20 @@
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-<!-- Filter theo trang thai - giu nguyen status da chon tren URL khi submit -->
-<form th:action="@{/nguoi-dung/don-hang}" method="get" class="ute-panel row g-2 align-items-center mb-3">
-    <div class="col-auto">
-        <label for="statusFilter" class="col-form-label">Lọc theo trạng thái:</label>
+<!--
+  Tìm kiếm + lọc trạng thái nằm chung một form, để hai điều kiện áp cùng lúc và
+  đều được giữ nguyên trên URL khi chuyển trang. Đổi điều kiện thì luôn về trang 1
+  (không gửi kèm tham số page) - nếu giữ trang cũ thì rất dễ rơi vào trang trống.
+-->
+<form th:action="@{/nguoi-dung/don-hang}" method="get" class="ute-panel row g-2 align-items-end mb-3">
+    <div class="col-md-5">
+        <label for="keyword" class="form-label">Tìm kiếm</label>
+        <input type="text" id="keyword" name="keyword" class="form-control"
+               th:value="${keyword}" placeholder="Mã vận đơn, tên hoặc SĐT người nhận">
     </div>
-    <div class="col-auto">
-        <select id="statusFilter" name="status" class="form-select" onchange="this.form.submit()">
+    <div class="col-md-4">
+        <label for="statusFilter" class="form-label">Trạng thái</label>
+        <select id="statusFilter" name="status" class="form-select">
             <option value="" th:selected="${selectedStatus == null}">Tất cả</option>
             <option th:each="s : ${statusValues}"
                     th:value="${s}"
@@ -34,13 +41,23 @@
                     th:selected="${s == selectedStatus}"></option>
         </select>
     </div>
-    <div class="col-auto" th:if="${selectedStatus != null}">
-        <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-sm btn-outline-secondary">Xoá lọc</a>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">
+            <i class="bi bi-search"></i> Tìm
+        </button>
+        <a th:if="${selectedStatus != null or (keyword != null and !keyword.isEmpty())}"
+           th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Xoá</a>
     </div>
 </form>
 
 <div th:if="${#lists.isEmpty(orders)}" class="ute-panel text-muted">
-    Chưa có đơn hàng nào. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn đầu tiên</a> để bắt đầu.
+    <span th:if="${selectedStatus == null and (keyword == null or keyword.isEmpty())}">
+        Chưa có đơn hàng nào. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn đầu tiên</a> để bắt đầu.
+    </span>
+    <span th:unless="${selectedStatus == null and (keyword == null or keyword.isEmpty())}">
+        Không tìm thấy đơn nào khớp với điều kiện đang lọc.
+        <a th:href="@{/nguoi-dung/don-hang}">Xoá bộ lọc</a> để xem lại tất cả.
+    </span>
 </div>
 
 <div class="ute-panel ute-panel-flush table-responsive" th:unless="${#lists.isEmpty(orders)}">
@@ -111,6 +128,36 @@
     </tbody>
 </table>
 </div>
+
+<!-- Thanh phan trang: giu nguyen keyword va status khi nhay trang -->
+<nav th:if="${orderPage.totalPages > 1}" class="mt-3" aria-label="Phân trang đơn hàng">
+    <ul class="pagination justify-content-center mb-2">
+        <li class="page-item" th:classappend="${orderPage.first} ? ' disabled'">
+            <a class="page-link"
+               th:href="@{/nguoi-dung/don-hang(page=${orderPage.number - 1}, status=${selectedStatus}, keyword=${keyword})}"
+               aria-label="Trang trước">&laquo;</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, orderPage.totalPages - 1)}"
+            th:classappend="${i == orderPage.number} ? ' active'">
+            <a class="page-link"
+               th:href="@{/nguoi-dung/don-hang(page=${i}, status=${selectedStatus}, keyword=${keyword})}"
+               th:text="${i + 1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${orderPage.last} ? ' disabled'">
+            <a class="page-link"
+               th:href="@{/nguoi-dung/don-hang(page=${orderPage.number + 1}, status=${selectedStatus}, keyword=${keyword})}"
+               aria-label="Trang sau">&raquo;</a>
+        </li>
+    </ul>
+</nav>
+
+<p th:unless="${#lists.isEmpty(orders)}" class="text-muted small text-center">
+    Hiển thị <span th:text="${#lists.size(orders)}">0</span> đơn
+    trên tổng <strong th:text="${orderPage.totalElements}">0</strong> đơn
+    <span th:if="${orderPage.totalPages > 1}">
+        &middot; trang <span th:text="${orderPage.number + 1}">1</span>/<span th:text="${orderPage.totalPages}">1</span>
+    </span>
+</p>
 </section>
 
 </body>

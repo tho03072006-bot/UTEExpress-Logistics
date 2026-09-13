@@ -3,6 +3,9 @@ package vn.edu.hcmute.uteexpress.service;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.Order;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +38,14 @@ public interface OrderService {
      * Loc lich su don theo trang thai. statusFilter = null nghia la lay tat ca (khong loc).
      */
     List<Order> findOrdersOfUser(String username, Order.OrderStatus statusFilter);
+
+    /**
+     * Lich su don co phan trang, ket hop loc trang thai va tim theo tu khoa.
+     * statusFilter = null la khong loc; keyword rong/null la khong tim.
+     * Tu khoa tra theo ma van don, ten nguoi nhan hoac so dien thoai nguoi nhan.
+     */
+    Page<Order> searchOrdersOfUser(String username, Order.OrderStatus statusFilter,
+                                   String keyword, Pageable pageable);
 
     Optional<Order> findByTrackingCode(String trackingCode);
 
