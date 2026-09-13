@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.entity.PromoCode;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
@@ -39,11 +40,18 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     }
 
     @Override
-    public OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method) {
+    public OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method,
+                                       PromoCode promoCode, BigDecimal discountAmount) {
+        BigDecimal fee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal discount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+
         OrderPayment payment = new OrderPayment();
         payment.setOrder(order);
         payment.setMethod(method != null ? method : OrderPayment.PaymentMethod.COD);
-        payment.setAmount(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO);
+        payment.setPromoCode(promoCode);
+        payment.setDiscountAmount(discount);
+        // Cuoc goc van nam nguyen o Order.shippingFee; o day la so tien khach thuc tra.
+        payment.setAmount(fee.subtract(discount).max(BigDecimal.ZERO));
         // Moi don deu bat dau o trang thai chua thanh toan: COD thi thu luc giao hang,
         // vi dien tu thi cho nguoi dung di qua trang thanh toan gia lap.
         payment.setStatus(OrderPayment.PaymentStatus.UNPAID);

@@ -48,6 +48,13 @@ public class OrderCreateRequest {
     @NotNull(message = "Vui lòng chọn phương thức thanh toán")
     private OrderPayment.PaymentMethod paymentMethod = OrderPayment.PaymentMethod.COD;
 
+    /**
+     * Mã giảm cước, không bắt buộc. Để trống nghĩa là không áp mã nào.
+     * Mã sai/hết hạn được báo lỗi ở Service chứ không validate bằng annotation,
+     * vì còn phải tra CSDL và so với cước của chính đơn này.
+     */
+    private String promoCode;
+
     public OrderCreateRequest() {
     }
 
@@ -123,6 +130,14 @@ public class OrderCreateRequest {
 
     public void setServiceType(Order.ServiceType serviceType) {
         this.serviceType = serviceType;
+    }
+
+    public String getPromoCode() {
+        return promoCode;
+    }
+
+    public void setPromoCode(String promoCode) {
+        this.promoCode = promoCode;
     }
 
     public OrderPayment.PaymentMethod getPaymentMethod() {

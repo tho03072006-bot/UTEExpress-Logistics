@@ -17,6 +17,16 @@
         <p>Dịch vụ: <span th:text="${order.serviceType}">-</span></p>
         <p>Cước phí: <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span></p>
         <p>Trạng thái: <span class="badge bg-secondary" th:text="${order.status}">-</span></p>
+        <p th:if="${payment != null and payment.hasDiscount()}" class="mb-1">
+            Giảm giá:
+            <strong>-<span th:replace="~{fragments/components :: money(${payment.discountAmount})}">0 đ</span></strong>
+            <span class="text-muted small" th:if="${payment.promoCode != null}"
+                  th:text="'(mã ' + ${payment.promoCode.code} + ')'">(mã)</span>
+        </p>
+        <p th:if="${payment != null and payment.hasDiscount()}" class="mb-1">
+            Còn phải trả:
+            <strong><span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span></strong>
+        </p>
         <p th:if="${payment != null}" class="mb-0">
             Thanh toán: <span th:text="${payment.method.displayName}">-</span> &middot;
             <span class="badge"

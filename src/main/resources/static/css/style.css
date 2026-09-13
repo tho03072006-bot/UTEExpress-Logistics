@@ -604,3 +604,16 @@ a:hover {
     border: 1px solid var(--ute-border);
     display: block;
 }
+
+/* ===================== Ma giam gia (TV1 - viec 5) ===================== */
+/* Ma luon luu dang chu hoa nen hien chu hoa luon cho khop voi cai nguoi dung se thay */
+.ute-promo-input {
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 600;
+}
+.ute-promo-input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+}

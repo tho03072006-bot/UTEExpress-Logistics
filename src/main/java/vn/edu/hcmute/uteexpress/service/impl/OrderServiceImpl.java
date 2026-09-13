@@ -5,11 +5,13 @@ import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.entity.PromoCode;
 import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
+import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
 import java.math.BigDecimal;
@@ -33,14 +35,17 @@ public class OrderServiceImpl implements OrderService {
     private final AppUserRepository appUserRepository;
     private final SavedAddressService savedAddressService;
     private final OrderPaymentService orderPaymentService;
+    private final PromoCodeService promoCodeService;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
-                            OrderPaymentService orderPaymentService) {
+                            OrderPaymentService orderPaymentService,
+                            PromoCodeService promoCodeService) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
         this.orderPaymentService = orderPaymentService;
+        this.promoCodeService = promoCodeService;
     }
 
     @Override
@@ -74,13 +79,25 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverAddress(request.getReceiverAddress());
         order.setWeightKg(request.getWeightKg());
         order.setServiceType(request.getServiceType());
-        order.setShippingFee(calculateFee(request.getServiceType(), request.getWeightKg()));
+        BigDecimal fee = calculateFee(request.getServiceType(), request.getWeightKg());
+        order.setShippingFee(fee);
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
+
+        // Kiem tra ma giam gia TRUOC khi luu don: ma sai thi nem loi ngay, khong tao don do dang.
+        PromoCode promoCode = null;
+        BigDecimal discount = BigDecimal.ZERO;
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
+            promoCode = promoCodeService.requireUsableCode(request.getPromoCode(), fee);
+            discount = promoCodeService.calculateDiscount(promoCode, fee);
+        }
 
         Order savedOrder = orderRepository.save(order);
         // Moi van don deu co dung mot ban ghi thanh toan, tao ngay tai day de khong bao gio
         // ton tai don "khong biet tra bang gi" trong CSDL.
-        orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod());
+        orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod(), promoCode, discount);
+        if (promoCode != null) {
+            promoCodeService.markUsed(promoCode);
+        }
         return savedOrder;
     }
 
