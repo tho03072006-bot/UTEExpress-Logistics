@@ -414,6 +414,7 @@ a:hover {
 .badge-status-picked_up { background-color: var(--ute-blue-soft); color: var(--ute-blue-dark); }
 .badge-status-in_transit { background-color: var(--ute-blue-mid); color: #fff; }
 .badge-status-delivered { background-color: var(--ute-blue-darker); color: #fff; }
+.badge-status-failed { background-color: var(--ute-gray); color: #fff; }
 .badge-status-cancelled,
 .badge-status-returned { background-color: #DCE1E8; color: var(--ute-ink); }
 

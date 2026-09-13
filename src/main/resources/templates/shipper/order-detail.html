@@ -21,6 +21,16 @@
     </a>
 </div>
 
+<div th:if="${message}"
+     class="alert alert-success"
+     th:text="${message}">
+</div>
+
+<div th:if="${error}"
+     class="alert alert-danger"
+     th:text="${error}">
+</div>
+
 <div class="ute-panel mb-4">
     <div class="d-flex flex-wrap justify-content-between gap-3">
         <div>
@@ -47,6 +57,7 @@
                     <span th:case="'PICKED_UP'">Đã lấy hàng</span>
                     <span th:case="'IN_TRANSIT'">Đang giao</span>
                     <span th:case="'DELIVERED'">Giao thành công</span>
+                    <span th:case="'FAILED'">Giao thất bại</span>
                     <span th:case="'CANCELLED'">Đã hủy</span>
                     <span th:case="'RETURNED'">Đã hoàn trả</span>
                     <span th:case="*" th:text="${order.status}">-</span>
@@ -127,6 +138,71 @@
                 </span>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="ute-panel mt-4">
+    <h4 class="mb-3">Cập nhật trạng thái</h4>
+
+    <form method="post"
+          th:if="${order.status.name() == 'PENDING_PICKUP'}"
+          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+        <input type="hidden" name="status" value="PICKED_UP">
+        <button type="submit" class="btn btn-primary">
+            Xác nhận đã lấy hàng
+        </button>
+    </form>
+
+    <form method="post"
+          th:if="${order.status.name() == 'PICKED_UP'}"
+          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+        <input type="hidden" name="status" value="IN_TRANSIT">
+        <button type="submit" class="btn btn-primary">
+            Bắt đầu giao hàng
+        </button>
+    </form>
+
+    <div class="d-flex flex-wrap gap-2"
+         th:if="${order.status.name() == 'IN_TRANSIT'}">
+        <form method="post"
+              th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+            <input type="hidden" name="status" value="DELIVERED">
+            <button type="submit" class="btn btn-success">
+                Giao hàng thành công
+            </button>
+        </form>
+
+        <form method="post"
+              th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+            <input type="hidden" name="status" value="FAILED">
+            <button type="submit" class="btn btn-outline-danger">
+                Giao hàng thất bại
+            </button>
+        </form>
+    </div>
+
+    <form method="post"
+          th:if="${order.status.name() == 'FAILED'}"
+          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+        <input type="hidden" name="status" value="RETURNED">
+        <button type="submit" class="btn btn-warning">
+            Xác nhận đã hoàn trả
+        </button>
+    </form>
+
+    <div class="alert alert-light border mb-0"
+         th:if="${order.status.name() == 'DELIVERED'}">
+        Đơn hàng đã được giao thành công.
+    </div>
+
+    <div class="alert alert-light border mb-0"
+         th:if="${order.status.name() == 'RETURNED'}">
+        Đơn hàng đã được hoàn trả.
+    </div>
+
+    <div class="alert alert-light border mb-0"
+         th:if="${order.status.name() == 'CANCELLED'}">
+        Đơn hàng đã bị hủy và không thể cập nhật.
     </div>
 </div>
 </section>

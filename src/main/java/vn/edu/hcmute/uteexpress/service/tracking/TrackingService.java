@@ -17,4 +17,12 @@ public interface TrackingService {
      */
     Optional<Order> findAssignedOrder(
             Long orderId, String shipperUsername);
+
+    /**
+     * Cập nhật trạng thái nếu đơn thuộc Shipper và bước chuyển hợp lệ.
+     */
+    Order updateStatus(
+            Long orderId,
+            String shipperUsername,
+            Order.OrderStatus newStatus);
 }
