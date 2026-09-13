@@ -57,7 +57,7 @@
                 <td th:text="${order.trackingCode}">-</td>
                 <td th:text="${order.receiverName}">-</td>
                 <td th:text="${order.serviceType}">-</td>
-                <td th:text="${order.shippingFee} + ' đ'">0</td>
+                <td><span th:replace="~{fragments/layout :: money(${order.shippingFee})}">0 đ</span></td>
                 <td>
                     <span class="badge"
                           th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"

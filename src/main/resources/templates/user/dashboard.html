@@ -18,6 +18,10 @@
         <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">+ Tạo đơn gửi hàng</a>
         <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Xem đơn hàng của tôi</a>
         <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Sổ địa chỉ</a>
+        <a th:href="@{/nguoi-dung/gio-don}" class="btn btn-outline-secondary">
+            Giỏ đơn chờ xác nhận
+            <span class="badge badge-ute" th:if="${cartCount != null and cartCount > 0}" th:text="${cartCount}">0</span>
+        </a>
     </div>
 
     <!-- TODO (TV1): them danh gia dich vu, ma giam gia... -->

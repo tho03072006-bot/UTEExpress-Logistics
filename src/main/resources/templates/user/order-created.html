@@ -19,7 +19,7 @@
             <p class="fs-4 fw-bold" th:text="${order.trackingCode}">UTE00000000</p>
             <p>Người nhận: <span th:text="${order.receiverName}">-</span></p>
             <p>Dịch vụ: <span th:text="${order.serviceType}">-</span></p>
-            <p>Cước phí: <span th:text="${order.shippingFee} + ' đ'">0</span></p>
+            <p>Cước phí: <span th:replace="~{fragments/layout :: money(${order.shippingFee})}">0 đ</span></p>
             <p>Trạng thái: <span class="badge bg-secondary" th:text="${order.status}">-</span></p>
         </div>
     </div>

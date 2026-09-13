@@ -4,9 +4,11 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderService;
+import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -27,10 +29,28 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final AppUserRepository appUserRepository;
+    private final SavedAddressService savedAddressService;
 
-    public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
+                            SavedAddressService savedAddressService) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
+        this.savedAddressService = savedAddressService;
+    }
+
+    @Override
+    public OrderCreateRequest prepareCreateForm(String username) {
+        OrderCreateRequest form = new OrderCreateRequest();
+        form.setServiceType(Order.ServiceType.STANDARD);
+
+        // Dia chi lay hang cua nguoi gui gan nhu khong doi giua cac don nen dien san cho tien.
+        savedAddressService.findDefaultOfType(username, SavedAddress.AddressType.SENDER)
+                .ifPresent(address -> {
+                    form.setSenderAddressId(address.getId());
+                    form.setSenderName(address.getContactName());
+                    form.setSenderAddress(address.getAddressLine());
+                });
+        return form;
     }
 
     @Override
@@ -88,6 +108,11 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(Order.OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+    @Override
+    public BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg) {
+        return calculateFee(serviceType, weightKg);
     }
 
     /**

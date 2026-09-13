@@ -35,6 +35,15 @@
                         <a class="nav-link" th:href="@{/nguoi-dung/dia-chi}">Sổ địa chỉ</a>
                     </li>
                     <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <!-- cartCount chi co o cac trang cua TV1 (UserCartBadgeAdvice), trang khac tu an con so -->
+                        <a class="nav-link" th:href="@{/nguoi-dung/gio-don}">
+                            Giỏ đơn
+                            <span class="badge badge-ute"
+                                  th:if="${cartCount != null and cartCount > 0}"
+                                  th:text="${cartCount}">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
                         <span class="nav-link text-light-emphasis" sec:authentication="name"></span>
                     </li>
                     <li class="nav-item" sec:authorize="isAuthenticated()">
@@ -54,6 +63,15 @@
         </div>
     </nav>
 </div>
+
+<!--
+  Hien so tien theo dinh dang Viet Nam: 32500 -> "32.500 đ" (dau cham ngan cach hang nghin).
+  Dung o moi noi hien tien de khoi moi trang mot kieu:
+      <span th:replace="~{fragments/layout :: money(${order.shippingFee})}">0 đ</span>
+  Luu y: trong <td> phai boc bang <span> roi th:replace cai <span> do, khong th:replace thang <td>.
+-->
+<span th:fragment="money(amount)"
+      th:text="${amount == null ? '—' : #numbers.formatInteger(amount, 1, 'POINT') + ' đ'}">0 đ</span>
 
 <div th:fragment="footer">
     <footer class="footer-ute text-light text-center py-3 mt-5">
