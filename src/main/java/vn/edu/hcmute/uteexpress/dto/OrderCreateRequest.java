@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 
 /**
  * Du lieu nguoi dung nhap tu form "Tao don gui hang" (khong dung truc tiep
@@ -11,32 +12,62 @@ import vn.edu.hcmute.uteexpress.entity.Order;
  */
 public class OrderCreateRequest {
 
-    @NotBlank(message = "Vui long nhap ten nguoi gui")
+    /**
+     * Id dia chi vua chon o o "Chon tu so dia chi" phia nguoi gui.
+     * Chi phuc vu giao dien: giu nguyen lua chon tren dropdown khi form bi tra ve
+     * vi loi validation. Du lieu that luu vao don van la senderName/senderAddress ben duoi,
+     * vi nguoi dung co the chon dia chi roi sua lai vai chu truoc khi bam tao don.
+     */
+    private Long senderAddressId;
+
+    /** Tuong tu senderAddressId nhung cho o chon dia chi nguoi nhan. */
+    private Long receiverAddressId;
+
+    @NotBlank(message = "Vui lòng nhập tên người gửi")
     private String senderName;
 
-    @NotBlank(message = "Vui long nhap dia chi lay hang")
+    @NotBlank(message = "Vui lòng nhập địa chỉ lấy hàng")
     private String senderAddress;
 
-    @NotBlank(message = "Vui long nhap ten nguoi nhan")
+    @NotBlank(message = "Vui lòng nhập tên người nhận")
     private String receiverName;
 
-    @NotBlank(message = "Vui long nhap so dien thoai nguoi nhan")
+    @NotBlank(message = "Vui lòng nhập số điện thoại người nhận")
     private String receiverPhone;
 
-    @NotBlank(message = "Vui long nhap dia chi giao hang")
+    @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
     private String receiverAddress;
 
-    @NotNull(message = "Vui long nhap khoi luong")
-    @Positive(message = "Khoi luong phai lon hon 0")
+    @NotNull(message = "Vui lòng nhập khối lượng")
+    @Positive(message = "Khối lượng phải lớn hơn 0")
     private Double weightKg;
 
-    @NotNull(message = "Vui long chon dich vu")
+    @NotNull(message = "Vui lòng chọn dịch vụ")
     private Order.ServiceType serviceType;
+
+    @NotNull(message = "Vui lòng chọn phương thức thanh toán")
+    private OrderPayment.PaymentMethod paymentMethod = OrderPayment.PaymentMethod.COD;
 
     public OrderCreateRequest() {
     }
 
     // ----- Getter / Setter -----
+
+    public Long getSenderAddressId() {
+        return senderAddressId;
+    }
+
+    public void setSenderAddressId(Long senderAddressId) {
+        this.senderAddressId = senderAddressId;
+    }
+
+    public Long getReceiverAddressId() {
+        return receiverAddressId;
+    }
+
+    public void setReceiverAddressId(Long receiverAddressId) {
+        this.receiverAddressId = receiverAddressId;
+    }
 
     public String getSenderName() {
         return senderName;
@@ -92,5 +123,13 @@ public class OrderCreateRequest {
 
     public void setServiceType(Order.ServiceType serviceType) {
         this.serviceType = serviceType;
+    }
+
+    public OrderPayment.PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(OrderPayment.PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

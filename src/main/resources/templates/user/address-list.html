@@ -1,79 +1,74 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head>
-    <meta charset="UTF-8">
     <title>Sổ địa chỉ - UTEExpress</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<div th:replace="~{fragments/layout :: header}"></div>
-
-<main class="container py-5">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-        <div>
-            <h2 class="mb-1">Sổ địa chỉ</h2>
-            <p class="text-muted mb-0">
-                Lưu sẵn địa chỉ lấy hàng và địa chỉ người nhận để khỏi phải gõ lại mỗi lần tạo đơn.
-            </p>
-        </div>
-        <a th:href="@{/nguoi-dung/dia-chi/them}" class="btn btn-primary">+ Thêm địa chỉ</a>
-    </div>
-
-    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
-    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-
-    <!-- Duyệt từng nhóm địa chỉ (gửi hàng / người nhận) do Service gom sẵn theo thứ tự -->
-    <section class="mb-5" th:each="group : ${addressGroups}">
-        <h5 class="border-bottom pb-2 mb-3" th:text="${group.key.displayName}">Loại địa chỉ</h5>
-
-        <p class="text-muted" th:if="${#lists.isEmpty(group.value)}">
-            Chưa có địa chỉ nào trong mục này.
+<section>
+<div class="ute-page-head">
+    <div>
+        <h2>Sổ địa chỉ</h2>
+        <p>
+            Lưu sẵn địa chỉ lấy hàng và địa chỉ người nhận để khỏi phải gõ lại mỗi lần tạo đơn.
         </p>
+    </div>
+    <a th:href="@{/nguoi-dung/dia-chi/them}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Thêm địa chỉ
+    </a>
+</div>
 
-        <div class="row g-3">
-            <div class="col-md-6" th:each="address : ${group.value}">
-                <div class="card h-100 address-card"
-                     th:classappend="${address.defaultAddress} ? ' address-card-default' : ''">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="card-title mb-0" th:text="${address.label}">Nhãn địa chỉ</h6>
-                            <span class="badge badge-ute" th:if="${address.defaultAddress}">Mặc định</span>
-                        </div>
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-                        <p class="mb-1">
-                            <strong th:text="${address.contactName}">Họ tên</strong>
-                            <span class="text-muted"> &middot; </span>
-                            <span th:text="${address.contactPhone}">Số điện thoại</span>
-                        </p>
-                        <p class="text-muted mb-3" th:text="${address.addressLine}">Địa chỉ chi tiết</p>
+<!-- Duyệt từng nhóm địa chỉ (gửi hàng / người nhận) do Service gom sẵn theo thứ tự -->
+<section class="mb-5" th:each="group : ${addressGroups}">
+    <h5 class="border-bottom pb-2 mb-3" th:text="${group.key.displayName}">Loại địa chỉ</h5>
 
-                        <div class="d-flex flex-wrap gap-2 mt-auto">
-                            <a class="btn btn-sm btn-outline-primary"
-                               th:href="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/sua'}">Sửa</a>
+    <p class="text-muted" th:if="${#lists.isEmpty(group.value)}">
+        Chưa có địa chỉ nào trong mục này.
+    </p>
 
-                            <!-- Địa chỉ đang là mặc định thì không cần hiện nút đặt mặc định nữa -->
-                            <form th:unless="${address.defaultAddress}" method="post"
-                                  th:action="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/mac-dinh'}">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">Đặt làm mặc định</button>
-                            </form>
+    <div class="row g-3">
+        <div class="col-md-6" th:each="address : ${group.value}">
+            <div class="card h-100 address-card"
+                 th:classappend="${address.defaultAddress} ? ' address-card-default' : ''">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0" th:text="${address.label}">Nhãn địa chỉ</h6>
+                        <span class="badge badge-ute" th:if="${address.defaultAddress}">Mặc định</span>
+                    </div>
 
-                            <form method="post"
-                                  th:action="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/xoa'}"
-                                  onsubmit="return confirm('Xoá địa chỉ này khỏi sổ địa chỉ?');">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">Xoá</button>
-                            </form>
-                        </div>
+                    <p class="mb-1">
+                        <strong th:text="${address.contactName}">Họ tên</strong>
+                        <span class="text-muted"> &middot; </span>
+                        <span th:text="${address.contactPhone}">Số điện thoại</span>
+                    </p>
+                    <p class="text-muted mb-3" th:text="${address.addressLine}">Địa chỉ chi tiết</p>
+
+                    <div class="d-flex flex-wrap gap-2 mt-auto">
+                        <a class="btn btn-sm btn-outline-primary"
+                           th:href="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/sua'}">Sửa</a>
+
+                        <!-- Địa chỉ đang là mặc định thì không cần hiện nút đặt mặc định nữa -->
+                        <form th:unless="${address.defaultAddress}" method="post"
+                              th:action="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/mac-dinh'}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Đặt làm mặc định</button>
+                        </form>
+
+                        <form method="post"
+                              th:action="@{'/nguoi-dung/dia-chi/' + ${address.id} + '/xoa'}"
+                              onsubmit="return confirm('Xoá địa chỉ này khỏi sổ địa chỉ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Xoá</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
-</main>
+    </div>
+</section>
+</section>
 
-<div th:replace="~{fragments/layout :: footer}"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

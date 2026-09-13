@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<!--/*
+  CÁC MẢNH GIAO DIỆN DÙNG LẠI của template UTEExpress.
+
+  File này KHÔNG BAO GIỜ được trả về như một trang - nó chỉ chứa fragment cho
+  fragments/base.html và các trang khác gọi tới. Sở dĩ phải tách riêng khỏi base.html:
+  mọi thứ nằm trong <body> của base.html đều được in ra trang, nên nếu để fragment
+  ở đó thì menu sẽ bị in lặp thêm một lần nữa ở cuối mỗi trang.
+*/-->
+<head>
+    <meta charset="UTF-8">
+    <title>Fragment dùng chung - UTEExpress</title>
+</head>
+<body>
+
+<!--
+  Menu bên trái. Viết một lần rồi dùng cho cả sidebar cố định lẫn menu trượt trên điện thoại,
+  để thêm/bớt mục chỉ phải sửa đúng một chỗ. Mục của Shipper / Manager / Admin chỉ hiện
+  với đúng vai trò tương ứng.
+-->
+<nav th:fragment="sidebarNav" class="ute-nav">
+    <div sec:authorize="isAuthenticated()">
+        <p class="ute-nav-heading">Người gửi hàng</p>
+        <a class="ute-nav-link" th:href="@{/nguoi-dung/trang-chu}">
+            <i class="bi bi-speedometer2"></i> Trang tổng quan
+        </a>
+        <a class="ute-nav-link" th:href="@{/nguoi-dung/tao-don}">
+            <i class="bi bi-plus-square"></i> Tạo đơn gửi hàng
+        </a>
+        <a class="ute-nav-link" th:href="@{/nguoi-dung/gio-don}">
+            <i class="bi bi-basket"></i> Giỏ đơn
+            <span class="badge badge-ute ms-auto" th:if="${cartCount != null and cartCount > 0}"
+                  th:text="${cartCount}">0</span>
+        </a>
+        <a class="ute-nav-link" th:href="@{/nguoi-dung/dia-chi}">
+            <i class="bi bi-geo-alt"></i> Sổ địa chỉ
+        </a>
+        <a class="ute-nav-link" th:href="@{/nguoi-dung/don-hang}">
+            <i class="bi bi-box-seam"></i> Đơn hàng của tôi
+        </a>
+    </div>
+
+    <div sec:authorize="hasRole('SHIPPER')">
+        <p class="ute-nav-heading">Shipper</p>
+        <a class="ute-nav-link" th:href="@{/shipper/trang-chu}">
+            <i class="bi bi-truck"></i> Đơn được phân công
+        </a>
+    </div>
+
+    <div sec:authorize="hasRole('MANAGER')">
+        <p class="ute-nav-heading">Quản lý</p>
+        <a class="ute-nav-link" th:href="@{/manager/trang-chu}">
+            <i class="bi bi-bar-chart"></i> Trang quản lý
+        </a>
+    </div>
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <p class="ute-nav-heading">Quản trị</p>
+        <a class="ute-nav-link" th:href="@{/admin/trang-chu}">
+            <i class="bi bi-shield-lock"></i> Trang quản trị
+        </a>
+    </div>
+
+    <div class="ute-nav-divider"></div>
+    <a class="ute-nav-link" th:href="@{/tra-cuu}">
+        <i class="bi bi-search"></i> Tra cứu vận đơn
+    </a>
+</nav>
+
+<!--
+  Hiện số tiền theo định dạng Việt Nam: 32500 -> "32.500 đ".
+  Dùng: <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
+  Trong <td> thì bọc bằng <span> rồi thay cái <span> đó, đừng thay thẳng <td>.
+-->
+<span th:fragment="money(amount)"
+      th:text="${amount == null ? '—' : #numbers.formatInteger(amount, 1, 'POINT') + ' đ'}">0 đ</span>
+
+</body>
+</html>

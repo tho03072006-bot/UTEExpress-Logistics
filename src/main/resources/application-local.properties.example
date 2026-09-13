@@ -1,0 +1,20 @@
+# Mau de tao file cau hinh rieng tren may ban.
+#
+# Cach dung:
+#   1. Copy file nay thanh "application-local.properties" (bo duoi .example) trong cung
+#      thu muc src/main/resources.
+#   2. Dien mat khau/thong tin THAT cua may ban vao file moi tao.
+#   3. KHONG can dong sua gi trong application.properties nua - Spring se tu doc va
+#      ghi de cac gia tri ben duoi tu application-local.properties (nho dong
+#      spring.config.import=optional:application-local.properties da co san).
+#
+# File application-local.properties da nam trong .gitignore nen se KHONG bao gio bi
+# commit len GitHub - moi nguoi giu mat khau that rieng tren may minh, an toan cho repo
+# public. Chi rieng file .example nay (khong chua mat khau that) moi len Git.
+
+spring.datasource.password=mat_khau_sql_server_that_cua_ban
+
+spring.mail.username=email_that_cua_ban@gmail.com
+spring.mail.password=app_password_gmail_that_cua_ban
+
+app.jwt.secret=chuoi_bi_mat_that_toi_thieu_32_ky_tu_cua_ban

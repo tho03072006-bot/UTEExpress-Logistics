@@ -3,6 +3,7 @@ package vn.edu.hcmute.uteexpress.service;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.Order;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,7 +12,22 @@ import java.util.Optional;
  */
 public interface OrderService {
 
+    /**
+     * Tao san form "Tao don gui hang" cho lan mo dau tien, da dien truoc dia chi lay hang
+     * mac dinh trong so dia chi cua nguoi dung (neu co) de khoi phai go lai moi lan.
+     * CO Y khong dien truoc dia chi nguoi nhan: moi don thuong gui cho mot nguoi khac nhau,
+     * dien san de dan toi gui nham - nguoi dung tu chon tu so dia chi neu muon.
+     */
+    OrderCreateRequest prepareCreateForm(String username);
+
     Order createOrder(OrderCreateRequest request, String senderUsername);
+
+    /**
+     * Tinh cuoc theo loai dich vu va khoi luong.
+     * Mo ra ngoai interface de gio don cho xac nhan (viec 2) hien cuoc tam tinh bang
+     * dung mot cong thuc voi luc tao don that - tranh viet lai roi hai cho lech nhau.
+     */
+    BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg);
 
     List<Order> findOrdersOfUser(String username);
 

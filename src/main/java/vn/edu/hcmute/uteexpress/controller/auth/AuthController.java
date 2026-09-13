@@ -1,5 +1,6 @@
 package vn.edu.hcmute.uteexpress.controller.auth;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import vn.edu.hcmute.uteexpress.dto.PasswordResetRequest;
 import vn.edu.hcmute.uteexpress.service.AuthService;
 
 /**
@@ -57,25 +59,75 @@ public class AuthController {
         boolean valid = authService.verifyOtp(username, otp);
         if (!valid) {
             model.addAttribute("username", username);
-            model.addAttribute("error", "Ma OTP khong dung hoac da het han.");
+            model.addAttribute("error", "Mã OTP không đúng hoặc đã hết hạn.");
             return "auth/verify-otp";
         }
         model.addAttribute("activated", true);
         return "auth/login";
     }
 
-    // TODO: @GetMapping("/quen-mat-khau"), @PostMapping("/quen-mat-khau") - lam sau, cung mau voi tren
+    // ===================== Quen mat khau =====================
+
+    @GetMapping("/quen-mat-khau")
+    public String forgotPasswordPage() {
+        return "auth/forgot-password";
+    }
+
+    /**
+     * Gui ma OTP dat lai mat khau. Du email co ton tai hay khong thi man hinh tiep theo
+     * van giong het nhau (xem AuthService.sendPasswordResetOtp) - tranh de nguoi la do duoc
+     * email nao dang co tai khoan trong he thong.
+     */
+    @PostMapping("/quen-mat-khau")
+    public String sendResetOtp(@RequestParam String email, Model model) {
+        authService.sendPasswordResetOtp(email);
+
+        PasswordResetRequest form = new PasswordResetRequest();
+        form.setEmail(email);
+        model.addAttribute("form", form);
+        model.addAttribute("otpJustSent", true);
+        return "auth/reset-password";
+    }
+
+    /** Mo thang trang nhap ma, danh cho nguoi da co ma trong mail nhung lo dong trinh duyet. */
+    @GetMapping("/dat-lai-mat-khau")
+    public String resetPasswordPage(Model model) {
+        model.addAttribute("form", new PasswordResetRequest());
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/dat-lai-mat-khau")
+    public String resetPassword(@Valid @ModelAttribute("form") PasswordResetRequest form,
+                                BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            return "auth/reset-password";
+        }
+        if (!form.isPasswordConfirmed()) {
+            model.addAttribute("error", "Hai ô mật khẩu không khớp nhau.");
+            return "auth/reset-password";
+        }
+
+        boolean done = authService.resetPassword(form.getEmail(), form.getOtp(), form.getNewPassword());
+        if (!done) {
+            model.addAttribute("error", "Mã OTP không đúng hoặc đã hết hạn. Vui lòng gửi lại mã mới.");
+            return "auth/reset-password";
+        }
+
+        model.addAttribute("passwordReset", true);
+        return "auth/login";
+    }
+
 
     /** Du lieu form dang ky lay tu giao dien - khong dung truc tiep Entity AppUser de nhan du lieu. */
     public static class RegisterForm {
 
-        @NotBlank(message = "Vui long nhap ten dang nhap")
+        @NotBlank(message = "Vui lòng nhập tên đăng nhập")
         private String username;
 
-        @NotBlank(message = "Vui long nhap mat khau")
+        @NotBlank(message = "Vui lòng nhập mật khẩu")
         private String password;
 
-        @NotBlank(message = "Vui long nhap email")
+        @NotBlank(message = "Vui lòng nhập email")
         private String email;
 
         private String fullName;

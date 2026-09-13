@@ -4,9 +4,13 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
+import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
+import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -27,10 +31,32 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final AppUserRepository appUserRepository;
+    private final SavedAddressService savedAddressService;
+    private final OrderPaymentService orderPaymentService;
 
-    public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
+                            SavedAddressService savedAddressService,
+                            OrderPaymentService orderPaymentService) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
+        this.savedAddressService = savedAddressService;
+        this.orderPaymentService = orderPaymentService;
+    }
+
+    @Override
+    public OrderCreateRequest prepareCreateForm(String username) {
+        OrderCreateRequest form = new OrderCreateRequest();
+        form.setServiceType(Order.ServiceType.STANDARD);
+        form.setPaymentMethod(OrderPayment.PaymentMethod.COD);
+
+        // Dia chi lay hang cua nguoi gui gan nhu khong doi giua cac don nen dien san cho tien.
+        savedAddressService.findDefaultOfType(username, SavedAddress.AddressType.SENDER)
+                .ifPresent(address -> {
+                    form.setSenderAddressId(address.getId());
+                    form.setSenderName(address.getContactName());
+                    form.setSenderAddress(address.getAddressLine());
+                });
+        return form;
     }
 
     @Override
@@ -51,7 +77,11 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingFee(calculateFee(request.getServiceType(), request.getWeightKg()));
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        // Moi van don deu co dung mot ban ghi thanh toan, tao ngay tai day de khong bao gio
+        // ton tai don "khong biet tra bang gi" trong CSDL.
+        orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod());
+        return savedOrder;
     }
 
     @Override
@@ -88,6 +118,11 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(Order.OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+    @Override
+    public BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg) {
+        return calculateFee(serviceType, weightKg);
     }
 
     /**

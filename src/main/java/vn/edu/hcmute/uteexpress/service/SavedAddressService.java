@@ -22,6 +22,9 @@ public interface SavedAddressService {
 
     List<SavedAddress> findByType(String username, SavedAddress.AddressType addressType);
 
+    /** Tổng số địa chỉ đã lưu, dùng cho thẻ thống kê ở trang tổng quan. */
+    long countOfUser(String username);
+
     /** Địa chỉ mặc định của một loại, dùng để điền sẵn khi tạo đơn hàng mới. */
     Optional<SavedAddress> findDefaultOfType(String username, SavedAddress.AddressType addressType);
 

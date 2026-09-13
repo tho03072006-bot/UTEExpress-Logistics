@@ -1,9 +1,14 @@
 /*
- * Style rieng cua UTEExpress - ke thua Bootstrap 5, chi ghi de nhung gi can thiet.
- * Bang mau lay dung theo logo truong HCMUTE: chi xanh duong #0072BC + trang + xam trung tinh
- * (khong dung mau do cua ngon lua trong logo - do khong hop de lam mau nen/nut bam).
- * Doi cac bien --ute-* nay neu truong doi bo nhan dien - toan bo site an theo day,
- * khong can sua lai tung file template.
+ * ============================================================================
+ * UTEExpress - bo giao dien dung chung cho toan bo website (template Bootstrap)
+ * ============================================================================
+ * Ke thua Bootstrap 5.3.3, chi ghi de nhung gi can thiet. Toan bo trang di qua
+ * template templates/fragments/base.html va an theo file css nay - khong trang nao
+ * tu viet style rieng.
+ *
+ * Bang mau lay dung theo logo truong HCMUTE: chi xanh duong #0072BC + trang + xam
+ * trung tinh. KHONG dung mau do/vang/luc o bat ky dau, ke ca de bao trang thai.
+ * Doi cac bien --ute-* ben duoi la doi mau toan site, khong phai sua tung template.
  */
 
 :root {
@@ -16,6 +21,16 @@
     --ute-gray: #6B7A8F;
     --ute-gray-soft: #EDF1F5;
 
+    /* Nen va vien dung chung cho ca site */
+    --ute-surface: #F4F7FA;
+    --ute-card: #FFFFFF;
+    --ute-border: #DDE4EC;
+
+    --ute-radius: .75rem;
+    --ute-shadow: 0 1px 2px rgba(11, 37, 64, .05), 0 4px 16px rgba(11, 37, 64, .06);
+    --ute-sidebar-width: 250px;
+    --ute-topbar-height: 60px;
+
     /* Ghi de bien mau cua Bootstrap 5.3 - cascade tu dong vao btn-primary, text-primary,
        bg-primary, border-primary, link-primary,... nen khong can sua lai tung class. */
     --bs-primary: var(--ute-blue);
@@ -23,51 +38,290 @@
     --bs-link-color: var(--ute-blue);
     --bs-link-color-rgb: 0, 114, 188;
     --bs-link-hover-color: var(--ute-blue-dark);
+    --bs-body-color: var(--ute-ink);
+    --bs-border-radius: var(--ute-radius);
 }
 
-body {
+/* ===================== Nen trang & chu ===================== */
+.ute-body {
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background-color: var(--ute-surface);
     color: var(--ute-ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* ----- Navbar thuong hieu HCMUTE: xanh phang, khong vien do ----- */
-.navbar-ute {
-    background-color: var(--ute-blue) !important;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -.01em;
 }
-.navbar-ute .navbar-brand {
+
+a {
+    color: var(--ute-blue);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--ute-blue-dark);
+    text-decoration: underline;
+}
+
+/* ===================== Thanh tren cung ===================== */
+.ute-topbar {
+    background-color: var(--ute-blue);
     color: #fff;
-    letter-spacing: 0.02em;
+    height: var(--ute-topbar-height);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .08);
+}
+.ute-topbar-inner {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 0 1.25rem;
+}
+.ute-brand {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: .01em;
     display: flex;
     align-items: center;
     gap: .5rem;
 }
-.navbar-ute .navbar-brand .brand-dot {
-    display: inline-block;
+.ute-brand:hover {
+    color: #fff;
+    text-decoration: none;
+}
+.ute-brand-dot {
     width: .55rem;
     height: .55rem;
     border-radius: 50%;
     background: #fff;
 }
-.navbar-ute .nav-link {
-    color: rgba(255, 255, 255, 0.92);
+.ute-topbar-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
 }
-.navbar-ute .nav-link:hover,
-.navbar-ute .nav-link:focus {
+.ute-topbar-link {
+    color: rgba(255, 255, 255, .9);
+    font-size: .925rem;
+}
+.ute-topbar-link:hover {
     color: #fff;
+    text-decoration: none;
 }
-.navbar-ute .nav-link.text-light-emphasis {
-    color: #fff !important;
-    font-weight: 600;
+.ute-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .9rem;
+    font-weight: 500;
+    color: #fff;
+    background: rgba(255, 255, 255, .15);
+    padding: .25rem .7rem;
+    border-radius: 999px;
 }
-.navbar-ute .btn-outline-light:hover {
-    background-color: #fff;
+.ute-btn-ghost {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .55);
+    background: transparent;
+    font-weight: 500;
+}
+.ute-btn-ghost:hover {
+    background: #fff;
     border-color: #fff;
     color: var(--ute-blue);
 }
-.navbar-ute .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5);
+.ute-menu-toggle {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: .25rem .55rem;
+}
+.ute-menu-toggle:hover {
+    color: var(--ute-blue);
+    background: #fff;
 }
 
-/* ----- Nut & thanh nhan ----- */
+/* ===================== Khung than trang ===================== */
+.ute-shell {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: stretch;
+}
+.ute-main {
+    flex: 1 1 auto;
+    min-width: 0; /* cho phep bang rong co the cuon ngang thay vi day vo bo cuc */
+}
+.ute-main-inner {
+    max-width: 1180px;
+    padding: 2rem 1.25rem 3rem;
+}
+/* Trang cong khai (khong sidebar) thi can giua cho de nhin */
+.ute-shell:not(.ute-shell-with-sidebar) .ute-main-inner {
+    margin: 0 auto;
+}
+
+/* ===================== Sidebar ===================== */
+.ute-sidebar {
+    width: var(--ute-sidebar-width);
+    flex: 0 0 var(--ute-sidebar-width);
+    background: var(--ute-card);
+    border-right: 1px solid var(--ute-border);
+    position: sticky;
+    top: var(--ute-topbar-height);
+    align-self: flex-start;
+    height: calc(100vh - var(--ute-topbar-height));
+    overflow-y: auto;
+}
+.ute-sidebar-offcanvas {
+    width: var(--ute-sidebar-width);
+}
+.ute-nav {
+    padding: 1rem .75rem;
+}
+.ute-nav-heading {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ute-gray);
+    margin: 1rem .75rem .35rem;
+}
+.ute-nav > div:first-child .ute-nav-heading {
+    margin-top: .25rem;
+}
+.ute-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .55rem .75rem;
+    margin-bottom: .15rem;
+    border-radius: .5rem;
+    color: var(--ute-ink);
+    font-size: .94rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+.ute-nav-link:hover {
+    background: var(--ute-gray-soft);
+    color: var(--ute-blue-dark);
+    text-decoration: none;
+}
+.ute-nav-link i {
+    color: var(--ute-gray);
+    font-size: 1rem;
+}
+/* Muc dang mo - class "active" do js/main.js gan theo duong dan hien tai */
+.ute-nav-link.active {
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    border-left-color: var(--ute-blue);
+    font-weight: 600;
+}
+.ute-nav-link.active i {
+    color: var(--ute-blue);
+}
+.ute-nav-divider {
+    height: 1px;
+    background: var(--ute-border);
+    margin: 1rem .75rem;
+}
+
+/* ===================== Footer ===================== */
+.ute-footer {
+    flex-shrink: 0;
+    background-color: var(--ute-ink);
+    color: rgba(255, 255, 255, .75);
+    font-size: .85rem;
+}
+.ute-footer-inner {
+    padding: 1.1rem 1.25rem;
+    text-align: center;
+}
+
+/* ===================== The (card) & bang ===================== */
+.card {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+}
+.card-title {
+    font-weight: 600;
+}
+
+/* Bang dat trong the trang co vien bo goc, nhin gon hon bang tran */
+.ute-panel {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.25rem;
+}
+.ute-panel-flush {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+}
+.table > thead th {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ute-gray);
+    border-bottom: 1px solid var(--ute-border);
+    background: var(--ute-gray-soft);
+    white-space: nowrap;
+}
+.table > tbody td {
+    border-bottom: 1px solid var(--ute-border);
+    vertical-align: middle;
+}
+.table > tbody tr:hover > td {
+    background-color: var(--ute-blue-soft);
+}
+.table > tfoot th {
+    border-top: 2px solid var(--ute-border);
+    background: var(--ute-gray-soft);
+}
+
+/* ===================== Tieu de trang ===================== */
+.ute-page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+}
+.ute-page-head h1,
+.ute-page-head h2 {
+    margin-bottom: .25rem;
+    font-size: 1.6rem;
+}
+.ute-page-head p {
+    margin-bottom: 0;
+    color: var(--ute-gray);
+    font-size: .94rem;
+}
+
+/* ===================== Nut ===================== */
+.btn {
+    font-weight: 500;
+    border-radius: .5rem;
+}
 .btn-primary {
     background-color: var(--ute-blue);
     border-color: var(--ute-blue);
@@ -85,6 +339,15 @@ body {
     background-color: var(--ute-blue);
     border-color: var(--ute-blue);
 }
+.btn-outline-secondary {
+    color: var(--ute-ink);
+    border-color: var(--ute-border);
+}
+.btn-outline-secondary:hover {
+    background-color: var(--ute-gray-soft);
+    border-color: var(--ute-gray);
+    color: var(--ute-ink);
+}
 /* Nut nhan manh tren nen xanh (vd CTA o hero) - trang + chu xanh, khong dung mau do */
 .btn-accent {
     background-color: #fff;
@@ -98,19 +361,55 @@ body {
     color: var(--ute-blue-dark);
 }
 
-/* ----- Hero trang chu ----- */
-.hero-ute {
-    background: linear-gradient(120deg, var(--ute-blue) 0%, var(--ute-blue-dark) 100%);
-    color: #fff;
-    border-radius: .75rem;
+/* ===================== Form ===================== */
+.form-label {
+    font-weight: 500;
+    font-size: .9rem;
+    margin-bottom: .3rem;
 }
-.hero-ute .text-muted-on-blue {
-    color: rgba(255, 255, 255, 0.85) !important;
+.form-control,
+.form-select {
+    border-color: var(--ute-border);
+    border-radius: .5rem;
+    padding: .55rem .75rem;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ute-blue-mid);
+    box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.form-check-input:checked {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.form-check-input:focus {
+    border-color: var(--ute-blue-mid);
+    box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.form-text {
+    color: var(--ute-gray);
 }
 
-/* ----- Badge trang thai don hang: cac sac do xanh + xam trung tinh, khong dung do/vang/luc -----
-   Dam dan theo tien do: xam (cho lay) -> xanh nhat -> xanh vua -> xanh dam (hoan tat).
-   Huy/hoan tra dung xam dam thay vi do de giu dung theo bo nhan dien. */
+/* ===================== Hero trang chu ===================== */
+.hero-ute {
+    background: linear-gradient(120deg, var(--ute-blue) 0%, var(--ute-blue-darker) 100%);
+    color: #fff;
+    border-radius: var(--ute-radius);
+}
+.hero-ute .text-muted-on-blue {
+    color: rgba(255, 255, 255, .85) !important;
+}
+
+/* ===================== Badge trang thai don hang =====================
+   Cac sac do xanh + xam trung tinh, dam dan theo tien do:
+   xam (cho lay) -> xanh nhat -> xanh vua -> xanh dam (hoan tat).
+   Huy/hoan tra dung xam nhat thay vi do de giu dung bo nhan dien. */
+.badge {
+    font-weight: 600;
+    border-radius: .4rem;
+    padding: .35em .6em;
+}
+.badge-ute { background-color: var(--ute-blue); color: #fff; }
 .badge-status-pending_pickup { background-color: var(--ute-gray); color: #fff; }
 .badge-status-picked_up { background-color: var(--ute-blue-soft); color: var(--ute-blue-dark); }
 .badge-status-in_transit { background-color: var(--ute-blue-mid); color: #fff; }
@@ -118,7 +417,14 @@ body {
 .badge-status-cancelled,
 .badge-status-returned { background-color: #DCE1E8; color: var(--ute-ink); }
 
-/* ----- Thong bao (flash message) - dung sac xanh, khong dung do/luc mac dinh cua Bootstrap ----- */
+/* Trang thai thanh toan (TV1 - viec 3) */
+.badge-payment-paid { background-color: var(--ute-blue-darker); color: #fff; }
+.badge-payment-unpaid { background-color: var(--ute-gray); color: #fff; }
+
+/* ===================== Thong bao ===================== */
+.alert {
+    border-radius: var(--ute-radius);
+}
 .alert-success {
     background-color: var(--ute-blue-soft);
     border-color: var(--ute-blue-mid);
@@ -129,32 +435,124 @@ body {
     border-color: var(--ute-gray);
     color: var(--ute-ink);
 }
-
-/* ----- Footer ----- */
-.footer-ute {
-    background-color: var(--ute-ink);
+.alert-light {
+    background-color: var(--ute-card);
+    border-color: var(--ute-border);
+    color: var(--ute-ink);
 }
 
-/* ----- Lien ket ----- */
-a {
-    color: var(--ute-blue);
-}
-a:hover {
-    color: var(--ute-blue-dark);
-}
-
-/* ----- So dia chi da luu (TV1 - viec 1) -----
-   Dung lai dung bo mau xanh HCMUTE: the dia chi mac dinh duoc vien xanh + nen xanh nhat
-   de noi bat hon cac the con lai, khong dung mau do/vang/luc de danh dau. */
-.badge-ute {
-    background-color: var(--ute-blue);
-    color: #fff;
-    font-weight: 600;
-}
+/* ===================== So dia chi da luu (TV1 - viec 1) ===================== */
 .address-card {
-    border-color: var(--ute-gray-soft);
+    border-color: var(--ute-border);
 }
 .address-card-default {
     border-color: var(--ute-blue);
     background-color: var(--ute-blue-soft);
+}
+
+/* ===================== Thanh toan gia lap (TV1 - viec 3) =====================
+   Dai bang phai noi bat de khong ai nham trang nay voi cong thanh toan that. */
+.payment-simulation-banner {
+    border: 2px dashed var(--ute-blue);
+    background-color: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    border-radius: var(--ute-radius);
+    padding: 1rem;
+}
+
+/* ===================== Man hinh nho ===================== */
+@media (max-width: 991.98px) {
+    .ute-main-inner {
+        padding: 1.25rem 1rem 2rem;
+    }
+    .ute-page-head h1,
+    .ute-page-head h2 {
+        font-size: 1.35rem;
+    }
+}
+@media (max-width: 575.98px) {
+    .ute-topbar-inner {
+        padding: 0 .85rem;
+        gap: .5rem;
+    }
+    .ute-brand {
+        font-size: 1rem;
+    }
+    .ute-topbar-nav {
+        gap: .5rem;
+    }
+}
+
+/* ===================== Lop tien ich ===================== */
+/* Form/trang noi dung hep cho de doc, dat giua khung noi dung */
+.ute-narrow { max-width: 680px; }
+.ute-narrow-sm { max-width: 460px; }
+
+/* ===================== The so lieu & loi tat o trang tong quan ===================== */
+.ute-stat {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+.ute-stat-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: .5rem;
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: .5rem;
+}
+.ute-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ute-ink);
+}
+.ute-stat-label {
+    font-size: .85rem;
+    color: var(--ute-gray);
+}
+
+.ute-quick {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    color: var(--ute-ink);
+}
+.ute-quick:hover {
+    border-color: var(--ute-blue);
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    text-decoration: none;
+}
+.ute-quick > i {
+    font-size: 1.4rem;
+    color: var(--ute-blue);
+    margin-bottom: .25rem;
+}
+.ute-quick-title {
+    font-weight: 600;
+}
+.ute-quick-desc {
+    font-size: .875rem;
+    color: var(--ute-gray);
+}
+.ute-quick:hover .ute-quick-desc {
+    color: var(--ute-blue-dark);
 }

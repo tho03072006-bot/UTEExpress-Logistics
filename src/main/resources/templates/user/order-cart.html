@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Giỏ đơn chờ xác nhận - UTEExpress</title>
+</head>
+<body>
+
+<section>
+<div class="ute-page-head">
+    <div>
+        <h2>Giỏ đơn chờ xác nhận</h2>
+        <p>
+            Gom nhiều đơn vào đây rồi xác nhận gửi một lần. Đơn trong giỏ chưa có mã vận đơn
+            và chưa được chuyển cho bên giao hàng.
+        </p>
+    </div>
+    <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Thêm đơn vào giỏ
+    </a>
+</div>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<div th:if="${#lists.isEmpty(drafts)}" class="alert alert-light border">
+    Giỏ đơn đang trống.
+    <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn</a>
+    rồi bấm "Thêm vào giỏ đơn" để gom nhiều đơn gửi cùng lúc.
+</div>
+
+<div th:unless="${#lists.isEmpty(drafts)}">
+    <div class="ute-panel ute-panel-flush table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Người nhận</th>
+                    <th>Địa chỉ giao</th>
+                    <th>Lấy hàng tại</th>
+                    <th>Khối lượng</th>
+                    <th>Dịch vụ</th>
+                    <th>Thanh toán</th>
+                    <th>Cước tạm tính</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="draft : ${drafts}">
+                    <td>
+                        <strong th:text="${draft.receiverName}">-</strong><br>
+                        <span class="text-muted small" th:text="${draft.receiverPhone}">-</span>
+                    </td>
+                    <td th:text="${draft.receiverAddress}">-</td>
+                    <td class="text-muted small" th:text="${draft.senderAddress}">-</td>
+                    <td th:text="${draft.weightKg} + ' kg'">-</td>
+                    <td th:text="${draft.serviceType}">-</td>
+                    <td class="small" th:text="${draft.paymentMethod.displayName}">-</td>
+                    <td><span th:replace="~{fragments/components :: money(${draft.estimatedFee})}">0 đ</span></td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            <form method="post" th:action="@{'/nguoi-dung/gio-don/' + ${draft.id} + '/xac-nhan'}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Gửi đơn này</button>
+                            </form>
+                            <form method="post" th:action="@{'/nguoi-dung/gio-don/' + ${draft.id} + '/xoa'}"
+                                  onsubmit="return confirm('Xoá đơn nháp này khỏi giỏ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Xoá</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6" class="text-end">Tổng cước tạm tính</th>
+                    <th><span th:replace="~{fragments/components :: money(${totalFee})}">0 đ</span></th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <form method="post" th:action="@{/nguoi-dung/gio-don/xac-nhan}">
+            <button type="submit" class="btn btn-primary">
+                Xác nhận gửi tất cả (<span th:text="${#lists.size(drafts)}">0</span> đơn)
+            </button>
+        </form>
+        <form method="post" th:action="@{/nguoi-dung/gio-don/xoa-het}"
+              onsubmit="return confirm('Xoá toàn bộ đơn nháp trong giỏ?');">
+            <button type="submit" class="btn btn-outline-secondary">Xoá hết giỏ</button>
+        </form>
+    </div>
+
+    <p class="text-muted small mt-3">
+        Cước ở trên là tạm tính theo bảng giá hiện tại. Khi bấm xác nhận, hệ thống tính lại cước
+        và sinh mã vận đơn cho từng đơn. Nếu có một đơn lỗi thì không đơn nào được gửi đi,
+        giỏ giữ nguyên để bạn sửa rồi xác nhận lại.
+    </p>
+</div>
+</section>
+
+</body>
+</html>
