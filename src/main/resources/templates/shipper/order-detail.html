@@ -142,6 +142,91 @@
 </div>
 
 <div class="ute-panel mt-4">
+    <h4 class="mb-3">Bằng chứng giao hàng</h4>
+
+    <div class="row g-4 mb-4"
+         th:if="${deliveryProof != null}">
+        <div class="col-md-6">
+            <div class="text-muted small mb-2">
+                Ảnh giao hàng đã lưu
+            </div>
+            <img class="img-fluid rounded border bg-white"
+                 style="max-height: 280px; width: 100%; object-fit: contain;"
+                 th:src="${deliveryProof.proofImagePath}"
+                 alt="Ảnh bằng chứng giao hàng">
+        </div>
+
+        <div class="col-md-6">
+            <div class="text-muted small mb-2">
+                Chữ ký người nhận đã lưu
+            </div>
+            <img class="img-fluid rounded border bg-white"
+                 style="max-height: 280px; width: 100%; object-fit: contain;"
+                 th:src="${deliveryProof.signaturePath}"
+                 alt="Chữ ký người nhận">
+        </div>
+    </div>
+
+    <form id="deliveryProofForm"
+          method="post"
+          enctype="multipart/form-data"
+          th:if="${order.status.name() == 'IN_TRANSIT'}"
+          th:action="@{/shipper/don/{id}/bang-chung(id=${order.id})}">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <label for="proofImage" class="form-label">
+                    Ảnh bằng chứng giao hàng
+                </label>
+                <input id="proofImage"
+                       name="proofImage"
+                       class="form-control"
+                       type="file"
+                       accept="image/jpeg,image/png"
+                       required>
+                <div class="form-text">
+                    Chấp nhận JPG, JPEG hoặc PNG; tối đa 5 MB.
+                </div>
+                <img id="proofPreview"
+                     class="img-fluid rounded border mt-3"
+                     style="max-height: 260px; width: 100%; object-fit: contain;"
+                     alt="Xem trước ảnh bằng chứng"
+                     hidden>
+            </div>
+
+            <div class="col-lg-6">
+                <label for="signatureCanvas" class="form-label">
+                    Chữ ký người nhận
+                </label>
+                <canvas id="signatureCanvas"
+                        class="border rounded d-block"
+                        width="700"
+                        height="240"
+                        style="width: 100%; height: auto; touch-action: none; background: #fff;">
+                </canvas>
+                <input id="signatureData"
+                       name="signatureData"
+                       type="hidden">
+                <button id="clearSignature"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary mt-2">
+                    Ký lại
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4">
+            Lưu bằng chứng giao hàng
+        </button>
+    </form>
+
+    <div class="text-muted"
+         th:if="${deliveryProof == null
+                 and order.status.name() != 'IN_TRANSIT'}">
+        Chưa có bằng chứng giao hàng cho đơn này.
+    </div>
+</div>
+
+<div class="ute-panel mt-4">
     <h4 class="mb-3">Cập nhật trạng thái</h4>
 
     <form method="post"
@@ -167,7 +252,12 @@
         <form method="post"
               th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
             <input type="hidden" name="status" value="DELIVERED">
-            <button type="submit" class="btn btn-success">
+            <button type="submit"
+                    class="btn btn-success"
+                    th:disabled="${deliveryProof == null}"
+                    th:title="${deliveryProof == null
+                        ? 'Hãy lưu ảnh và chữ ký trước'
+                        : 'Xác nhận giao thành công'}">
                 Giao hàng thành công
             </button>
         </form>
@@ -205,6 +295,8 @@
         Đơn hàng đã bị hủy và không thể cập nhật.
     </div>
 </div>
+
+<script th:src="@{/js/delivery-proof.js}"></script>
 </section>
 
 </body>

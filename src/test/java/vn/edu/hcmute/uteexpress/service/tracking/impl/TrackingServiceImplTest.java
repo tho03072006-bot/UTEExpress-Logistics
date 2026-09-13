@@ -29,6 +29,7 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
+import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 
 @ExtendWith(MockitoExtension.class)
 class TrackingServiceImplTest {
@@ -41,6 +42,9 @@ class TrackingServiceImplTest {
 
     @Mock
     private OrderPaymentService orderPaymentService;
+
+    @Mock
+    private DeliveryProofService deliveryProofService;
 
     @InjectMocks
     private TrackingServiceImpl trackingService;
@@ -116,6 +120,11 @@ class TrackingServiceImplTest {
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
 
+        if (newStatus == Order.OrderStatus.DELIVERED) {
+            when(deliveryProofService.hasCompleteProof(order))
+                    .thenReturn(true);
+        }
+
         Order result = trackingService.updateStatus(
                 1L, "nguyentai", newStatus);
 
@@ -164,6 +173,28 @@ class TrackingServiceImplTest {
     }
 
     @Test
+    void updateStatus_rejectsDeliveredWithoutCompleteProof() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(
+                shipper, Order.OrderStatus.IN_TRANSIT);
+
+        when(appUserRepository.findByUsername("nguyentai"))
+                .thenReturn(Optional.of(shipper));
+        when(orderRepository.findByIdAndShipper(1L, shipper))
+                .thenReturn(Optional.of(order));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> trackingService.updateStatus(
+                        1L,
+                        "nguyentai",
+                        Order.OrderStatus.DELIVERED));
+
+        verify(deliveryProofService).hasCompleteProof(order);
+        verify(orderRepository, never()).save(order);
+    }
+
+    @Test
     void updateStatus_marksCodAsPaidWhenDelivered() {
         AppUser shipper = createShipper();
         Order order = createOrder(
@@ -178,6 +209,8 @@ class TrackingServiceImplTest {
         when(orderRepository.findByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
+        when(deliveryProofService.hasCompleteProof(order))
+                .thenReturn(true);
         when(orderPaymentService.findByOrder(order))
                 .thenReturn(Optional.of(payment));
 
@@ -204,6 +237,8 @@ class TrackingServiceImplTest {
         when(orderRepository.findByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
+        when(deliveryProofService.hasCompleteProof(order))
+                .thenReturn(true);
         when(orderPaymentService.findByOrder(order))
                 .thenReturn(Optional.of(payment));
 
