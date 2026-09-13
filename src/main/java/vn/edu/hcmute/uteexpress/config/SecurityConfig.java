@@ -31,6 +31,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
+                        "/quen-mat-khau", "/dat-lai-mat-khau",
                         "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
                 .requestMatchers("/nguoi-dung/**").authenticated()
                 // TODO (TV2, TV3): doi 2 dong duoi thanh .hasRole("SHIPPER") / .hasRole("MANAGER", "ADMIN")

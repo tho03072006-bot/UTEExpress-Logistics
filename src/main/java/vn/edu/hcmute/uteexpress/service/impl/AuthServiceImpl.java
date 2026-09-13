@@ -12,6 +12,7 @@ import vn.edu.hcmute.uteexpress.service.AuthService;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -34,10 +35,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void register(String username, String rawPassword, String email, String fullName) {
         if (appUserRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Ten dang nhap da ton tai");
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
         }
         if (appUserRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email da duoc dang ky");
+            throw new IllegalArgumentException("Email đã được đăng ký");
         }
 
         AppUser appUser = new AppUser(username, passwordEncoder.encode(rawPassword), email);
@@ -50,43 +51,103 @@ public class AuthServiceImpl implements AuthService {
         appUser.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
 
         appUserRepository.save(appUser);
-        sendOtpEmail(email, otp);
+        sendOtpEmail(email, otp, "Ma xac thuc dang ky", "kich hoat tai khoan");
     }
 
     @Override
     public boolean verifyOtp(String username, String otpCode) {
         AppUser appUser = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay tai khoan"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
 
-        boolean valid = otpCode != null
+        if (!isOtpValid(appUser, otpCode)) {
+            return false;
+        }
+
+        appUser.setEnabled(true);
+        clearOtp(appUser);
+        appUserRepository.save(appUser);
+        return true;
+    }
+
+    @Override
+    public void sendPasswordResetOtp(String email) {
+        Optional<AppUser> found = appUserRepository.findByEmail(email);
+
+        if (found.isEmpty()) {
+            // Khong bao loi ra man hinh - xem giai thich o AuthService. Chi ghi log de nguoi
+            // phat trien biet co ai do go nham email, khong lo thong tin ra nguoi dung.
+            log.info("Co yeu cau dat lai mat khau cho email chua dang ky, bo qua.");
+            return;
+        }
+
+        AppUser appUser = found.get();
+        if (!appUser.isEnabled()) {
+            // Tai khoan chua kich hoat thi phai di duong dang ky/OTP kich hoat, khong phai duong nay.
+            // Neu van gui OTP o day, ma do co the bi dung nguoc lai de kich hoat tai khoan chua xac thuc.
+            log.info("Co yeu cau dat lai mat khau cho tai khoan chua kich hoat, bo qua.");
+            return;
+        }
+
+        String otp = generateOtp();
+        appUser.setOtpCode(otp);
+        appUser.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        appUserRepository.save(appUser);
+
+        sendOtpEmail(email, otp, "Ma dat lai mat khau", "dat lai mat khau");
+    }
+
+    @Override
+    public boolean resetPassword(String email, String otpCode, String newRawPassword) {
+        Optional<AppUser> found = appUserRepository.findByEmail(email);
+        if (found.isEmpty()) {
+            return false;
+        }
+
+        AppUser appUser = found.get();
+        if (!appUser.isEnabled() || !isOtpValid(appUser, otpCode)) {
+            return false;
+        }
+
+        appUser.setPassword(passwordEncoder.encode(newRawPassword));
+        // Xoa OTP ngay sau khi dung - moi ma chi doi mat khau duoc dung mot lan.
+        clearOtp(appUser);
+        appUserRepository.save(appUser);
+        return true;
+    }
+
+    // ----- Phần dùng chung trong service -----
+
+    /** Mã đúng và còn trong hạn 10 phút thì mới hợp lệ. */
+    private boolean isOtpValid(AppUser appUser, String otpCode) {
+        return otpCode != null
+                && appUser.getOtpCode() != null
                 && otpCode.equals(appUser.getOtpCode())
                 && appUser.getOtpExpiry() != null
                 && appUser.getOtpExpiry().isAfter(LocalDateTime.now());
+    }
 
-        if (valid) {
-            appUser.setEnabled(true);
-            appUser.setOtpCode(null);
-            appUser.setOtpExpiry(null);
-            appUserRepository.save(appUser);
-        }
-        return valid;
+    private void clearOtp(AppUser appUser) {
+        appUser.setOtpCode(null);
+        appUser.setOtpExpiry(null);
     }
 
     /**
      * Gui OTP qua email that (can dien spring.mail.* trong application.properties).
      * Demo/dev: neu chua cau hinh SMTP that, gui se loi - bat loi va IN OTP RA CONSOLE
-     * de van test dang ky duoc ma khong can email that.
+     * de van test duoc ma khong can email that.
      */
-    private void sendOtpEmail(String toEmail, String otp) {
+    private void sendOtpEmail(String toEmail, String otp, String subject, String purpose) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(toEmail);
-            message.setSubject("[UTEExpress] Ma xac thuc dang ky");
-            message.setText("Ma OTP cua ban la: " + otp + " (het han sau " + OTP_EXPIRY_MINUTES + " phut)");
+            message.setSubject("[UTEExpress] " + subject);
+            message.setText("Ma OTP de " + purpose + " cua ban la: " + otp
+                    + " (het han sau " + OTP_EXPIRY_MINUTES + " phut)."
+                    + " Neu khong phai ban yeu cau, hay bo qua email nay.");
             mailSender.send(message);
         } catch (Exception ex) {
             log.warn("Khong gui duoc email that (chua cau hinh SMTP that trong application.properties). "
-                    + "Dung OTP nay de test: {}", otp);
+                    + "Dung OTP nay de test ({}): {}", purpose, otp);
         }
     }
 
