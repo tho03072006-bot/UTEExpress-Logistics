@@ -15,7 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.dto.tracking.ShipperStatisticsPeriod;
 import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
+import vn.edu.hcmute.uteexpress.service.tracking.ShipperStatisticsService;
 import vn.edu.hcmute.uteexpress.service.tracking.TrackingService;
 
 @Controller
@@ -24,12 +26,15 @@ public class ShipperController {
 
     private final TrackingService trackingService;
     private final DeliveryProofService deliveryProofService;
+    private final ShipperStatisticsService shipperStatisticsService;
 
     public ShipperController(
             TrackingService trackingService,
-            DeliveryProofService deliveryProofService) {
+            DeliveryProofService deliveryProofService,
+            ShipperStatisticsService shipperStatisticsService) {
         this.trackingService = trackingService;
         this.deliveryProofService = deliveryProofService;
+        this.shipperStatisticsService = shipperStatisticsService;
     }
 
     @GetMapping("/trang-chu")
@@ -46,6 +51,29 @@ public class ShipperController {
                         authentication.getName()));
 
         return "shipper/dashboard";
+    }
+
+    @GetMapping("/thong-ke")
+    public String statistics(
+            @RequestParam(
+                    name = "period",
+                    defaultValue = "DAY")
+                    ShipperStatisticsPeriod period,
+            Authentication authentication,
+            Model model) {
+        if (isAnonymous(authentication)) {
+            return "redirect:/dang-nhap";
+        }
+
+        model.addAttribute(
+                "summary",
+                shipperStatisticsService.getStatistics(
+                        authentication.getName(), period));
+        model.addAttribute(
+                "periods",
+                ShipperStatisticsPeriod.values());
+
+        return "shipper/statistics";
     }
 
     @GetMapping("/don/{id}")
