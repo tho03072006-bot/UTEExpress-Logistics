@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Thống kê giao hàng - UTEExpress</title>
+</head>
+<body>
+
+<section>
+<div class="ute-page-head">
+    <div>
+        <h2>Thống kê giao hàng</h2>
+        <p>Theo dõi kết quả giao hàng và tiền COD của bạn.</p>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div class="btn-group" role="group" aria-label="Chọn khoảng thống kê">
+        <a th:each="period : ${periods}"
+           class="btn btn-outline-primary"
+           th:classappend="${summary.period == period} ? ' active' : ''"
+           th:href="@{/shipper/thong-ke(period=${period.name()})}"
+           th:text="${period.displayName}">
+            Ngày
+        </a>
+    </div>
+
+    <span class="text-muted">
+        Từ
+        <strong th:text="${#temporals.format(summary.fromDate, 'dd/MM/yyyy')}">01/01/2026</strong>
+        đến
+        <strong th:text="${#temporals.format(summary.toDate, 'dd/MM/yyyy')}">01/01/2026</strong>
+    </span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
+            <span class="ute-stat-value" th:text="${summary.totalOrders}">0</span>
+            <span class="ute-stat-label">Tổng số đơn</span>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-check-circle"></i></span>
+            <span class="ute-stat-value" th:text="${summary.deliveredOrders}">0</span>
+            <span class="ute-stat-label">Giao thành công</span>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-arrow-return-left"></i></span>
+            <span class="ute-stat-value" th:text="${summary.failedOrReturnedOrders}">0</span>
+            <span class="ute-stat-label">Thất bại / hoàn trả</span>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-hourglass-split"></i></span>
+            <span class="ute-stat-value" th:text="${summary.inProgressOrders}">0</span>
+            <span class="ute-stat-label">Đang xử lý</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="ute-panel h-100">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                    <h3 class="h5 mb-1">Tỷ lệ giao thành công</h3>
+                    <p class="text-muted small mb-0">Tính trên tổng số đơn trong kỳ.</p>
+                </div>
+                <strong class="fs-3 text-primary"
+                        th:text="|${summary.successRate}%|">0.0%</strong>
+            </div>
+
+            <div class="progress" role="progressbar"
+                 aria-label="Tỷ lệ giao thành công"
+                 th:attr="aria-valuenow=${summary.successRate}"
+                 aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar"
+                     th:style="|width: ${summary.successRate}%|">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="ute-panel h-100 d-flex align-items-center gap-3">
+            <span class="ute-stat-icon mb-0 flex-shrink-0">
+                <i class="bi bi-cash-stack"></i>
+            </span>
+            <div>
+                <h3 class="h5 mb-1">COD đã thu trong kỳ</h3>
+                <div class="fs-3 fw-bold text-primary">
+                    <span th:replace="~{fragments/components :: money(${summary.collectedCod})}">
+                        0 đ
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+</body>
+</html>
