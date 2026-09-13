@@ -1,6 +1,10 @@
 package vn.edu.hcmute.uteexpress.controller.user;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,6 +37,9 @@ import vn.edu.hcmute.uteexpress.service.ServiceReviewService;
 @Controller
 @RequestMapping("/nguoi-dung")
 public class UserOrderController {
+
+    /** So don hien tren moi trang cua lich su don. */
+    private static final int ORDERS_PER_PAGE = 10;
 
     private final OrderService orderService;
     private final SavedAddressService savedAddressService;
@@ -130,12 +137,23 @@ public class UserOrderController {
 
     @GetMapping("/don-hang")
     public String orderHistory(@RequestParam(name = "status", required = false) Order.OrderStatus status,
+                                @RequestParam(name = "keyword", required = false) String keyword,
+                                @RequestParam(name = "page", defaultValue = "0") int page,
                                 Authentication authentication, Model model) {
-        model.addAttribute("orders", orderService.findOrdersOfUser(authentication.getName(), status));
-        model.addAttribute("payments", orderPaymentService.findPaymentsOfUser(authentication.getName()));
-        model.addAttribute("reviews", serviceReviewService.findReviewsOfUser(authentication.getName()));
+        String username = authentication.getName();
+
+        // Don moi nhat len dau. page am (nguoi dung sua tay tren URL) thi kep ve trang dau.
+        Pageable pageable = PageRequest.of(Math.max(page, 0), ORDERS_PER_PAGE,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Order> orderPage = orderService.searchOrdersOfUser(username, status, keyword, pageable);
+
+        model.addAttribute("orderPage", orderPage);
+        model.addAttribute("orders", orderPage.getContent());
+        model.addAttribute("payments", orderPaymentService.findPaymentsOfUser(username));
+        model.addAttribute("reviews", serviceReviewService.findReviewsOfUser(username));
         model.addAttribute("statusValues", Order.OrderStatus.values());
         model.addAttribute("selectedStatus", status);
+        model.addAttribute("keyword", keyword);
         return "user/order-list";
     }
 
