@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.controller.auth;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,7 +47,7 @@ public class AuthController {
         }
         try {
             authService.register(form.getUsername(), form.getPassword(), form.getEmail(), form.getFullName());
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             model.addAttribute("error", ex.getMessage());
             return "auth/register";
         }
@@ -80,7 +81,11 @@ public class AuthController {
      */
     @PostMapping("/quen-mat-khau")
     public String sendResetOtp(@RequestParam String email, Model model) {
-        authService.sendPasswordResetOtp(email);
+        try {
+            authService.sendPasswordResetOtp(email);
+        } catch (IllegalStateException ex) {
+            // Giữ cùng phản hồi cho email tồn tại/không tồn tại để tránh dò tài khoản.
+        }
 
         PasswordResetRequest form = new PasswordResetRequest();
         form.setEmail(email);
@@ -128,6 +133,7 @@ public class AuthController {
         private String password;
 
         @NotBlank(message = "Vui lòng nhập email")
+        @Email(message = "Email không đúng định dạng")
         private String email;
 
         private String fullName;

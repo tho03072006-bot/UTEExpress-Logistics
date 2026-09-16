@@ -12,12 +12,16 @@ Copy file `src/main/resources/application-local.properties.example` thành
 `application-local.properties` (bỏ đuôi `.example`, cùng thư mục), rồi điền giá trị thật
 của máy bạn vào file mới này:
 - `spring.datasource.password` — mật khẩu SQL Server thật trên máy bạn (SSMS, `localhost,1433`).
-- `spring.mail.username` / `spring.mail.password` — chỉ cần khi bắt đầu làm OTP email, có thể để tạm.
+- `spring.mail.username` / `spring.mail.password` — bắt buộc để gửi OTP email thật. Dùng địa chỉ Gmail gửi và App Password của chính hộp thư gửi; không dùng mật khẩu đăng nhập thông thường. Không ghi App Password vào file được Git theo dõi.
 - `app.jwt.secret` — chuỗi bất kỳ ≥ 32 ký tự, chỉ cần khi bắt đầu làm JWT.
 
 File `application-local.properties` đã nằm trong `.gitignore` nên sẽ không bao giờ lên Git —
 an toàn cho repo public. Không cần đụng vào `application.properties` (file đó chỉ chứa
 placeholder `CHANGE_ME`, cứ để nguyên rồi commit bình thường).
+
+Để thử đăng ký/khôi phục mật khẩu với hộp thư nhận `uteexpress8@gmail.com`, nhập địa chỉ đó
+trên form của ứng dụng. `spring.mail.username` là hộp thư **gửi**, không nhất thiết là hộp thư
+nhận. Nếu SMTP lỗi, ứng dụng không in OTP ra console; hãy kiểm tra cấu hình mail trên máy.
 
 Nhớ tạo sẵn database `uteexpress` trống trong SSMS trên máy bạn — `spring.jpa.hibernate.ddl-auto=update`
 sẽ tự tạo bảng khi chạy lần đầu (nếu không tự tạo được, viết script SQL tay như đã làm ở Baitap02).
