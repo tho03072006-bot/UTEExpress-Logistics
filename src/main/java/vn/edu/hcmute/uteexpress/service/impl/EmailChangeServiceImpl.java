@@ -152,11 +152,7 @@ public class EmailChangeServiceImpl implements EmailChangeService {
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
     }
 
-    /**
-     * Gửi mã tới ĐỊA CHỈ MỚI chứ không phải địa chỉ cũ - đó mới là thứ cần chứng minh
-     * người dùng mở được. Giống AuthServiceImpl: nếu SMTP chưa cấu hình được thì bắt lỗi
-     * và in mã ra console để vẫn test được luồng mà không cần hộp thư thật.
-     */
+    /** Gửi mã tới địa chỉ mới; lỗi SMTP không được để lộ OTP trong log. */
     private void sendOtpEmail(String toEmail, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -168,11 +164,10 @@ public class EmailChangeServiceImpl implements EmailChangeService {
                     + " dia chi email cua tai khoan se khong bi thay doi.");
             mailSender.send(message);
         } catch (Exception ex) {
-            // In ca ly do that ra log: "chua cau hinh SMTP" chi la mot kha nang, con co
-            // the la sai app password, chan cong 587, hoac mat mang. Bao dung benh thi
-            // moi sua dung, khoi mo nham file cau hinh.
-            log.warn("Khong gui duoc email toi {}. Ly do: {}. "
-                    + "Dung OTP nay de test doi email: {}", toEmail, ex.getMessage(), otp);
+            // Để transaction rollback yêu cầu đổi email khi không gửi được mã.
+            log.warn("Khong gui duoc email xac thuc doi dia chi: {}",
+                    ex.getClass().getSimpleName());
+            throw new IllegalStateException("Không gửi được email OTP. Vui lòng thử lại sau.");
         }
     }
 

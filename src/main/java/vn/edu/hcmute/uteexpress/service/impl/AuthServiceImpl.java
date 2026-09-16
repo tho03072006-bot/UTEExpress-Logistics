@@ -3,9 +3,11 @@ package vn.edu.hcmute.uteexpress.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.AuthService;
@@ -33,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void register(String username, String rawPassword, String email, String fullName) {
         if (appUserRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
@@ -56,8 +59,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean verifyOtp(String username, String otpCode) {
-        AppUser appUser = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
+        Optional<AppUser> found = appUserRepository.findByUsername(username);
+        if (found.isEmpty() || found.get().isEnabled()) {
+            return false;
+        }
+        AppUser appUser = found.get();
 
         if (!isOtpValid(appUser, otpCode)) {
             return false;
@@ -70,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void sendPasswordResetOtp(String email) {
         Optional<AppUser> found = appUserRepository.findByEmail(email);
 
@@ -131,11 +138,7 @@ public class AuthServiceImpl implements AuthService {
         appUser.setOtpExpiry(null);
     }
 
-    /**
-     * Gui OTP qua email that (can dien spring.mail.* trong application.properties).
-     * Demo/dev: neu chua cau hinh SMTP that, gui se loi - bat loi va IN OTP RA CONSOLE
-     * de van test duoc ma khong can email that.
-     */
+    /** Không ghi mã OTP vào log; lỗi gửi mail làm rollback mã vừa lưu. */
     private void sendOtpEmail(String toEmail, String otp, String subject, String purpose) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -145,9 +148,10 @@ public class AuthServiceImpl implements AuthService {
                     + " (het han sau " + OTP_EXPIRY_MINUTES + " phut)."
                     + " Neu khong phai ban yeu cau, hay bo qua email nay.");
             mailSender.send(message);
-        } catch (Exception ex) {
-            log.warn("Khong gui duoc email that (chua cau hinh SMTP that trong application.properties). "
-                    + "Dung OTP nay de test ({}): {}", purpose, otp);
+        } catch (MailException ex) {
+            log.warn("Khong gui duoc email OTP de {}. Kiem tra cau hinh SMTP: {}",
+                    purpose, ex.getClass().getSimpleName());
+            throw new IllegalStateException("Không gửi được email OTP. Vui lòng thử lại sau.");
         }
     }
 
