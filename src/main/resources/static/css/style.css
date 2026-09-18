@@ -26,6 +26,14 @@
     --ute-card: #FFFFFF;
     --ute-border: #DDE4EC;
 
+    /* Ba bien nay tach rieng vi chung LA MAU NEN, khong phai mau chu.
+       --ute-ink va --ute-gray o tren chu yeu dung lam mau chu nen o che do toi
+       phai doi thanh sang; neu dung chung bien cho ca nen thi footer se thanh
+       trang loa va badge se mat chu. Tach ra de moi ben doi mot huong. */
+    --ute-footer-bg: #0B2540;
+    --ute-badge-neutral: #6B7A8F;
+    --ute-badge-muted: #DCE1E8;
+
     --ute-radius: .75rem;
     --ute-shadow: 0 1px 2px rgba(11, 37, 64, .05), 0 4px 16px rgba(11, 37, 64, .06);
     --ute-sidebar-width: 250px;
@@ -40,6 +48,112 @@
     --bs-link-hover-color: var(--ute-blue-dark);
     --bs-body-color: var(--ute-ink);
     --bs-border-radius: var(--ute-radius);
+
+    color-scheme: light;
+}
+
+/* ===================== Che do toi =====================
+   Chi doi GIA TRI cua cac bien o tren, khong viet lai mot bo style thu hai -
+   nho vay them trang moi khong phai lam gi them, trang do tu chay ca hai che do.
+
+   Thuoc tinh data-theme duoc gan vao the <html> boi doan script nho trong
+   fragments/base.html. Lua chon cua nguoi dung luu o localStorage; chua chon lan
+   nao thi theo cai dat sang/toi cua he dieu hanh.
+
+   Luu y khi chinh bang mau nay: chu tren nen phai du tuong phan. Vi du
+   --ute-blue van giu dam vua phai vi no la NEN cua nut primary va thanh tren cung
+   (chu mau trang nam tren do), con --ute-blue-dark moi la mau CHU nhan nen doi
+   thanh sang han de noi tren nen toi. */
+:root[data-theme="dark"] {
+    --ute-blue: #1183CE;
+    --ute-blue-dark: #74BFF0;
+    --ute-blue-darker: #0C5F96;
+    --ute-blue-mid: #2A86C4;
+    --ute-blue-soft: #14283A;
+    --ute-ink: #E7EEF6;
+    --ute-gray: #9AA9BC;
+    --ute-gray-soft: #1E2A38;
+
+    --ute-surface: #0E1621;
+    --ute-card: #16212E;
+    --ute-border: #2A3746;
+
+    --ute-footer-bg: #0A111A;
+    --ute-badge-neutral: #445468;
+    --ute-badge-muted: #2A3847;
+
+    /* Nen toi thi bong do khong con nhin thay, thay bang bong dam hon cho tach lop */
+    --ute-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 16px rgba(0, 0, 0, .3);
+
+    --bs-primary: var(--ute-blue);
+    --bs-primary-rgb: 17, 131, 206;
+    --bs-link-color: var(--ute-blue-dark);
+    --bs-link-color-rgb: 116, 191, 240;
+    --bs-link-hover-color: #9BD2F6;
+    --bs-body-color: var(--ute-ink);
+
+    /* Bao cho trinh duyet biet dang o nen toi de thanh cuon, o nhap va menu
+       cua chinh trinh duyet cung doi mau theo */
+    color-scheme: dark;
+}
+
+/* Bootstrap ve o nhap, select va bang bang bien rieng cua no - phai doi them
+   nhung bien nay, neu khong o nhap se van trang toat giua trang toi. */
+:root[data-theme="dark"] {
+    --bs-body-bg: var(--ute-surface);
+    --bs-secondary-color: var(--ute-gray);
+    --bs-border-color: var(--ute-border);
+    --bs-emphasis-color: var(--ute-ink);
+}
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select {
+    background-color: var(--ute-surface);
+    border-color: var(--ute-border);
+    color: var(--ute-ink);
+}
+:root[data-theme="dark"] .form-control::placeholder {
+    color: var(--ute-gray);
+}
+:root[data-theme="dark"] .form-control:focus,
+:root[data-theme="dark"] .form-select:focus {
+    background-color: var(--ute-surface);
+    color: var(--ute-ink);
+}
+/* Mui ten cua select la anh SVG mau den co san cua Bootstrap, nen toi phai doi sang */
+:root[data-theme="dark"] .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239AA9BC' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+:root[data-theme="dark"] .text-muted {
+    color: var(--ute-gray) !important;
+}
+:root[data-theme="dark"] .btn-outline-secondary {
+    color: var(--ute-ink);
+    border-color: var(--ute-border);
+}
+
+/* ===================== Nut chuyen sang/toi ===================== */
+.ute-theme-toggle {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45);
+    background: transparent;
+    font-size: 1rem;
+    line-height: 1;
+    padding: .3rem .55rem;
+    border-radius: .5rem;
+}
+.ute-theme-toggle:hover {
+    background: #fff;
+    color: var(--ute-blue);
+}
+/* Hien dung mot icon: mat trang o che do sang (bam de chuyen sang toi) va nguoc lai */
+.ute-theme-toggle .bi-sun-fill {
+    display: none;
+}
+:root[data-theme="dark"] .ute-theme-toggle .bi-moon-stars {
+    display: none;
+}
+:root[data-theme="dark"] .ute-theme-toggle .bi-sun-fill {
+    display: inline-block;
 }
 
 /* ===================== Nen trang & chu ===================== */
@@ -238,7 +352,7 @@ a:hover {
 /* ===================== Footer ===================== */
 .ute-footer {
     flex-shrink: 0;
-    background-color: var(--ute-ink);
+    background-color: var(--ute-footer-bg);
     color: rgba(255, 255, 255, .75);
     font-size: .85rem;
 }
@@ -410,17 +524,17 @@ a:hover {
     padding: .35em .6em;
 }
 .badge-ute { background-color: var(--ute-blue); color: #fff; }
-.badge-status-pending_pickup { background-color: var(--ute-gray); color: #fff; }
+.badge-status-pending_pickup { background-color: var(--ute-badge-neutral); color: #fff; }
 .badge-status-picked_up { background-color: var(--ute-blue-soft); color: var(--ute-blue-dark); }
 .badge-status-in_transit { background-color: var(--ute-blue-mid); color: #fff; }
 .badge-status-delivered { background-color: var(--ute-blue-darker); color: #fff; }
-.badge-status-failed { background-color: var(--ute-gray); color: #fff; }
+.badge-status-failed { background-color: var(--ute-badge-neutral); color: #fff; }
 .badge-status-cancelled,
-.badge-status-returned { background-color: #DCE1E8; color: var(--ute-ink); }
+.badge-status-returned { background-color: var(--ute-badge-muted); color: var(--ute-ink); }
 
 /* Trang thai thanh toan (TV1 - viec 3) */
 .badge-payment-paid { background-color: var(--ute-blue-darker); color: #fff; }
-.badge-payment-unpaid { background-color: var(--ute-gray); color: #fff; }
+.badge-payment-unpaid { background-color: var(--ute-badge-neutral); color: #fff; }
 
 /* ===================== Thong bao ===================== */
 .alert {
@@ -461,6 +575,84 @@ a:hover {
     padding: 1rem;
 }
 
+/* ===================== Timeline hanh trinh don (TV1) =====================
+   Duong doc noi cac moc, moc da di qua to xanh, moc dang dung co vong sang. */
+.ute-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.ute-timeline li {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+}
+/* Doan duong noi xuong moc ke tiep; moc cuoi khong can ve nen bo di */
+.ute-timeline li::before {
+    content: "";
+    position: absolute;
+    left: .3125rem;
+    top: 1rem;
+    bottom: -.25rem;
+    width: 2px;
+    background: var(--ute-border);
+}
+.ute-timeline li:last-child {
+    padding-bottom: 0;
+}
+.ute-timeline li:last-child::before {
+    display: none;
+}
+.ute-timeline li.is-done::before {
+    background: var(--ute-blue);
+}
+
+.ute-timeline-dot {
+    position: absolute;
+    left: 0;
+    top: .3rem;
+    width: .75rem;
+    height: .75rem;
+    border-radius: 50%;
+    background: var(--ute-card);
+    border: 2px solid var(--ute-border);
+}
+.ute-timeline li.is-done .ute-timeline-dot {
+    background: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+/* Moc dang dung: vong sang nhe toa ra cho de nhan ra dang o dau */
+.ute-timeline li.is-current .ute-timeline-dot {
+    background: var(--ute-blue);
+    border-color: var(--ute-blue);
+    box-shadow: 0 0 0 4px var(--ute-blue-soft);
+}
+
+.ute-timeline-label {
+    font-weight: 600;
+    color: var(--ute-gray);
+}
+.ute-timeline li.is-done .ute-timeline-label {
+    color: var(--ute-ink);
+}
+.ute-timeline li.is-current .ute-timeline-label {
+    color: var(--ute-blue-dark);
+}
+.ute-timeline-desc {
+    font-size: .875rem;
+    color: var(--ute-gray);
+}
+.ute-timeline-time {
+    font-size: .8rem;
+    color: var(--ute-gray);
+    margin-top: .15rem;
+}
+
+/* Sao danh gia o che do chi doc (trang chi tiet don) */
+.ute-review-stars {
+    color: var(--ute-blue);
+}
+
 /* ===================== Ho so tai khoan (TV1) ===================== */
 /* Cap nhan - gia tri cho nhung thong tin chi doc (ten dang nhap, vai tro, ngay tao) */
 .ute-profile-label {
@@ -498,6 +690,91 @@ a:hover {
     font-size: .875rem;
     font-weight: 500;
     color: var(--ute-blue-dark);
+}
+
+/* ===================== Chuyen dong (TV1) =====================
+   Nguyen tac: chuyen dong chi de dan mat nguoi dung, khong de trang tri. Moi hieu ung
+   deu ngan (duoi 0.5s) va chi chay mot lan khi vao trang - khong co gi nhap nhay lien tuc.
+
+   Toan bo khoi nay bi TAT o cuoi file khi may nguoi dung bat "giam chuyen dong"
+   (prefers-reduced-motion). Voi nguoi de bi chong mat hoac say chuyen dong, hieu ung
+   truot va mo dan co the gay kho chiu that su, nen phai ton trong cai dat do. */
+
+/* Noi dung hien len nhe nhang thay vi nhay ra dot ngot */
+@keyframes ute-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.ute-panel,
+.ute-stat,
+.ute-quick,
+.ute-main-inner > section > .card,
+.ute-main-inner > section > .ute-page-head {
+    animation: ute-fade-up .35s ease-out both;
+}
+
+/* Cac the trong cung mot hang hien lan luot chu khong cung luc - mat di theo thu tu
+   tu trai sang phai, de bat duoc bo cuc hon la ca hang bat len mot the. */
+.row > [class^="col"]:nth-child(1) .ute-stat,
+.row > [class^="col"]:nth-child(1) .ute-quick { animation-delay: .04s; }
+.row > [class^="col"]:nth-child(2) .ute-stat,
+.row > [class^="col"]:nth-child(2) .ute-quick { animation-delay: .10s; }
+.row > [class^="col"]:nth-child(3) .ute-stat,
+.row > [class^="col"]:nth-child(3) .ute-quick { animation-delay: .16s; }
+.row > [class^="col"]:nth-child(4) .ute-stat,
+.row > [class^="col"]:nth-child(4) .ute-quick { animation-delay: .22s; }
+
+/* Cac moc tren timeline hien dan tu tren xuong, dung huong nguoi doc di theo hanh trinh */
+.ute-timeline li {
+    animation: ute-fade-up .3s ease-out both;
+}
+.ute-timeline li:nth-child(1) { animation-delay: .05s; }
+.ute-timeline li:nth-child(2) { animation-delay: .13s; }
+.ute-timeline li:nth-child(3) { animation-delay: .21s; }
+.ute-timeline li:nth-child(4) { animation-delay: .29s; }
+
+/* Chuyen mau muot khi bam nut sang/toi. Luc moi tai trang mau da dung ngay tu dau
+   (script trong <head>) nen khong co gi de chuyen - khong lo bi nhap nhay. */
+.ute-body,
+.ute-panel,
+.card,
+.ute-sidebar,
+.ute-footer,
+.form-control,
+.form-select {
+    transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+/* Phan hoi khi ro chuot - cho nguoi dung biet cai gi bam duoc */
+.btn,
+.ute-nav-link,
+.badge {
+    transition: background-color .18s ease, border-color .18s ease,
+                color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.btn:active {
+    transform: translateY(1px);
+}
+.ute-quick {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.ute-quick:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(11, 37, 64, .12);
+    border-color: var(--ute-blue);
+}
+.ute-timeline-dot {
+    transition: box-shadow .25s ease, background-color .25s ease;
+}
+.table > tbody tr {
+    transition: background-color .15s ease;
 }
 
 /* ===================== Man hinh nho ===================== */
@@ -672,4 +949,29 @@ a:hover {
 .page-link {
     border-radius: .4rem;
     margin: 0 .12rem;
+}
+
+/* ===================== Ton trong cai dat "giam chuyen dong" =====================
+   Windows, macOS, Android va iOS deu co cong tac "Giam chuyen dong" cho nguoi de bi
+   chong mat, say chuyen dong hoac dong kinh nhay sang. Khi nguoi dung da bat cong tac
+   do, trinh duyet bao lai qua prefers-reduced-motion va website PHAI tat hieu ung.
+
+   De o cuoi file de chac chan ghi de duoc moi khai bao animation/transition o tren.
+   Khong xoa han animation ma rut ve gan nhu tuc thi: cac hieu ung dung
+   animation-fill-mode: both, neu bo hoan toan thi phan tu se ket o trang thai dau
+   (mo va lech xuong) va noi dung coi nhu bien mat. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .btn:active,
+    .ute-quick:hover {
+        transform: none;
+    }
 }
