@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Chi tiết đơn hàng - UTEExpress</title>
+</head>
+<body>
+
+<section>
+<div class="ute-page-head">
+    <div>
+        <h2 class="mb-1">
+            Đơn <span th:text="${order.trackingCode}">UTE00000000</span>
+        </h2>
+        <p class="mb-0">
+            Tạo ngày <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</span>
+        </p>
+    </div>
+    <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Về danh sách đơn
+    </a>
+</div>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<div class="row g-3">
+
+    <!-- ===================== Cột trái: hành trình ===================== -->
+    <div class="col-lg-5">
+        <div class="ute-panel h-100">
+            <h5 class="mb-1">Hành trình đơn hàng</h5>
+            <p class="ute-profile-note mt-0 mb-4">
+                Trạng thái hiện tại:
+                <strong><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong>
+            </p>
+
+            <ol class="ute-timeline">
+                <li th:each="step : ${timeline}"
+                    th:classappend="${step.done ? 'is-done' : ''} + ${step.current ? ' is-current' : ''}">
+                    <div class="ute-timeline-dot"></div>
+                    <div class="ute-timeline-body">
+                        <div class="ute-timeline-label" th:text="${step.label}">Mốc</div>
+                        <div class="ute-timeline-desc" th:text="${step.description}">Mô tả</div>
+                        <!-- Chỉ mốc tạo đơn và mốc đang đứng mới có giờ thật, xem OrderTimelineStep -->
+                        <div class="ute-timeline-time" th:if="${step.at != null}"
+                             th:text="${#temporals.format(step.at, 'HH:mm · dd/MM/yyyy')}">-</div>
+                    </div>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- ===================== Cột phải: thông tin đơn ===================== -->
+    <div class="col-lg-7">
+
+        <div class="ute-panel mb-3">
+            <h5 class="mb-3">Thông tin giao nhận</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Người gửi</div>
+                    <div class="ute-profile-value" th:text="${order.senderName} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.senderAddress} ?: '—'">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Người nhận</div>
+                    <div class="ute-profile-value" th:text="${order.receiverName} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.receiverPhone} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.receiverAddress} ?: '—'">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ute-panel mb-3">
+            <h5 class="mb-3">Dịch vụ và cước phí</h5>
+            <div class="row g-3">
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Loại dịch vụ</div>
+                    <div class="ute-profile-value">
+                        <th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Khối lượng</div>
+                    <div class="ute-profile-value"
+                         th:text="${order.weightKg != null} ? ${order.weightKg} + ' kg' : '—'">-</div>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Cước phí</div>
+                    <div class="ute-profile-value">
+                        <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ute-panel mb-3" th:if="${payment != null}">
+            <h5 class="mb-3">Thanh toán</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Hình thức</div>
+                    <div class="ute-profile-value" th:text="${payment.method.displayName}">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Tình trạng</div>
+                    <div>
+                        <span class="badge"
+                              th:classappend="${'badge-payment-' + #strings.toLowerCase(payment.status.name())}"
+                              th:text="${payment.status.displayName}">-</span>
+                    </div>
+                </div>
+                <div class="col-12" th:if="${payment.hasDiscount()}">
+                    <div class="ute-profile-label">Sau giảm giá</div>
+                    <div class="ute-profile-value">
+                        <span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span>
+                        <span class="text-muted small" th:if="${payment.promoCode != null}"
+                              th:text="'(đã áp mã ' + ${payment.promoCode.code} + ')'">(mã)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ute-panel mb-3" th:if="${review != null}">
+            <h5 class="mb-2">Đánh giá của bạn</h5>
+            <div class="ute-review-stars mb-2">
+                <i th:each="i : ${#numbers.sequence(1, 5)}"
+                   th:class="${i <= review.rating} ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                <span class="text-muted small ms-1" th:text="${review.rating} + '/5'">5/5</span>
+            </div>
+            <p class="mb-0" th:text="${review.content}">Nội dung đánh giá</p>
+        </div>
+
+        <!-- Các nút hành động, chỉ hiện đúng nút dùng được với trạng thái hiện tại -->
+        <div class="d-flex flex-wrap gap-2">
+            <a th:if="${payment != null and payment.status.name() == 'UNPAID' and payment.method.onlineWallet}"
+               th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}" class="btn btn-primary">
+                <i class="bi bi-credit-card"></i> Thanh toán
+            </a>
+
+            <a th:if="${order.status.name() == 'DELIVERED' and review == null}"
+               th:href="@{'/nguoi-dung/danh-gia/' + ${order.id}}" class="btn btn-primary">
+                <i class="bi bi-star"></i> Đánh giá dịch vụ
+            </a>
+
+            <form th:if="${order.status.name() == 'PENDING_PICKUP'}" method="post"
+                  th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}">
+                <button type="submit" class="btn btn-outline-secondary">Huỷ đơn</button>
+            </form>
+        </div>
+    </div>
+</div>
+</section>
+
+</body>
+</html>

@@ -157,6 +157,28 @@ public class UserOrderController {
         return "user/order-list";
     }
 
+    /**
+     * Trang chi tiet mot van don: thong tin gui/nhan, cuoc phi, thanh toan va
+     * timeline hanh trinh. Kiem tra quyen so huu nam trong OrderService.
+     */
+    @GetMapping("/don-hang/{id}")
+    public String orderDetail(@PathVariable Long id, Authentication authentication,
+                              Model model, RedirectAttributes redirectAttributes) {
+        Order order;
+        try {
+            order = orderService.findOwnedOrder(id, authentication.getName());
+        } catch (IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/nguoi-dung/don-hang";
+        }
+
+        model.addAttribute("order", order);
+        model.addAttribute("timeline", orderService.buildTimeline(order));
+        model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
+        model.addAttribute("review", serviceReviewService.findByOrderId(order.getId()).orElse(null));
+        return "user/order-detail";
+    }
+
     @PostMapping("/don-hang/{id}/huy")
     public String cancelOrder(@PathVariable Long id, Authentication authentication,
                                RedirectAttributes redirectAttributes) {

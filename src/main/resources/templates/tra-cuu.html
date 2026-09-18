@@ -21,8 +21,12 @@
         <div class="card-body">
             <h5 class="card-title" th:text="${order.trackingCode}">UTE00000000</h5>
             <p>Người nhận: <span th:text="${order.receiverName}">-</span></p>
-            <p>Dịch vụ: <span th:text="${order.serviceType}">-</span></p>
-            <p>Trạng thái: <span class="badge bg-primary" th:text="${order.status}">-</span></p>
+            <p>Dịch vụ:
+                <span><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span>
+            </p>
+            <p>Trạng thái:
+                <span class="badge bg-primary"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span>
+            </p>
         </div>
     </div>
 </div>

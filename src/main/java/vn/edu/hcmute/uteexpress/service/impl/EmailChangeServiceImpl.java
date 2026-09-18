@@ -11,6 +11,7 @@ import vn.edu.hcmute.uteexpress.entity.EmailChangeRequest;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository;
 import vn.edu.hcmute.uteexpress.service.EmailChangeService;
+import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -32,13 +33,16 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private final EmailChangeRequestRepository emailChangeRequestRepository;
     private final AppUserRepository appUserRepository;
     private final JavaMailSender mailSender;
+    private final MailFromNameSetter mailFromNameSetter;
 
     public EmailChangeServiceImpl(EmailChangeRequestRepository emailChangeRequestRepository,
                                   AppUserRepository appUserRepository,
-                                  JavaMailSender mailSender) {
+                                  JavaMailSender mailSender,
+                                  MailFromNameSetter mailFromNameSetter) {
         this.emailChangeRequestRepository = emailChangeRequestRepository;
         this.appUserRepository = appUserRepository;
         this.mailSender = mailSender;
+        this.mailFromNameSetter = mailFromNameSetter;
     }
 
     @Override
@@ -156,12 +160,16 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private void sendOtpEmail(String toEmail, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            mailFromNameSetter.applyTo(message);
             message.setTo(toEmail);
-            message.setSubject("[UTEExpress] Ma xac thuc doi dia chi email");
-            message.setText("Ma OTP de xac nhan doi email cua ban la: " + otp
-                    + " (het han sau " + OTP_EXPIRY_MINUTES + " phut)."
-                    + " Neu khong phai ban yeu cau, hay bo qua email nay -"
-                    + " dia chi email cua tai khoan se khong bi thay doi.");
+            message.setSubject("[UTEExpress] Mã xác thực đổi địa chỉ email");
+            message.setText("Chào bạn,\n\n"
+                    + "Mã OTP để xác nhận đổi email của bạn là: " + otp + "\n"
+                    + "Mã có hiệu lực trong " + OTP_EXPIRY_MINUTES + " phút.\n\n"
+                    + "Nếu không phải bạn yêu cầu, hãy bỏ qua email này - "
+                    + "địa chỉ email của tài khoản sẽ không bị thay đổi.\n\n"
+                    + "Trân trọng,\n"
+                    + "UTEExpress");
             mailSender.send(message);
         } catch (Exception ex) {
             // Để transaction rollback yêu cầu đổi email khi không gửi được mã.

@@ -35,6 +35,27 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!--/*
+      Gan che do sang/toi NGAY o <head>, truoc khi trinh duyet ve than trang.
+      Neu de xuong cuoi trang moi chay thi nguoi dung se thay mot nhay trang toat
+      roi moi doi sang nen toi - kho chiu va nhin nhu loi.
+
+      Chua tung chon lan nao thi theo cai dat cua he dieu hanh (prefers-color-scheme).
+      Bao try/catch vi trinh duyet o che do rieng tu co the chan localStorage.
+    */-->
+    <script th:inline="none">
+        (function () {
+            try {
+                var saved = localStorage.getItem('ute-theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
 </head>
 
 <body class="ute-body">
@@ -57,6 +78,13 @@
         <nav class="ute-topbar-nav">
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/}">Trang chủ</a>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
+
+            <!-- Chi mot nut, doi qua lai giua hai che do. Icon nao hien do CSS quyet dinh. -->
+            <button type="button" class="btn btn-sm ute-theme-toggle" id="uteThemeToggle"
+                    aria-label="Chuyển chế độ sáng / tối" title="Chuyển chế độ sáng / tối">
+                <i class="bi bi-moon-stars"></i>
+                <i class="bi bi-sun-fill"></i>
+            </button>
 
             <span sec:authorize="isAuthenticated()" class="ute-user-chip">
                 <i class="bi bi-person-circle"></i>

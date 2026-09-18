@@ -44,6 +44,16 @@ target/
 # application.properties van len Git binh thuong (chi chua placeholder CHANGE_ME).
 application-local.properties
 
+# Cau hinh ket noi database chung tren MonsterASP (co mat khau that).
+# Ban mau khong chua mat khau la application-cloud.properties.example, file do
+# VAN len Git de ca nhom biet can dien nhung gi.
+application-cloud.properties
+
+# Ban sao du lieu xuat ra tu script db/backup-du-lieu.ps1.
+# Khong day len Git vi chua du lieu that cua nguoi dung (ho ten, so dien thoai,
+# dia chi) va file co the rat nang.
+db/backup/
+
 # Tep nguoi dung tai len khi chay thu (anh/video danh gia) - khong day len Git
 uploads/
 
