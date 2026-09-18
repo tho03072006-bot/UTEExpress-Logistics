@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Đăng nhập nội bộ - UTEExpress</title></head>
+<body><section>
+<div class="mx-auto ute-panel p-4" style="max-width:560px">
+<span class="badge text-bg-dark mb-3">Dành cho Admin và Manager</span>
+<h1 class="h3">Đăng nhập nội bộ</h1>
+<p>Tài khoản do quản trị viên cấp. Không đăng ký hoặc kích hoạt bằng OTP.</p>
+<p class="alert alert-danger" role="alert" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu hoặc liên hệ quản trị viên. Nếu sai 5 lần, hãy đợi 15 phút.</p>
+<p class="alert alert-warning" role="status" th:if="${param.expired}">Phiên đã hết hiệu lực do tài khoản, quyền hoặc mật khẩu thay đổi. Vui lòng đăng nhập lại.</p>
+<p class="alert alert-success" role="status" th:if="${param.changed}">Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>
+<p class="alert alert-info" role="status" th:if="${param.logout}">Đã đăng xuất.</p>
+<form th:action="@{/noi-bo/dang-nhap}" method="post">
+<div class="mb-3"><label for="username" class="form-label">Tên tài khoản được cấp</label>
+<input id="username" name="username" class="form-control" required maxlength="50" autocomplete="username" autocapitalize="none"></div>
+<div class="mb-3"><label for="password" class="form-label">Mật khẩu</label>
+<input id="password" name="password" type="password" class="form-control" required maxlength="64" autocomplete="current-password"></div>
+<button type="submit" class="btn btn-primary w-100">Đăng nhập nội bộ</button>
+</form>
+<p class="small text-muted mt-3 mb-0">Quên mật khẩu: liên hệ Admin để được cấp lại. Admin cuối cùng cần người quản trị cơ sở dữ liệu hỗ trợ theo quy trình phục hồi nội bộ.</p>
+</div>
+</section></body>
+</html>
+

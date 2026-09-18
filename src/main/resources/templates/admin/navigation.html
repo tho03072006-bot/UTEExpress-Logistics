@@ -1,0 +1,12 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<body><nav th:fragment="navigation" class="d-flex flex-wrap align-items-center gap-2 mb-4 border-bottom pb-3" aria-label="Chức năng nội bộ">
+<span class="badge text-bg-dark me-2">Khu nội bộ</span>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/trang-chu}">Tổng quan vận hành</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/don-hang}">Tra soát đơn hàng</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/trang-chu}">Quản trị hệ thống</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/tai-khoan}">Tài khoản nội bộ</a>
+<a class="btn btn-outline-secondary btn-sm" th:href="@{/noi-bo/doi-mat-khau}">Đổi mật khẩu</a>
+<form th:action="@{/noi-bo/dang-xuat}" method="post" class="ms-auto">
+<button class="btn btn-outline-danger btn-sm" type="submit">Đăng xuất nội bộ</button></form>
+</nav></body></html>
+
