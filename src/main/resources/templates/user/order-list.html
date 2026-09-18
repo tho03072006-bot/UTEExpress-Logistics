@@ -37,8 +37,9 @@
             <option value="" th:selected="${selectedStatus == null}">Tất cả</option>
             <option th:each="s : ${statusValues}"
                     th:value="${s}"
-                    th:text="${s}"
-                    th:selected="${s == selectedStatus}"></option>
+                    th:selected="${s == selectedStatus}">
+                <th:block th:replace="~{fragments/components :: orderStatusText(${s})}"></th:block>
+            </option>
         </select>
     </div>
     <div class="col-md-3 d-flex gap-2">
@@ -76,9 +77,12 @@
     </thead>
     <tbody>
         <tr th:each="order : ${orders}">
-            <td th:text="${order.trackingCode}">-</td>
+            <td>
+                <a th:href="@{'/nguoi-dung/don-hang/' + ${order.id}}"
+                   class="fw-semibold" th:text="${order.trackingCode}">-</a>
+            </td>
             <td th:text="${order.receiverName}">-</td>
-            <td th:text="${order.serviceType}">-</td>
+            <td><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></td>
             <td><span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span></td>
             <td th:with="payment=${payments.get(order.id)}">
                 <span th:if="${payment == null}" class="text-muted">-</span>
@@ -96,13 +100,17 @@
             </td>
             <td>
                 <span class="badge"
-                      th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"
-                      th:text="${order.status}">-</span>
+                      th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}">
+                    <th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block>
+                </span>
             </td>
             <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</td>
             <td>
                 <div class="d-flex flex-wrap gap-2"
                      th:with="payment=${payments.get(order.id)}, review=${reviews.get(order.id)}">
+                    <a th:href="@{'/nguoi-dung/don-hang/' + ${order.id}}"
+                       class="btn btn-sm btn-outline-primary">Chi tiết</a>
+
                     <!-- Chi don tra truoc bang vi va chua thanh toan moi hien nut nay -->
                     <a th:if="${payment != null and payment.method.onlineWallet and payment.status.name() == 'UNPAID'}"
                        th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}"

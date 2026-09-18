@@ -84,5 +84,36 @@
 <span th:fragment="money(amount)"
       th:text="${amount == null ? '—' : #numbers.formatInteger(amount, 1, 'POINT') + ' đ'}">0 đ</span>
 
+<!--
+  Đổi tên hằng của enum sang chữ tiếng Việt cho người dùng đọc.
+
+  Vì sao không thêm displayName thẳng vào enum như OrderPayment đã làm: hai enum
+  OrderStatus và ServiceType nằm trong Order.java - entity dùng chung của cả nhóm,
+  quy ước là không ai tự sửa. Nên phần dịch để ở đây, sửa một chỗ là cả site đổi theo.
+
+  Dùng th:block nên không sinh thêm thẻ nào, nhét được vào cả <td>, <span> lẫn <option>:
+      <td><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></td>
+-->
+<th:block th:fragment="orderStatusText(status)"
+          th:switch="${status == null} ? '' : ${status.name()}">
+    <th:block th:case="'PENDING_PICKUP'">Chờ lấy hàng</th:block>
+    <th:block th:case="'PICKED_UP'">Đã lấy hàng</th:block>
+    <th:block th:case="'IN_TRANSIT'">Đang giao</th:block>
+    <th:block th:case="'DELIVERED'">Giao thành công</th:block>
+    <th:block th:case="'FAILED'">Giao thất bại</th:block>
+    <th:block th:case="'CANCELLED'">Đã hủy</th:block>
+    <th:block th:case="'RETURNED'">Đã hoàn trả</th:block>
+    <!-- Có trạng thái mới mà quên bổ sung ở trên thì in tạm tên hằng, không để trống -->
+    <th:block th:case="*" th:text="${status}">—</th:block>
+</th:block>
+
+<th:block th:fragment="serviceTypeText(serviceType)"
+          th:switch="${serviceType == null} ? '' : ${serviceType.name()}">
+    <th:block th:case="'STANDARD'">Tiêu chuẩn</th:block>
+    <th:block th:case="'EXPRESS'">Nhanh</th:block>
+    <th:block th:case="'SUPER_EXPRESS'">Hỏa tốc</th:block>
+    <th:block th:case="*" th:text="${serviceType}">—</th:block>
+</th:block>
+
 </body>
 </html>

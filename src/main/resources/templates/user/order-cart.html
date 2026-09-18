@@ -53,7 +53,7 @@
                     <td th:text="${draft.receiverAddress}">-</td>
                     <td class="text-muted small" th:text="${draft.senderAddress}">-</td>
                     <td th:text="${draft.weightKg} + ' kg'">-</td>
-                    <td th:text="${draft.serviceType}">-</td>
+                    <td><th:block th:replace="~{fragments/components :: serviceTypeText(${draft.serviceType})}"></th:block></td>
                     <td class="small">
                         <span th:text="${draft.paymentMethod.displayName}">-</span>
                         <div class="text-muted" th:if="${draft.promoCode != null and !draft.promoCode.isEmpty()}"

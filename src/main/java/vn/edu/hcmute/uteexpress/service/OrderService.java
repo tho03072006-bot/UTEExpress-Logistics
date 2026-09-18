@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.service;
 
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
+import vn.edu.hcmute.uteexpress.dto.OrderTimelineStep;
 import vn.edu.hcmute.uteexpress.entity.Order;
 
 import org.springframework.data.domain.Page;
@@ -48,6 +49,21 @@ public interface OrderService {
                                    String keyword, Pageable pageable);
 
     Optional<Order> findByTrackingCode(String trackingCode);
+
+    /**
+     * Lay mot don cu the de hien trang chi tiet, kem kiem tra quyen so huu.
+     * Nem IllegalStateException neu khong tim thay don HOAC don khong phai cua username nay -
+     * co y dung chung mot cau bao loi cho ca hai truong hop: neu bao "don khong phai cua ban"
+     * thi nguoi la co the do id de biet don nao co that trong he thong.
+     */
+    Order findOwnedOrder(Long orderId, String username);
+
+    /**
+     * Dung danh sach cac moc hanh trinh cua don de ve timeline o trang chi tiet.
+     * Luong binh thuong di qua 4 moc: cho lay hang - da lay hang - dang giao - giao thanh cong.
+     * Don ket thuc bat thuong (huy / that bai / hoan tra) thi moc cuoi doi thanh trang thai do.
+     */
+    List<OrderTimelineStep> buildTimeline(Order order);
 
     /**
      * Nguoi gui tu huy don khi don chua duoc lay hang (PENDING_PICKUP).
