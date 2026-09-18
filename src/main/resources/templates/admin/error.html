@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Không thể thực hiện yêu cầu - UTEExpress</title></head>
+<body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-panel p-4">
+<h1 class="h3">Không thể thực hiện yêu cầu</h1><div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<div class="d-flex flex-wrap gap-2"><a th:href="@{/noi-bo/dang-nhap}" class="btn btn-primary">Đăng nhập nội bộ</a>
+<a th:href="@{/manager/trang-chu}" class="btn btn-outline-primary">Về tổng quan</a></div></div>
+</section></body>
+</html>
+

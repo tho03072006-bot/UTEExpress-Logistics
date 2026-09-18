@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Quản trị hệ thống - UTEExpress</title></head>
+<body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="mb-4"><span class="badge text-bg-dark">ADMIN · Cấp quản trị hệ thống</span>
+<h1 class="h2 mt-3">Quản trị và kiểm soát truy cập</h1>
+<p>Admin cấp tài khoản nội bộ, quản lý quyền, khóa/mở tài khoản và cấp lại mật khẩu. Admin đồng thời được sử dụng các chức năng của Manager.</p></div>
+<div class="row g-3 mb-4"><div class="col-md-6"><div class="ute-panel p-4 h-100">
+<h2 class="h5">Quản trị nhân sự</h2><p>Cấp tài khoản Admin/Manager bằng mật khẩu bàn giao, bắt buộc đổi mật khẩu; thu hồi quyền khi nhân sự ngừng công tác.</p>
+<a class="btn btn-dark" th:href="@{/admin/tai-khoan}">Quản lý tài khoản nội bộ</a></div></div>
+<div class="col-md-6"><div class="ute-panel p-4 h-100"><h2 class="h5">Giám sát vận hành</h2>
+<p><strong th:text="${summary.totalOrders}">0</strong> đơn hàng · <strong th:text="${summary.pendingOrders}">0</strong> đơn chờ lấy.</p>
+<a class="btn btn-outline-primary" th:href="@{/manager/trang-chu}">Mở khu Manager</a></div></div></div>
+<div class="ute-panel p-4"><h2 class="h5">Phân cấp chức năng hiện có</h2>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Chức năng</th><th>Manager</th><th>Admin</th></tr></thead><tbody>
+<tr><td>Xem tổng quan và tra soát đơn toàn hệ thống</td><td>Có</td><td>Có</td></tr>
+<tr><td>Lọc đơn theo mã, trạng thái, khoảng ngày</td><td>Có</td><td>Có</td></tr>
+<tr><td>Đổi mật khẩu của chính mình</td><td>Có</td><td>Có</td></tr>
+<tr><td>Cấp tài khoản, thay đổi quyền, khóa/mở, cấp lại mật khẩu nội bộ</td><td>Không</td><td>Có, trừ tự thay đổi quyền/trạng thái</td></tr>
+<tr><td>Tự nâng quyền hoặc xóa tài khoản</td><td>Không</td><td>Không</td></tr>
+</tbody></table></div></div>
+</section></body>
+</html>
+

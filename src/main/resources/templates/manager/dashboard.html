@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head>
     <title>Trang tong quan - UTEExpress</title>
 </head>
 <body>
 
 <section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="ute-page-head">
     <div>
-        <h2>Tổng quan quản lý</h2>
-        <p>Theo dõi nhanh tài khoản và đơn hàng trong hệ thống UTEExpress.</p>
+        <span class="badge text-bg-primary mb-2">MANAGER · Cấp quản lý vận hành</span>
+        <h2>Tổng quan vận hành</h2>
+        <p>Theo dõi đơn hàng và năng lực giao nhận. Manager không được cấp tài khoản nội bộ hoặc thay đổi quyền quản trị.</p>
     </div>
 </div>
 
@@ -46,11 +48,9 @@
 </div>
 
 <div class="ute-panel p-4">
-    <h3 class="h5">Cấu trúc chức năng Manager/Admin</h3>
-    <p class="mb-0 text-muted">
-        Controller nhận yêu cầu, Service xử lý nghiệp vụ, Repository đọc dữ liệu,
-        DTO gom kết quả và Thymeleaf hiển thị ra giao diện.
-    </p>
+    <h3 class="h5">Tra soát đơn hàng</h3>
+    <p class="text-muted">Tra cứu đơn toàn hệ thống theo mã vận đơn, trạng thái và khoảng ngày để theo dõi tiến độ giao nhận.</p>
+    <a class="btn btn-primary" th:href="@{/manager/don-hang}">Xem danh sách và lọc đơn</a>
 </div>
 </section>
 

@@ -1,5 +1,7 @@
 # Khung sườn UTEExpress — hướng dẫn chạy lần đầu
 
+> Cập nhật 18/09/2026 theo yêu cầu nhóm: ứng dụng **chỉ dùng MySQL trên Aiven**, một database chung cho User/Shipper/Manager/Admin. Làm theo [hướng dẫn Aiven](docs/thang/AIVEN_MYSQL.md) trước. Các hướng dẫn SQL Server bên dưới là tài liệu lịch sử, không dùng để cấu hình phiên bản hiện tại. Không chạy script SQL Server lên Aiven và không bật `ddl-auto=update/create` trên database chung.
+
 Bộ khung này dựng theo đúng kiến trúc & phân công ở mục 05/03 trong "Kế hoạch UTEExpress".
 Mọi TODO trong code là việc thật cần làm tiếp — không phải chỗ nào cũng chạy được ngay.
 

@@ -43,6 +43,9 @@ target/
 # File cau hinh chua mat khau that tren tung may - KHONG bao gio len Git.
 # application.properties van len Git binh thuong (chi chua placeholder CHANGE_ME).
 application-local.properties
+/config/aiven-local.properties
+/config/sqlserver-before-aiven.properties
+/config/certificates/
 
 # Cau hinh ket noi database chung tren MonsterASP (co mat khau that).
 # Ban mau khong chua mat khau la application-cloud.properties.example, file do

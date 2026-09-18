@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Tra soát đơn toàn hệ thống - UTEExpress</title></head>
+<body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<h1 class="h3">Tra soát đơn hàng toàn hệ thống</h1><p class="text-muted">Xem tình trạng vận hành. Bộ lọc mặc định lấy 30 ngày gần nhất; tối đa 366 ngày mỗi lần.</p>
+<form method="get" th:action="@{/manager/don-hang}" class="ute-panel p-3 row g-3 mb-4">
+<div class="col-md-3"><label for="tracking" class="form-label">Mã vận đơn chính xác</label><input id="tracking" name="tracking" th:value="${tracking}" maxlength="20" pattern="[A-Za-z0-9-]{1,20}" class="form-control"></div>
+<div class="col-md-3"><label for="status" class="form-label">Trạng thái</label><select name="status" id="status" class="form-select"><option value="">Tất cả</option>
+<option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == status}" th:text="${statusLabels[s]}"></option></select></div>
+<div class="col-md-2"><label for="from" class="form-label">Từ ngày</label><input id="from" name="from" type="date" required min="2000-01-01" th:max="${today}" th:value="${from}" class="form-control"></div>
+<div class="col-md-2"><label for="to" class="form-label">Đến ngày</label><input id="to" name="to" type="date" required min="2000-01-01" th:max="${today}" th:value="${to}" class="form-control"></div>
+<div class="col-md-2 align-self-end"><button type="submit" class="btn btn-primary">Lọc đơn</button></div>
+</form><div class="ute-panel p-3"><div class="table-responsive"><table class="table align-middle">
+<thead><tr><th>Mã vận đơn</th><th>Người gửi / nhận</th><th>Shipper</th><th>Trạng thái</th><th>Cước phí</th><th>Ngày tạo</th></tr></thead><tbody>
+<tr th:if="${orders.empty}"><td colspan="6" class="text-center py-4">Không có đơn phù hợp với bộ lọc.</td></tr>
+<tr th:each="order : ${orders.content}"><td th:text="${order.trackingCode}"></td>
+<td><span th:text="${order.senderName}"></span><br><small th:text="${order.receiverName}"></small></td>
+<td th:text="${order.shipperName}"></td><td th:text="${order.statusLabel}"></td>
+<td><span th:replace="~{fragments/components :: money(${order.shippingFee})}"></span></td>
+<td th:text="${order.createdAt == null ? '—' : #temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></td></tr>
+</tbody></table></div></div>
+<nav aria-label="Phân trang đơn hàng" class="d-flex gap-3 align-items-center mt-3">
+<a th:if="${orders.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/don-hang(page=${orders.number - 1},tracking=${tracking},status=${status},from=${from},to=${to})}">Trang trước</a>
+<span th:text="|Trang ${orders.number + 1} · ${orders.totalElements} đơn|"></span>
+<a th:if="${orders.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/don-hang(page=${orders.number + 1},tracking=${tracking},status=${status},from=${from},to=${to})}">Trang sau</a></nav>
+</section></body>
+</html>

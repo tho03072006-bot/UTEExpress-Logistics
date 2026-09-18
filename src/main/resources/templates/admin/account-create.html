@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Cấp tài khoản nội bộ - UTEExpress</title></head>
+<body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-panel p-4 mx-auto" style="max-width:720px">
+<h1 class="h3">Cấp tài khoản nội bộ</h1>
+<p>Chỉ Admin được cấp mới. Mỗi nhân sự dùng tài khoản riêng, không chuyển tài khoản khách hàng thành Admin/Manager.</p>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<form th:action="@{/admin/tai-khoan/cap-moi}" th:object="${form}" method="post">
+<div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert"><ul class="mb-0"><li th:each="e : ${#fields.allErrors()}" th:text="${e}"></li></ul></div>
+<div class="mb-3"><label for="username" class="form-label">Tên đăng nhập</label><input th:field="*{username}" class="form-control" required minlength="4" maxlength="50" pattern="[a-z][a-z0-9._-]{3,49}" autocomplete="off"><div class="form-text">4–50 ký tự, bắt đầu bằng chữ thường; cho phép số, dấu chấm, gạch dưới, gạch ngang.</div></div>
+<div class="mb-3"><label for="fullName" class="form-label">Họ và tên nhân sự</label><input th:field="*{fullName}" class="form-control" required minlength="2" maxlength="100" autocomplete="off"></div>
+<div class="mb-3"><label for="email" class="form-label">Email công việc</label><input th:field="*{email}" type="email" class="form-control" required maxlength="100" autocomplete="off"></div>
+<div class="mb-3"><label for="role" class="form-label">Cấp quyền</label><select th:field="*{role}" class="form-select" required>
+<option value="">Chọn quyền phù hợp</option><option value="MANAGER">Manager — vận hành và tra soát</option><option value="ADMIN">Admin — quản trị tài khoản và toàn bộ quyền Manager</option></select></div>
+<div class="mb-3"><label for="password" class="form-label">Mật khẩu mới</label>
+<input id="password" name="password" type="password" class="form-control" required minlength="12" maxlength="64" autocomplete="new-password" aria-describedby="password-help"></div>
+<div class="mb-3"><label for="confirmPassword" class="form-label">Nhập lại mật khẩu mới</label>
+<input id="confirmPassword" name="confirmPassword" type="password" class="form-control" required minlength="12" maxlength="64" autocomplete="new-password"></div>
+<p id="password-help" class="text-muted small">12–64 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt; không có khoảng trắng; tối đa 72 byte UTF-8. Bàn giao mật khẩu qua kênh riêng.</p><div class="d-flex gap-2"><button type="submit" class="btn btn-primary">Cấp tài khoản</button><a class="btn btn-outline-secondary" th:href="@{/admin/tai-khoan}">Hủy</a></div>
+</form></div>
+</section></body>
+</html>
+
