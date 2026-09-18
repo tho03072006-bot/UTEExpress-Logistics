@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.AuthService;
+import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -26,12 +27,14 @@ public class AuthServiceImpl implements AuthService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final MailFromNameSetter mailFromNameSetter;
 
     public AuthServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-                            JavaMailSender mailSender) {
+                            JavaMailSender mailSender, MailFromNameSetter mailFromNameSetter) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
+        this.mailFromNameSetter = mailFromNameSetter;
     }
 
     @Override
@@ -142,6 +145,7 @@ public class AuthServiceImpl implements AuthService {
     private void sendOtpEmail(String toEmail, String otp, String subject, String purpose) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            mailFromNameSetter.applyTo(message);
             message.setTo(toEmail);
             message.setSubject("[UTEExpress] " + subject);
             message.setText("Ma OTP de " + purpose + " cua ban la: " + otp

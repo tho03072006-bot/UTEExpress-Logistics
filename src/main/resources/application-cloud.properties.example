@@ -1,0 +1,56 @@
+# =============================================================================
+# UTEExpress - ket noi toi DATABASE CHUNG cua ca nhom tren MonsterASP
+# =============================================================================
+#
+# CACH DUNG
+#   1. Copy file nay thanh "application-cloud.properties" (bo duoi .example),
+#      de cung thu muc src/main/resources/
+#   2. Dien thong tin that vao cac cho CHANGE_ME ben duoi
+#   3. Chay app voi profile cloud:
+#         mvn spring-boot:run -Dspring-boot.run.profiles=cloud
+#      hoac trong Eclipse: Run Configurations > Arguments > VM arguments:
+#         -Dspring.profiles.active=cloud
+#
+# File "application-cloud.properties" da nam trong .gitignore nen KHONG bao gio
+# len Git. Rieng file .example nay thi len Git de ai cung biet can dien gi.
+#
+# KHI NAO DUNG PROFILE NAO
+#   - Khong bat profile (mac dinh): chay SQL Server tren may minh. Dung luc ngoi
+#     code hang ngay - nhanh, sua lung tung khong pha du lieu cua ban khac.
+#   - Profile "cloud": dung database chung. Dung khi test tich hop va khi demo -
+#     ca nhom nhin cung mot du lieu, may nao mo cung ra ket qua giong nhau.
+#
+# LAY THONG TIN O DAU
+#   MonsterASP > Databases > chon database > khung "Access to Database"
+#   PHAI bam sang tab "Remote access" (KHONG phai "Local access").
+#   Hostname o tab "Local access" chi chay duoc tu ben trong may chu cua ho,
+#   may ca nhan phan giai ra IP noi bo 10.0.0.x nen khong ket noi duoc.
+# =============================================================================
+
+# ----- Ket noi database -----
+# Lay dung hostname o tab "Remote access", KHONG phai db68944.databaseasp.net.
+#
+# encrypt=true la BAT BUOC: ket noi nay di qua Internet, de false thi mat khau
+# va du lieu nguoi dung truyen di khong duoc ma hoa.
+spring.datasource.url=jdbc:sqlserver://CHANGE_ME_HOSTNAME_REMOTE:1433;databaseName=CHANGE_ME_TEN_DB;encrypt=true;trustServerCertificate=true;loginTimeout=30
+spring.datasource.username=CHANGE_ME_LOGIN
+spring.datasource.password=CHANGE_ME_MAT_KHAU
+
+# ----- JPA -----
+# validate chu KHONG phai update: database nay dung chung ca nhom, de update thi
+# ai sua entity la schema doi cho ca nhom ma khong ai biet. Voi validate, app bao
+# loi ngay khi entity lech schema - phat hien som thay vi hong du lieu am tham.
+#
+# Rieng LAN DAU dung de tao bang thi doi tam thanh "update", chay app mot lan cho
+# Hibernate tao xong bang, roi chay scripts db/01 -> db/06 va doi lai "validate".
+spring.jpa.hibernate.ddl-auto=validate
+
+# Tat in cau SQL ra man hinh cho do roi log khi chay that
+spring.jpa.show-sql=false
+
+# ----- Mail -----
+# Dung chung mot hop thu cho ca nhom de ten nguoi gui thong nhat la UTEExpress,
+# thay vi moi may gui bang gmail ca nhan cua mot ban.
+# Mat khau phai la "App Password" 16 ky tu cua Google, KHONG phai mat khau dang nhap.
+spring.mail.username=CHANGE_ME@gmail.com
+spring.mail.password=CHANGE_ME_APP_PASSWORD_16_KY_TU

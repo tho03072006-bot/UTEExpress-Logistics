@@ -30,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.AuthService;
+import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
@@ -45,8 +46,11 @@ class AuthServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Dung instance that thay vi mock: lop nay chi ghep chuoi ten nguoi gui,
+        // khong goi ra ngoai nen mock cung khong loi gi hon.
         authService = new AuthServiceImpl(
-                appUserRepository, passwordEncoder, mailSender);
+                appUserRepository, passwordEncoder, mailSender,
+                new MailFromNameSetter("UTEExpress", "uteexpress@example.com"));
     }
 
     @Test

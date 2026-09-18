@@ -11,6 +11,7 @@ import vn.edu.hcmute.uteexpress.entity.EmailChangeRequest;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository;
 import vn.edu.hcmute.uteexpress.service.EmailChangeService;
+import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -32,13 +33,16 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private final EmailChangeRequestRepository emailChangeRequestRepository;
     private final AppUserRepository appUserRepository;
     private final JavaMailSender mailSender;
+    private final MailFromNameSetter mailFromNameSetter;
 
     public EmailChangeServiceImpl(EmailChangeRequestRepository emailChangeRequestRepository,
                                   AppUserRepository appUserRepository,
-                                  JavaMailSender mailSender) {
+                                  JavaMailSender mailSender,
+                                  MailFromNameSetter mailFromNameSetter) {
         this.emailChangeRequestRepository = emailChangeRequestRepository;
         this.appUserRepository = appUserRepository;
         this.mailSender = mailSender;
+        this.mailFromNameSetter = mailFromNameSetter;
     }
 
     @Override
@@ -156,6 +160,7 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private void sendOtpEmail(String toEmail, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            mailFromNameSetter.applyTo(message);
             message.setTo(toEmail);
             message.setSubject("[UTEExpress] Ma xac thuc doi dia chi email");
             message.setText("Ma OTP de xac nhan doi email cua ban la: " + otp
