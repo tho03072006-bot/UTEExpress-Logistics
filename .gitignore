@@ -43,6 +43,9 @@ target/
 # File cau hinh chua mat khau that tren tung may - KHONG bao gio len Git.
 # application.properties van len Git binh thuong (chi chua placeholder CHANGE_ME).
 application-local.properties
+/config/aiven-local.properties
+/config/sqlserver-before-aiven.properties
+/config/certificates/
 
 # Tep nguoi dung tai len khi chay thu (anh/video danh gia) - khong day len Git
 uploads/

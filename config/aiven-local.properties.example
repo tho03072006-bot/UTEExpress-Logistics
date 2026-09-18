@@ -1,0 +1,9 @@
+# Copy thanh config/aiven-local.properties (da gitignore), dien thong tin tu Aiven Console.
+# Dung dau / trong duong dan Windows trong file .properties.
+AIVEN_HOST=CHANGE_ME.aivencloud.com
+AIVEN_PORT=CHANGE_ME
+AIVEN_DATABASE=defaultdb
+AIVEN_USER=avnadmin
+AIVEN_PASSWORD=CHANGE_ME
+AIVEN_TRUSTSTORE_URL=file:/E:/Lap_Trinh_Web/UTEEXPRESS/config/certificates/aiven-truststore.p12
+AIVEN_TRUSTSTORE_PASSWORD=CHANGE_ME
