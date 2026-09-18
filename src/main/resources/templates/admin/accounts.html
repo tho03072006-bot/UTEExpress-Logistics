@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Quản lý tài khoản nội bộ - UTEExpress</title></head>
+<body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><div><h1 class="h3">Tài khoản nội bộ</h1>
+<p class="text-muted">Admin kiểm soát cấp quyền và trạng thái. Mọi thay đổi quyền hoặc mật khẩu đều thu hồi phiên cũ.</p></div>
+<a class="btn btn-primary align-self-start" th:href="@{/admin/tai-khoan/cap-moi}">Cấp tài khoản mới</a></div>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<p class="alert alert-info">Không được tự thay đổi quyền/trạng thái. Hệ thống luôn phải còn Admin hoạt động. Không xóa tài khoản để giữ lịch sử.</p>
+<p th:if="${accounts.empty}" class="ute-panel p-4">Không có tài khoản trong trang này.</p>
+<div class="ute-panel p-4 mb-3" th:each="account : ${accounts.content}">
+<div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+<h2 class="h5 mb-0" th:text="${account.username}"></h2>
+<span class="badge" th:classappend="${account.role == 'ADMIN'} ? 'text-bg-dark' : 'text-bg-primary'" th:text="${account.role}"></span>
+<span class="badge" th:classappend="${account.active} ? 'text-bg-success' : 'text-bg-danger'" th:text="${account.active} ? 'Hoạt động' : 'Đã khóa'"></span>
+<span th:if="${account.passwordChangeRequired}" class="badge text-bg-warning">Cần đổi mật khẩu</span></div>
+<p class="mb-1"><span th:text="${account.fullName}"></span> · <span th:text="${account.email}"></span></p>
+<p class="text-muted small">Người cấp: <span th:text="${account.issuedBy}"></span></p>
+<div th:if="${account.username != #authentication.name}">
+<form th:action="@{/admin/tai-khoan/{id}/cap-nhat(id=${account.id})}" method="post" class="row g-2 align-items-end">
+<input type="hidden" name="revision" th:value="${account.revision}">
+<div class="col-md-4"><label class="form-label" th:for="|role-${account.id}|">Cấp quyền</label><select name="role" th:id="|role-${account.id}|" class="form-select" required>
+<option value="MANAGER" th:selected="${account.role == 'MANAGER'}">Manager — vận hành</option><option value="ADMIN" th:selected="${account.role == 'ADMIN'}">Admin — quản trị</option></select></div>
+<div class="col-md-4"><label class="form-label" th:for="|active-${account.id}|">Trạng thái</label><select name="active" th:id="|active-${account.id}|" class="form-select" required>
+<option value="true" th:selected="${account.active}">Hoạt động</option><option value="false" th:selected="${!account.active}">Khóa</option></select></div>
+<div class="col-md-4"><button class="btn btn-primary" type="submit">Lưu quyền và trạng thái</button></div>
+</form>
+<details th:if="${account.active}" class="mt-3"><summary>Cấp lại mật khẩu cho nhân sự</summary>
+<form th:action="@{/admin/tai-khoan/{id}/cap-lai-mat-khau(id=${account.id})}" method="post" class="mt-3">
+<input type="hidden" name="revision" th:value="${account.revision}">
+<div class="row g-2">
+<div class="col-md-5"><label class="form-label" th:for="|password-${account.id}|">Mật khẩu tạm mới</label>
+<input name="password" th:id="|password-${account.id}|" type="password" required minlength="12" maxlength="64" autocomplete="new-password" class="form-control"></div>
+<div class="col-md-5"><label class="form-label" th:for="|confirm-${account.id}|">Xác nhận mật khẩu</label>
+<input name="confirmPassword" th:id="|confirm-${account.id}|" type="password" required minlength="12" maxlength="64" autocomplete="new-password" class="form-control"></div>
+<div class="col-md-2 align-self-end"><button class="btn btn-outline-danger" type="submit">Cấp lại</button></div></div>
+<p class="small text-muted mt-2">12–64 ký tự, có chữ hoa/thường, số, ký tự đặc biệt; không có khoảng trắng; tối đa 72 byte UTF-8. Người nhận phải đổi sau khi đăng nhập.</p>
+</form></details></div>
+<p th:if="${account.username == #authentication.name}" class="text-muted mb-0">Đây là tài khoản của bạn. Dùng mục Đổi mật khẩu để thay mật khẩu.</p>
+</div>
+<nav aria-label="Phân trang tài khoản" class="d-flex align-items-center gap-3">
+<a th:if="${accounts.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/admin/tai-khoan(page=${accounts.number - 1})}">Trang trước</a>
+<span th:text="|Trang ${accounts.number + 1} · ${accounts.totalElements} tài khoản|"></span>
+<a th:if="${accounts.hasNext()}" class="btn btn-outline-secondary" th:href="@{/admin/tai-khoan(page=${accounts.number + 1})}">Trang sau</a>
+</nav>
+</section></body>
+</html>
+

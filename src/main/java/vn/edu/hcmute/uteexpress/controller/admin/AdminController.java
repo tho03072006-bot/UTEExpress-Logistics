@@ -24,7 +24,6 @@ public class AdminController {
     @GetMapping("/trang-chu")
     public String dashboard(Model model) {
         model.addAttribute("summary", managerDashboardService.getSummary());
-        // Dung chung template voi Manager luc dau, tach rieng khi can giao dien khac biet
-        return "manager/dashboard";
+        return "admin/dashboard";
     }
 }
