@@ -575,6 +575,30 @@ a:hover {
     padding: 1rem;
 }
 
+/* ===================== O tra cuu tren trang chu (TV1) =====================
+   Dat ngay trong khoi hero mau xanh nen o nhap phai la nen trang de doc duoc. */
+.ute-hero-search {
+    display: flex;
+    gap: .5rem;
+    max-width: 520px;
+}
+.ute-hero-search .form-control {
+    border: none;
+    padding: .65rem 1rem;
+}
+.ute-hero-search .form-control:focus {
+    box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .35);
+}
+.ute-hero-search .btn {
+    white-space: nowrap;
+}
+@media (max-width: 575.98px) {
+    /* Man hinh hep thi xep doc, o nhap chiem het chieu ngang cho de bam */
+    .ute-hero-search {
+        flex-direction: column;
+    }
+}
+
 /* ===================== Timeline hanh trinh don (TV1) =====================
    Duong doc noi cac moc, moc da di qua to xanh, moc dang dung co vong sang. */
 .ute-timeline {

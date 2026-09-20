@@ -1,5 +1,6 @@
 package vn.edu.hcmute.uteexpress.service;
 
+import vn.edu.hcmute.uteexpress.dto.HomeStatistics;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.dto.OrderTimelineStep;
 import vn.edu.hcmute.uteexpress.entity.Order;
@@ -46,6 +47,12 @@ public interface OrderService {
      * (tieu chuan - nhanh - hoa toc), khong bi xao tron moi lan tai trang.
      */
     Map<Order.ServiceType, BigDecimal> estimateAllServices(double weightKg);
+
+    /**
+     * So lieu hoat dong hien o trang chu cong khai.
+     * Dem that tu co so du lieu, khong phai con so tu dat cho dep.
+     */
+    HomeStatistics getHomeStatistics();
 
     List<Order> findOrdersOfUser(String username);
 

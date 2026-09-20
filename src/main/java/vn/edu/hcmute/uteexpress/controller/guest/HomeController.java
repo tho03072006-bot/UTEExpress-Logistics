@@ -32,7 +32,7 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model) {
-        // TODO (TV1): them bang gia cuoc tham khao theo khu vuc/khoi luong len trang nay
+        model.addAttribute("thongKe", orderService.getHomeStatistics());
         model.addAttribute("latestReviews", serviceReviewService.findLatestReviews(HOME_REVIEW_LIMIT));
         return "index";
     }

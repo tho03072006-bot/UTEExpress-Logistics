@@ -3,6 +3,8 @@ package vn.edu.hcmute.uteexpress.service.impl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.edu.hcmute.uteexpress.dto.HomeStatistics;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.dto.OrderTimelineStep;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
@@ -242,6 +244,24 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg) {
         return calculateFee(serviceType, weightKg);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HomeStatistics getHomeStatistics() {
+        long daGiao = orderRepository.countByStatus(Order.OrderStatus.DELIVERED);
+        long dangGiao = orderRepository.countByStatusIn(
+                List.of(Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT));
+        long khachHang = appUserRepository.countByRoleAndEnabledTrue(AppUser.Role.USER);
+
+        // Ti le tinh tren cac don DA KET THUC, khong tinh don dang chay: don moi tao
+        // chua giao khong the coi la that bai, gop vao se lam ti le tut xuong vo ly.
+        long thatBai = orderRepository.countByStatusIn(
+                List.of(Order.OrderStatus.FAILED, Order.OrderStatus.RETURNED));
+        long daKetThuc = daGiao + thatBai;
+        int tiLe = daKetThuc == 0 ? 0 : (int) Math.round(daGiao * 100.0 / daKetThuc);
+
+        return new HomeStatistics(daGiao, khachHang, dangGiao, tiLe);
     }
 
     @Override

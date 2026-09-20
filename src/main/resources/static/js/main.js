@@ -122,14 +122,21 @@
     var DURATION_MS = 600;
 
     function animateCount(element) {
-        var target = parseInt(element.textContent.trim(), 10);
-        // O nao khong phai so nguyen thuan (vd co dau cham, ky tu %) thi de nguyen.
+        var noiDung = element.textContent.trim();
+        // Tach phan so va phan duoi (vd "95%" -> 95 va "%") de dem xong van giu
+        // nguyen ky tu duoi, khong bien "95%" thanh "95".
+        var khop = noiDung.match(/^(\d+)(\D*)$/);
+        if (!khop) {
+            return;
+        }
+        var target = parseInt(khop[1], 10);
+        var duoi = khop[2] || '';
         if (isNaN(target) || target <= 0) {
             return;
         }
 
         var start = null;
-        element.textContent = '0';
+        element.textContent = '0' + duoi;
 
         function step(timestamp) {
             if (start === null) {
@@ -138,12 +145,12 @@
             var progress = Math.min((timestamp - start) / DURATION_MS, 1);
             // Cham dan ve cuoi cho cam giac dung lai nhe nhang thay vi phanh gap.
             var eased = 1 - Math.pow(1 - progress, 3);
-            element.textContent = Math.round(target * eased);
+            element.textContent = Math.round(target * eased) + duoi;
 
             if (progress < 1) {
                 window.requestAnimationFrame(step);
             } else {
-                element.textContent = target; // chot lai dung so that
+                element.textContent = target + duoi; // chot lai dung so that
             }
         }
 
