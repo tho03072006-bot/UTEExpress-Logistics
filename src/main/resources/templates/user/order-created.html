@@ -12,7 +12,12 @@
 <div class="card">
     <div class="card-body">
         <h5 class="card-title">Mã vận đơn</h5>
-        <p class="fs-4 fw-bold" th:text="${order.trackingCode}">UTE00000000</p>
+        <p class="fs-4 fw-bold mb-2" th:text="${order.trackingCode}">UTE00000000</p>
+        <!-- Ma vua sinh ra, nguoi dung gan nhu chac chan se gui lai cho nguoi nhan -->
+        <button type="button" class="btn btn-sm btn-outline-secondary mb-3 ute-copy-btn"
+                th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
+            <i class="bi bi-clipboard"></i> Chép mã
+        </button>
         <p>Người nhận: <span th:text="${order.receiverName}">-</span></p>
         <p>Dịch vụ:
             <span><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span>

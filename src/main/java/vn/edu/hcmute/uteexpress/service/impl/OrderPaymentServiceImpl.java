@@ -105,6 +105,12 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) {
             throw new IllegalStateException("Đơn này đã được thanh toán rồi.");
         }
+        // Đơn đã dừng hẳn thì không bao giờ được giao nữa, thu tiền lúc này là
+        // lấy tiền của khách cho một dịch vụ không còn thực hiện.
+        if (isOrderClosed(payment.getOrder())) {
+            throw new IllegalStateException(
+                    "Đơn này đã kết thúc nên không thanh toán được nữa.");
+        }
 
         payment.setStatus(OrderPayment.PaymentStatus.PAID);
         payment.setTransactionRef(generateMockTransactionRef());
@@ -145,6 +151,18 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
      * và cả nhóm nhìn vào biết ngay đây là giao dịch mô phỏng, không phải mã thật
      * do VNPay/MoMo trả về.
      */
+    /**
+     * Đơn đã dừng hẳn, không còn đường đi tiếp trong quy trình giao hàng.
+     *
+     * FAILED không tính vào đây: giao thất bại thì shipper vẫn còn giao lại được,
+     * đơn chưa coi là chấm dứt.
+     */
+    private boolean isOrderClosed(Order order) {
+        return order != null
+                && (order.getStatus() == Order.OrderStatus.CANCELLED
+                    || order.getStatus() == Order.OrderStatus.RETURNED);
+    }
+
     private String generateMockTransactionRef() {
         long timestampPart = System.currentTimeMillis() % 1_000_000;
         int randomPart = RANDOM.nextInt(1_000);

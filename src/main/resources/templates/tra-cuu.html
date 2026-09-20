@@ -19,7 +19,13 @@
 
     <div th:if="${order != null}" class="card">
         <div class="card-body">
-            <h5 class="card-title" th:text="${order.trackingCode}">UTE00000000</h5>
+            <h5 class="card-title d-flex align-items-center flex-wrap gap-2">
+                <span th:text="${order.trackingCode}">UTE00000000</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ute-copy-btn"
+                        th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
+                    <i class="bi bi-clipboard"></i> Chép mã
+                </button>
+            </h5>
             <p>Người nhận: <span th:text="${order.receiverName}">-</span></p>
             <p>Dịch vụ:
                 <span><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span>

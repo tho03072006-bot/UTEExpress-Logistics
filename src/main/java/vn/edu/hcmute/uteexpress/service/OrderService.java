@@ -1,5 +1,6 @@
 package vn.edu.hcmute.uteexpress.service;
 
+import vn.edu.hcmute.uteexpress.dto.HomeStatistics;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.dto.OrderTimelineStep;
 import vn.edu.hcmute.uteexpress.entity.Order;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -32,6 +34,25 @@ public interface OrderService {
      * dung mot cong thuc voi luc tao don that - tranh viet lai roi hai cho lech nhau.
      */
     BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg);
+
+    /**
+     * Bang cuoc cua TAT CA loai dich vu cho cung mot khoi luong, dung cho trang
+     * "Uoc tinh cuoc phi" ma khach chua dang nhap cung xem duoc.
+     *
+     * Tra ve ca ba thay vi bat nguoi dung chon truoc mot loai: nguoi gui hang thuong
+     * muon so sanh nhanh xem tra them bao nhieu thi hang di nhanh hon, chon truoc roi
+     * moi thay gia thi phai bam di bam lai ba lan.
+     *
+     * Dung LinkedHashMap de thu tu hien ra dung theo thu tu khai bao trong enum
+     * (tieu chuan - nhanh - hoa toc), khong bi xao tron moi lan tai trang.
+     */
+    Map<Order.ServiceType, BigDecimal> estimateAllServices(double weightKg);
+
+    /**
+     * So lieu hoat dong hien o trang chu cong khai.
+     * Dem that tu co so du lieu, khong phai con so tu dat cho dep.
+     */
+    HomeStatistics getHomeStatistics();
 
     List<Order> findOrdersOfUser(String username);
 

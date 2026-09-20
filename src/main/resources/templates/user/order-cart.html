@@ -90,7 +90,8 @@
             </button>
         </form>
         <form method="post" th:action="@{/nguoi-dung/gio-don/xoa-het}"
-              onsubmit="return confirm('Xoá toàn bộ đơn nháp trong giỏ?');">
+              data-ute-confirm="Xoá toàn bộ đơn nháp trong giỏ? Các đơn này sẽ mất, không lấy lại được."
+              data-ute-confirm-nut="Xoá hết giỏ">
             <button type="submit" class="btn btn-outline-secondary">Xoá hết giỏ</button>
         </form>
     </div>

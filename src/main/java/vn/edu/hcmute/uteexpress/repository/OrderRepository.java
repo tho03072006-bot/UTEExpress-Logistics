@@ -48,4 +48,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByShipper(AppUser shipper);
 
     List<Order> findByStatus(Order.OrderStatus status);
+
+    long countByStatus(Order.OrderStatus status);
+
+    /**
+     * Dem don dang tren duong: da lay hang xong nhung chua giao toi noi.
+     * Dung cho khoi so lieu o trang chu.
+     */
+    long countByStatusIn(List<Order.OrderStatus> statuses);
 }

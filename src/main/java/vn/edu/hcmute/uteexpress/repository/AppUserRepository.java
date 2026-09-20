@@ -14,4 +14,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+    /** Dem khach hang da kich hoat, dung cho khoi so lieu o trang chu. */
+    long countByRoleAndEnabledTrue(AppUser.Role role);
 }

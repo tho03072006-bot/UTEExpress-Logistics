@@ -15,6 +15,50 @@
     </p>
     <a th:href="@{/dang-ky}" class="btn btn-accent btn-lg">Tạo đơn ngay</a>
     <a th:href="@{/tra-cuu}" class="btn btn-outline-light btn-lg">Tra cứu vận đơn</a>
+
+    <!-- Ô tra cứu đặt thẳng ở đây thay vì bắt bấm sang trang khác: người ghé trang
+         giao nhận phần lớn chỉ muốn hỏi "hàng tôi tới đâu rồi". Các bên lớn như
+         GHN, ViettelPost đều để ô này ngay trang chủ. -->
+    <form method="get" th:action="@{/tra-cuu}" class="ute-hero-search mt-4">
+        <label class="visually-hidden" for="heroTrackingCode">Mã vận đơn</label>
+        <input type="text" id="heroTrackingCode" name="trackingCode" class="form-control"
+               placeholder="Nhập mã vận đơn, ví dụ UTE250001" required>
+        <button type="submit" class="btn btn-accent">
+            <i class="bi bi-search"></i> Tra cứu
+        </button>
+    </form>
+</div>
+
+<!-- Số liệu thật đếm từ cơ sở dữ liệu, không phải con số tự đặt cho đẹp -->
+<div class="row g-3 mb-4" th:if="${thongKe != null}">
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
+            <span class="ute-stat-value" th:text="${thongKe.deliveredOrders}">0</span>
+            <span class="ute-stat-label">Đơn đã giao thành công</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-people"></i></span>
+            <span class="ute-stat-value" th:text="${thongKe.activeCustomers}">0</span>
+            <span class="ute-stat-label">Khách hàng đang dùng</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-truck"></i></span>
+            <span class="ute-stat-value" th:text="${thongKe.ordersInTransit}">0</span>
+            <span class="ute-stat-label">Đơn đang trên đường</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-check2-circle"></i></span>
+            <span class="ute-stat-value" th:text="${thongKe.successRate} + '%'">0%</span>
+            <span class="ute-stat-label">Tỉ lệ giao thành công</span>
+        </div>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -30,9 +74,9 @@
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">Bảng giá cước tham khảo</h5>
-                <!-- TODO (TV1): bang gia theo khu vuc / khoi luong / loai dich vu -->
-                <p class="card-text text-muted">Tiêu chuẩn: 15.000đ + 3.000đ/kg &middot; Nhanh: 25.000đ + 3.000đ/kg &middot; Hỏa tốc: 40.000đ + 3.000đ/kg</p>
+                <h5 class="card-title">Ước tính cước phí</h5>
+                <p class="card-text text-muted">Nhập khối lượng để xem cước của cả ba loại dịch vụ - không cần đăng nhập.</p>
+                <a th:href="@{/uoc-tinh-cuoc}" class="btn btn-sm btn-outline-primary">Tính cước ngay</a>
             </div>
         </div>
     </div>

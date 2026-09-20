@@ -122,14 +122,21 @@
     var DURATION_MS = 600;
 
     function animateCount(element) {
-        var target = parseInt(element.textContent.trim(), 10);
-        // O nao khong phai so nguyen thuan (vd co dau cham, ky tu %) thi de nguyen.
+        var noiDung = element.textContent.trim();
+        // Tach phan so va phan duoi (vd "95%" -> 95 va "%") de dem xong van giu
+        // nguyen ky tu duoi, khong bien "95%" thanh "95".
+        var khop = noiDung.match(/^(\d+)(\D*)$/);
+        if (!khop) {
+            return;
+        }
+        var target = parseInt(khop[1], 10);
+        var duoi = khop[2] || '';
         if (isNaN(target) || target <= 0) {
             return;
         }
 
         var start = null;
-        element.textContent = '0';
+        element.textContent = '0' + duoi;
 
         function step(timestamp) {
             if (start === null) {
@@ -138,12 +145,12 @@
             var progress = Math.min((timestamp - start) / DURATION_MS, 1);
             // Cham dan ve cuoi cho cam giac dung lai nhe nhang thay vi phanh gap.
             var eased = 1 - Math.pow(1 - progress, 3);
-            element.textContent = Math.round(target * eased);
+            element.textContent = Math.round(target * eased) + duoi;
 
             if (progress < 1) {
                 window.requestAnimationFrame(step);
             } else {
-                element.textContent = target; // chot lai dung so that
+                element.textContent = target + duoi; // chot lai dung so that
             }
         }
 
@@ -158,5 +165,148 @@
         }
         Array.prototype.forEach.call(
             document.querySelectorAll('.ute-stat-value'), animateCount);
+    });
+})();
+
+/*
+ * Hoi lai truoc khi lam viec khong quay lai duoc (huy don, xoa...).
+ *
+ * Bat su kien submit cua moi form co thuoc tinh data-ute-confirm, chan lai roi mo hop
+ * thoai Bootstrap. Bam dong y thi moi submit that.
+ *
+ * Vi sao dung hop thoai Bootstrap thay vi ham confirm() co san cua trinh duyet:
+ * confirm() hien hop mac dinh cua he dieu hanh, khong theo bang mau va khong doi theo
+ * che do sang/toi cua site; nhin lac long va khong ro dang hoi ve cai gi.
+ *
+ * Gan bang su kien submit chu khong phai click vao nut: nhu vay bam Enter trong form
+ * cung duoc hoi lai, khong lot luoi.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var dialogElement = document.getElementById('uteConfirmDialog');
+        var messageElement = document.getElementById('uteConfirmMessage');
+        var acceptButton = document.getElementById('uteConfirmAccept');
+
+        // Thieu hop thoai (trang khong di qua template chung) thi thoi, de form chay nhu cu.
+        if (!dialogElement || !messageElement || !acceptButton || !window.bootstrap) {
+            return;
+        }
+
+        var dialog = new window.bootstrap.Modal(dialogElement);
+        var formDangCho = null;
+
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (!form || !form.getAttribute) {
+                return;
+            }
+            var cauHoi = form.getAttribute('data-ute-confirm');
+            if (!cauHoi) {
+                return;
+            }
+            // Da xac nhan roi thi cho di tiep, khong hoi vong lap.
+            if (form.dataset.uteConfirmed === 'true') {
+                return;
+            }
+
+            event.preventDefault();
+            formDangCho = form;
+            messageElement.textContent = cauHoi;
+            acceptButton.textContent = form.getAttribute('data-ute-confirm-nut') || 'Đồng ý';
+            dialog.show();
+        });
+
+        acceptButton.addEventListener('click', function () {
+            if (!formDangCho) {
+                return;
+            }
+            var form = formDangCho;
+            formDangCho = null;
+            form.dataset.uteConfirmed = 'true';
+            dialog.hide();
+            form.submit();
+        });
+
+        // Dong hop thoai ma khong dong y thi quen form di, tranh lan sang lan bam sau.
+        dialogElement.addEventListener('hidden.bs.modal', function () {
+            formDangCho = null;
+        });
+    });
+})();
+
+/*
+ * Nut chep ma van don.
+ *
+ * Ma dang UTE250001 go tay rat de sai mot so, ma nguoi dung thuong phai gui lai cho
+ * nguoi nhan hoac dan vao o tra cuu. Mot nut chep tiet kiem duoc buoc do.
+ *
+ * Danh dau bang data-ute-copy, gia tri chinh la chuoi can chep:
+ *     <button data-ute-copy="UTE250001">Chep ma</button>
+ *
+ * navigator.clipboard chi chay tren HTTPS hoac localhost. Khi khong dung duoc
+ * (vi du mo qua dia chi IP trong mang LAN) thi lui ve cach cu: tao mot o nhap tam,
+ * chon het roi goi lenh sao chep cua trinh duyet.
+ */
+(function () {
+    'use strict';
+
+    var THOI_GIAN_BAO = 1500;
+
+    function chepBangCachCu(chuoi) {
+        var oTam = document.createElement('textarea');
+        oTam.value = chuoi;
+        // Dat ngoai man hinh de nguoi dung khong thay o nhap nhay ra
+        oTam.style.position = 'fixed';
+        oTam.style.top = '-1000px';
+        document.body.appendChild(oTam);
+        oTam.select();
+        var thanhCong = false;
+        try {
+            thanhCong = document.execCommand('copy');
+        } catch (e) {
+            thanhCong = false;
+        }
+        document.body.removeChild(oTam);
+        return thanhCong;
+    }
+
+    function baoDaChep(nut) {
+        // Giu lai noi dung cu de tra ve sau khi bao xong
+        if (!nut.dataset.noiDungGoc) {
+            nut.dataset.noiDungGoc = nut.innerHTML;
+        }
+        nut.innerHTML = '<i class="bi bi-check2"></i> Đã chép';
+        nut.classList.add('ute-copied');
+        window.setTimeout(function () {
+            nut.innerHTML = nut.dataset.noiDungGoc;
+            nut.classList.remove('ute-copied');
+        }, THOI_GIAN_BAO);
+    }
+
+    document.addEventListener('click', function (event) {
+        var nut = event.target.closest('[data-ute-copy]');
+        if (!nut) {
+            return;
+        }
+        event.preventDefault();
+
+        var chuoi = nut.getAttribute('data-ute-copy');
+        if (!chuoi) {
+            return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(chuoi).then(function () {
+                baoDaChep(nut);
+            }, function () {
+                if (chepBangCachCu(chuoi)) {
+                    baoDaChep(nut);
+                }
+            });
+        } else if (chepBangCachCu(chuoi)) {
+            baoDaChep(nut);
+        }
     });
 })();

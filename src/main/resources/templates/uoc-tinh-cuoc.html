@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head>
+    <title>Ước tính cước phí - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow">
+<div class="ute-page-head">
+    <div>
+        <h2 class="mb-1">Ước tính cước phí</h2>
+        <p class="mb-0">
+            Nhập khối lượng kiện hàng để xem cước của cả ba loại dịch vụ, không cần đăng nhập.
+        </p>
+    </div>
+</div>
+
+<div class="ute-panel mb-4">
+    <!-- Dùng GET để kết quả nằm trên đường dẫn: lưu lại hay gửi cho người khác đều xem được -->
+    <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="row g-3 align-items-end">
+        <div class="col-sm-7">
+            <label class="form-label" for="weightKg">Khối lượng kiện hàng (kg)</label>
+            <input type="number" id="weightKg" th:field="*{weightKg}" class="form-control"
+                   step="0.1" min="0.1" max="100" placeholder="Ví dụ: 2.5" required>
+            <div class="ute-field-error" th:if="${#fields.hasErrors('weightKg')}"
+                 th:errors="*{weightKg}"></div>
+        </div>
+        <div class="col-sm-5">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-calculator"></i> Xem bảng cước
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Chỉ hiện bảng sau khi người dùng đã nhập, lần đầu mở trang thì không có gì -->
+<div th:if="${bangCuoc != null}" class="ute-panel ute-panel-flush mb-3">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Loại dịch vụ</th>
+                    <th>Thời gian dự kiến</th>
+                    <th class="text-end">Cước phí</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="dong : ${bangCuoc}">
+                    <td class="fw-semibold">
+                        <th:block th:replace="~{fragments/components :: serviceTypeText(${dong.key})}"></th:block>
+                    </td>
+                    <td class="text-muted" th:switch="${dong.key.name()}">
+                        <span th:case="'STANDARD'">3 - 5 ngày</span>
+                        <span th:case="'EXPRESS'">1 - 2 ngày</span>
+                        <span th:case="'SUPER_EXPRESS'">Trong ngày</span>
+                        <span th:case="*">—</span>
+                    </td>
+                    <td class="text-end fw-semibold">
+                        <span th:replace="~{fragments/components :: money(${dong.value})}">0 đ</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div th:if="${bangCuoc != null}" class="d-flex flex-wrap gap-2 mb-3">
+    <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Tạo đơn với mức cước này
+    </a>
+    <a th:href="@{/tra-cuu}" class="btn btn-outline-secondary">Tra cứu vận đơn</a>
+</div>
+
+<p class="ute-profile-note">
+    Cước trên là mức tham khảo, tính theo công thức phí cơ bản của từng loại dịch vụ cộng
+    3.000đ cho mỗi kilôgam. Cước thực tế khi tạo đơn có thể thay đổi nếu bạn áp mã giảm giá.
+    Kiện trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng.
+</p>
+</section>
+
+</body>
+</html>

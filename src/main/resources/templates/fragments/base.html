@@ -78,6 +78,7 @@
         <nav class="ute-topbar-nav">
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/}">Trang chủ</a>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
+            <a class="ute-topbar-link d-none d-lg-inline" th:href="@{/uoc-tinh-cuoc}">Ước tính cước</a>
 
             <!-- Chi mot nut, doi qua lai giua hai che do. Icon nao hien do CSS quyet dinh. -->
             <button type="button" class="btn btn-sm ute-theme-toggle" id="uteThemeToggle"
@@ -132,6 +133,9 @@
         <span>UTEExpress &middot; Đồ án Lập trình Web WEBPR330479 &middot; HCMUTE</span>
     </div>
 </footer>
+
+<!-- Hộp hỏi lại dùng chung cho mọi trang, xem fragments/components.html -->
+<div th:replace="~{fragments/components :: confirmDialog}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/main.js}"></script>
