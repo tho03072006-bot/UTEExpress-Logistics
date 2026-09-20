@@ -30,7 +30,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
+                .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
+                        "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
                         "/css/**", "/js/**", "/images/**", "/uploads/**", "/api/tracking/**").permitAll()
                 .requestMatchers("/nguoi-dung/**").authenticated()

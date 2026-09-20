@@ -20,7 +20,9 @@ import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -240,6 +242,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public BigDecimal estimateFee(Order.ServiceType serviceType, double weightKg) {
         return calculateFee(serviceType, weightKg);
+    }
+
+    @Override
+    public Map<Order.ServiceType, BigDecimal> estimateAllServices(double weightKg) {
+        Map<Order.ServiceType, BigDecimal> bangCuoc = new LinkedHashMap<>();
+        for (Order.ServiceType serviceType : Order.ServiceType.values()) {
+            bangCuoc.put(serviceType, calculateFee(serviceType, weightKg));
+        }
+        return bangCuoc;
     }
 
     /**
