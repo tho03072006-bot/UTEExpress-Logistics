@@ -63,3 +63,6 @@ uploads/
 # File khoa tam cua Microsoft Word/Excel (~$ten-file.docx).
 # Word tu tao khi mo tai lieu va tu xoa khi dong - khong bao gio commit len Git.
 ~$*
+
+# Cau hinh cong cu chay app cuc bo - khong day len Git
+.claude/

@@ -1,6 +1,6 @@
 # Khung sườn UTEExpress — hướng dẫn chạy lần đầu
 
-> Cập nhật 18/09/2026 theo yêu cầu nhóm: ứng dụng **chỉ dùng MySQL trên Aiven**, một database chung cho User/Shipper/Manager/Admin. Làm theo [hướng dẫn Aiven](docs/thang/AIVEN_MYSQL.md) trước. Các hướng dẫn SQL Server bên dưới là tài liệu lịch sử, không dùng để cấu hình phiên bản hiện tại. Không chạy script SQL Server lên Aiven và không bật `ddl-auto=update/create` trên database chung.
+> Cập nhật 20/09/2026: ứng dụng **chỉ dùng MySQL trên Aiven**, một database chung cho User/Shipper/Manager/Admin — không còn SQL Server, không còn MonsterASP và không còn profile `cloud`. Mục 2 (cấu hình) và mục 5 (database chung) bên dưới đã viết lại theo đúng hiện trạng; từng bước chi tiết xem [hướng dẫn Aiven](docs/thang/AIVEN_MYSQL.md). Không chạy các script SQL Server trong `db/` lên Aiven và không bật `ddl-auto=update/create` trên database chung.
 
 Bộ khung này dựng theo đúng kiến trúc & phân công ở mục 05/03 trong "Kế hoạch UTEExpress".
 Mọi TODO trong code là việc thật cần làm tiếp — không phải chỗ nào cũng chạy được ngay.
@@ -10,108 +10,192 @@ Mọi TODO trong code là việc thật cần làm tiếp — không phải ch�
 dependency lần đầu (cần mạng, có thể mất vài phút).
 
 ## 2. Cấu hình trước khi chạy — KHÔNG sửa trực tiếp application.properties
-Copy file `src/main/resources/application-local.properties.example` thành
-`application-local.properties` (bỏ đuôi `.example`, cùng thư mục), rồi điền giá trị thật
-của máy bạn vào file mới này:
-- `spring.datasource.password` — mật khẩu SQL Server thật trên máy bạn (SSMS, `localhost,1433`).
-- `spring.mail.username` / `spring.mail.password` — bắt buộc để gửi OTP email thật. Dùng địa chỉ Gmail gửi và App Password của chính hộp thư gửi; không dùng mật khẩu đăng nhập thông thường. Không ghi App Password vào file được Git theo dõi.
-- `app.jwt.secret` — chuỗi bất kỳ ≥ 32 ký tự, chỉ cần khi bắt đầu làm JWT.
 
-File `application-local.properties` đã nằm trong `.gitignore` nên sẽ không bao giờ lên Git —
-an toàn cho repo public. Không cần đụng vào `application.properties` (file đó chỉ chứa
-placeholder `CHANGE_ME`, cứ để nguyên rồi commit bình thường).
+Mỗi máy có **hai** file cấu hình riêng, cả hai đều đã nằm trong `.gitignore` nên không bao giờ
+lên Git — an toàn cho repo public:
+
+| File cần tạo | Chứa gì | Copy từ mẫu |
+|---|---|---|
+| `config/aiven-local.properties` | Kết nối database Aiven (7 mục `AIVEN_*`) | `config/aiven-local.properties.example` |
+| `src/main/resources/application-local.properties` | Mail OTP + `app.jwt.secret` | `src/main/resources/application-local.properties.example` |
+
+Không cần đụng vào `application.properties` (file đó chỉ chứa placeholder `CHANGE_ME`, cứ để
+nguyên rồi commit bình thường).
+
+### 2.1 Database — `config/aiven-local.properties`
+
+Copy file mẫu (bỏ đuôi `.example`, cùng thư mục) rồi điền đủ 7 mục lấy từ Aiven Console:
+`AIVEN_HOST`, `AIVEN_PORT`, `AIVEN_DATABASE`, `AIVEN_USER`, `AIVEN_PASSWORD`,
+`AIVEN_TRUSTSTORE_URL`, `AIVEN_TRUSTSTORE_PASSWORD`.
+
+Ba chỗ hay điền sai:
+- `AIVEN_HOST` **không** kèm `https://`.
+- `AIVEN_PORT` là số thật Aiven cấp, **không** mặc định 3306.
+- Đường dẫn Windows trong file `.properties` phải dùng dấu `/`, ví dụ
+  `file:/D:/WEB/Project_CK/config/certificates/aiven-truststore.p12`. Đường dẫn có dấu cách
+  phải mã hoá thành `%20`.
+
+Kết nối bắt buộc TLS `sslMode=VERIFY_IDENTITY`, nên phải có sẵn CA và truststore: tải CA từ
+trang dịch vụ Aiven về `config/certificates/ca.pem`, rồi tạo truststore PKCS12 bằng `keytool`
+của JDK (xem lệnh cụ thể ở [hướng dẫn Aiven](docs/thang/AIVEN_MYSQL.md) mục 1). Không tắt SSL
+và không bật `allowPublicKeyRetrieval` để né lỗi chứng chỉ.
+
+**Tuyệt đối không đặt `spring.datasource.*` trong `application-local.properties`.** Toàn bộ
+datasource do `src/main/resources/database-aiven.properties` lo, và file đó được
+`application.properties` nạp sẵn — nên **không cần bật profile nào cả**. Nếu trước đây bạn từng
+đặt biến môi trường `SPRING_DATASOURCE_*` hoặc thêm VM argument profile cũ trong Run
+Configuration thì phải gỡ, vì các override bên ngoài có ưu tiên cao hơn file.
+
+### 2.2 Mail OTP và JWT — `application-local.properties`
+
+- `spring.mail.username` / `spring.mail.password` — bắt buộc để gửi OTP email thật. Dùng địa chỉ
+  Gmail gửi và App Password của chính hộp thư gửi; không dùng mật khẩu đăng nhập thông thường.
+  Không ghi App Password vào file được Git theo dõi.
+- `app.jwt.secret` — chuỗi bất kỳ ≥ 32 ký tự (dùng cho API tra cứu vận đơn công khai).
 
 Để thử đăng ký/khôi phục mật khẩu với hộp thư nhận `uteexpress8@gmail.com`, nhập địa chỉ đó
 trên form của ứng dụng. `spring.mail.username` là hộp thư **gửi**, không nhất thiết là hộp thư
 nhận. Nếu SMTP lỗi, ứng dụng không in OTP ra console; hãy kiểm tra cấu hình mail trên máy.
 
-Nhớ tạo sẵn database `uteexpress` trống trong SSMS trên máy bạn — `spring.jpa.hibernate.ddl-auto=update`
-sẽ tự tạo bảng khi chạy lần đầu (nếu không tự tạo được, viết script SQL tay như đã làm ở Baitap02).
-Mỗi người chạy SQL Server và tạo database riêng trên máy mình — không cần (và không nên) dùng
-chung 1 database qua mạng khi code; xem thêm giải thích ở mục "Cơ sở dữ liệu" trong file
-"UTEExpress — Phân công & Quy trình Teamwork" (docs/).
+### 2.3 Không phải tạo database trên máy
+
+Không cần cài SQL Server hay MySQL trên máy, cũng không cần tạo database trống. Schema trên Aiven
+đã được khởi tạo sẵn một lần cho cả nhóm (xem mục 5). App chạy ở `ddl-auto=validate`, nghĩa là nó
+chỉ **kiểm tra** schema và dừng lại báo lỗi nếu entity lệch, chứ không tự `ALTER`/`DROP` database
+dùng chung.
 
 ## 3. Chạy thử
 Trong Eclipse: chuột phải vào `UteexpressApplication.java` → `Run As → Spring Boot App`.
 Mở `http://localhost:8080` — phải thấy trang chủ UTEExpress (Bootstrap, có nút "Tạo đơn ngay").
 
 ## 4. Trạng thái hiện tại
-- Chạy được: trang chủ Guest, trang đăng nhập (giao diện), route rỗng cho từng role.
-- Chưa làm: toàn bộ TODO trong code — theo đúng plan ở mục 03 của "Kế hoạch UTEExpress" cho từng thành viên.
-- `SecurityConfig` đang mở toàn bộ (permitAll) để cả nhóm build song song không bị chặn đăng nhập —
-  PHẢI siết lại theo role khi làm xong chức năng đăng nhập.
 
-## 5. Database chung trên MonsterASP — cách để 3 máy test giống hệt nhau
+Cập nhật 20/09/2026 trên nhánh `develop`, 155 test pass.
+
+### Chạy được
+
+- **Guest:** trang chủ (ô tra cứu, 4 thẻ số liệu lấy thật từ database, khối đánh giá khách hàng),
+  tra cứu vận đơn, ước tính cước phí, API JSON công khai `/api/tracking/{ma}`.
+- **User (người gửi):** đăng ký + OTP email, đăng nhập/đăng xuất, quên mật khẩu + OTP, trang cá
+  nhân + đổi mật khẩu + đổi email có OTP, sổ địa chỉ, giỏ đơn chờ xác nhận, tạo đơn, thanh toán
+  (COD thật; VNPay/MoMo mô phỏng), mã giảm giá, đánh giá dịch vụ, chi tiết đơn có timeline hành
+  trình, in vận đơn.
+- **Shipper, Manager, Admin:** đã có khu vực riêng và đã chặn đúng quyền (bảng bên dưới). Chức
+  năng nghiệp vụ bên trong do TV2/TV3 phụ trách, xem nhánh `feature_Tai` và `feature_Thang`.
+
+### Phân quyền — đã siết, KHÔNG còn permitAll toàn bộ
+
+Đã thử bằng request thật khi chưa đăng nhập, không khu vực nào để lọt:
+
+| Khu vực | Yêu cầu | Chưa đăng nhập thì |
+|---|---|---|
+| `/nguoi-dung/**` | đã đăng nhập | 302 → `/dang-nhap` |
+| `/shipper/**` | vai trò `SHIPPER` | 302 → `/dang-nhap` |
+| `/manager/**` | tài khoản nội bộ | 302 → `/noi-bo/dang-nhap` |
+| `/admin/**` | tài khoản nội bộ + `ROLE_ADMIN` | 302 → `/noi-bo/dang-nhap` |
+
+**Bẫy khi đọc code:** trong `SecurityConfig` vẫn còn dòng
+`.requestMatchers("/manager/**", "/admin/**").permitAll()`, nhưng **dòng đó không còn tác dụng**.
+`StaffSecurityConfig` khai báo `@Order(1)` kèm `securityMatcher("/admin/**", "/manager/**",
+"/noi-bo/**")` nên chain của nó được xét trước. Đừng nhìn dòng `permitAll` rồi kết luận khu vực
+quản trị đang mở.
+
+### Còn lại 8 chỗ `TODO` trong code
+
+- `SecurityConfig` — **CSRF vẫn đang tắt** cho khu vực công khai/người dùng, cần bật lại cho các
+  form HTML. (Chain nội bộ trong `StaffSecurityConfig` vẫn giữ CSRF mặc định.)
+- `SecurityConfig` — TODO "TV3 bảo vệ khu vực manager/admin" thực ra **đã xong rồi**, cùng dòng
+  `permitAll` chết ở trên; dọn đi được.
+- `JwtAuthFilter` — chưa đọc header `Authorization`, JWT chưa dùng tới.
+- `OrderServiceImpl` (2 chỗ) — bảng giá cước đang gán cứng, chờ TV3 thay bằng bảng giá theo khu vực.
+- `OrderPaymentService` — chờ TV2 gọi tới khi cập nhật trạng thái đơn.
+- `ManagerController` — còn route quản lý cần thêm.
+- `GlobalExceptionHandler` — tách riêng xử lý lỗi validation.
+
+## 5. Database chung trên Aiven MySQL — cách để 3 máy test giống hệt nhau
 
 Vấn đề trước đây: mỗi bạn chạy SQL Server riêng trên máy mình, tài khoản test và dữ liệu
-khác nhau, nên demo máy này ra kết quả khác máy kia. Nay nhóm dùng thêm một database
-chung đặt trên MonsterASP.
+khác nhau, nên demo máy này ra kết quả khác máy kia. Nay cả nhóm dùng **một database MySQL 8.4
+đặt trên Aiven**; User, Shipper, Manager và Admin đọc ghi cùng một nơi.
 
-### Dùng profile nào, khi nào
+### Không còn profile nào nữa
 
-| Profile | Database | Dùng khi |
-|---|---|---|
-| (mặc định, không bật gì) | SQL Server trên máy mình | Ngồi code hằng ngày — nhanh, sửa hỏng không ảnh hưởng ai |
-| `cloud` | MonsterASP, dùng chung cả nhóm | Test tích hợp và **demo với thầy** — 3 máy nhìn cùng một dữ liệu |
+Bản cũ có profile `cloud` để chọn giữa database trên máy mình và database chung. Nay chỉ còn
+**một** đường: `application.properties` nạp thẳng `classpath:database-aiven.properties`, nên chạy
+app chỉ cần
+
+```powershell
+mvn spring-boot:run
+```
+
+Không thêm `-Dspring-boot.run.profiles=...`, không thêm VM argument profile trong Eclipse.
+File `src/main/resources/application-cloud.properties.example` là tàn dư của bản MonsterASP,
+ứng dụng không còn đọc tới — bỏ qua nó.
 
 ### Cài đặt lần đầu (mỗi bạn làm một lần trên máy mình)
 
-1. Copy `src/main/resources/application-cloud.properties.example`
-   thành `application-cloud.properties` (bỏ đuôi `.example`, để cùng thư mục).
-2. Điền thông tin thật vào các chỗ `CHANGE_ME` — xin trong nhóm chat, **đừng commit**.
-   File này đã nằm trong `.gitignore` nên không bao giờ lên Git.
-3. Chạy với profile cloud:
-   - Dòng lệnh: `mvn spring-boot:run -Dspring-boot.run.profiles=cloud`
-   - Eclipse: `Run Configurations` → tab `Arguments` → ô `VM arguments` thêm
-     `-Dspring.profiles.active=cloud`
+1. Copy `config/aiven-local.properties.example` thành `config/aiven-local.properties`.
+2. Điền đủ 7 mục `AIVEN_*` — xin trong nhóm chat, **đừng commit**.
+3. Tải CA về `config/certificates/ca.pem` rồi tạo truststore PKCS12 bằng `keytool` của JDK.
+4. Chạy `mvn spring-boot:run` từ **thư mục gốc project** (chạy ở chỗ khác sẽ không tìm ra file
+   cấu hình local).
 
-### Lấy thông tin kết nối ở đâu
+Cả ba máy dùng **cùng HOST + PORT + DATABASE**. Từng bước chi tiết, lệnh `keytool` cụ thể và cách
+xử lý lỗi TLS/PKIX, `Access denied`, timeout xem [hướng dẫn Aiven](docs/thang/AIVEN_MYSQL.md).
 
-MonsterASP → `Databases` → chọn database → khung **Access to Database** →
-bấm sang tab **Remote access** (KHÔNG phải "Local access").
+### Khởi tạo schema — ĐÃ XONG, đừng chạy lại
 
-Hostname ở tab "Local access" chỉ chạy được từ bên trong máy chủ của họ; máy cá nhân
-phân giải ra IP nội bộ `10.0.0.x` nên không kết nối tới được.
+Ngày 18/09/2026 đã tạo xong 10 bảng (InnoDB, utf8mb4) bằng công cụ
+`vn.edu.hcmute.uteexpress.tool.database.InitializeAivenDatabase`. Công cụ tự từ chối chạy nếu
+database đã có bảng, nên không ai cần và không ai nên chạy lại.
 
-### Sao lưu dữ liệu — phòng khi mất mạng hoặc sự cố
+Ba điều cấm trên database dùng chung:
 
-Gói Free không có bản sao tự động. Trước mỗi buổi demo, chạy:
+- **Không** bật `ddl-auto=update` / `create` / `create-drop`. Ai sửa entity là schema đổi cho cả
+  nhóm mà không ai biết. Để `validate` thì app báo lỗi ngay khi entity lệch schema, thay vì âm
+  thầm sửa database chung.
+- **Không** chạy các script nằm trực tiếp trong `db/` (`db/01` → `db/06`) lên Aiven — đó là cú
+  pháp SQL Server của database cũ, không chạy được trên MySQL.
+- Thay đổi schema về sau phải là script được cả nhóm review và chạy **một lần**.
 
-```powershell
-# Sao lưu database chung về máy
-.\dbackup-du-lieu.ps1 -Server "HOSTNAME_REMOTE" -Database "TEN_DB" -User "LOGIN" -Password "MAT_KHAU"
+### Dữ liệu mẫu
 
-# Sao lưu database trên máy mình (không cần tham số)
-.\dbackup-du-lieu.ps1
+Chỉ thư mục `db/mysql/` mới dùng được cho Aiven. Script dữ liệu mẫu:
+
+```
+db/mysql/01_seed_du_lieu_mau.sql
 ```
 
-File kết quả nằm ở `db/backup/uteexpress_data_<ngày>_<giờ>.sql`, chỉ chứa **dữ liệu**
-(câu lệnh tạo bảng đã có sẵn trong `db/01` → `db/06`).
+Script **chạy lại được nhiều lần** mà không nhân đôi dữ liệu: nó kiểm tra `NOT EXISTS` theo các
+cột unique (`username`, `code`, `tracking_code`) và không gán cứng `id`, nên không đè lên dữ liệu
+của người khác.
 
-Hôm demo mà mất mạng thì đổ ngược vào máy mình rồi chạy không cần profile cloud:
+Nội dung: 11 tài khoản, 80 vận đơn `UTE250001` → `UTE250080` trải đều 3 tháng gần nhất với đủ 7
+trạng thái, kèm thanh toán và đánh giá — đủ số liệu thật để nhìn phân trang, bộ lọc, thống kê
+Shipper và bảng điều khiển Manager. Mật khẩu mọi tài khoản mẫu là `Test@12345`, riêng `newuser1`
+là `MatKhauMoi@2026`.
 
-```powershell
-sqlcmd -S "localhost\SQLEXPRESS" -E -C -f 65001 -d uteexpress -i "dbackup\<tên-file>.sql"
-```
+Cách chạy: mở DBeaver trên kết nối Aiven → `SQL Editor` → mở file → `Execute script`.
+
+### Sao lưu dữ liệu
+
+`db/backup-du-lieu.ps1` viết cho SQL Server, **không dùng được với MySQL** — đừng chạy nhầm.
+
+Máy hiện chưa cài `mysqldump` / `mysql` client, nên cách sao lưu dùng được ngay là DBeaver:
+chuột phải vào database → `Tools` → `Dump database`. Muốn dùng `mysqldump` thì phải cài MySQL
+client tools trước.
 
 Thư mục `db/backup/` nằm trong `.gitignore` vì chứa dữ liệu thật của người dùng.
 
-### BẪY: tiếng Việt thành "?" trên database mới
+### Tiếng Việt có dấu — bẫy cũ đã hết
 
-`AppUser.java` và `Order.java` có 6 cột chữ **không có `@Nationalized`**
-(`full_name`, `sender_name`, `sender_address`, `receiver_name`, `receiver_address`).
-Trên database mới, Hibernate sẽ tạo chúng thành `varchar`, tiếng Việt có dấu lưu xuống
-thành dấu `?`. Hai file đó là entity dùng chung, quy ước là không ai tự sửa.
+Bẫy `nvarchar` thời SQL Server (Hibernate sinh cột `varchar`, tiếng Việt có dấu lưu xuống thành
+`?`) **không còn áp dụng**: schema trên Aiven tạo bằng `utf8mb4` và chuỗi kết nối đặt
+`characterEncoding=UTF-8`, nên cột chữ lưu tiếng Việt bình thường. Thói quen đánh `@Nationalized`
+cho cột chữ trong entity mới vẫn giữ được — trên MySQL nó vô hại.
 
-Nên thứ tự dựng database chung **bắt buộc** như sau:
-
-1. Tạm để `spring.jpa.hibernate.ddl-auto=update` trong `application-cloud.properties`
-2. Chạy app một lần cho Hibernate tạo xong bảng, rồi tắt đi
-3. Chạy lần lượt `db/01` → `db/06` trên database đó (script `01` đổi các cột trên sang `nvarchar`)
-4. Đổi lại thành `ddl-auto=validate` và giữ nguyên từ đó
-
-Để `update` lâu dài trên database chung rất nguy hiểm: ai sửa entity là schema đổi cho
-cả nhóm mà không ai biết. Với `validate`, app báo lỗi ngay khi entity lệch schema.
+Vẫn giữ nguyên quy ước: `AppUser.java` và `Order.java` là entity dùng chung cả nhóm, không ai
+tự sửa, phải hỏi cả nhóm trước.
 
 ## 6. Mail OTP — dùng chung một hộp thư
 
