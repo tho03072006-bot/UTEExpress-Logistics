@@ -575,6 +575,153 @@ a:hover {
     padding: 1rem;
 }
 
+/* ===================== Nut chep ma van don (TV1) ===================== */
+.ute-copy-btn {
+    font-size: .8rem;
+    font-weight: 500;
+    padding: .15rem .55rem;
+    white-space: nowrap;
+}
+/* Luc vua chep xong: doi sang nen xanh dac cho nguoi dung thay ro la da an duoc,
+   khong chi doi moi chu - de mat nhin luot qua van bat duoc. */
+.ute-copy-btn.ute-copied {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+    color: #fff;
+}
+
+/* ===================== In van don (TV1) =====================
+   Khong lam trang in rieng: chi giau bot phan khong can roi sap xep lai trang chi
+   tiet don. Mot to giay dan len kien hang chi can ma van don, nguoi gui, nguoi nhan,
+   dich vu va cuoc phi - khong can menu, nut bam hay mau nen.
+
+   Khoi nay chi co tac dung luc in, mo binh thuong khong anh huong gi. */
+.ute-print-header {
+    display: none;
+}
+
+@media print {
+    /* Ep bang mau ve ban in TRUOC MOI THU KHAC.
+       Neu nguoi dung dang o che do toi roi bam In, --ute-ink dang la mau sang:
+       chu sang tren giay trang coi nhu mat chu. Doi thang gia tri bien o day thi
+       moi thanh phan dung bien deu tu dung theo, khong phai sua tung class. */
+    :root,
+    :root[data-theme="dark"],
+    :root[data-theme="light"] {
+        --ute-ink: #000000;
+        --ute-gray: #444444;
+        --ute-gray-soft: #F0F0F0;
+        --ute-blue: #000000;
+        --ute-blue-dark: #000000;
+        --ute-blue-darker: #000000;
+        --ute-blue-mid: #555555;
+        --ute-blue-soft: #FFFFFF;
+        --ute-surface: #FFFFFF;
+        --ute-card: #FFFFFF;
+        --ute-border: #999999;
+        --ute-footer-bg: #FFFFFF;
+        --ute-badge-neutral: #FFFFFF;
+        --ute-badge-muted: #FFFFFF;
+        --ute-shadow: none;
+        --bs-body-color: #000000;
+        --bs-body-bg: #FFFFFF;
+    }
+
+    /* Huy hieu trang thai in ra giay: vien den chu den thay vi nen mau */
+    .badge {
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+    }
+
+    /* Giau moi thu khong thuoc ve to phieu */
+    .ute-topbar,
+    .ute-sidebar,
+    .ute-sidebar-offcanvas,
+    .ute-footer,
+    .ute-page-head .btn,
+    .ute-copy-btn,
+    .alert,
+    form,
+    .btn {
+        display: none !important;
+    }
+
+    /* Bo khung, bo bong, bo nen mau - muc in ra giay khong can nhung thu do */
+    .ute-body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .ute-shell,
+    .ute-main,
+    .ute-main-inner {
+        display: block !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .ute-panel,
+    .card {
+        background: #fff !important;
+        border: 1px solid #999 !important;
+        box-shadow: none !important;
+        padding: .6rem .8rem !important;
+        margin-bottom: .5rem !important;
+        break-inside: avoid;
+    }
+
+    /* Dai dau to phieu: chi hien khi in */
+    .ute-print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 2px solid #000;
+        padding-bottom: .4rem;
+        margin-bottom: .8rem;
+    }
+    .ute-print-brand {
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+    .ute-print-note {
+        font-size: .8rem;
+    }
+
+    /* Ma van don la thu nguoi giao hang doc dau tien, phai to va de doc */
+    .ute-page-head h2 {
+        font-size: 1.5rem !important;
+        margin: 0 0 .3rem !important;
+    }
+
+    /* Hai cot canh nhau cho vua mot to, khong tran sang trang thu hai */
+    .row > [class^="col-lg"] {
+        width: 50% !important;
+        float: left;
+    }
+
+    /* Timeline in ra van giu duoc cham va duong noi, nhung bo hieu ung */
+    .ute-timeline li {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+    .ute-timeline-dot {
+        border-color: #000 !important;
+    }
+    .ute-timeline li.is-done .ute-timeline-dot {
+        background: #000 !important;
+    }
+
+    a[href]::after {
+        /* Khong in duong dan phia sau link - to phieu khong can */
+        content: "" !important;
+    }
+
+    @page {
+        margin: 12mm;
+    }
+}
+
 /* ===================== O tra cuu tren trang chu (TV1) =====================
    Dat ngay trong khoi hero mau xanh nen o nhap phai la nen trang de doc duoc. */
 .ute-hero-search {

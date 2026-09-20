@@ -235,3 +235,78 @@
         });
     });
 })();
+
+/*
+ * Nut chep ma van don.
+ *
+ * Ma dang UTE250001 go tay rat de sai mot so, ma nguoi dung thuong phai gui lai cho
+ * nguoi nhan hoac dan vao o tra cuu. Mot nut chep tiet kiem duoc buoc do.
+ *
+ * Danh dau bang data-ute-copy, gia tri chinh la chuoi can chep:
+ *     <button data-ute-copy="UTE250001">Chep ma</button>
+ *
+ * navigator.clipboard chi chay tren HTTPS hoac localhost. Khi khong dung duoc
+ * (vi du mo qua dia chi IP trong mang LAN) thi lui ve cach cu: tao mot o nhap tam,
+ * chon het roi goi lenh sao chep cua trinh duyet.
+ */
+(function () {
+    'use strict';
+
+    var THOI_GIAN_BAO = 1500;
+
+    function chepBangCachCu(chuoi) {
+        var oTam = document.createElement('textarea');
+        oTam.value = chuoi;
+        // Dat ngoai man hinh de nguoi dung khong thay o nhap nhay ra
+        oTam.style.position = 'fixed';
+        oTam.style.top = '-1000px';
+        document.body.appendChild(oTam);
+        oTam.select();
+        var thanhCong = false;
+        try {
+            thanhCong = document.execCommand('copy');
+        } catch (e) {
+            thanhCong = false;
+        }
+        document.body.removeChild(oTam);
+        return thanhCong;
+    }
+
+    function baoDaChep(nut) {
+        // Giu lai noi dung cu de tra ve sau khi bao xong
+        if (!nut.dataset.noiDungGoc) {
+            nut.dataset.noiDungGoc = nut.innerHTML;
+        }
+        nut.innerHTML = '<i class="bi bi-check2"></i> Đã chép';
+        nut.classList.add('ute-copied');
+        window.setTimeout(function () {
+            nut.innerHTML = nut.dataset.noiDungGoc;
+            nut.classList.remove('ute-copied');
+        }, THOI_GIAN_BAO);
+    }
+
+    document.addEventListener('click', function (event) {
+        var nut = event.target.closest('[data-ute-copy]');
+        if (!nut) {
+            return;
+        }
+        event.preventDefault();
+
+        var chuoi = nut.getAttribute('data-ute-copy');
+        if (!chuoi) {
+            return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(chuoi).then(function () {
+                baoDaChep(nut);
+            }, function () {
+                if (chepBangCachCu(chuoi)) {
+                    baoDaChep(nut);
+                }
+            });
+        } else if (chepBangCachCu(chuoi)) {
+            baoDaChep(nut);
+        }
+    });
+})();

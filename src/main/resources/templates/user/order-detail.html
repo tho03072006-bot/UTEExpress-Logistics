@@ -9,16 +9,36 @@
 <section>
 <div class="ute-page-head">
     <div>
-        <h2 class="mb-1">
+        <h2 class="mb-1 d-flex align-items-center flex-wrap gap-2">
             Đơn <span th:text="${order.trackingCode}">UTE00000000</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary ute-copy-btn"
+                    th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
+                <i class="bi bi-clipboard"></i> Chép mã
+            </button>
         </h2>
         <p class="mb-0">
             Tạo ngày <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</span>
         </p>
     </div>
-    <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Về danh sách đơn
-    </a>
+    <div class="d-flex gap-2">
+        <!-- Bo cuc khi in do khoi @media print trong style.css lo, khong can trang rieng -->
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer"></i> In vận đơn
+        </button>
+        <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Về danh sách đơn
+        </a>
+    </div>
+</div>
+
+<!-- Chi hien khi in: to giay in ra khong co thanh dieu huong nen phai tu ghi ten
+     don vi va thoi diem in, neu khong to phieu khong biet cua ai va in luc nao. -->
+<div class="ute-print-header">
+    <div class="ute-print-brand">UTEExpress</div>
+    <div class="ute-print-note">
+        Phiếu gửi hàng &middot; In lúc
+        <span th:text="${#temporals.format(#temporals.createNow(), 'HH:mm dd/MM/yyyy')}">--</span>
+    </div>
 </div>
 
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
