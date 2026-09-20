@@ -160,3 +160,71 @@
             document.querySelectorAll('.ute-stat-value'), animateCount);
     });
 })();
+
+/*
+ * Hoi lai truoc khi lam viec khong quay lai duoc (huy don, xoa...).
+ *
+ * Bat su kien submit cua moi form co thuoc tinh data-ute-confirm, chan lai roi mo hop
+ * thoai Bootstrap. Bam dong y thi moi submit that.
+ *
+ * Vi sao dung hop thoai Bootstrap thay vi ham confirm() co san cua trinh duyet:
+ * confirm() hien hop mac dinh cua he dieu hanh, khong theo bang mau va khong doi theo
+ * che do sang/toi cua site; nhin lac long va khong ro dang hoi ve cai gi.
+ *
+ * Gan bang su kien submit chu khong phai click vao nut: nhu vay bam Enter trong form
+ * cung duoc hoi lai, khong lot luoi.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var dialogElement = document.getElementById('uteConfirmDialog');
+        var messageElement = document.getElementById('uteConfirmMessage');
+        var acceptButton = document.getElementById('uteConfirmAccept');
+
+        // Thieu hop thoai (trang khong di qua template chung) thi thoi, de form chay nhu cu.
+        if (!dialogElement || !messageElement || !acceptButton || !window.bootstrap) {
+            return;
+        }
+
+        var dialog = new window.bootstrap.Modal(dialogElement);
+        var formDangCho = null;
+
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (!form || !form.getAttribute) {
+                return;
+            }
+            var cauHoi = form.getAttribute('data-ute-confirm');
+            if (!cauHoi) {
+                return;
+            }
+            // Da xac nhan roi thi cho di tiep, khong hoi vong lap.
+            if (form.dataset.uteConfirmed === 'true') {
+                return;
+            }
+
+            event.preventDefault();
+            formDangCho = form;
+            messageElement.textContent = cauHoi;
+            acceptButton.textContent = form.getAttribute('data-ute-confirm-nut') || 'Đồng ý';
+            dialog.show();
+        });
+
+        acceptButton.addEventListener('click', function () {
+            if (!formDangCho) {
+                return;
+            }
+            var form = formDangCho;
+            formDangCho = null;
+            form.dataset.uteConfirmed = 'true';
+            dialog.hide();
+            form.submit();
+        });
+
+        // Dong hop thoai ma khong dong y thi quen form di, tranh lan sang lan bam sau.
+        dialogElement.addEventListener('hidden.bs.modal', function () {
+            formDangCho = null;
+        });
+    });
+})();

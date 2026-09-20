@@ -143,7 +143,10 @@
             </a>
 
             <form th:if="${order.status.name() == 'PENDING_PICKUP'}" method="post"
-                  th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}">
+                  th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}"
+                  th:data-ute-confirm="'Huỷ đơn ' + ${order.trackingCode}
+                      + '? Đơn đã huỷ không khôi phục lại được.'"
+                  data-ute-confirm-nut="Huỷ đơn">
                 <button type="submit" class="btn btn-outline-secondary">Huỷ đơn</button>
             </form>
         </div>

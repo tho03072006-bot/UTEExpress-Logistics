@@ -110,6 +110,46 @@
     <th:block th:case="*" th:text="${status}">—</th:block>
 </th:block>
 
+<!--
+  HỘP HỎI LẠI TRƯỚC KHI LÀM VIỆC KHÔNG QUAY LẠI ĐƯỢC.
+
+  Dùng chung cho cả site, đặt một lần trong fragments/base.html nên trang nào cũng có.
+  Cách dùng: đánh dấu form cần hỏi lại bằng data-ute-confirm, nội dung thuộc tính chính
+  là câu hỏi hiện ra:
+
+      <form method="post" th:action="..."
+            data-ute-confirm="Huỷ đơn UTE123? Việc này không hoàn tác được."
+            data-ute-confirm-nut="Huỷ đơn">
+          <button type="submit">Huỷ đơn</button>
+      </form>
+
+  Làm chung một cơ chế thay vì viết riêng cho từng nút: sau này ai thêm nút xoá hay
+  huỷ chỉ cần gắn thêm thuộc tính, không phải chép lại đoạn hộp thoại.
+
+  Nếu trình duyệt chặn JavaScript thì form submit thẳng như cũ - mất bước hỏi lại
+  nhưng chức năng vẫn chạy, không kẹt người dùng.
+-->
+<div th:fragment="confirmDialog" class="modal fade" id="uteConfirmDialog" tabindex="-1"
+     aria-labelledby="uteConfirmTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uteConfirmTitle">Xác nhận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="uteConfirmMessage">Bạn có chắc không?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Quay lại
+                </button>
+                <button type="button" class="btn btn-primary" id="uteConfirmAccept">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <th:block th:fragment="serviceTypeText(serviceType)"
           th:switch="${serviceType == null} ? '' : ${serviceType.name()}">
     <th:block th:case="'STANDARD'">Tiêu chuẩn</th:block>

@@ -127,7 +127,10 @@
                     <!-- Chi cho huy khi don con dang PENDING_PICKUP (chua ai lay hang) -->
                     <form th:if="${order.status.name() == 'PENDING_PICKUP'}"
                           th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}"
-                          method="post">
+                          method="post"
+                          th:data-ute-confirm="'Huỷ đơn ' + ${order.trackingCode}
+                              + '? Đơn đã huỷ không khôi phục lại được.'"
+                          data-ute-confirm-nut="Huỷ đơn">
                         <button type="submit" class="btn btn-sm btn-outline-secondary">Huỷ đơn</button>
                     </form>
                 </div>
