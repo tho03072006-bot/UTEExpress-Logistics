@@ -2,9 +2,13 @@
 
 ## Quyết định và trạng thái
 
-Theo yêu cầu mới nhất của Thắng: dùng **database Aiven mới**, không chuyển dữ liệu cũ. Toàn ứng dụng chỉ dùng MySQL Aiven, không còn driver/kết nối SQL Server mặc định. Ngày 18/09/2026 đã kết nối thành công MySQL 8.4 bằng TLS xác minh danh tính và đã khởi tạo schema trống gồm 10 bảng; chưa tạo dữ liệu mẫu hoặc tài khoản thật. Không xóa database cũ; bản cấu hình trước khi đổi nằm ở `config/sqlserver-before-aiven.properties`, được gitignore và không được ứng dụng đọc.
+Toàn ứng dụng chỉ dùng MySQL Aiven. Ngày 18/09/2026 khởi tạo schema chung 10 bảng; ngày 10/10/2026 nâng cấp bổ sung lên 12 bảng bằng `UpgradeAivenOperations`, giữ dữ liệu hiện có. Chỉ gỡ cấu hình kết nối cũ, không xóa database hoặc bảng local theo yêu cầu cuối của Thắng. File cấu hình SQL Server riêng từng lưu đã bị gỡ, không còn được sử dụng.
 
-User, Shipper, Manager và Admin dùng cùng Spring DataSource nên đọc/ghi cùng database. Không sửa entity/controller/service/repository nghiệp vụ của Thọ hoặc Tài. Bộ khởi tạo đọc mapping của cả nhóm để tạo đủ 10 bảng, 12 khóa ngoại, 9 ràng buộc unique; dùng InnoDB và utf8mb4. Không seed tài khoản hay nâng quyền tài khoản OTP.
+User, Shipper, Manager và Admin dùng cùng Spring DataSource. Thắng đã cho phép sửa shared code/schema khi chức năng yêu cầu: thêm version chống cập nhật đè, bảng cước và nhật ký, transaction tạo đơn và khóa khuyến mãi; không xóa/ghi đè dữ liệu của vai trò khác. Schema hiện có 12 bảng, 12 khóa ngoại và 10 ràng buộc unique, InnoDB/utf8mb4. Khởi tạo schema trống thêm 3 mức cước demo nhưng không tự seed tài khoản/đơn hoặc nâng quyền tài khoản OTP.
+
+Cập nhật CRUD cả bốn vai trò: đã chạy UpgradeAivenAccounts trên Aiven, bổ sung app_user.revision, locked_by_admin, access_version với giá trị mặc định 0, không xóa dữ liệu. Admin có thể sửa/xóa tài khoản theo validation; xóa chỉ khi không có dữ liệu liên kết. Chỉ Admin được CRUD; xem [ADMIN_ACCOUNT_CRUD.md](ADMIN_ACCOUNT_CRUD.md). Cả nhóm cần dùng cùng phiên bản code và restart.
+
+Xem [SETUP.md](../../SETUP.md) cho lệnh kiểm tra/nâng cấp hiện tại và [OPERATIONS_UPGRADE.md](OPERATIONS_UPGRADE.md) cho phân quyền/validation mới. Cả nhóm pull cùng phiên bản và restart sau migration; không dùng code cũ song song để tránh giá cước/version khác nhau.
 
 ## 1. Chuẩn bị dịch vụ và cấu hình local
 
@@ -92,4 +96,4 @@ Trong Eclipse chọn Java 17, working directory là project, VM argument `-Duser
 - Table missing/schema-validation: kiểm tra đúng database và phiên bản code; chỉ người phụ trách DB xử lý sau review.
 - Duplicate/deadlock: kiểm tra thông báo nghiệp vụ và tải lại trạng thái trước khi thử lại; không lặp mù thao tác cấp tài khoản.
 
-Đã xác nhận kết nối, TLS, đủ 10 bảng và Spring Boot `ddl-auto=validate` trên Aiven thật. Toàn bộ 143 test đạt; chưa chạy thử trình duyệt nhiều máy, chưa tạo Admin thật và chưa kiểm thử đồng thời. Xem `COMMIT_PLAN.md` để commit theo từng nhóm thay đổi.
+Ngày 10/10/2026 đã xác nhận kết nối/TLS, đủ 12 bảng, 3 cột bảo vệ tài khoản và Spring Boot `ddl-auto=validate` trên Aiven thật. Build sạch và toàn bộ 297 test đạt (0 failure/error/skipped), gồm CRUD cả bốn role và nghiệp vụ Aiven trong transaction rollback; không commit dữ liệu kiểm thử. Chưa kiểm thử trình duyệt nhiều máy, SMTP thật hoặc stress test đồng thời. Xem [COMMIT_PLAN_2026_10_10.md](COMMIT_PLAN_2026_10_10.md) để commit theo từng nhóm thay đổi.
