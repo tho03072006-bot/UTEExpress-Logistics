@@ -3,6 +3,8 @@
 <span class="badge text-bg-dark me-2">Khu nội bộ</span>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/manager/trang-chu}">Tổng quan vận hành</a>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/manager/don-hang}">Tra soát đơn hàng</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/phan-cong}">Phân công Shipper</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/khieu-nai}">Khiếu nại</a>
 <a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/trang-chu}">Quản trị hệ thống</a>
 <a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/tai-khoan}">Tài khoản nội bộ</a>
 <a class="btn btn-outline-secondary btn-sm" th:href="@{/noi-bo/doi-mat-khau}">Đổi mật khẩu</a>

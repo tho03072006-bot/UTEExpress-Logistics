@@ -8,4 +8,8 @@ public interface ShipperStatisticsService {
     ShipperStatisticsResponse getStatistics(
             String shipperUsername,
             ShipperStatisticsPeriod period);
+
+    ShipperStatisticsResponse getStatistics(String username, ShipperStatisticsPeriod period,
+            java.time.LocalDate from, java.time.LocalDate to);
+    byte[] exportCsv(String username, ShipperStatisticsPeriod period, java.time.LocalDate from, java.time.LocalDate to);
 }

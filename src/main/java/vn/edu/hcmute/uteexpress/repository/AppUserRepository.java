@@ -7,6 +7,9 @@ import java.util.Optional;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
+    org.springframework.data.domain.Page<AppUser> findByRoleAndEnabledTrue(
+            AppUser.Role role, org.springframework.data.domain.Pageable pageable);
+
     Optional<AppUser> findByUsername(String username);
 
     Optional<AppUser> findByEmail(String email);

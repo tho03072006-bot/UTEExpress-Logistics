@@ -22,7 +22,7 @@
   với đúng vai trò tương ứng.
 -->
 <nav th:fragment="sidebarNav" class="ute-nav">
-    <div sec:authorize="isAuthenticated()">
+    <div sec:authorize="hasRole('USER')">
         <p class="ute-nav-heading">Người gửi hàng</p>
         <a class="ute-nav-link" th:href="@{/nguoi-dung/trang-chu}">
             <i class="bi bi-speedometer2"></i> Trang tổng quan
@@ -54,6 +54,9 @@
         <a class="ute-nav-link" th:href="@{/shipper/thong-ke}">
             <i class="bi bi-graph-up-arrow"></i> Thống kê giao hàng
         </a>
+        <a class="ute-nav-link" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
+        <a class="ute-nav-link" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
+            <span class="badge badge-ute ms-auto" data-notification-count hidden>0</span></a>
     </div>
 
     <div sec:authorize="hasRole('MANAGER')">

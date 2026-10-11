@@ -1,0 +1,12 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Hành trình vận đơn - UTEExpress</title></head><body><section th:classappend="${#strings.startsWith(prefix, '/shipper/')} ? 'shipper-workspace'">
+<div class="ute-page-head" th:classappend="${#strings.startsWith(prefix, '/shipper/')} ? 'shipper-hero'"><div><h2 th:text="|Hành trình ${order.trackingCode}|"></h2><p>Các cập nhật gần nhất được hiển thị trước. Thời gian theo giờ Việt Nam.</p></div>
+<a class="btn btn-outline-secondary" th:href="@{${prefix + order.id}}">Quay lại vận đơn</a></div>
+<div class="ute-panel"><div th:replace="~{fragments/logistics :: history(${history})}"></div></div>
+<nav th:if="${history.totalPages > 1}" class="d-flex gap-3 justify-content-center align-items-center mt-4" aria-label="Phân trang hành trình">
+    <a th:if="${history.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{${prefix + order.id + '/hanh-trinh'}(page=${history.number - 1})}">Trang trước</a>
+    <span th:text="|Trang ${history.number + 1}/${history.totalPages}|"></span>
+    <a th:if="${history.hasNext()}" class="btn btn-outline-secondary" th:href="@{${prefix + order.id + '/hanh-trinh'}(page=${history.number + 1})}">Trang sau</a>
+</nav>
+<script th:if="${#strings.startsWith(prefix, '/shipper/')}" th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

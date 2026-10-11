@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderPaymentRepository extends JpaRepository<OrderPayment, Long> {
+    List<OrderPayment> findByOrderIdIn(List<Long> orderIds);
 
     Optional<OrderPayment> findByOrder(Order order);
 

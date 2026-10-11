@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent;
@@ -50,6 +51,10 @@ class TrackingServiceImplTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock private vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
+    @Spy private java.time.Clock clock = java.time.Clock.fixed(java.time.Instant.parse("2026-10-11T02:00:00Z"),
+            java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
 
     @InjectMocks
     private TrackingServiceImpl trackingService;
@@ -121,7 +126,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
 
@@ -130,8 +135,10 @@ class TrackingServiceImplTest {
                     .thenReturn(true);
         }
 
-        Order result = trackingService.updateStatus(
-                1L, "nguyentai", newStatus);
+        Order result = trackingService.updateStatus(1L, "nguyentai", newStatus,
+                newStatus == Order.OrderStatus.FAILED
+                        ? vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason.CUSTOMER_ABSENT : null,
+                "", null);
 
         assertEquals(newStatus, result.getStatus());
         verify(orderRepository).save(order);
@@ -147,7 +154,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -167,7 +174,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(99L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(99L, shipper))
                 .thenReturn(Optional.empty());
 
         assertThrows(
@@ -189,7 +196,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -216,7 +223,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         when(deliveryProofService.hasCompleteProof(order))
@@ -244,7 +251,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         when(deliveryProofService.hasCompleteProof(order))
@@ -299,6 +306,7 @@ class TrackingServiceImplTest {
         AppUser shipper = new AppUser();
         shipper.setUsername("nguyentai");
         shipper.setRole(AppUser.Role.SHIPPER);
+        shipper.setEnabled(true);
         return shipper;
     }
 

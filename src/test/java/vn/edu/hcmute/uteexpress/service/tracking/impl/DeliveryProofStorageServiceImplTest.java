@@ -26,7 +26,7 @@ class DeliveryProofStorageServiceImplTest {
     @BeforeEach
     void setUp() {
         storageService = new DeliveryProofStorageServiceImpl(
-                uploadRoot.toString());
+                uploadRoot.resolve("public").toString());
     }
 
     @Test
@@ -40,7 +40,8 @@ class DeliveryProofStorageServiceImplTest {
 
         String publicPath = storageService.storeProofImage(image);
 
-        assertTrue(publicPath.startsWith("/uploads/giao-hang/"));
+        assertTrue(publicPath.startsWith("/private-proof/"));
+        assertTrue(Files.notExists(uploadRoot.resolve("public")));
         assertTrue(Files.exists(savedFile(publicPath)));
     }
 
@@ -65,7 +66,7 @@ class DeliveryProofStorageServiceImplTest {
         String publicPath = storageService
                 .storeSignature(signatureData);
 
-        assertTrue(publicPath.startsWith("/uploads/giao-hang/"));
+        assertTrue(publicPath.startsWith("/private-proof/"));
         assertTrue(Files.exists(savedFile(publicPath)));
     }
 
@@ -81,7 +82,19 @@ class DeliveryProofStorageServiceImplTest {
                 .getFileName()
                 .toString();
 
-        return uploadRoot.resolve("giao-hang").resolve(fileName);
+        return uploadRoot.resolve("public-private/giao-hang").resolve(fileName);
+    }
+
+    @Test
+    void rejectsOversizedDimensionsBeforeDecodingPixels() throws Exception {
+        byte[] data;
+        try (var output = new ByteArrayOutputStream()) {
+            ImageIO.write(new BufferedImage(4097, 1, BufferedImage.TYPE_INT_RGB), "png", output);
+            data = output.toByteArray();
+        }
+        var file = new MockMultipartFile("proofImage", "large.png", "image/png", data);
+        assertThrows(IllegalStateException.class, () -> storageService.storeProofImage(file));
+        assertTrue(Files.notExists(uploadRoot.resolve("public-private")));
     }
 
     private byte[] createPng() throws Exception {

@@ -1,0 +1,36 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Phân công giao hàng - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head"><div><h2>Phân công giao hàng</h2><p>Chỉ phân công đơn chờ lấy hàng cho Shipper đang hoạt động.</p></div></div>
+<div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
+<div class="alert alert-light border" th:if="${error}" th:text="${error}"></div>
+<div class="ute-panel text-muted" th:if="${orders.empty}">Không có đơn đang chờ lấy hàng.</div>
+<article class="ute-panel mb-3" th:each="order : ${orders.content}">
+    <div class="d-flex justify-content-between flex-wrap gap-2"><strong th:text="${order.trackingCode}"></strong>
+        <span class="text-muted" th:text="${order.shipper == null ? 'Chưa phân công' : 'Hiện tại: ' + order.shipper.username}"></span></div>
+    <p class="text-muted mt-2" th:text="|${order.senderName} → ${order.receiverName}|"></p>
+    <form class="row g-3 align-items-end" method="post" th:action="@{/manager/phan-cong}">
+        <input type="hidden" name="trackingCode" th:value="${order.trackingCode}">
+        <input type="hidden" name="expectedShipperId" th:value="${order.shipper == null ? 0 : order.shipper.id}">
+        <input type="hidden" name="expectedUpdatedAt" th:value="${order.updatedAt}">
+        <div class="col-lg-4"><label class="form-label" th:for="${'shipper-' + order.id}">Shipper</label>
+            <select name="shipperId" th:id="${'shipper-' + order.id}" class="form-select" required>
+                <option value="">Chọn Shipper</option>
+                <option th:each="shipper : ${shippers.content}" th:value="${shipper.id}" th:text="|${shipper.username} · ${shipper.fullName ?: 'Shipper'}|"></option>
+            </select></div>
+        <div class="col-lg-6"><label class="form-label" th:for="${'note-' + order.id}">Lý do phân công</label>
+            <input name="note" th:id="${'note-' + order.id}" class="form-control" minlength="5" maxlength="350" required></div>
+        <div class="col-lg-2"><button class="btn btn-primary" type="submit" th:disabled="${shippers.empty}">Phân công</button></div>
+    </form>
+</article>
+<nav class="d-flex flex-wrap gap-3 align-items-center mt-3" aria-label="Phân trang điều phối">
+    <a th:if="${orders.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/phan-cong(page=${orders.number - 1},shipperPage=${shippers.number})}">Đơn trước</a>
+    <span th:text="|${orders.totalElements} đơn · Trang ${orders.number + 1}|"></span>
+    <a th:if="${orders.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/phan-cong(page=${orders.number + 1},shipperPage=${shippers.number})}">Đơn sau</a>
+</nav>
+<nav class="d-flex flex-wrap gap-3 align-items-center mt-3" th:if="${shippers.totalPages > 1}" aria-label="Phân trang Shipper">
+    <a th:if="${shippers.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/phan-cong(page=${orders.number},shipperPage=${shippers.number - 1})}">Shipper trước</a>
+    <span th:text="|Danh sách Shipper ${shippers.number + 1}/${shippers.totalPages}|"></span>
+    <a th:if="${shippers.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/phan-cong(page=${orders.number},shipperPage=${shippers.number + 1})}">Shipper sau</a>
+</nav>
+</section></body></html>

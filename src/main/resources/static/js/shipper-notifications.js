@@ -1,0 +1,66 @@
+(function () {
+    "use strict";
+    const badges = document.querySelectorAll("[data-notification-count]");
+    if (!badges.length) return;
+    let previousCount = null;
+    let sessionExpired = false;
+    function showAssignment() {
+        const banner = document.getElementById("shipperNotificationBanner");
+        if (!banner) return;
+        banner.querySelector("[data-notification-message]").textContent = "Bạn vừa nhận thông báo phân công vận đơn mới.";
+        banner.hidden = false;
+    }
+    async function refresh() {
+        if (sessionExpired) return;
+        try {
+            const response = await fetch("/shipper/thong-bao/chua-doc", {
+                cache: "no-store", credentials: "same-origin", redirect: "error",
+                headers: {"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"}
+            });
+            if (response.status === 401) {
+                sessionExpired = true;
+                window.clearInterval(timer); window.clearTimeout(reconnect);
+                if (client?.connected) client.disconnect();
+                const banner = document.getElementById("shipperNotificationBanner");
+                if (banner) {
+                    banner.querySelector("[data-notification-message]").textContent = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                    const link = banner.querySelector("a");
+                    link.href = "/dang-nhap"; link.textContent = "Đăng nhập";
+                    banner.hidden = false;
+                }
+                return;
+            }
+            if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return;
+            const data = await response.json();
+            const count = Number(data.count);
+            if (!Number.isSafeInteger(count) || count < 0) return;
+            badges.forEach(badge => { badge.textContent = count > 99 ? "99+" : String(count); badge.hidden = count === 0; });
+            if (previousCount !== null && count > previousCount) {
+                showAssignment();
+            }
+            previousCount = count;
+        } catch (_) { /* Lần kiểm tra sau sẽ thử lại khi có mạng. */ }
+    }
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    let client;
+    let reconnect;
+    function connect() {
+        if (sessionExpired) return;
+        if (typeof SockJS === "undefined" || typeof Stomp === "undefined") return;
+        client = Stomp.over(new SockJS("/ws-tracking"));
+        client.debug = null;
+        client.connect({}, function () {
+            client.subscribe("/user/queue/shipper-notifications", function () {
+                showAssignment();
+                refresh();
+            });
+            refresh();
+        }, function () { if (!sessionExpired) reconnect = window.setTimeout(connect, 5000); });
+    }
+    connect();
+    window.addEventListener("pagehide", function () {
+        window.clearInterval(timer); window.clearTimeout(reconnect);
+        if (client?.connected) client.disconnect();
+    });
+}());

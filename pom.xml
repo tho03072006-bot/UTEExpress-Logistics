@@ -19,9 +19,21 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- Mockito can instrument JDK classes when tests run on Java 26. -->
+        <byte-buddy.version>1.17.8</byte-buddy.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Web MVC + Thymeleaf -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

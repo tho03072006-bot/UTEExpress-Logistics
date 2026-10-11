@@ -175,6 +175,15 @@
         </div>
     </div>
 </div>
+<div class="ute-panel mt-4">
+    <h4>Hành trình và hỗ trợ</h4>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/hanh-trinh(id=${order.id})}">Xem lịch sử hành trình</a>
+        <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}">Gửi / xem khiếu nại</a>
+        <a class="btn btn-outline-secondary" download="van-don.png" th:href="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}">Tải QR vận đơn</a>
+    </div>
+    <img class="img-fluid bg-white rounded" width="160" height="160" th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="QR mã vận đơn">
+</div>
 </section>
 
 </body>

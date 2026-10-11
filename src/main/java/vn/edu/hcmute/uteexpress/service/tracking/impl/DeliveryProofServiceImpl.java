@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.service.tracking.impl;
 
 import java.time.LocalDateTime;
+import java.time.Clock;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -25,16 +26,19 @@ public class DeliveryProofServiceImpl
     private final AppUserRepository appUserRepository;
     private final OrderRepository orderRepository;
     private final DeliveryProofStorageService storageService;
+    private final Clock clock;
 
     public DeliveryProofServiceImpl(
             DeliveryProofRepository deliveryProofRepository,
             AppUserRepository appUserRepository,
             OrderRepository orderRepository,
-            DeliveryProofStorageService storageService) {
+            DeliveryProofStorageService storageService,
+            Clock clock) {
         this.deliveryProofRepository = deliveryProofRepository;
         this.appUserRepository = appUserRepository;
         this.orderRepository = orderRepository;
         this.storageService = storageService;
+        this.clock = clock;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class DeliveryProofServiceImpl
         AppUser shipper = findShipper(shipperUsername);
 
         Order order = orderRepository
-                .findByIdAndShipper(orderId, shipper)
+                .findLockedByIdAndShipper(orderId, shipper)
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy đơn hoặc đơn không được "
                                 + "phân công cho bạn."));
@@ -84,7 +88,8 @@ public class DeliveryProofServiceImpl
         proof.setShipper(shipper);
         proof.setProofImagePath(proofImagePath);
         proof.setSignaturePath(signaturePath);
-        proof.setUpdatedAt(LocalDateTime.now());
+        if (proof.getId() == null) proof.setCreatedAt(LocalDateTime.now(clock));
+        proof.setUpdatedAt(LocalDateTime.now(clock));
 
         return deliveryProofRepository.save(proof);
     }
@@ -94,7 +99,7 @@ public class DeliveryProofServiceImpl
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 
-        if (shipper.getRole() != AppUser.Role.SHIPPER) {
+        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled()) {
             throw new IllegalStateException(
                     "Tài khoản hiện tại không có vai trò SHIPPER.");
         }

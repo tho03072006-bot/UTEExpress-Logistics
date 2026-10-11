@@ -44,16 +44,22 @@ public class OrderServiceImpl implements OrderService {
     private final SavedAddressService savedAddressService;
     private final OrderPaymentService orderPaymentService;
     private final PromoCodeService promoCodeService;
+    private final vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
+    private final java.time.Clock clock;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
                             OrderPaymentService orderPaymentService,
-                            PromoCodeService promoCodeService) {
+                            PromoCodeService promoCodeService,
+                            vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
+                            java.time.Clock clock) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
         this.orderPaymentService = orderPaymentService;
         this.promoCodeService = promoCodeService;
+        this.history = history;
+        this.clock = clock;
     }
 
     @Override
@@ -73,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Order createOrder(OrderCreateRequest request, String senderUsername) {
         AppUser sender = appUserRepository.findByUsername(senderUsername)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
@@ -90,6 +97,9 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal fee = calculateFee(request.getServiceType(), request.getWeightKg());
         order.setShippingFee(fee);
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
+        var now = java.time.LocalDateTime.now(clock);
+        order.setCreatedAt(now);
+        order.setUpdatedAt(now);
 
         // Kiem tra ma giam gia TRUOC khi luu don: ma sai thi nem loi ngay, khong tao don do dang.
         PromoCode promoCode = null;
@@ -106,6 +116,9 @@ public class OrderServiceImpl implements OrderService {
         if (promoCode != null) {
             promoCodeService.markUsed(promoCode);
         }
+        history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(savedOrder, sender,
+                Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PENDING_PICKUP, null,
+                "Người gửi tạo vận đơn.", null, now));
         return savedOrder;
     }
 
@@ -226,8 +239,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrder(Long orderId, String username) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findLockedById(orderId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này."));
 
         if (!order.getSender().getUsername().equals(username)) {
@@ -238,7 +252,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(Order.OrderStatus.CANCELLED);
+        order.setUpdatedAt(java.time.LocalDateTime.now(clock));
         orderRepository.save(order);
+        history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(order, order.getSender(),
+                Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.CANCELLED, null,
+                "Người gửi hủy vận đơn trước khi lấy hàng.", null, java.time.LocalDateTime.now(clock)));
     }
 
     @Override

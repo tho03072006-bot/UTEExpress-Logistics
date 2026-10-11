@@ -28,8 +28,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        var pageRequestCache = new vn.edu.hcmute.uteexpress.security.PageRequestCache();
         http
+            .requestCache(cache -> cache.requestCache(pageRequestCache))
+            .exceptionHandling(errors -> errors.defaultAuthenticationEntryPointFor(
+                    new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED),
+                    vn.edu.hcmute.uteexpress.security.PageRequestCache::isBackgroundRequest))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/uploads/giao-hang/**", "/private-proof/**").denyAll()
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
                         "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
@@ -43,16 +49,26 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginPage("/dang-nhap")
-                .defaultSuccessUrl("/nguoi-dung/trang-chu", false)
+                .successHandler((request, response, authentication) -> {
+                    var handler = new org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler();
+                    handler.setRequestCache(pageRequestCache);
+                    handler.setDefaultTargetUrl(authentication.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_SHIPPER")) ? "/shipper/trang-chu" : "/nguoi-dung/trang-chu");
+                    handler.onAuthenticationSuccess(request, response, authentication);
+                })
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            // Tam tat CSRF de nhom de test cac API (vd tra cuu van don) trong luc build.
-            // TODO: bat lai csrf cho cac form HTML khi hoan thien.
-            .csrf(csrf -> csrf.disable());
+            // Bảo vệ form Shipper và gửi khiếu nại; các route cũ khác giữ chính sách hiện có.
+            .csrf(csrf -> csrf.requireCsrfProtectionMatcher(request -> {
+                String path = request.getServletPath();
+                if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
+                return !java.util.Set.of("GET", "HEAD", "OPTIONS", "TRACE").contains(request.getMethod())
+                        && (path.startsWith("/shipper/") || path.matches("/nguoi-dung/don-hang/[0-9]+/khieu-nai"));
+            }));
 
         return http.build();
     }

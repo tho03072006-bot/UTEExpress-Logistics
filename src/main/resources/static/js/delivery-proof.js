@@ -88,8 +88,9 @@
         }
 
         const file = proofImage.files[0];
+        proofImage.setCustomValidity(file && file.size > 5 * 1024 * 1024 ? "Ảnh tối đa 5 MB. Hãy chọn ảnh nhỏ hơn." : "");
 
-        if (!file) {
+        if (!file || file.size > 5 * 1024 * 1024) {
             proofPreview.hidden = true;
             proofPreview.removeAttribute("src");
             return;

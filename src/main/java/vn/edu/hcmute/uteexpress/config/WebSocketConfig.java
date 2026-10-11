@@ -19,7 +19,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
     }
 
@@ -28,5 +28,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-tracking")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
+    }
+
+    @Override
+    public void configureClientInboundChannel(org.springframework.messaging.simp.config.ChannelRegistration registration) {
+        registration.interceptors(new org.springframework.messaging.support.ChannelInterceptor() {
+            @Override
+            public org.springframework.messaging.Message<?> preSend(org.springframework.messaging.Message<?> message,
+                    org.springframework.messaging.MessageChannel channel) {
+                var headers = org.springframework.messaging.support.MessageHeaderAccessor.getAccessor(
+                        message, org.springframework.messaging.simp.stomp.StompHeaderAccessor.class);
+                if (headers == null || headers.getDestination() == null) return message;
+                String destination = headers.getDestination();
+                if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SEND
+                        && (destination.startsWith("/topic/") || destination.startsWith("/queue/") || destination.startsWith("/user/")))
+                    throw new org.springframework.security.access.AccessDeniedException("Không được tự gửi thông báo hệ thống.");
+                if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SUBSCRIBE
+                        && (destination.startsWith("/queue/") || destination.startsWith("/user/"))) {
+                    if (!destination.equals("/user/queue/shipper-notifications")
+                            || !(headers.getUser() instanceof org.springframework.security.core.Authentication auth)
+                            || auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_SHIPPER")))
+                        throw new org.springframework.security.access.AccessDeniedException("Không có quyền nhận thông báo này.");
+                }
+                return message;
+            }
+        });
     }
 }

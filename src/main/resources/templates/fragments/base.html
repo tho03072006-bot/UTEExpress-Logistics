@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:fragment="doc(pageTitle, content, withSidebar)"
+      th:with="isShipper=${#authorization.expression('hasRole(''SHIPPER'')')}, useSidebar=${withSidebar or isShipper}"
       lang="vi">
 <!--/*
   TEMPLATE DÙNG CHUNG CHO TOÀN BỘ WEBSITE UTEExpress.
@@ -21,6 +22,7 @@
   Tham số thứ ba (withSidebar):
     true  - trang trong khu vực đã đăng nhập, có thanh điều hướng bên trái
     false - trang công khai (trang chủ, tra cứu, đăng nhập/đăng ký), chỉ có thanh trên
+  Shipper đã đăng nhập vẫn giữ menu công việc khi mở các trang công khai.
 */-->
 <head>
     <meta charset="UTF-8">
@@ -61,22 +63,22 @@
 <body class="ute-body">
 
 <!-- ===================== Thanh trên cùng ===================== -->
-<header class="ute-topbar">
+<header class="ute-topbar" th:classappend="${useSidebar} ? 'ute-topbar-with-sidebar' : ''">
     <div class="ute-topbar-inner">
         <!-- Nút mở menu, chỉ hiện trên màn hình nhỏ và chỉ ở khu vực có sidebar -->
-        <button th:if="${withSidebar}" class="btn btn-sm ute-menu-toggle d-lg-none" type="button"
+        <button th:if="${useSidebar}" class="btn btn-sm ute-menu-toggle d-lg-none" type="button"
                 data-bs-toggle="offcanvas" data-bs-target="#uteSidebarMobile"
                 aria-controls="uteSidebarMobile" aria-label="Mở menu">
             <i class="bi bi-list"></i>
         </button>
 
-        <a class="ute-brand" th:href="@{/}">
+        <a class="ute-brand" th:href="@{${isShipper ? '/shipper/trang-chu' : '/'}}">
             <span class="ute-brand-dot"></span>
             UTEExpress
         </a>
 
         <nav class="ute-topbar-nav">
-            <a class="ute-topbar-link d-none d-md-inline" th:href="@{/}">Trang chủ</a>
+            <a class="ute-topbar-link d-none d-md-inline" th:href="@{${isShipper ? '/shipper/trang-chu' : '/'}}">Trang chủ</a>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
             <a class="ute-topbar-link d-none d-lg-inline" th:href="@{/uoc-tinh-cuoc}">Ước tính cước</a>
 
@@ -87,7 +89,10 @@
                 <i class="bi bi-sun-fill"></i>
             </button>
 
-            <span sec:authorize="isAuthenticated()" class="ute-user-chip">
+            <a sec:authorize="hasRole('SHIPPER')" class="ute-topbar-link" th:href="@{/shipper/thong-bao}" aria-label="Thông báo nhận đơn">
+                <i class="bi bi-bell"></i><span class="badge badge-ute" data-notification-count hidden>0</span>
+            </a>
+            <span sec:authorize="isAuthenticated()" class="ute-user-chip d-none d-sm-inline-flex">
                 <i class="bi bi-person-circle"></i>
                 <span sec:authentication="name">user</span>
             </span>
@@ -100,17 +105,21 @@
         </nav>
     </div>
 </header>
+<div sec:authorize="hasRole('SHIPPER')" id="shipperNotificationBanner" class="container py-2" hidden>
+    <div class="alert alert-light border mb-0" role="status"><span data-notification-message></span>
+        <a class="ms-2" th:href="@{/shipper/thong-bao}">Xem thông báo</a></div>
+</div>
 
 <!-- ===================== Thân trang ===================== -->
-<div th:class="${withSidebar} ? 'ute-shell ute-shell-with-sidebar' : 'ute-shell'">
+<div th:class="${useSidebar} ? 'ute-shell ute-shell-with-sidebar' : 'ute-shell'">
 
     <!-- Sidebar cố định cho màn hình lớn -->
-    <aside th:if="${withSidebar}" class="ute-sidebar d-none d-lg-block">
+    <aside th:if="${useSidebar}" class="ute-sidebar d-none d-lg-block">
         <nav th:replace="~{fragments/components :: sidebarNav}"></nav>
     </aside>
 
     <!-- Cùng menu đó nhưng dạng trượt ra, dùng cho điện thoại / máy tính bảng -->
-    <div th:if="${withSidebar}" class="offcanvas offcanvas-start ute-sidebar-offcanvas" tabindex="-1"
+    <div th:if="${useSidebar}" class="offcanvas offcanvas-start ute-sidebar-offcanvas" tabindex="-1"
          id="uteSidebarMobile" aria-labelledby="uteSidebarMobileLabel">
         <div class="offcanvas-header">
             <h6 class="offcanvas-title mb-0" id="uteSidebarMobileLabel">Điều hướng</h6>
@@ -141,5 +150,11 @@
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/address-picker.js}"></script>
 
+<th:block sec:authorize="hasRole('SHIPPER')">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:src="@{/js/tracking-realtime.js}"></script>
+    <script th:src="@{/js/shipper-notifications.js}"></script>
+</th:block>
 </body>
 </html>

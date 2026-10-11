@@ -1,0 +1,21 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Quét QR vận đơn - UTEExpress</title></head><body><section class="shipper-workspace">
+<a class="shipper-back" th:href="@{/shipper/trang-chu}"><i class="bi bi-arrow-left"></i> Về danh sách đơn</a>
+<header class="shipper-hero"><div><span class="shipper-eyebrow"><i class="bi bi-qr-code-scan"></i> NHẬN DIỆN VẬN ĐƠN</span><h2>Quét mã, mở chuyến giao</h2><p>Đưa QR vào khung hình hoặc chọn ảnh có sẵn để tìm đơn được phân công cho bạn.</p></div></header>
+<div class="shipper-notice" role="alert" th:if="${error}" th:text="${error}"></div>
+<div class="shipper-scan-grid">
+    <article class="ute-panel"><div class="shipper-section-head"><div><span class="shipper-eyebrow">QUÉT TRỰC TIẾP</span><h3>Camera điện thoại hoặc máy tính</h3></div><i class="bi bi-camera"></i></div>
+        <div class="shipper-camera"><video id="qrVideo" playsinline muted aria-label="Camera quét QR vận đơn"></video><div id="qrCameraPlaceholder" class="shipper-camera-placeholder"><i class="bi bi-qr-code-scan"></i><p>Đặt QR rõ nét, đủ sáng<br>và nằm trọn trong khung hình.</p></div><div id="qrCameraFrame" class="shipper-camera-frame" hidden></div></div>
+        <p id="qrCameraStatus" class="shipper-hint" role="status" aria-live="polite">Camera chỉ bật khi bạn nhấn bắt đầu.</p>
+        <div class="d-flex flex-wrap gap-2"><button id="qrCameraStart" type="button" class="btn btn-primary"><i class="bi bi-camera-video"></i> Bắt đầu quét</button><button id="qrCameraStop" type="button" class="btn btn-outline-secondary" disabled>Dừng camera</button></div>
+        <p class="shipper-hint mt-3 mb-0">Cho phép quyền camera khi trình duyệt hỏi. Camera cần HTTPS hoặc localhost; nếu không dùng được, hãy chọn ảnh QR bên cạnh.</p>
+        <form id="qrCodeForm" method="post" th:action="@{/shipper/quet-ma/ma}" hidden><input id="qrDecodedCode" name="code" type="hidden"></form>
+    </article>
+    <aside><form class="ute-panel" method="post" enctype="multipart/form-data" th:action="@{/shipper/quet-ma}">
+        <span class="shipper-eyebrow">TỪ ẢNH CÓ SẴN</span><h3 class="mt-2 mb-3">Chụp hoặc tải ảnh QR</h3>
+        <label for="qrImage" class="form-label">Ảnh QR vận đơn</label><input id="qrImage" name="qrImage" type="file" accept="image/jpeg,image/png" capture="environment" class="form-control" required>
+        <p class="shipper-hint mt-2">JPG/PNG tối đa 5 MB. Chụp đầy đủ QR, tránh ảnh mờ hoặc bị lóa.</p><button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-upload"></i> Đọc QR từ ảnh</button>
+    </form><article class="ute-panel mt-4"><span class="shipper-eyebrow">TÌM NHANH</span><h3 class="mt-2">Không có QR?</h3><p class="shipper-hint">Bạn vẫn có thể tìm vận đơn bằng mã hoặc thông tin người nhận trong danh sách đơn.</p><a class="btn btn-outline-secondary w-100" th:href="@{/shipper/trang-chu}"><i class="bi bi-search"></i> Tìm trong danh sách</a></article></aside>
+</div>
+<script th:src="@{/js/vendor/zxing/zxing-browser-0.1.5.min.js}"></script><script th:src="@{/js/shipper-qr-camera.js}"></script>
+</section></body></html>
