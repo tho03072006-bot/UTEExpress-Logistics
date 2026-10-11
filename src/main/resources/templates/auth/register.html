@@ -6,33 +6,64 @@
 </head>
 <body>
 
-<section class="ute-narrow-sm">
-<h2 class="mb-4">Đăng ký tài khoản</h2>
+<section class="shipper-workspace sx-public sx-auth">
+<div class="sx-auth-card">
+    <aside class="sx-auth-side" aria-hidden="true">
+        <span class="shipper-eyebrow"><i class="bi bi-stars"></i> MIỄN PHÍ</span>
+        <h2>Tạo tài khoản UTEExpress</h2>
+        <p>Chỉ một phút để bắt đầu gửi hàng và theo dõi mọi vận đơn của bạn.</p>
+        <img th:src="@{/images/shipper/hero-delivery.svg}" alt="" width="320" height="213">
+        <ul>
+            <li><i class="bi bi-check-circle-fill"></i> Lưu sổ địa chỉ, tạo đơn nhanh</li>
+            <li><i class="bi bi-check-circle-fill"></i> Thanh toán COD hoặc ví điện tử</li>
+            <li><i class="bi bi-check-circle-fill"></i> Nhận email khi đơn giao xong</li>
+        </ul>
+    </aside>
 
-<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div class="sx-auth-form">
+        <h1>Đăng ký tài khoản</h1>
+        <p class="shipper-hint">Mã OTP kích hoạt sẽ được gửi tới email của bạn.</p>
 
-<form method="post" th:action="@{/dang-ky}" th:object="${form}">
-    <div class="mb-3">
-        <label class="form-label">Họ tên</label>
-        <input type="text" th:field="*{fullName}" class="form-control">
+        <div th:if="${error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+
+        <form method="post" th:action="@{/dang-ky}" th:object="${form}" class="sx-auth-guard">
+            <div class="mb-3">
+                <label class="form-label" for="fullName">Họ tên</label>
+                <div class="sx-input-icon"><i class="bi bi-person-vcard" aria-hidden="true"></i>
+                    <input type="text" th:field="*{fullName}" class="form-control" maxlength="100" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="username">Tên đăng nhập</label>
+                <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
+                    <input type="text" th:field="*{username}" class="form-control" required maxlength="50" autocomplete="username"
+                           autocapitalize="none" spellcheck="false" placeholder="Chữ, số, không dấu" th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="email">Email (nhận mã OTP)</label>
+                <div class="sx-input-icon"><i class="bi bi-envelope" aria-hidden="true"></i>
+                    <input type="email" th:field="*{email}" class="form-control" required maxlength="100" autocomplete="email"
+                           placeholder="ban@gmail.com" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password">Mật khẩu</label>
+                <div class="sx-input-icon"><i class="bi bi-lock" aria-hidden="true"></i>
+                    <input type="password" th:field="*{password}" class="form-control" required autocomplete="new-password"
+                           placeholder="Tạo mật khẩu" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
+                    <button type="button" class="sx-eye" data-toggle-password="password" aria-label="Hiện mật khẩu" title="Hiện / ẩn mật khẩu"><i class="bi bi-eye"></i></button></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-person-plus"></i> Đăng ký</button>
+        </form>
+
+        <div class="sx-auth-links">
+            <span>Đã có tài khoản? <a th:href="@{/dang-nhap}">Đăng nhập</a></span>
+            <a th:href="@{/tra-cuu}"><i class="bi bi-search"></i> Tra cứu vận đơn</a>
+        </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Tên đăng nhập</label>
-        <input type="text" th:field="*{username}" class="form-control" required>
-        <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Email (nhận mã OTP)</label>
-        <input type="email" th:field="*{email}" class="form-control" required>
-        <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Mật khẩu</label>
-        <input type="password" th:field="*{password}" class="form-control" required>
-        <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-    </div>
-    <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
-</form>
+</div>
+<div th:replace="~{fragments/auth :: scripts}"></div>
 </section>
 
 </body>

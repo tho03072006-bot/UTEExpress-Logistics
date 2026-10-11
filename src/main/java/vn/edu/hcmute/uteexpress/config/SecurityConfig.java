@@ -40,6 +40,8 @@ public class SecurityConfig {
                         "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
                         "/css/**", "/js/**", "/images/**", "/uploads/**", "/api/tracking/**").permitAll()
+                // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
+                .requestMatchers("/error").permitAll()
                 .requestMatchers("/nguoi-dung/**").authenticated()
              // TV2: khu vuc shipper chi danh cho vai tro SHIPPER.
              // TODO (TV3): bao ve khu vuc manager/admin khi chuc nang quan ly hoan thien.

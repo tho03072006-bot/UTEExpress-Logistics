@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Điện thoại quét QR vận đơn">
+  <ellipse cx="180" cy="220" rx="110" ry="9" fill="#000" opacity=".2"/>
+  <!-- gói hàng có nhãn QR -->
+  <g transform="translate(212 118)">
+    <path d="M0 22 L 60 0 L 120 22 L 60 44 Z" fill="#FCD34D"/>
+    <path d="M0 22 L 60 44 L 60 104 L 0 82 Z" fill="#F59E0B"/>
+    <path d="M120 22 L 60 44 L 60 104 L 120 82 Z" fill="#D97706"/>
+    <rect x="72" y="52" width="34" height="34" rx="3" fill="#FFFFFF" transform="skewY(-20) translate(0 26)"/>
+  </g>
+  <!-- điện thoại -->
+  <rect x="84" y="28" width="112" height="190" rx="20" fill="#0B2540"/>
+  <rect x="93" y="44" width="94" height="158" rx="12" fill="#FFFFFF"/>
+  <rect x="124" y="34" width="32" height="5" rx="2.5" fill="#1E3A5F"/>
+  <!-- QR trong màn hình -->
+  <g transform="translate(110 78)" fill="#0B2540">
+    <rect width="60" height="60" rx="4" fill="#F1F5F9"/>
+    <rect x="6" y="6" width="16" height="16" rx="2"/><rect x="10" y="10" width="8" height="8" fill="#F1F5F9"/>
+    <rect x="38" y="6" width="16" height="16" rx="2"/><rect x="42" y="10" width="8" height="8" fill="#F1F5F9"/>
+    <rect x="6" y="38" width="16" height="16" rx="2"/><rect x="10" y="42" width="8" height="8" fill="#F1F5F9"/>
+    <rect x="28" y="28" width="6" height="6"/><rect x="38" y="30" width="6" height="6"/><rect x="46" y="40" width="8" height="6"/>
+    <rect x="30" y="44" width="6" height="10"/><rect x="40" y="48" width="6" height="6"/><rect x="28" y="8" width="5" height="5"/>
+  </g>
+  <!-- khung quét -->
+  <g fill="none" stroke="#22D3EE" stroke-width="5" stroke-linecap="round">
+    <path d="M104 82 v-12 h12"/><path d="M164 70 h12 v12"/><path d="M176 134 v12 h-12"/><path d="M116 146 h-12 v-12"/>
+  </g>
+  <rect x="100" y="106" width="80" height="4" rx="2" fill="#22D3EE"/>
+  <rect x="100" y="100" width="80" height="16" fill="#22D3EE" opacity=".18"/>
+  <rect x="112" y="166" width="56" height="16" rx="8" fill="#4F46E5"/>
+  <path d="M132 174 l5 5 9 -10" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#FFFFFF">
+    <path d="M60 70 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M300 56 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

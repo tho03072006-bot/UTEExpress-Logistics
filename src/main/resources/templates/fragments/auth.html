@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<!--/* Script dùng chung cho các trang tài khoản (đăng nhập, đăng ký, quên/đặt lại mật khẩu, OTP, đăng nhập nội bộ). */-->
+<body>
+<script th:fragment="scripts" th:inline="none">
+    (function () {
+        'use strict';
+        // Nút con mắt: hiện / ẩn mật khẩu
+        document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
+            var input = document.getElementById(button.getAttribute('data-toggle-password'));
+            if (!input) return;
+            button.addEventListener('click', function () {
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                button.querySelector('i').className = 'bi ' + (show ? 'bi-eye-slash' : 'bi-eye');
+                button.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            });
+        });
+        // Cảnh báo Caps Lock khi gõ mật khẩu
+        document.querySelectorAll('input[type=password]').forEach(function (input) {
+            var warning = input.closest('.mb-3') && input.closest('.mb-3').querySelector('[data-caps-warning]');
+            if (!warning) return;
+            ['keydown', 'keyup'].forEach(function (name) {
+                input.addEventListener(name, function (event) {
+                    if (event.getModifierState) warning.hidden = !event.getModifierState('CapsLock');
+                });
+            });
+        });
+        // Ô OTP: chỉ giữ chữ số
+        document.querySelectorAll('input[data-otp]').forEach(function (input) {
+            input.addEventListener('input', function () { input.value = input.value.replace(/\D/g, '').slice(0, 6); });
+        });
+        // Chống bấm gửi hai lần (khóa nút sau khi trình duyệt đã lấy dữ liệu form)
+        document.querySelectorAll('.sx-auth form').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (event.defaultPrevented) return;
+                var submit = form.querySelector('button[type=submit]');
+                if (submit) setTimeout(function () { submit.disabled = true; }, 0);
+            });
+        });
+        window.addEventListener('pageshow', function (event) {
+            if (!event.persisted) return;
+            document.querySelectorAll('.sx-auth form button[type=submit]').forEach(function (b) { b.disabled = false; });
+        });
+    }());
+</script>
+</body>
+</html>

@@ -26,6 +26,17 @@ public interface TrackingService {
 
     boolean canRetry(Order order);
 
+    /** Tối đa 3 lần lấy hàng thất bại cho mỗi vận đơn. */
+    int MAX_PICKUP_FAILURES = 3;
+
+    /** Ghi nhận lấy hàng thất bại; đơn vẫn chờ lấy hàng, có lý do và hẹn lấy lại nếu có. */
+    vn.edu.hcmute.uteexpress.entity.OrderStatusHistory reportPickupFailure(Long orderId, String shipperUsername,
+            DeliveryFailureReason reason, String note, LocalDateTime nextAttemptAt);
+
+    long pickupFailures(Order order);
+
+    boolean canReportPickupFailure(Order order);
+
     Optional<Order> findAssignedOrderByCode(String code, String username);
 
     /**

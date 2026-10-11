@@ -7,12 +7,12 @@
 <body>
 
 <section class="ute-narrow-sm">
-<h2 class="mb-2">Xác thực email mới</h2>
-<p class="text-muted">
+<div class="ute-page-head sx-art-bell"><div><h2>Xác thực email mới</h2>
+<p>
     Chúng tôi vừa gửi mã gồm 6 chữ số tới
     <strong th:text="${pendingEmail}">email@example.com</strong>.
     Mở hộp thư đó và nhập mã vào ô bên dưới. Mã có hiệu lực trong 10 phút.
-</p>
+</p></div></div>
 
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>

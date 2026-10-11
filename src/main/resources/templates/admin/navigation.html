@@ -1,14 +1,28 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
-<body><nav th:fragment="navigation" class="d-flex flex-wrap align-items-center gap-2 mb-4 border-bottom pb-3" aria-label="Chức năng nội bộ">
-<span class="badge text-bg-dark me-2">Khu nội bộ</span>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/trang-chu}">Tổng quan vận hành</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/don-hang}">Tra soát đơn hàng</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/phan-cong}">Phân công Shipper</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/khieu-nai}">Khiếu nại</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/trang-chu}">Quản trị hệ thống</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/tai-khoan}">Tài khoản nội bộ</a>
-<a class="btn btn-outline-secondary btn-sm" th:href="@{/noi-bo/doi-mat-khau}">Đổi mật khẩu</a>
+<body><nav th:fragment="navigation" class="sx-staff-nav d-flex flex-wrap align-items-center gap-2 mb-4" aria-label="Chức năng nội bộ">
+<span class="badge text-bg-dark me-2"><i class="bi bi-building-lock"></i> Khu nội bộ</span>
+<a class="btn btn-outline-primary btn-sm sx-tone-blue" th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2"></i> Tổng quan vận hành</a>
+<a class="btn btn-outline-primary btn-sm sx-tone-cyan" th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
+<a class="btn btn-outline-primary btn-sm sx-tone-violet" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công Shipper</a>
+<a class="btn btn-outline-primary btn-sm sx-tone-rose" th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-square-text"></i> Khiếu nại</a>
+<a class="btn btn-outline-primary btn-sm sx-tone-gold" th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát COD</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Quản trị hệ thống</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/tai-khoan}"><i class="bi bi-people"></i> Tài khoản nội bộ</a>
+<a class="btn btn-outline-secondary btn-sm sx-tone-slate" th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
 <form th:action="@{/noi-bo/dang-xuat}" method="post" class="ms-auto">
-<button class="btn btn-outline-danger btn-sm" type="submit">Đăng xuất nội bộ</button></form>
+<button class="btn btn-outline-danger btn-sm" type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất nội bộ</button></form>
+<script th:inline="none">
+    // Đánh dấu mục đang mở theo đường dẫn hiện tại (vd. /manager/khieu-nai/5 -> Khiếu nại).
+    (function (nav) {
+        if (!nav) return;
+        var path = window.location.pathname, best = null;
+        nav.querySelectorAll('a[href]').forEach(function (link) {
+            var href = link.getAttribute('href');
+            if (path === href || path.indexOf(href + '/') === 0) {
+                if (!best || href.length > best.getAttribute('href').length) best = link;
+            }
+        });
+        if (best) { best.classList.add('active'); best.setAttribute('aria-current', 'page'); }
+    }(document.currentScript && document.currentScript.closest('nav')));
+</script>
 </nav></body></html>
-

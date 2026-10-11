@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent;
+import vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusText;
+import vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
@@ -125,12 +127,12 @@ public class TrackingServiceImpl implements TrackingService {
         if (!isValidTransition(order.getStatus(), newStatus)) {
             throw new IllegalStateException(
                     "Không thể chuyển trạng thái từ "
-                            + order.getStatus()
+                            + OrderStatusText.of(order.getStatus())
                             + " sang "
-                            + newStatus);
+                            + OrderStatusText.of(newStatus) + ".");
         }
 
-        LocalDateTime now = LocalDateTime.now(clock.withZone(ZoneId.of("Asia/Ho_Chi_Minh")));
+        LocalDateTime now = now();
         String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
         if (newStatus == Order.OrderStatus.FAILED && failureReason == null)
             throw new IllegalArgumentException("Hãy chọn lý do giao thất bại.");
@@ -161,8 +163,54 @@ public class TrackingServiceImpl implements TrackingService {
                 normalizedNote, nextAttemptAt, now));
 
         publishStatusChanged(savedOrder);
+        switch (newStatus) {
+            case DELIVERED -> publishSenderUpdate(savedOrder, SenderOrderUpdateEvent.Kind.DELIVERED, null, null);
+            case FAILED -> publishSenderUpdate(savedOrder, SenderOrderUpdateEvent.Kind.DELIVERY_FAILED,
+                    failureReason.getLabel(), nextAttemptAt);
+            case RETURNED -> publishSenderUpdate(savedOrder, SenderOrderUpdateEvent.Kind.RETURNED, null, null);
+            default -> { }
+        }
 
         return savedOrder;
+    }
+
+    @Override
+    @Transactional
+    public OrderStatusHistory reportPickupFailure(Long orderId, String shipperUsername,
+            DeliveryFailureReason reason, String note, LocalDateTime nextAttemptAt) {
+        AppUser shipper = findShipper(shipperUsername);
+        Order order = orderRepository.findLockedByIdAndShipper(orderId, shipper)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hoặc đơn không được phân công cho bạn."));
+        if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP)
+            throw new IllegalStateException("Chỉ ghi nhận lấy hàng thất bại khi đơn đang chờ lấy hàng.");
+        LocalDateTime now = now();
+        String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
+        if (reason == null) throw new IllegalArgumentException("Hãy chọn lý do lấy hàng thất bại.");
+        if (reason == DeliveryFailureReason.OTHER && normalizedNote.length() < 5)
+            throw new IllegalArgumentException("Lý do khác cần ghi chú ít nhất 5 ký tự.");
+        if (nextAttemptAt != null && (!nextAttemptAt.isAfter(now) || nextAttemptAt.isAfter(now.plusDays(30))))
+            throw new IllegalArgumentException("Hẹn lấy hàng lại phải sau hiện tại và trong 30 ngày tới.");
+        if (history.countPickupFailures(order) >= MAX_PICKUP_FAILURES)
+            throw new IllegalStateException("Đơn đã " + MAX_PICKUP_FAILURES
+                    + " lần lấy hàng không thành công; hãy trao đổi với Manager để hủy hoặc phân công lại.");
+        var latest = history.latestPickupFailures(List.of(order.getId()));
+        if (!latest.isEmpty() && latest.get(0).getOccurredAt().isAfter(now.minusMinutes(1)))
+            throw new IllegalStateException("Bạn vừa ghi nhận lấy hàng thất bại cho đơn này. Hãy đợi 1 phút rồi thử lại.");
+        var entry = history.save(new OrderStatusHistory(order, shipper, Order.OrderStatus.PENDING_PICKUP,
+                Order.OrderStatus.PENDING_PICKUP, reason, normalizedNote, nextAttemptAt, now));
+        publishSenderUpdate(order, SenderOrderUpdateEvent.Kind.PICKUP_FAILED, reason.getPickupLabel(), nextAttemptAt);
+        return entry;
+    }
+
+    @Override
+    public long pickupFailures(Order order) {
+        return history.countPickupFailures(order);
+    }
+
+    @Override
+    public boolean canReportPickupFailure(Order order) {
+        return order.getStatus() == Order.OrderStatus.PENDING_PICKUP
+                && history.countPickupFailures(order) < MAX_PICKUP_FAILURES;
     }
 
     @Override
@@ -188,6 +236,17 @@ public class TrackingServiceImpl implements TrackingService {
                         order.getTrackingCode(),
                         order.getStatus().name(),
                         order.getUpdatedAt()));
+    }
+
+    private void publishSenderUpdate(Order order, SenderOrderUpdateEvent.Kind kind, String reason, LocalDateTime next) {
+        AppUser sender = order.getSender();
+        if (sender == null) return;
+        String name = sender.getFullName() == null || sender.getFullName().isBlank() ? order.getSenderName() : sender.getFullName();
+        eventPublisher.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, reason, next));
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock.withZone(ZoneId.of("Asia/Ho_Chi_Minh")));
     }
 
     private void markCodCollectedIfNecessary(Order order) {

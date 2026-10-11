@@ -75,6 +75,14 @@ public class DeliveryProofServiceImpl
                     "Chỉ được lưu bằng chứng khi đơn đang giao.");
         }
 
+        // Kiểm tra đủ hai phần trước khi ghi tệp, tránh để lại ảnh mồ côi khi thiếu chữ ký.
+        if (proofImage == null || proofImage.isEmpty()) {
+            throw new IllegalStateException("Vui lòng chọn ảnh bằng chứng giao hàng.");
+        }
+        if (signatureData == null || signatureData.isBlank()) {
+            throw new IllegalStateException("Vui lòng ký xác nhận trước khi lưu.");
+        }
+
         String proofImagePath =
                 storageService.storeProofImage(proofImage);
         String signaturePath =

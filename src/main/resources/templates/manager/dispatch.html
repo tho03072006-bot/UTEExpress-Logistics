@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head><title>Phân công giao hàng - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h2>Phân công giao hàng</h2><p>Chỉ phân công đơn chờ lấy hàng cho Shipper đang hoạt động.</p></div></div>
+<div class="ute-page-head sx-art-route"><div><h2>Phân công giao hàng</h2><p>Chỉ phân công đơn chờ lấy hàng cho Shipper đang hoạt động.</p></div></div>
 <div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
 <div class="alert alert-light border" th:if="${error}" th:text="${error}"></div>
 <div class="ute-panel text-muted" th:if="${orders.empty}">Không có đơn đang chờ lấy hàng.</div>

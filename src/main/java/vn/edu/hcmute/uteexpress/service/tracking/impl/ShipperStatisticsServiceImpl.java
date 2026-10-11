@@ -37,7 +37,8 @@ public class ShipperStatisticsServiceImpl implements ShipperStatisticsService {
             from = switch (selected) { case DAY -> today; case WEEK -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)); case MONTH -> today.withDayOfMonth(1); };
             to = switch (selected) { case DAY -> from; case WEEK -> from.plusDays(6); case MONTH -> from.with(TemporalAdjusters.lastDayOfMonth()); };
         }
-        if (from.isAfter(to) || ChronoUnit.DAYS.between(from, to) > 91 || from.getYear() < 2000 || to.getYear() > 2100)
+        if (from.isAfter(to)) throw new IllegalArgumentException("Từ ngày không được sau đến ngày.");
+        if (ChronoUnit.DAYS.between(from, to) > 91 || from.getYear() < 2000 || to.getYear() > 2100)
             throw new IllegalArgumentException("Khoảng thống kê tối đa 92 ngày, trong năm 2000–2100.");
         var start = from.atStartOfDay(); var end = to.plusDays(1).atStartOfDay();
         var activities = new ArrayList<>(history.activities(shipper, start, end));

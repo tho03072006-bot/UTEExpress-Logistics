@@ -23,61 +23,86 @@
 -->
 <nav th:fragment="sidebarNav" class="ute-nav">
     <div sec:authorize="hasRole('USER')">
+        <div class="sx-profile">
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">K</span>
+            <div><strong sec:authentication="name">user</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Khách hàng</span></div>
+        </div>
         <p class="ute-nav-heading">Người gửi hàng</p>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/trang-chu}">
+        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/nguoi-dung/trang-chu}">
             <i class="bi bi-speedometer2"></i> Trang tổng quan
         </a>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/tao-don}">
+        <a class="ute-nav-link sx-nav sx-tone-green" th:href="@{/nguoi-dung/tao-don}">
             <i class="bi bi-plus-square"></i> Tạo đơn gửi hàng
         </a>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/gio-don}">
+        <a class="ute-nav-link sx-nav sx-tone-amber" th:href="@{/nguoi-dung/gio-don}">
             <i class="bi bi-basket"></i> Giỏ đơn
-            <span class="badge badge-ute ms-auto" th:if="${cartCount != null and cartCount > 0}"
+            <span class="badge sx-count-red ms-auto" th:if="${cartCount != null and cartCount > 0}"
                   th:text="${cartCount}">0</span>
         </a>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/dia-chi}">
+        <a class="ute-nav-link sx-nav sx-tone-teal" th:href="@{/nguoi-dung/dia-chi}">
             <i class="bi bi-geo-alt"></i> Sổ địa chỉ
         </a>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/don-hang}">
+        <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/nguoi-dung/don-hang}">
             <i class="bi bi-box-seam"></i> Đơn hàng của tôi
         </a>
-        <a class="ute-nav-link" th:href="@{/nguoi-dung/tai-khoan}">
+        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/nguoi-dung/tai-khoan}">
             <i class="bi bi-person-gear"></i> Tài khoản của tôi
         </a>
     </div>
 
     <div sec:authorize="hasRole('SHIPPER')">
+        <div class="sx-profile">
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">S</span>
+            <div><strong sec:authentication="name">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang hoạt động</span></div>
+        </div>
         <p class="ute-nav-heading">Shipper</p>
-        <a class="ute-nav-link" th:href="@{/shipper/trang-chu}">
+        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/shipper/trang-chu}">
             <i class="bi bi-truck"></i> Đơn được phân công
         </a>
-        <a class="ute-nav-link" th:href="@{/shipper/thong-ke}">
+        <a class="ute-nav-link sx-nav sx-tone-teal" th:href="@{/shipper/lo-trinh}">
+            <i class="bi bi-signpost-split"></i> Lộ trình hôm nay
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-gold" th:href="@{/shipper/doi-soat}">
+            <i class="bi bi-cash-coin"></i> Nộp tiền COD
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/shipper/thong-ke}">
             <i class="bi bi-graph-up-arrow"></i> Thống kê giao hàng
         </a>
-        <a class="ute-nav-link" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
-        <a class="ute-nav-link" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
-            <span class="badge badge-ute ms-auto" data-notification-count hidden>0</span></a>
+        <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
+        <a class="ute-nav-link sx-nav sx-tone-rose" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
+            <span class="badge sx-count-red ms-auto" data-notification-count hidden>0</span></a>
     </div>
 
     <div sec:authorize="hasRole('MANAGER')">
+        <div class="sx-profile sx-profile-staff">
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">M</span>
+            <div><strong sec:authentication="name">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Quản lý vận hành</span></div>
+        </div>
         <p class="ute-nav-heading">Quản lý</p>
-        <a class="ute-nav-link" th:href="@{/manager/trang-chu}">
+        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/manager/trang-chu}">
             <i class="bi bi-bar-chart"></i> Trang quản lý
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-gold" th:href="@{/manager/doi-soat-cod}">
+            <i class="bi bi-cash-coin"></i> Đối soát COD
         </a>
     </div>
 
     <div sec:authorize="hasRole('ADMIN')">
+        <div class="sx-profile sx-profile-staff">
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">A</span>
+            <div><strong sec:authentication="name">admin</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Quản trị hệ thống</span></div>
+        </div>
         <p class="ute-nav-heading">Quản trị</p>
-        <a class="ute-nav-link" th:href="@{/admin/trang-chu}">
+        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/admin/trang-chu}">
             <i class="bi bi-shield-lock"></i> Trang quản trị
         </a>
     </div>
 
     <div class="ute-nav-divider"></div>
-    <a class="ute-nav-link" th:href="@{/tra-cuu}">
+    <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/tra-cuu}">
         <i class="bi bi-search"></i> Tra cứu vận đơn
     </a>
-    <a class="ute-nav-link" th:href="@{/uoc-tinh-cuoc}">
+    <a class="ute-nav-link sx-nav sx-tone-amber" th:href="@{/uoc-tinh-cuoc}">
         <i class="bi bi-calculator"></i> Ước tính cước phí
     </a>
 </nav>

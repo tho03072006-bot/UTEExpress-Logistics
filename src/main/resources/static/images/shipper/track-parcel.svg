@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Kính lúp tra cứu gói hàng">
+  <ellipse cx="176" cy="216" rx="120" ry="9" fill="#000" opacity=".2"/>
+  <!-- tuyến đường và điểm -->
+  <path d="M30 196 C 80 170 96 210 150 188 S 250 150 318 168" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10" opacity=".7"/>
+  <g transform="translate(40 168)"><path d="M0 0 C -9 -11 -11 -16 -11 -21 A11 11 0 0 1 11 -21 C 11 -16 9 -11 0 0 Z" fill="#F59E0B"/><circle cy="-21" r="4.5" fill="#FFFFFF"/></g>
+  <g transform="translate(318 150)"><path d="M0 0 C -11 -14 -14 -20 -14 -27 A14 14 0 0 1 14 -27 C 14 -20 11 -14 0 0 Z" fill="#22C55E"/><path d="M-6 -27 l4 4 8 -8" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <!-- gói hàng -->
+  <g transform="translate(96 82)">
+    <path d="M0 30 L 72 0 L 144 30 L 72 60 Z" fill="#FCD34D"/>
+    <path d="M0 30 L 72 60 L 72 132 L 0 102 Z" fill="#F59E0B"/>
+    <path d="M144 30 L 72 60 L 72 132 L 144 102 Z" fill="#D97706"/>
+    <path d="M36 15 L 108 45 L 108 70 L 96 64 L 96 40 L 24 10 Z" fill="#FEF3C7" opacity=".9"/>
+    <rect x="14" y="62" width="40" height="24" rx="3" fill="#FFFFFF" opacity=".92" transform="skewY(22) translate(0 -18)"/>
+  </g>
+  <!-- kính lúp -->
+  <g transform="translate(230 92)">
+    <circle r="40" fill="#E0F2FE" opacity=".35"/>
+    <circle r="40" fill="none" stroke="#FFFFFF" stroke-width="11"/>
+    <circle r="40" fill="none" stroke="#4F46E5" stroke-width="5"/>
+    <path d="M-20 -14 a 26 26 0 0 1 16 -12" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+    <path d="M28 30 L 62 64" stroke="#0B2540" stroke-width="15" stroke-linecap="round"/>
+    <path d="M30 32 L 44 46" stroke="#7C3AED" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M58 52 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M318 44 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

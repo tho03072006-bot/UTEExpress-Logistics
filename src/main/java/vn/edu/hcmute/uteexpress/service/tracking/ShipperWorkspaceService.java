@@ -45,16 +45,32 @@ public class ShipperWorkspaceService {
     }
     public Map<Long, ShipperMoneyView> money(String username, List<Order> visible) {
         var result = new HashMap<Long, ShipperMoneyView>();
-        for (var order : visible) { access.checkOrder(order, username); result.put(order.getId(), ShipperMoneyView.from(null)); }
+        access.checkOrders(visible, username);
+        for (var order : visible) result.put(order.getId(), ShipperMoneyView.from(null));
         if (!visible.isEmpty()) for (var payment : payments.findByOrderIdIn(visible.stream().map(Order::getId).toList()))
             result.put(payment.getOrder().getId(), ShipperMoneyView.from(payment));
         return result;
     }
     public Map<Long, OrderStatusHistory> retries(String username, List<Order> visible) {
         var result = new HashMap<Long, OrderStatusHistory>();
-        for (var order : visible) access.checkOrder(order, username);
+        access.checkOrders(visible, username);
         if (!visible.isEmpty()) for (var entry : history.latestFailures(visible.stream().map(Order::getId).toList()))
             result.put(entry.getOrder().getId(), entry);
+        return result;
+    }
+    /** Lần lấy hàng thất bại gần nhất của các đơn đang hiển thị. */
+    public Map<Long, OrderStatusHistory> pickupFailures(String username, List<Order> visible) {
+        var result = new HashMap<Long, OrderStatusHistory>();
+        access.checkOrders(visible, username);
+        if (!visible.isEmpty()) for (var entry : history.latestPickupFailures(visible.stream().map(Order::getId).toList()))
+            result.put(entry.getOrder().getId(), entry);
+        return result;
+    }
+    public Map<Long, Long> pickupCounts(String username, List<Order> visible) {
+        var result = new HashMap<Long, Long>();
+        access.checkOrders(visible, username);
+        if (!visible.isEmpty()) for (var count : history.pickupFailureCounts(visible.stream().map(Order::getId).toList()))
+            result.put(count.orderId(), count.count());
         return result;
     }
     public LocalDateTime now() { return LocalDateTime.now(clock); }

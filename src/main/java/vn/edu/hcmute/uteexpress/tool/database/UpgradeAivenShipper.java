@@ -10,7 +10,11 @@ public final class UpgradeAivenShipper {
     private static final Map<String, Set<String>> COLUMNS = Map.of(
         "order_status_history", Set.of("id", "order_id", "actor_id", "actor_name", "previous_status", "status", "failure_reason", "note", "next_attempt_at", "occurred_at"),
         "shipper_notification", Set.of("id", "order_id", "recipient_id", "message", "created_at", "read_at"),
-        "order_complaint", Set.of("id", "revision", "order_id", "subject", "description", "image_bytes", "status", "manager_reply", "shipper_note", "handled_by", "created_at", "updated_at"));
+        "order_complaint", Set.of("id", "revision", "order_id", "subject", "description", "image_bytes", "status", "manager_reply", "shipper_note", "handled_by", "created_at", "updated_at"),
+        "cod_settlement", Set.of("id", "revision", "shipper_id", "order_count", "total_amount", "declared_amount", "status", "shipper_note", "manager_note", "reviewed_by", "submitted_at", "reviewed_at"),
+        "cod_settlement_item", Set.of("id", "settlement_id", "order_id", "amount"));
+    /** V2: lịch sử, thông báo, khiếu nại. V3: đối soát COD. Chạy theo thứ tự vì V3 tham chiếu bảng có sẵn. */
+    private static final List<String> SCRIPTS = List.of("/db/migration/V2__shipper_features.sql", "/db/migration/V3__cod_settlement.sql");
     public static void main(String[] args) {
         if (args.length != 1 || !Set.of("--check", "--apply", "--print-schema").contains(args[0])) {
             System.err.println("Dùng --check, --apply hoặc --print-schema."); System.exit(1);
@@ -31,14 +35,17 @@ public final class UpgradeAivenShipper {
         }
     }
     static List<String> statements() throws java.io.IOException {
-        try (var input = UpgradeAivenShipper.class.getResourceAsStream("/db/migration/V2__shipper_features.sql")) {
-            if (input == null) throw new IllegalArgumentException("Thiếu script nâng cấp Shipper.");
-            String script = new String(input.readAllBytes(), StandardCharsets.UTF_8).replaceAll("(?m)^--.*$", "");
-            var result = Arrays.stream(script.split(";")).map(String::strip).filter(s -> !s.isEmpty()).toList();
-            if (result.size() != 3 || result.stream().anyMatch(s -> !s.startsWith("CREATE TABLE IF NOT EXISTS ")))
-                throw new IllegalArgumentException("Script chỉ được thêm ba bảng chức năng mới.");
-            return result;
+        var result = new ArrayList<String>();
+        for (String path : SCRIPTS) {
+            try (var input = UpgradeAivenShipper.class.getResourceAsStream(path)) {
+                if (input == null) throw new IllegalArgumentException("Thiếu script nâng cấp Shipper: " + path);
+                String script = new String(input.readAllBytes(), StandardCharsets.UTF_8).replaceAll("(?m)^--.*$", "");
+                Arrays.stream(script.split(";")).map(String::strip).filter(s -> !s.isEmpty()).forEach(result::add);
+            }
         }
+        if (result.size() != COLUMNS.size() || result.stream().anyMatch(s -> !s.startsWith("CREATE TABLE IF NOT EXISTS ")))
+            throw new IllegalArgumentException("Script chỉ được thêm " + COLUMNS.size() + " bảng chức năng mới.");
+        return List.copyOf(result);
     }
     static void apply(Connection connection) throws Exception {
         validateTarget(connection);
@@ -79,6 +86,8 @@ public final class UpgradeAivenShipper {
         Map<String, String> expectedForeignKeys = switch (table) {
             case "order_status_history" -> Map.of("order_id", "shipment_order", "actor_id", "app_user");
             case "shipper_notification" -> Map.of("order_id", "shipment_order", "recipient_id", "app_user");
+            case "cod_settlement" -> Map.of("shipper_id", "app_user", "reviewed_by", "app_user");
+            case "cod_settlement_item" -> Map.of("settlement_id", "cod_settlement", "order_id", "shipment_order");
             default -> Map.of("order_id", "shipment_order", "handled_by", "app_user");
         };
         Map<String, String> foreignKeys = new HashMap<>();
@@ -87,7 +96,7 @@ public final class UpgradeAivenShipper {
         }
         if (!foreignKeys.entrySet().containsAll(expectedForeignKeys.entrySet()))
             throw new IllegalArgumentException("Bảng " + table + " thiếu khóa ngoại; cần kiểm tra thủ công.");
-        if (!table.equals("order_status_history")) {
+        if (!table.equals("order_status_history") && !table.equals("cod_settlement")) {
             Map<String, Set<String>> uniqueIndexes = new HashMap<>();
             try (var result = connection.getMetaData().getIndexInfo(connection.getCatalog(), null, table, true, false)) {
                 while (result.next()) {

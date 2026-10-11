@@ -6,22 +6,42 @@
 </head>
 <body>
 
-<section class="ute-narrow-sm">
-<h2 class="mb-3">Xác thực OTP</h2>
-<p class="text-muted">
-    Mã OTP đã được gửi tới email bạn đăng ký và có hiệu lực trong 10 phút.
-</p>
+<section class="shipper-workspace sx-public sx-auth">
+<div class="sx-auth-card">
+    <aside class="sx-auth-side" aria-hidden="true">
+        <span class="shipper-eyebrow"><i class="bi bi-shield-check"></i> KÍCH HOẠT TÀI KHOẢN</span>
+        <h2>Chỉ còn một bước nữa</h2>
+        <p>Nhập mã OTP vừa gửi tới email để kích hoạt tài khoản UTEExpress.</p>
+        <img th:src="@{/images/shipper/notify-bell.svg}" alt="" width="320" height="213">
+        <ul>
+            <li><i class="bi bi-clock-history"></i> Mã có hiệu lực trong 10 phút</li>
+            <li><i class="bi bi-inbox"></i> Không thấy thư? Kiểm tra mục Spam</li>
+        </ul>
+    </aside>
 
-<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div class="sx-auth-form">
+        <h1>Xác thực OTP</h1>
+        <p class="shipper-hint">Mã OTP đã được gửi tới email bạn đăng ký và có hiệu lực trong 10 phút.</p>
 
-<form method="post" th:action="@{/xac-thuc-otp}">
-    <input type="hidden" name="username" th:value="${username}">
-    <div class="mb-3">
-        <label class="form-label">Mã OTP (6 số)</label>
-        <input type="text" name="otp" class="form-control" maxlength="6" required autofocus>
+        <div th:if="${error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+
+        <form method="post" th:action="@{/xac-thuc-otp}">
+            <input type="hidden" name="username" th:value="${username}">
+            <div class="mb-4">
+                <label class="form-label" for="otp">Mã OTP (6 số)</label>
+                <input type="text" id="otp" name="otp" class="form-control ute-otp-input sx-otp" maxlength="6" required autofocus
+                       inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" placeholder="000000" data-otp
+                       title="Nhập đủ 6 chữ số">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-check2-circle"></i> Xác thực</button>
+        </form>
+        <div class="sx-auth-links">
+            <span>Nhập nhầm email? <a th:href="@{/dang-ky}">Đăng ký lại</a></span>
+            <a th:href="@{/dang-nhap}">Đăng nhập</a>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary w-100">Xác thực</button>
-</form>
+</div>
+<div th:replace="~{fragments/auth :: scripts}"></div>
 </section>
 
 </body>

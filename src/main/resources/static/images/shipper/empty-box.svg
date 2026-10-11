@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" role="img" aria-label="Chưa có dữ liệu">
+  <ellipse cx="120" cy="152" rx="82" ry="8" fill="#64748B" opacity=".18"/>
+  <!-- hộp mở -->
+  <path d="M56 70 L 120 92 L 184 70 L 184 132 L 120 154 L 56 132 Z" fill="#F59E0B"/>
+  <path d="M120 92 L 184 70 L 184 132 L 120 154 Z" fill="#D97706"/>
+  <path d="M56 70 L 30 50 L 94 30 L 120 50 Z" fill="#FCD34D"/>
+  <path d="M184 70 L 210 50 L 146 30 L 120 50 Z" fill="#FBBF24"/>
+  <path d="M56 70 L 120 50 L 184 70 L 120 92 Z" fill="#92400E" opacity=".55"/>
+  <rect x="92" y="108" width="22" height="16" rx="3" fill="#FFFFFF" opacity=".85" transform="skewY(19) translate(0 -35)"/>
+  <!-- kính lúp -->
+  <g transform="translate(176 26)">
+    <circle r="15" fill="#E0F2FE" stroke="#4F46E5" stroke-width="6"/>
+    <path d="M10 11 l14 14" stroke="#4F46E5" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g fill="#7C3AED" opacity=".55">
+    <path d="M44 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z"/><circle cx="214" cy="96" r="3"/><circle cx="26" cy="104" r="2.5"/>
+  </g>
+</svg>
