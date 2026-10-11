@@ -1,0 +1,31 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Đối soát COD - UTEExpress</title></head><body><section class="shipper-workspace">
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Phiếu nộp tiền của Shipper</h2><p>Kiểm tra tiền mặt Shipper nộp lại và xác nhận hoặc từ chối từng phiếu.</p></div>
+<img class="sx-hero-art" th:src="@{/images/shipper/cod-wallet.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
+<div class="shipper-metrics">
+    <a class="shipper-metric sx-tone-amber" th:href="@{/manager/doi-soat-cod(status='SUBMITTED')}"><i class="bi bi-hourglass-split"></i><strong th:text="${summary.pendingCount}">0</strong><span>Phiếu chờ xác nhận</span></a>
+    <div class="shipper-metric sx-tone-gold sx-metric-money sx-metric-wide"><i class="bi bi-cash-stack"></i><strong><th:block th:replace="~{fragments/components :: money(${summary.pendingAmount})}"></th:block></strong><span>Tiền chờ xác nhận</span></div>
+    <a class="shipper-metric sx-tone-green" th:href="@{/manager/doi-soat-cod(status='CONFIRMED')}"><i class="bi bi-check2-circle"></i><strong th:text="${summary.confirmedCount}">0</strong><span>Phiếu đã xác nhận</span></a>
+</div>
+<nav class="shipper-status-tabs" aria-label="Lọc trạng thái phiếu">
+    <a class="sx-tone-blue" th:classappend="${selectedStatus == null} ? 'active'" th:href="@{/manager/doi-soat-cod}">Tất cả</a>
+    <a th:each="s : ${statuses}" th:class="${'sx-cod-status-' + #strings.toLowerCase(s.name())}" th:classappend="${s == selectedStatus} ? 'active'" th:href="@{/manager/doi-soat-cod(status=${s})}" th:text="${s.label}"></a>
+</nav>
+<div class="ute-panel"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Phiếu</th><th>Shipper</th><th>Số đơn</th><th class="text-end">Tổng cước</th><th class="text-end">Tiền nộp</th><th>Trạng thái</th><th>Gửi lúc</th><th></th></tr></thead>
+    <tbody><tr th:if="${settlements.empty}"><td colspan="8" class="text-muted py-4">Không có phiếu phù hợp.</td></tr>
+    <tr th:each="s : ${settlements.content}"><td class="fw-bold" th:text="|#${s.id}|"></td><td th:text="${s.shipper.fullName != null ? s.shipper.fullName : s.shipper.username}"></td><td th:text="${s.orderCount}"></td>
+        <td class="text-end"><span th:replace="~{fragments/components :: money(${s.totalAmount})}"></span></td>
+        <td class="text-end fw-semibold"><span th:replace="~{fragments/components :: money(${s.declaredAmount})}"></span><i class="bi bi-exclamation-triangle-fill ms-1 text-warning" th:if="${s.hasDifference()}" title="Có chênh lệch"></i></td>
+        <td><span class="sx-pill sx-dot" th:classappend="${'sx-cod-status-' + #strings.toLowerCase(s.status.name())}" th:text="${s.status.label}"></span></td>
+        <td th:text="${#temporals.format(s.submittedAt, 'dd/MM/yyyy HH:mm')}"></td>
+        <td><a class="btn btn-outline-primary btn-sm" th:href="@{/manager/doi-soat-cod/{id}(id=${s.id})}" th:text="${s.status.name() == 'SUBMITTED'} ? 'Xử lý' : 'Xem'"></a></td></tr></tbody>
+</table></div></div>
+<nav th:if="${settlements.totalPages > 1}" class="shipper-pagination" aria-label="Phân trang phiếu nộp tiền">
+    <a th:if="${settlements.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/doi-soat-cod(page=${settlements.number - 1},status=${selectedStatus})}">Trang trước</a>
+    <span th:text="|Trang ${settlements.number + 1}/${settlements.totalPages}|"></span>
+    <a th:if="${settlements.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/doi-soat-cod(page=${settlements.number + 1},status=${selectedStatus})}">Trang sau</a>
+</nav>
+<script th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

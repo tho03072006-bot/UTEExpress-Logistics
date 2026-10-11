@@ -6,35 +6,69 @@
 </head>
 <body>
 
-<section class="ute-narrow">
-<h2 class="mb-4">Tra cứu vận đơn</h2>
-
-<form method="get" th:action="@{/tra-cuu}" class="d-flex gap-2 mb-4">
-    <input type="text" name="trackingCode" class="form-control" placeholder="Nhập mã vận đơn (VD: UTE12345678)" required>
-    <button type="submit" class="btn btn-primary">Tra cứu</button>
-</form>
+<section class="shipper-workspace sx-public sx-page-narrow">
+<header class="shipper-hero">
+    <div class="sx-hero-main">
+        <span class="shipper-eyebrow"><i class="bi bi-search"></i> TRA CỨU HÀNH TRÌNH</span>
+        <h2>Tra cứu vận đơn</h2>
+        <p>Nhập mã vận đơn để biết hàng của bạn đang ở đâu. Không cần đăng nhập.</p>
+        <form method="get" th:action="@{/tra-cuu}" class="sx-hero-search">
+            <label class="visually-hidden" for="trackingCode">Mã vận đơn</label>
+            <i class="bi bi-upc-scan" aria-hidden="true"></i>
+            <input type="text" id="trackingCode" name="trackingCode" class="form-control" th:value="${param.trackingCode}"
+                   placeholder="Nhập mã vận đơn (VD: UTE12345678)" maxlength="30" required autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tra cứu</button>
+        </form>
+    </div>
+    <img class="sx-hero-art" th:src="@{/images/shipper/track-parcel.svg}" alt="" aria-hidden="true" width="320" height="213">
+</header>
 
 <div th:if="${searched}">
-    <div th:if="${order == null}" class="alert alert-warning">Không tìm thấy vận đơn này.</div>
-
-    <div th:if="${order != null}" class="card">
-        <div class="card-body">
-            <h5 class="card-title d-flex align-items-center flex-wrap gap-2">
-                <span th:text="${order.trackingCode}">UTE00000000</span>
-                <button type="button" class="btn btn-sm btn-outline-secondary ute-copy-btn"
-                        th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
-                    <i class="bi bi-clipboard"></i> Chép mã
-                </button>
-            </h5>
-            <p>Người nhận: <span th:text="${order.receiverName}">-</span></p>
-            <p>Dịch vụ:
-                <span><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span>
-            </p>
-            <p>Trạng thái:
-                <span class="badge bg-primary"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span>
-            </p>
-        </div>
+    <div th:if="${order == null}" class="ute-panel shipper-empty">
+        <img class="sx-empty-art" th:src="@{/images/shipper/empty-box.svg}" alt="" aria-hidden="true" width="200" height="142">
+        <h3>Không tìm thấy vận đơn này</h3>
+        <p>Kiểm tra lại mã vận đơn (thường bắt đầu bằng <strong>UTE</strong>) hoặc hỏi người gửi hàng.</p>
     </div>
+
+    <article th:if="${order != null}" class="ute-panel sx-track-card"
+             th:with="st=${order.status.name()},
+                      rank=${st == 'PENDING_PICKUP' ? 0 : (st == 'PICKED_UP' ? 1 : (st == 'IN_TRANSIT' or st == 'FAILED' ? 2 : (st == 'DELIVERED' ? 3 : -1)))}"
+             th:classappend="${'sx-status-' + #strings.toLowerCase(st)}">
+        <div class="sx-track-head">
+            <div><span class="shipper-eyebrow">MÃ VẬN ĐƠN</span>
+                <h3 class="d-flex align-items-center flex-wrap gap-2 mb-0">
+                    <span th:text="${order.trackingCode}">UTE00000000</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ute-copy-btn"
+                            th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
+                        <i class="bi bi-clipboard"></i> Chép mã
+                    </button>
+                </h3></div>
+            <span class="sx-pill sx-dot sx-track-status"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span>
+        </div>
+
+        <ol class="sx-progress" th:if="${rank >= 0}" aria-label="Tiến độ vận đơn">
+            <li th:classappend="${rank >= 0} ? 'done'"><span><i class="bi bi-receipt"></i></span>Chờ lấy hàng</li>
+            <li th:classappend="${rank >= 1} ? 'done'"><span><i class="bi bi-bag-check"></i></span>Đã lấy hàng</li>
+            <li th:classappend="${rank >= 2} ? 'done'"><span><i class="bi bi-truck"></i></span>Đang giao</li>
+            <li th:classappend="${rank >= 3} ? 'done' : (${st == 'FAILED'} ? 'failed')"><span><i class="bi" th:classappend="${st == 'FAILED'} ? 'bi-x-lg' : 'bi-check2-circle'"></i></span>
+                <th:block th:text="${st == 'FAILED'} ? 'Giao chưa thành công' : 'Giao thành công'">Giao thành công</th:block></li>
+        </ol>
+        <div class="shipper-notice sx-notice-warning" th:if="${st == 'CANCELLED' or st == 'RETURNED'}">
+            <i class="bi bi-info-circle"></i><span th:text="${st == 'CANCELLED'} ? 'Vận đơn đã bị hủy.' : 'Vận đơn đã được hoàn trả về người gửi.'"></span></div>
+
+        <div class="sx-track-info">
+            <div><span>Người nhận</span><strong th:text="${order.receiverName}">-</strong></div>
+            <div><span>Dịch vụ</span><strong><span class="sx-chip" th:classappend="${'sx-service-' + #strings.toLowerCase(order.serviceType.name())}"><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span></strong></div>
+            <div><span>Trạng thái</span><strong><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong></div>
+        </div>
+        <p class="shipper-hint mb-0 mt-3"><i class="bi bi-person-lock"></i> Người gửi đăng nhập để xem toàn bộ lịch sử hành trình, ảnh và chữ ký giao hàng.</p>
+    </article>
+</div>
+
+<div class="sx-tip-grid" th:unless="${searched}">
+    <div class="sx-tip sx-tone-indigo"><i class="bi bi-upc"></i><div><strong>Mã vận đơn ở đâu?</strong><p>In trên phiếu gửi hàng hoặc trong mục Đơn hàng của tôi.</p></div></div>
+    <div class="sx-tip sx-tone-teal"><i class="bi bi-qr-code"></i><div><strong>Có mã QR?</strong><p>Mã QR trên vận đơn chứa đúng mã để tra cứu.</p></div></div>
+    <div class="sx-tip sx-tone-amber"><i class="bi bi-bell"></i><div><strong>Nhận thông báo</strong><p>Người gửi nhận email khi đơn giao thành công hoặc gặp sự cố.</p></div></div>
 </div>
 </section>
 

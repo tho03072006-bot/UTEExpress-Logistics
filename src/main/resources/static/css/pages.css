@@ -1,0 +1,154 @@
+/*
+ * ============================================================================
+ * UTEExpress - giao dien trang cong khai: trang chu, tra cuu, uoc tinh cuoc,
+ * dang nhap. Nap sau style.css va shipper.css; dung lai bien mau --sx-* va
+ * cac lop shipper-hero / shipper-metric. Moi quy tac gan voi lop sx-* rieng
+ * nen cac trang khac khong bi anh huong.
+ * ============================================================================
+ */
+
+/* ---------- Khung chung ---------- */
+.sx-page-narrow { max-width: 1000px; margin-inline: auto; }
+.shipper-workspace .shipper-hero h1 { color: #FFFFFF; font-weight: 800; letter-spacing: -.035em; font-size: clamp(1.9rem, 4.2vw, 3rem); margin: .6rem 0; line-height: 1.12; }
+.sx-home-hero { padding: clamp(1.5rem, 4vw, 2.75rem) !important; }
+.sx-home-hero p { font-size: 1.05rem; }
+.sx-hero-art-lg { width: clamp(240px, 30vw, 390px); }
+.sx-section-title { margin: 2.5rem 0 1.1rem; }
+.sx-section-title h2 { font-size: clamp(1.3rem, 2.4vw, 1.65rem); font-weight: 800; letter-spacing: -.03em; margin: .4rem 0 0; }
+
+/* ---------- Ô tìm kiếm trong hero (tra cứu / cân nặng) ---------- */
+.sx-hero-search { display: flex; align-items: center; gap: .5rem; max-width: 600px; margin-top: 1.25rem; padding: .4rem .4rem .4rem 1rem;
+    border-radius: 1rem; background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .35); backdrop-filter: blur(8px); }
+.sx-hero-search > i { color: #FFFFFF; font-size: 1.2rem; opacity: .9; }
+.shipper-workspace .sx-hero-search .form-control { flex: 1; min-width: 0; background: transparent; border: 0; color: #FFFFFF; box-shadow: none; font-size: 1rem; padding-left: .25rem; }
+.shipper-workspace .sx-hero-search .form-control:focus { background: transparent; color: #FFFFFF; box-shadow: none; }
+.shipper-workspace .sx-hero-search .form-control::placeholder { color: rgba(255, 255, 255, .78); }
+.shipper-workspace .sx-hero-search .btn { flex-shrink: 0; background: #FFFFFF; color: #00508A; font-weight: 700; box-shadow: none; border-radius: .75rem; }
+.shipper-workspace .sx-hero-search .btn:hover { background: #E0F2FE; color: #003B68; }
+.sx-hero-search:focus-within { border-color: rgba(255, 255, 255, .8); box-shadow: 0 0 0 4px rgba(255, 255, 255, .15); }
+.sx-hero-error { display: inline-flex; align-items: center; gap: .45rem; margin-top: .75rem; padding: .45rem .8rem; border-radius: .7rem;
+    background: #FFFFFF; color: #BE123C; font-size: .85rem; font-weight: 600; }
+.sx-hero-error .ute-field-error { color: inherit; margin: 0; }
+
+/* ---------- Thẻ tiện ích có hình minh họa ---------- */
+.sx-feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.sx-feature { display: flex; flex-direction: column; overflow: hidden; border-radius: 1.1rem; border: 1px solid var(--ute-border);
+    background: var(--ute-card); box-shadow: var(--ute-shadow); color: var(--ute-ink); text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+a.sx-feature:hover { transform: translateY(-4px); box-shadow: var(--sx-card-glow); color: var(--ute-ink); }
+.sx-feature.sx-tone-amber img { background: linear-gradient(135deg, #F59E0B, #F43F5E); }
+.sx-feature img { display: block; width: 100%; height: 170px; object-fit: contain; padding: .75rem 1rem 0;
+    background: linear-gradient(135deg, var(--tone), color-mix(in srgb, var(--tone) 45%, #4F46E5)); }
+.sx-feature h3 { font-size: 1.1rem; font-weight: 700; margin: 1.1rem 1.25rem .4rem; }
+.sx-feature p { color: var(--ute-gray); font-size: .88rem; margin: 0 1.25rem 1rem; line-height: 1.65; }
+.sx-feature-link { margin: auto 1.25rem 1.25rem; font-weight: 700; color: var(--tone-ink); display: inline-flex; align-items: center; gap: .4rem; }
+a.sx-feature:hover .sx-feature-link i { transform: translateX(3px); }
+.sx-feature-link i { transition: transform .15s ease; }
+.sx-service-list { list-style: none; padding: 0; margin: 0 1.25rem 1.25rem; display: grid; gap: .55rem; }
+.sx-service-list li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-size: .86rem; color: var(--ute-gray); }
+
+/* ---------- Quy trình 4 bước ---------- */
+.sx-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; counter-reset: step; }
+.sx-steps li { position: relative; padding: 1.25rem; border-radius: 1rem; background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: var(--ute-shadow); counter-increment: step; }
+.sx-steps li::after { content: counter(step); position: absolute; top: .9rem; right: 1rem; font-size: 2rem; font-weight: 800; color: var(--tone-soft); line-height: 1; }
+.sx-step-icon { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: .9rem; margin-bottom: .85rem; color: #FFFFFF; font-size: 1.25rem;
+    background: linear-gradient(135deg, var(--tone), color-mix(in srgb, var(--tone) 55%, #4F46E5)); box-shadow: 0 8px 18px color-mix(in srgb, var(--tone) 35%, transparent); }
+.sx-steps strong { display: block; font-size: .98rem; }
+.sx-steps p { color: var(--ute-gray); font-size: .84rem; margin: .35rem 0 0; line-height: 1.6; }
+
+/* ---------- Đánh giá ---------- */
+.sx-review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.sx-review { position: relative; display: flex; flex-direction: column; padding: 1.35rem; border-radius: 1.1rem; background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: var(--ute-shadow); }
+.sx-review-quote { position: absolute; top: .6rem; right: 1rem; font-size: 2.6rem; color: var(--sx-indigo-soft); line-height: 1; }
+.sx-review .ute-stars { color: #F59E0B; }
+.sx-review p { overflow-wrap: anywhere; line-height: 1.65; }
+.sx-review-author { display: flex; align-items: center; gap: .65rem; margin-top: auto; padding-top: .75rem; border-top: 1px dashed var(--ute-border); }
+.sx-review-author div { display: flex; flex-direction: column; min-width: 0; }
+.sx-review-author strong { font-size: .88rem; }
+.sx-review-author span:not(.sx-avatar) { font-size: .75rem; color: var(--ute-gray); }
+.sx-avatar.sx-avatar-sm { flex: 0 0 2.2rem; height: 2.2rem; font-size: .9rem; color: #FFFFFF; border: 0; background: linear-gradient(135deg, var(--sx-blue), var(--sx-violet)); }
+
+/* ---------- Tra cứu: thẻ kết quả + tiến độ ---------- */
+.sx-track-card { border-top: 4px solid var(--tone); margin-bottom: 1.25rem; }
+.sx-track-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+.sx-track-head h3 { font-size: 1.5rem; font-weight: 800; letter-spacing: .02em; }
+.sx-track-status { font-size: .85rem; padding: .5rem .9rem; }
+.sx-progress { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sx-progress li { position: relative; text-align: center; font-size: .78rem; font-weight: 600; color: var(--ute-gray); padding-top: .2rem; }
+.sx-progress li span { position: relative; z-index: 1; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin: 0 auto .5rem; border-radius: 50%;
+    background: var(--ute-gray-soft); color: var(--ute-gray); font-size: 1.05rem; border: 3px solid var(--ute-card); }
+.sx-progress li + li::before { content: ''; position: absolute; top: 1.45rem; right: 50%; width: 100%; height: 4px; background: var(--ute-gray-soft); }
+.sx-progress li.done { color: var(--tone-ink); }
+.sx-progress li.done span { background: var(--tone); color: #FFFFFF; box-shadow: 0 0 0 4px var(--tone-soft); }
+.sx-progress li.done::before { background: var(--tone); }
+.sx-progress li.failed { color: var(--sx-rose-ink); }
+.sx-progress li.failed span { background: var(--sx-rose); color: #FFFFFF; box-shadow: 0 0 0 4px var(--sx-rose-soft); }
+.sx-track-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.sx-track-info > div { padding: .85rem 1rem; border-radius: .85rem; background: var(--ute-surface); border: 1px solid var(--ute-border); min-width: 0; }
+.sx-track-info > div > span { display: block; font-size: .74rem; color: var(--ute-gray); margin-bottom: .25rem; }
+.sx-track-info strong { font-size: .95rem; overflow-wrap: anywhere; }
+.sx-tip-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.sx-tip { display: flex; gap: .85rem; padding: 1.1rem; border-radius: 1rem; background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: var(--ute-shadow); }
+.sx-tip > i { flex: 0 0 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: .8rem; background: var(--tone-soft); color: var(--tone); font-size: 1.15rem; }
+.sx-tip strong { font-size: .9rem; }
+.sx-tip p { margin: .2rem 0 0; font-size: .8rem; color: var(--ute-gray); line-height: 1.55; }
+
+/* ---------- Ước tính cước: thẻ giá ---------- */
+.sx-price-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+.sx-price { position: relative; overflow: hidden; padding: 1.4rem; border-radius: 1.1rem; background: var(--ute-card); border: 1px solid var(--ute-border);
+    border-top: 4px solid var(--tone); box-shadow: var(--ute-shadow); transition: transform .18s ease, box-shadow .18s ease; }
+.sx-price:hover { transform: translateY(-3px); box-shadow: var(--sx-card-glow); }
+.sx-price::after { content: ''; position: absolute; right: -40px; bottom: -40px; width: 130px; height: 130px; border-radius: 50%; background: var(--tone-soft); }
+.sx-price-icon { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; border-radius: .9rem; background: var(--tone-soft); color: var(--tone); font-size: 1.3rem; margin-bottom: .9rem; }
+.sx-price h3 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.sx-price-time { color: var(--ute-gray); font-size: .84rem; margin: .3rem 0 1rem; }
+.sx-price-value { position: relative; z-index: 1; display: block; font-size: 1.85rem; font-weight: 800; letter-spacing: -.03em; color: var(--tone-ink); }
+
+/* ---------- Đăng nhập ---------- */
+.sx-auth { padding: clamp(.5rem, 3vw, 2rem) 0; }
+.sx-auth-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); max-width: 980px; margin: 0 auto; overflow: hidden;
+    border-radius: 1.4rem; background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: 0 24px 60px rgba(15, 23, 42, .12); }
+.sx-auth-side { position: relative; overflow: hidden; padding: 2.25rem; color: #FFFFFF; background: var(--sx-hero); display: flex; flex-direction: column; }
+.sx-auth-side::after { content: ''; position: absolute; width: 280px; height: 280px; right: -90px; top: -110px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .22), transparent 70%); }
+.sx-auth-side .shipper-eyebrow { color: rgba(255, 255, 255, .85); }
+.sx-auth-side h2 { color: #FFFFFF; font-weight: 800; letter-spacing: -.03em; margin: .6rem 0 .5rem; }
+.sx-auth-side p { color: rgba(255, 255, 255, .85); margin: 0; }
+.sx-auth-side img { width: 100%; max-width: 330px; height: auto; margin: 1.5rem auto 1rem; filter: drop-shadow(0 18px 22px rgba(0, 0, 0, .2)); }
+.sx-auth-side ul { list-style: none; padding: 0; margin: auto 0 0; display: grid; gap: .55rem; font-size: .88rem; }
+.sx-auth-side li { display: flex; align-items: center; gap: .55rem; }
+.sx-auth-side li i { color: #4ADE80; }
+.sx-auth-form { padding: clamp(1.5rem, 4vw, 2.75rem); }
+.sx-auth-form h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .25rem; }
+.sx-input-icon { position: relative; }
+.sx-input-icon > i { position: absolute; left: .95rem; top: 50%; transform: translateY(-50%); color: var(--ute-gray); pointer-events: none; }
+.shipper-workspace .sx-input-icon .form-control { padding: .75rem 2.8rem .75rem 2.6rem; border-radius: .8rem; }
+.sx-eye { position: absolute; right: .4rem; top: 50%; transform: translateY(-50%); width: 2.2rem; height: 2.2rem; border: 0; border-radius: .6rem; background: transparent; color: var(--ute-gray); }
+.sx-eye:hover, .sx-eye:focus-visible { background: var(--sx-blue-soft); color: var(--sx-blue-ink); }
+.sx-caps { margin-top: .4rem; font-size: .78rem; font-weight: 600; color: var(--sx-amber-ink); }
+.sx-auth-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-top: 1.25rem; font-size: .88rem; }
+.sx-auth-links a { font-weight: 600; }
+.sx-auth-staff { margin: 1.25rem 0 0; padding-top: 1rem; border-top: 1px dashed var(--ute-border); font-size: .82rem; color: var(--ute-gray); }
+
+/* ---------- Màn hình nhỏ ---------- */
+@media (max-width: 991px) {
+    .sx-feature-grid, .sx-review-grid, .sx-price-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-auth-card { grid-template-columns: minmax(0, 1fr); }
+    .sx-auth-side img { display: none; }
+    .sx-auth-side ul { margin-top: 1.25rem; }
+}
+@media (max-width: 767px) {
+    .sx-feature-grid, .sx-review-grid, .sx-price-grid, .sx-tip-grid, .sx-track-info { grid-template-columns: minmax(0, 1fr); }
+    .sx-hero-search { flex-wrap: wrap; padding: .5rem; }
+    .sx-hero-search > i { display: none; }
+    .shipper-workspace .sx-hero-search .form-control { flex: 1 1 100%; padding: .5rem .6rem; }
+    .shipper-workspace .sx-hero-search .btn { flex: 1 1 100%; }
+    .sx-progress li { font-size: .68rem; }
+    .sx-progress li span { width: 2.2rem; height: 2.2rem; font-size: .9rem; }
+    .sx-progress li + li::before { top: 1.25rem; }
+    .sx-auth-side { padding: 1.5rem; }
+}
+@media (max-width: 480px) { .sx-steps { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) {
+    .sx-feature, .sx-price, .sx-feature-link i { transition: none; }
+    a.sx-feature:hover, .sx-price:hover { transform: none; }
+}

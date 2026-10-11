@@ -474,8 +474,12 @@ class LogisticsIntegrationTest {
             .andExpect(status().isForbidden());
         assertThrows(IllegalArgumentException.class, () -> statistics.getStatistics(shipper.getUsername(), null, NOW.toLocalDate(), null));
         assertThrows(IllegalArgumentException.class, () -> statistics.getStatistics(shipper.getUsername(), null, NOW.toLocalDate(), NOW.toLocalDate().plusDays(92)));
+        // Khoảng ngày ngược: giữ trang thống kê, báo lỗi tại chỗ và giữ lại ngày đã nhập để sửa.
         mvc.perform(get("/shipper/thong-ke").param("from", "2026-10-11").param("to", "2026-10-10")
-                .with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isBadRequest());
+                .with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Từ ngày không được sau đến ngày.")))
+                .andExpect(content().string(containsString("value=\"2026-10-10\"")))
+                .andExpect(content().string(containsString("is-invalid")));
     }
 
     @Test void cameraCodeSubmissionValidatesCodeCsrfAndAssignment() throws Exception {

@@ -37,13 +37,15 @@ public class ShipperController {
     private final OrderComplaintService complaints;
     private final ShipmentQrService qr;
     private final vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace;
+    private final vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService codSettlements;
 
     public ShipperController(
             TrackingService trackingService,
             DeliveryProofService deliveryProofService,
             ShipperStatisticsService shipperStatisticsService,
             OrderJourneyService journey, OrderComplaintService complaints, ShipmentQrService qr,
-            vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace) {
+            vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace,
+            vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService codSettlements) {
         this.trackingService = trackingService;
         this.deliveryProofService = deliveryProofService;
         this.shipperStatisticsService = shipperStatisticsService;
@@ -51,6 +53,7 @@ public class ShipperController {
         this.complaints = complaints;
         this.qr = qr;
         this.workspace = workspace;
+        this.codSettlements = codSettlements;
     }
 
     @GetMapping("/trang-chu")
@@ -67,13 +70,28 @@ public class ShipperController {
             return "redirect:/dang-nhap";
         }
 
-        var orderPage = work == vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView.ALL
-                ? trackingService.searchAssignedOrders(authentication.getName(), keyword, status, from, to, page)
-                : workspace.work(authentication.getName(), work, keyword, status, from, to, page);
+        org.springframework.data.domain.Page<Order> orderPage;
+        try {
+            orderPage = work == vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView.ALL
+                    ? trackingService.searchAssignedOrders(authentication.getName(), keyword, status, from, to, page)
+                    : workspace.work(authentication.getName(), work, keyword, status, from, to, page);
+        } catch (IllegalArgumentException exception) {
+            // Bộ lọc sai (từ khóa quá dài, ngày ngược...) vẫn giữ trang và báo lỗi tại chỗ.
+            model.addAttribute("filterError", exception.getMessage());
+            orderPage = org.springframework.data.domain.Page.empty(
+                    org.springframework.data.domain.PageRequest.of(0, 10));
+        }
+        String username = authentication.getName();
+        var visible = orderPage.getContent();
         model.addAttribute("work", work);
-        model.addAttribute("workCounts", workspace.counts(authentication.getName()));
-        model.addAttribute("money", workspace.money(authentication.getName(), orderPage.getContent()));
-        model.addAttribute("retries", workspace.retries(authentication.getName(), orderPage.getContent()));
+        model.addAttribute("workCounts", workspace.counts(username));
+        model.addAttribute("money", workspace.money(username, visible));
+        model.addAttribute("retries", workspace.retries(username, visible));
+        model.addAttribute("pickupFailures", workspace.pickupFailures(username, visible));
+        model.addAttribute("pickupCounts", workspace.pickupCounts(username, visible));
+        model.addAttribute("codHeld", codSettlements.held(username));
+        model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
+        model.addAttribute("bulkMax", vn.edu.hcmute.uteexpress.service.tracking.ShipperBulkService.MAX_ORDERS);
         model.addAttribute("now", workspace.now());
         model.addAttribute("orders", orderPage.getContent());
         model.addAttribute("orderPage", orderPage);
@@ -100,11 +118,17 @@ public class ShipperController {
             return "redirect:/dang-nhap";
         }
 
-        model.addAttribute(
-                "summary",
-                shipperStatisticsService.getStatistics(
-                        authentication.getName(), period, from, to));
-        model.addAttribute("customRange", from != null);
+        try {
+            model.addAttribute("summary", shipperStatisticsService.getStatistics(authentication.getName(), period, from, to));
+            model.addAttribute("customRange", from != null);
+        } catch (IllegalArgumentException exception) {
+            // Khoảng ngày sai: hiện thống kê mặc định và giữ lại ngày người dùng vừa nhập để sửa.
+            model.addAttribute("statsError", exception.getMessage());
+            model.addAttribute("summary", shipperStatisticsService.getStatistics(authentication.getName(), period, null, null));
+            model.addAttribute("customRange", false);
+            model.addAttribute("invalidFrom", from);
+            model.addAttribute("invalidTo", to);
+        }
         model.addAttribute(
                 "periods",
                 ShipperStatisticsPeriod.values());
@@ -153,6 +177,10 @@ public class ShipperController {
         model.addAttribute("now", workspace.now());
         model.addAttribute("history", journey.history(id, authentication.getName(), 0));
         model.addAttribute("canRetry", trackingService.canRetry(assignedOrder));
+        model.addAttribute("pickupFailure", workspace.pickupFailures(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
+        model.addAttribute("pickupCount", trackingService.pickupFailures(assignedOrder));
+        model.addAttribute("canReportPickupFailure", trackingService.canReportPickupFailure(assignedOrder));
+        model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
         model.addAttribute("currentProof", trackingService.hasCurrentProof(assignedOrder));
         model.addAttribute("failureReasons", DeliveryFailureReason.values());
         model.addAttribute("complaint", complaints.forOrder(assignedOrder, authentication.getName()).orElse(null));
@@ -167,7 +195,7 @@ public class ShipperController {
     @PostMapping("/don/{id}/bang-chung")
     public String saveDeliveryProof(
             @PathVariable Long id,
-            @RequestParam("proofImage")
+            @RequestParam(name = "proofImage", required = false)
                     MultipartFile proofImage,
             @RequestParam(
                     name = "signatureData",
@@ -189,7 +217,7 @@ public class ShipperController {
             redirectAttributes.addFlashAttribute(
                     "message",
                     "Đã lưu ảnh bằng chứng và chữ ký người nhận.");
-        } catch (IllegalStateException exception) {
+        } catch (IllegalStateException | IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     exception.getMessage());
@@ -225,6 +253,13 @@ public class ShipperController {
             redirectAttributes.addFlashAttribute(
                     "error",
                     exception.getMessage());
+            if (newStatus == Order.OrderStatus.FAILED) {
+                // Giữ lại nội dung đã nhập để Shipper sửa thay vì nhập lại từ đầu.
+                redirectAttributes.addFlashAttribute("openForm", "delivery-failure");
+                redirectAttributes.addFlashAttribute("formReason", failureReason);
+                redirectAttributes.addFlashAttribute("formNote", note);
+                redirectAttributes.addFlashAttribute("formNextAttemptAt", nextAttemptAt);
+            }
         }
 
         return "redirect:/shipper/don/" + id;
@@ -234,7 +269,7 @@ public class ShipperController {
     public String scanPage() { return "shipper/scan"; }
 
     @PostMapping("/quet-ma/ma")
-    public String scanCode(@RequestParam String code, Authentication auth, RedirectAttributes flash) {
+    public String scanCode(@RequestParam(defaultValue = "") String code, Authentication auth, RedirectAttributes flash) {
         try {
             code = code.strip(); qr.checkCode(code);
             var order = trackingService.findAssignedOrderByCode(code, auth.getName())
@@ -245,7 +280,7 @@ public class ShipperController {
     }
 
     @PostMapping("/quet-ma")
-    public String scan(@RequestParam("qrImage") MultipartFile image, Authentication authentication,
+    public String scan(@RequestParam(name = "qrImage", required = false) MultipartFile image, Authentication authentication,
             RedirectAttributes flash) {
         try {
             var order = trackingService.findAssignedOrderByCode(qr.decode(image), authentication.getName())

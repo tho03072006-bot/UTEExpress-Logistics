@@ -32,6 +32,19 @@ public class LogisticsAccess {
         if (user.getRole() == AppUser.Role.ADMIN || user.getRole() == AppUser.Role.MANAGER) { internal(username); return; }
         throw denied();
     }
+    /** Kiểm tra cả danh sách với một lần đọc tài khoản (trang danh sách có tới 10 đơn). */
+    public void checkOrders(java.util.Collection<Order> orders, String username) {
+        if (orders.isEmpty()) return;
+        AppUser user = users.findByUsername(username).orElseThrow(LogisticsAccess::denied);
+        if (!user.isEnabled()) throw denied();
+        if (user.getRole() == AppUser.Role.ADMIN || user.getRole() == AppUser.Role.MANAGER) { internal(username); return; }
+        for (Order order : orders) {
+            boolean allowed = user.getRole() == AppUser.Role.USER ? user.getId().equals(order.getSender().getId())
+                    : user.getRole() == AppUser.Role.SHIPPER && order.getShipper() != null
+                            && user.getId().equals(order.getShipper().getId());
+            if (!allowed) throw denied();
+        }
+    }
     private AppUser requireRole(String username, AppUser.Role role) {
         var user = users.findByUsername(username).orElseThrow(LogisticsAccess::denied);
         if (!user.isEnabled() || user.getRole() != role) throw denied();

@@ -58,4 +58,10 @@ public class OrderStatusHistory {
     public String getNote() { return note; }
     public LocalDateTime getNextAttemptAt() { return nextAttemptAt; }
     public LocalDateTime getOccurredAt() { return occurredAt; }
+    /** Lấy hàng thất bại: trạng thái giữ nguyên chờ lấy hàng nhưng có lý do. */
+    public boolean isPickupFailure() {
+        return previousStatus == Order.OrderStatus.PENDING_PICKUP && status == Order.OrderStatus.PENDING_PICKUP
+                && failureReason != null;
+    }
+    public String getReasonLabel() { return failureReason == null ? null : failureReason.labelFor(isPickupFailure()); }
 }

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title th:text="|Phiếu nộp tiền #${settlement.id} - UTEExpress|"></title></head><body>
+<section class="shipper-workspace" th:with="staff=${viewer == 'staff'}, st=${settlement.status.name()}">
+<th:block th:if="${staff}"><nav th:replace="~{admin/navigation :: navigation}"></nav></th:block>
+<a class="shipper-back" th:href="${staff} ? @{/manager/doi-soat-cod} : @{/shipper/doi-soat}"><i class="bi bi-arrow-left"></i> <span th:text="${staff} ? 'Về danh sách đối soát' : 'Về trang nộp tiền COD'"></span></a>
+<header class="shipper-hero"><div><span class="shipper-eyebrow"><i class="bi bi-receipt"></i> PHIẾU NỘP TIỀN COD</span><h2 th:text="|Phiếu #${settlement.id}|"></h2>
+        <strong class="sx-cod-hero-amount"><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong>
+        <div class="sx-hero-stats"><span class="sx-hero-chip"><i class="bi bi-person-badge"></i> <span th:text="${settlement.shipper.fullName != null ? settlement.shipper.fullName : settlement.shipper.username}"></span></span>
+            <span class="sx-hero-chip"><i class="bi bi-receipt"></i> <span th:text="|${settlement.orderCount} đơn|"></span></span>
+            <span class="sx-hero-chip"><i class="bi bi-clock"></i> <span th:text="|Gửi ${#temporals.format(settlement.submittedAt, 'dd/MM/yyyy HH:mm')}|"></span></span></div></div>
+    <span class="sx-pill sx-dot shipper-hero-status" th:classappend="${'sx-cod-status-' + #strings.toLowerCase(st)}" th:text="${settlement.status.label}"></span></header>
+<div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
+<div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+<div class="shipper-notice sx-notice-warning" th:if="${settlement.hasDifference()}"><i class="bi bi-exclamation-triangle"></i><span th:text="|Chênh lệch ${#numbers.formatInteger(settlement.difference.abs(), 1, 'POINT')} đ so với tổng cước COD ${#numbers.formatInteger(settlement.totalAmount, 1, 'POINT')} đ (nộp thiếu).|"></span></div>
+<div class="sx-cod-grid">
+<article class="ute-panel sx-tone-gold"><div class="shipper-section-head"><div><span class="shipper-eyebrow">CHI TIẾT</span><h3>Các vận đơn trong phiếu</h3></div><i class="bi bi-list-check"></i></div>
+    <p class="shipper-hint" th:if="${#lists.isEmpty(items)}" th:text="${st == 'REJECTED'} ? 'Phiếu bị từ chối nên các đơn đã trở lại danh sách chờ nộp.' : 'Phiếu không có vận đơn.'"></p>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(items)}"><table class="table align-middle mb-0">
+        <thead><tr><th>Vận đơn</th><th>Người nhận</th><th class="text-end">Cước COD</th></tr></thead>
+        <tbody><tr th:each="item : ${items}"><td><a th:if="${!staff}" th:href="@{/shipper/don/{id}(id=${item.order.id})}" th:text="${item.order.trackingCode}"></a><span th:if="${staff}" th:text="${item.order.trackingCode}"></span></td>
+            <td th:text="${item.order.receiverName}"></td><td class="text-end fw-semibold"><span th:replace="~{fragments/components :: money(${item.amount})}"></span></td></tr></tbody>
+        <tfoot><tr><th colspan="2">Tổng cước COD</th><th class="text-end"><span th:replace="~{fragments/components :: money(${settlement.totalAmount})}"></span></th></tr></tfoot>
+    </table></div>
+</article>
+<aside>
+    <article class="ute-panel sx-tone-indigo"><span class="shipper-eyebrow"><i class="bi bi-chat-left-text"></i> TRAO ĐỔI</span><h3 class="mt-2">Ghi chú</h3>
+        <div class="shipper-payment-row"><span>Tổng cước COD</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.totalAmount})}"></th:block></strong></div>
+        <div class="shipper-payment-row"><span>Tiền mặt nộp</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong></div>
+        <p class="mt-3 mb-1 fw-semibold">Shipper</p><p class="shipper-hint" style="white-space: pre-wrap" th:text="${settlement.shipperNote != null ? settlement.shipperNote : 'Không có ghi chú.'}"></p>
+        <th:block th:if="${settlement.reviewedAt != null}"><p class="mt-3 mb-1 fw-semibold" th:text="|Manager · ${#temporals.format(settlement.reviewedAt, 'dd/MM/yyyy HH:mm')}|"></p><p class="shipper-hint" style="white-space: pre-wrap" th:text="${settlement.managerNote != null ? settlement.managerNote : 'Không có ghi chú.'}"></p></th:block>
+    </article>
+    <form th:if="${staff and st == 'SUBMITTED'}" class="ute-panel mt-4 sx-tone-green" method="post" th:action="@{/manager/doi-soat-cod/{id}(id=${settlement.id})}" data-sx-once>
+        <span class="shipper-eyebrow"><i class="bi bi-clipboard-check"></i> XỬ LÝ PHIẾU</span><h3 class="mt-2">Xác nhận đã nhận tiền</h3>
+        <input type="hidden" name="revision" th:value="${settlement.revision}">
+        <div class="mb-3"><label for="managerNote" class="form-label">Ghi chú</label><textarea id="managerNote" name="note" class="form-control" rows="3" maxlength="500" data-sx-count th:text="${formNote}" placeholder="Bắt buộc khi từ chối hoặc khi phiếu có chênh lệch."></textarea></div>
+        <div class="d-flex flex-wrap gap-2"><button class="btn sx-btn-success flex-fill" type="submit" name="decision" value="CONFIRM"><i class="bi bi-check2-circle"></i> Xác nhận</button>
+            <button class="btn sx-btn-soft sx-tone-rose flex-fill" type="submit" name="decision" value="REJECT"><i class="bi bi-x-circle"></i> Từ chối</button></div>
+        <p class="shipper-hint mt-2 mb-0">Từ chối sẽ trả các đơn về danh sách chờ nộp của Shipper.</p>
+    </form>
+</aside>
+</div>
+</section></body></html>

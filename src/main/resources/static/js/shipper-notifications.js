@@ -35,6 +35,14 @@
             const count = Number(data.count);
             if (!Number.isSafeInteger(count) || count < 0) return;
             badges.forEach(badge => { badge.textContent = count > 99 ? "99+" : String(count); badge.hidden = count === 0; });
+            // Chấm đỏ: rung chuông khi có thông báo mới (lần đầu tải trang có thư chưa đọc cũng nhắc một lần).
+            const isNew = count > 0 && (previousCount === null || count > previousCount);
+            document.querySelectorAll("[data-notification-bell]").forEach(bell => {
+                bell.classList.toggle("sx-has-unread", count > 0);
+                bell.setAttribute("aria-label", count > 0 ? "Thông báo nhận đơn: " + count + " chưa đọc" : "Thông báo nhận đơn");
+                if (isNew) { bell.classList.remove("sx-ring"); void bell.offsetWidth; bell.classList.add("sx-ring"); }
+            });
+            document.title = (count > 0 ? "(" + (count > 99 ? "99+" : count) + ") " : "") + document.title.replace(/^\(\d+\+?\) /, "");
             if (previousCount !== null && count > previousCount) {
                 showAssignment();
             }

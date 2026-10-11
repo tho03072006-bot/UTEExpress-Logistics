@@ -6,123 +6,103 @@
 </head>
 <body>
 
-<section>
-<div class="p-5 mb-4 hero-ute">
-    <h1 class="display-5 fw-bold">Giao nhận nhanh chóng, tin cậy</h1>
-    <p class="col-md-8 fs-5 text-muted-on-blue">
-        UTEExpress kết nối người gửi và người nhận trên toàn quốc.
-        Tạo đơn, theo dõi hành trình và nhận hàng chỉ trong vài bước.
-    </p>
-    <a th:href="@{/dang-ky}" class="btn btn-accent btn-lg">Tạo đơn ngay</a>
-    <a th:href="@{/tra-cuu}" class="btn btn-outline-light btn-lg">Tra cứu vận đơn</a>
-
-    <!-- Ô tra cứu đặt thẳng ở đây thay vì bắt bấm sang trang khác: người ghé trang
-         giao nhận phần lớn chỉ muốn hỏi "hàng tôi tới đâu rồi". Các bên lớn như
-         GHN, ViettelPost đều để ô này ngay trang chủ. -->
-    <form method="get" th:action="@{/tra-cuu}" class="ute-hero-search mt-4">
-        <label class="visually-hidden" for="heroTrackingCode">Mã vận đơn</label>
-        <input type="text" id="heroTrackingCode" name="trackingCode" class="form-control"
-               placeholder="Nhập mã vận đơn, ví dụ UTE250001" required>
-        <button type="submit" class="btn btn-accent">
-            <i class="bi bi-search"></i> Tra cứu
-        </button>
-    </form>
-</div>
+<!-- Dùng bộ giao diện màu chung (static/css/shipper.css + pages.css) -->
+<section class="shipper-workspace sx-public">
+<header class="shipper-hero sx-home-hero">
+    <div class="sx-hero-main">
+        <span class="shipper-eyebrow"><i class="bi bi-lightning-charge-fill"></i> GIAO NHẬN TOÀN QUỐC</span>
+        <h1>Giao nhận nhanh chóng, tin cậy</h1>
+        <p>UTEExpress kết nối người gửi và người nhận trên toàn quốc. Tạo đơn, theo dõi hành trình và nhận hàng chỉ trong vài bước.</p>
+        <div class="shipper-hero-actions">
+            <a th:href="@{/dang-ky}" class="btn btn-light btn-lg"><i class="bi bi-plus-circle"></i> Tạo đơn ngay</a>
+            <a th:href="@{/tra-cuu}" class="btn sx-btn-glass btn-lg"><i class="bi bi-search"></i> Tra cứu vận đơn</a>
+        </div>
+        <!-- Ô tra cứu ngay trên trang chủ: người ghé trang phần lớn chỉ muốn hỏi "hàng tôi tới đâu rồi". -->
+        <form method="get" th:action="@{/tra-cuu}" class="sx-hero-search">
+            <label class="visually-hidden" for="heroTrackingCode">Mã vận đơn</label>
+            <i class="bi bi-upc-scan" aria-hidden="true"></i>
+            <input type="text" id="heroTrackingCode" name="trackingCode" class="form-control"
+                   placeholder="Nhập mã vận đơn, ví dụ UTE250001" maxlength="30" required autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tra cứu</button>
+        </form>
+        <div class="sx-hero-stats">
+            <span class="sx-hero-chip"><i class="bi bi-lightning-charge"></i> Hỏa tốc trong ngày</span>
+            <span class="sx-hero-chip"><i class="bi bi-broadcast"></i> Theo dõi hành trình trực tuyến</span>
+            <span class="sx-hero-chip"><i class="bi bi-wallet2"></i> COD &amp; ví điện tử</span>
+        </div>
+    </div>
+    <img class="sx-hero-art sx-hero-art-lg" th:src="@{/images/shipper/hero-delivery.svg}" alt="" aria-hidden="true" width="380" height="253">
+</header>
 
 <!-- Số liệu thật đếm từ cơ sở dữ liệu, không phải con số tự đặt cho đẹp -->
-<div class="row g-3 mb-4" th:if="${thongKe != null}">
-    <div class="col-6 col-lg-3">
-        <div class="ute-stat">
-            <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
-            <span class="ute-stat-value" th:text="${thongKe.deliveredOrders}">0</span>
-            <span class="ute-stat-label">Đơn đã giao thành công</span>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ute-stat">
-            <span class="ute-stat-icon"><i class="bi bi-people"></i></span>
-            <span class="ute-stat-value" th:text="${thongKe.activeCustomers}">0</span>
-            <span class="ute-stat-label">Khách hàng đang dùng</span>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ute-stat">
-            <span class="ute-stat-icon"><i class="bi bi-truck"></i></span>
-            <span class="ute-stat-value" th:text="${thongKe.ordersInTransit}">0</span>
-            <span class="ute-stat-label">Đơn đang trên đường</span>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ute-stat">
-            <span class="ute-stat-icon"><i class="bi bi-check2-circle"></i></span>
-            <span class="ute-stat-value" th:text="${thongKe.successRate} + '%'">0%</span>
-            <span class="ute-stat-label">Tỉ lệ giao thành công</span>
-        </div>
+<div class="shipper-metrics" th:if="${thongKe != null}">
+    <div class="shipper-metric sx-tone-green"><i class="bi bi-box-seam"></i><strong th:text="${thongKe.deliveredOrders}">0</strong><span>Đơn đã giao thành công</span></div>
+    <div class="shipper-metric sx-tone-indigo"><i class="bi bi-people"></i><strong th:text="${thongKe.activeCustomers}">0</strong><span>Khách hàng đang dùng</span></div>
+    <div class="shipper-metric sx-tone-cyan"><i class="bi bi-truck"></i><strong th:text="${thongKe.ordersInTransit}">0</strong><span>Đơn đang trên đường</span></div>
+    <div class="shipper-metric sx-tone-amber"><i class="bi bi-graph-up-arrow"></i><strong th:text="${thongKe.successRate} + '%'">0%</strong><span>Tỉ lệ giao thành công</span></div>
+</div>
+
+<div class="sx-section-title"><span class="shipper-eyebrow">TIỆN ÍCH</span><h2>Mọi thứ bạn cần cho một đơn hàng</h2></div>
+<div class="sx-feature-grid">
+    <a class="sx-feature sx-tone-cyan" th:href="@{/tra-cuu}">
+        <img th:src="@{/images/shipper/track-parcel.svg}" alt="" aria-hidden="true" width="240" height="160">
+        <h3>Tra cứu vận đơn</h3>
+        <p>Nhập mã vận đơn để xem trạng thái giao hàng — không cần đăng nhập.</p>
+        <span class="sx-feature-link">Tra cứu ngay <i class="bi bi-arrow-right"></i></span>
+    </a>
+    <a class="sx-feature sx-tone-amber" th:href="@{/uoc-tinh-cuoc}">
+        <img th:src="@{/images/shipper/fee-calc.svg}" alt="" aria-hidden="true" width="240" height="160">
+        <h3>Ước tính cước phí</h3>
+        <p>Nhập khối lượng để xem cước của cả ba loại dịch vụ — không cần đăng nhập.</p>
+        <span class="sx-feature-link">Tính cước ngay <i class="bi bi-arrow-right"></i></span>
+    </a>
+    <div class="sx-feature sx-tone-violet">
+        <img th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="240" height="160">
+        <h3>Dịch vụ giao hàng</h3>
+        <ul class="sx-service-list">
+            <li><span class="sx-chip sx-service-standard"><i class="bi bi-box"></i> Tiêu chuẩn</span> 3 - 5 ngày</li>
+            <li><span class="sx-chip sx-service-express"><i class="bi bi-lightning"></i> Nhanh</span> 1 - 2 ngày</li>
+            <li><span class="sx-chip sx-service-super_express"><i class="bi bi-lightning-charge-fill"></i> Hỏa tốc</span> Trong ngày</li>
+        </ul>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Tra cứu vận đơn</h5>
-                <p class="card-text text-muted">Nhập mã vận đơn để xem trạng thái giao hàng - không cần đăng nhập.</p>
-                <a th:href="@{/tra-cuu}" class="btn btn-sm btn-outline-primary">Tra cứu ngay</a>
+<div class="sx-section-title"><span class="shipper-eyebrow">QUY TRÌNH</span><h2>Gửi hàng trong 4 bước</h2></div>
+<ol class="sx-steps">
+    <li class="sx-tone-indigo"><span class="sx-step-icon"><i class="bi bi-pencil-square"></i></span><strong>Tạo đơn</strong><p>Nhập địa chỉ, khối lượng và chọn dịch vụ.</p></li>
+    <li class="sx-tone-amber"><span class="sx-step-icon"><i class="bi bi-box-seam"></i></span><strong>Shipper lấy hàng</strong><p>Shipper được phân công tới tận nơi nhận hàng.</p></li>
+    <li class="sx-tone-cyan"><span class="sx-step-icon"><i class="bi bi-truck"></i></span><strong>Vận chuyển</strong><p>Theo dõi từng mốc hành trình bằng mã vận đơn.</p></li>
+    <li class="sx-tone-green"><span class="sx-step-icon"><i class="bi bi-check2-circle"></i></span><strong>Giao thành công</strong><p>Có ảnh và chữ ký xác nhận của người nhận.</p></li>
+</ol>
+
+<!-- Đánh giá thật do người gửi viết sau khi đơn đã giao xong -->
+<div th:unless="${#lists.isEmpty(latestReviews)}" class="mt-5">
+    <div class="sx-section-title"><span class="shipper-eyebrow">ĐÁNH GIÁ</span><h2>Khách hàng nói gì về UTEExpress</h2>
+        <p class="shipper-hint mb-0">Đánh giá từ những người đã nhận hàng thành công.</p></div>
+    <div class="sx-review-grid">
+        <article class="sx-review" th:each="review : ${latestReviews}">
+            <i class="bi bi-quote sx-review-quote" aria-hidden="true"></i>
+            <div class="ute-stars mb-2">
+                <i class="bi" th:each="star : ${#numbers.sequence(1, 5)}"
+                   th:classappend="${star &lt;= review.rating} ? ' bi-star-fill' : ' bi-star'"></i>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Ước tính cước phí</h5>
-                <p class="card-text text-muted">Nhập khối lượng để xem cước của cả ba loại dịch vụ - không cần đăng nhập.</p>
-                <a th:href="@{/uoc-tinh-cuoc}" class="btn btn-sm btn-outline-primary">Tính cước ngay</a>
+            <p th:text="${review.content}">Nội dung đánh giá</p>
+            <div th:if="${review.hasMedia()}" class="mb-2">
+                <img th:if="${review.mediaType.name() == 'IMAGE'}" class="ute-review-media"
+                     th:src="@{${review.mediaPath}}" alt="Ảnh đính kèm đánh giá" loading="lazy">
+                <video th:if="${review.mediaType.name() == 'VIDEO'}" class="ute-review-media"
+                       th:src="@{${review.mediaPath}}" controls muted></video>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Dịch vụ</h5>
-                <p class="card-text text-muted">Giao tiêu chuẩn &middot; Giao nhanh &middot; Giao hỏa tốc</p>
+            <div class="sx-review-author">
+                <!-- Chỉ hiện tên, không hiện email hay mã vận đơn của người khác -->
+                <span class="sx-avatar sx-avatar-sm" aria-hidden="true"
+                      th:text="${#strings.toUpperCase(#strings.substring(review.user.fullName != null and !#strings.isEmpty(review.user.fullName) ? review.user.fullName : review.user.username, 0, 1))}">K</span>
+                <div><strong th:text="${review.user.fullName != null ? review.user.fullName : review.user.username}">Khách hàng</strong>
+                    <span th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">01/01/2026</span></div>
             </div>
-        </div>
+        </article>
     </div>
 </div>
-
-<!-- Danh gia that do nguoi gui viet sau khi don da giao xong (TV1 - viec 4) -->
-<section th:unless="${#lists.isEmpty(latestReviews)}" class="mt-5">
-    <h4 class="mb-1">Khách hàng nói gì về UTEExpress</h4>
-    <p class="text-muted">Đánh giá từ những người đã nhận hàng thành công.</p>
-
-    <div class="row g-3">
-        <div class="col-md-4" th:each="review : ${latestReviews}">
-            <div class="card h-100">
-                <div class="card-body d-flex flex-column">
-                    <div class="ute-stars mb-2">
-                        <i class="bi" th:each="star : ${#numbers.sequence(1, 5)}"
-                           th:classappend="${star &lt;= review.rating} ? ' bi-star-fill' : ' bi-star'"></i>
-                    </div>
-                    <p class="card-text" th:text="${review.content}">Nội dung đánh giá</p>
-
-                    <div th:if="${review.hasMedia()}" class="mb-2">
-                        <img th:if="${review.mediaType.name() == 'IMAGE'}" class="ute-review-media"
-                             th:src="@{${review.mediaPath}}" alt="Ảnh đính kèm đánh giá">
-                        <video th:if="${review.mediaType.name() == 'VIDEO'}" class="ute-review-media"
-                               th:src="@{${review.mediaPath}}" controls muted></video>
-                    </div>
-
-                    <div class="text-muted small mt-auto">
-                        <!-- Chi hien ten, khong hien email hay ma van don cua nguoi khac -->
-                        <span th:text="${review.user.fullName != null ? review.user.fullName : review.user.username}">Khách hàng</span>
-                        &middot;
-                        <span th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">01/01/2026</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 </section>
 
 </body>

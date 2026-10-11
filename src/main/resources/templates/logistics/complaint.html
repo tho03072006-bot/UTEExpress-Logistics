@@ -2,9 +2,9 @@
 <head><title>Khiếu nại vận đơn - UTEExpress</title></head><body><section th:classappend="${viewer == 'shipper'} ? 'shipper-workspace'">
 <th:block th:if="${viewer == 'staff'}"><nav th:replace="~{admin/navigation :: navigation}"></nav></th:block>
 <div class="ute-page-head" th:classappend="${viewer == 'shipper'} ? 'shipper-hero'"><div><h2 th:text="|Khiếu nại ${order.trackingCode}|"></h2><p>Thông tin được chia sẻ với người gửi, Shipper được phân công và Manager.</p></div>
-    <a class="btn btn-outline-secondary" th:href="${viewer == 'staff'} ? @{/manager/khieu-nai} : @{${prefix + order.id}}">Quay lại</a></div>
-<div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
-<div class="alert alert-light border" th:if="${error}" th:text="${error}"></div>
+    <a class="btn btn-outline-secondary" th:classappend="${viewer == 'shipper'} ? 'sx-btn-glass'" th:href="${viewer == 'staff'} ? @{/manager/khieu-nai} : @{${prefix + order.id}}"><i class="bi bi-arrow-left"></i> Quay lại</a></div>
+<div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
+<div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
 <form th:if="${complaint == null and viewer == 'customer'}" class="ute-panel" method="post" enctype="multipart/form-data"
       th:action="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}">
     <div class="mb-3"><label for="subject" class="form-label">Tiêu đề</label><input id="subject" name="subject" th:value="${subject}" class="form-control" minlength="5" maxlength="100" required></div>
@@ -14,7 +14,7 @@
 </form>
 <div class="ute-panel text-muted" th:if="${complaint == null and viewer != 'customer'}">Người gửi chưa có khiếu nại cho vận đơn này.</div>
 <div th:if="${complaint != null}">
-    <article class="ute-panel mb-4"><div class="d-flex justify-content-between flex-wrap gap-2"><h4 th:text="${complaint.subject}"></h4><span class="badge badge-ute align-self-start" th:text="${complaint.status.label}"></span></div>
+    <article class="ute-panel mb-4"><div class="d-flex justify-content-between flex-wrap gap-2"><h4 th:text="${complaint.subject}"></h4><span class="sx-pill sx-dot align-self-start" th:classappend="${complaint.status.name() == 'RESOLVED'} ? 'sx-tone-green' : (${complaint.status.name() == 'REJECTED'} ? 'sx-tone-rose' : (${complaint.status.name() == 'IN_PROGRESS'} ? 'sx-tone-cyan' : 'sx-tone-amber'))" th:text="${complaint.status.label}"></span></div>
         <p class="small text-muted" th:text="|Gửi lúc ${#temporals.format(complaint.createdAt, 'dd/MM/yyyy HH:mm')}|"></p>
         <p style="white-space: pre-wrap" th:text="${complaint.description}"></p>
         <img th:if="${complaint.hasImage}" class="img-fluid rounded" style="max-height: 400px" th:src="@{${imagePrefix + complaint.id + '/anh'}}" alt="Ảnh minh chứng khiếu nại">
@@ -30,7 +30,7 @@
     </form>
     <form th:if="${viewer == 'shipper' and !complaint.status.closed}" class="ute-panel" method="post" th:action="@{/shipper/khieu-nai/{id}/bo-sung(id=${complaint.id})}">
         <h4>Bổ sung thông tin giao hàng</h4><input type="hidden" name="revision" th:value="${complaint.revision}">
-        <label for="shipperNote" class="form-label">Thông tin gửi Manager</label><textarea id="shipperNote" name="note" class="form-control mb-3" minlength="5" maxlength="1000" rows="4" th:text="${complaint.shipperNote}" required></textarea>
+        <label for="shipperNote" class="form-label">Thông tin gửi Manager</label><textarea id="shipperNote" name="note" class="form-control mb-3" minlength="5" maxlength="1000" rows="4" th:text="${complaint.shipperNote}" required data-sx-count></textarea>
         <button class="btn btn-primary" type="submit">Gửi thông tin bổ sung</button>
     </form>
 </div>

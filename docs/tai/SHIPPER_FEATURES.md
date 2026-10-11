@@ -99,3 +99,45 @@ Với tài khoản Shipper, logo và nút Trang chủ trên thanh trên cùng d�
 
 Đã kiểm tra 29 test tích hợp, 0 lỗi, gồm kiểm tra menu và đường dẫn trên ba trang công khai với Shipper và khách chưa đăng nhập.
 
+
+## Nâng cấp đợt 3 (11/10/2026)
+
+| Tính năng | Cách dùng |
+|---|---|
+| Lấy hàng không thành công | Chi tiết đơn chờ lấy → "Lấy hàng không thành công": chọn lý do, hẹn lấy lại (trong 30 ngày) và ghi chú. Đơn vẫn chờ lấy hàng; tối đa 3 lần, chặn ghi nhận lặp trong 1 phút. Hành trình của người gửi hiện "Lấy hàng không thành công". Lấy hàng hẹn sang ngày khác không nằm trong "Công việc hôm nay"; đến giờ hẹn thì vào tab "Đến hẹn". |
+| Lộ trình hôm nay | Shipper → Lộ trình hôm nay (`/shipper/lo-trinh`): điểm dừng theo thứ tự ưu tiên, gộp đơn cùng địa chỉ, đơn chờ lấy dùng địa chỉ người gửi. Google Maps nhận tối đa 10 điểm và URL 2.000 ký tự nên lộ trình dài được chia chặng nối tiếp. |
+| Cập nhật nhiều đơn | Danh sách đơn: tick các đơn chờ lấy/đã lấy → thanh nổi "Đã lấy hàng" hoặc "Bắt đầu giao", có hộp xác nhận. Tối đa 50 đơn/lần, mỗi đơn chạy transaction riêng; đơn lỗi được liệt kê, đơn của Shipper khác không lộ mã. |
+| Email cho người gửi | Gửi sau khi lưu thành công khi lấy hàng thất bại, giao thành công, giao thất bại hoặc hoàn trả. Chạy nền, lỗi SMTP không ảnh hưởng thao tác. Máy chưa cấu hình mail (`CHANGE_ME`) hoặc địa chỉ thử (`.test`, `.invalid`, `example.com`) thì bỏ qua. Tắt bằng `app.mail.order-updates.enabled=false`. |
+| Đối soát COD | Shipper → Nộp tiền COD (`/shipper/doi-soat`): chọn đơn COD đã thu, nhập tiền mặt nộp (nộp thiếu phải ghi lý do ≥ 10 ký tự), gửi phiếu. Manager → Đối soát COD (`/manager/doi-soat-cod`) xác nhận hoặc từ chối (bắt buộc lý do); từ chối trả đơn về danh sách chờ nộp. Mỗi vận đơn chỉ nằm trong một phiếu (ràng buộc duy nhất), mỗi Shipper chỉ có một phiếu chờ duyệt. Chỉ tính đơn có nhật ký giao thành công do chính Shipper ghi nhận. |
+
+**Database Aiven:** thêm 2 bảng `cod_settlement`, `cod_settlement_item` (script `V3__cod_settlement.sql`). Đã chạy `UpgradeAivenShipper --apply` trên Aiven chung ngày 11/10/2026; công cụ giờ kiểm tra cả 5 bảng. Thành viên khác chỉ cần lấy code mới. Lấy hàng thất bại dùng lại cột `failure_reason` có sẵn (nhãn riêng cho người gửi) nên không sửa bảng cũ.
+
+**Giao diện:** file `static/css/shipper.css` (nạp sau `style.css`, chỉ tác động `.shipper-workspace` và lớp `sx-*`). Giữ xanh HCMUTE làm màu chính, thêm màu theo trạng thái: chờ lấy hổ phách, đã lấy tím, đang giao xanh ngọc, giao thành công xanh lá, thất bại hồng đỏ, hoàn trả cam, tiền COD vàng kim. Hỗ trợ sáng/tối; đã thử 1280 px và 390 px không tràn ngang.
+
+**Validation bổ sung:** bộ lọc sai (từ khóa > 100 ký tự, ngày ngược, số trang âm) báo ngay trên trang thay vì trang lỗi; thống kê ngày ngược báo lỗi và giữ ngày đã nhập; tham số sai kiểu/thiếu tham số/thiếu tệp trả trang lỗi 400 thân thiện có nút về trang làm việc (không còn lỗi 500); form giao/lấy hàng thất bại giữ lại nội dung khi lỗi; trình duyệt kiểm tra trước giờ hẹn (sau hiện tại, trong 30 ngày), ảnh JPG/PNG ≤ 5 MB, đếm ký tự, lý do "khác" bắt buộc ghi chú, chống bấm gửi hai lần; thông báo chuyển trạng thái sai dùng tiếng Việt. Lưu bằng chứng kiểm tra đủ ảnh và chữ ký trước khi ghi tệp.
+
+**Tối ưu:** trang danh sách kiểm tra quyền một lần cho cả trang thay vì mỗi đơn một truy vấn tài khoản (giảm khoảng 30 lượt gọi Aiven mỗi lần mở); lộ trình và đối soát đọc dữ liệu theo lô; ảnh QR/bằng chứng tải lười.
+
+**Kiểm tra:** 209 test, 0 lỗi (thêm 19 test: lấy hàng thất bại, lộ trình, cập nhật hàng loạt, đối soát COD, validation, email). Đã thử trên trình duyệt với H2 riêng: chọn nhiều đơn, ghi nhận lấy hàng thất bại, lộ trình, lập phiếu COD và Manager duyệt.
+
+**Trang lỗi chung:** `GlobalExceptionHandler` trả đúng mã lỗi (404 đường dẫn không tồn tại, 405 sai phương thức, 400 tham số sai, 413 tệp quá lớn, 500 lỗi khác) thay vì luôn 500 "Loi he thong"; trình duyệt nhận trang `templates/error.html` tiếng Việt (thay Whitelabel), API nhận chữ thuần; lỗi 500 không lộ chi tiết kỹ thuật mà ghi log. `/error` được mở cho người chưa đăng nhập.
+
+**Lưu ý khi chạy:** sau khi code được build lại (Maven hoặc STS), phải dừng hẳn ứng dụng đang chạy rồi chạy lại. Phiên Java cũ trộn class cũ trong bộ nhớ với file mới trên đĩa sẽ gây lỗi 500 hoặc báo không tìm thấy trang mới (vd. `/shipper/lo-trinh`).
+
+## Giao diện đợt 2 (11/10/2026)
+
+- **Hình minh họa tự vẽ (SVG)** trong `static/images/shipper/`: người giao hàng (danh sách đơn), bản đồ lộ trình, ví COD, biểu đồ thống kê, quét QR, chuông thông báo và hộp trống cho trạng thái chưa có dữ liệu. Ẩn trên màn hình < 576 px; tắt chuyển động khi bật "giảm chuyển động".
+- **Chuông thông báo:** chấm đỏ có số chưa đọc trên thanh trên và trong menu, rung nhẹ khi có thông báo mới, tiêu đề tab có dạng "(2) …".
+- **Thẻ hồ sơ Shipper** ở đầu menu: chữ cái đầu tên, trạng thái đang hoạt động.
+- **Ô chọn tệp:** sửa nền trắng chữ trắng ở chế độ tối (toàn site); khu vực Shipper dùng nút chọn tệp màu tím.
+- **Camera quét QR:** danh sách điều kiện (kết nối an toàn, trình duyệt hỗ trợ — tự đánh dấu ✓/✗) và ô **tick đồng ý dùng camera**; chưa tick thì nút "Bắt đầu quét" bị khóa. Lựa chọn được nhớ trên trình duyệt; bỏ tick khi đang quét sẽ tắt camera.
+
+## Giao diện trang công khai (11/10/2026)
+
+Làm lại giao diện 4 trang chung theo cùng phong cách khu vực Shipper (file `static/css/pages.css`, lớp `sx-*`), **không đổi controller, tên ô nhập hay đường dẫn**:
+
+- **Trang chủ** (`index.html`): hero màu chuyển + hình người giao hàng, ô tra cứu nhanh, thẻ số liệu màu, 3 thẻ tiện ích có hình (tra cứu, tính cước, dịch vụ), quy trình gửi hàng 4 bước, đánh giá dạng thẻ có ảnh đại diện chữ cái.
+- **Tra cứu vận đơn** (`tra-cuu.html`): ô tìm trong hero giữ lại mã đã nhập, thẻ kết quả có thanh tiến độ 4 mốc theo trạng thái (thất bại hiện đỏ), trạng thái không tìm thấy có hình minh họa, gợi ý khi chưa tìm.
+- **Ước tính cước** (`uoc-tinh-cuoc.html`): ô nhập cân nặng trong hero, lỗi kiểm tra hiển thị ngay dưới ô, kết quả là 3 thẻ giá màu theo dịch vụ.
+- **Đăng nhập** (`auth/login.html`): bố cục hai cột (giới thiệu + form), biểu tượng trong ô nhập, nút hiện/ẩn mật khẩu, cảnh báo Caps Lock, chống bấm hai lần, liên kết đăng nhập nội bộ.
+- Thêm hình `track-parcel.svg`, `fee-calc.svg`. Thẻ hồ sơ Shipper trong menu rút gọn thành "Đang hoạt động".

@@ -1,0 +1,442 @@
+/*
+ * ============================================================================
+ * UTEExpress - giao dien khu vuc Shipper (phan cua Nguyen Huu Tai)
+ * ============================================================================
+ * Nap SAU style.css. Moi quy tac deu nam trong .shipper-workspace hoac lop sx-*
+ * nen khong anh huong trang cua thanh vien khac.
+ *
+ * Bang mau: giu xanh HCMUTE #0072BC lam mau chinh, bo sung mau trang thai de
+ * Shipper nhan ra cong viec trong mot cai nhin:
+ *   cho lay hang = hổ phách, da lay hang = tim, dang giao = xanh lam ngoc,
+ *   giao thanh cong = xanh la, that bai = hong do, hoan tra = cam, huy = xam.
+ * Tien COD dung vang kim. Che do toi chi doi gia tri bien.
+ */
+
+:root {
+    --sx-blue: #0072BC;      --sx-blue-soft: #E6F1FA;   --sx-blue-ink: #00579A;
+    --sx-indigo: #4F46E5;    --sx-indigo-soft: #EEF0FF; --sx-indigo-ink: #3730A3;
+    --sx-violet: #7C3AED;    --sx-violet-soft: #F2ECFE; --sx-violet-ink: #6D28D9;
+    --sx-cyan: #0891B2;      --sx-cyan-soft: #E1F5FA;   --sx-cyan-ink: #0E7490;
+    --sx-teal: #0D9488;      --sx-teal-soft: #E0F5F2;   --sx-teal-ink: #0F766E;
+    --sx-green: #16A34A;     --sx-green-soft: #E4F7EA;  --sx-green-ink: #15803D;
+    --sx-amber: #D97706;     --sx-amber-soft: #FEF3DC;  --sx-amber-ink: #B45309;
+    --sx-rose: #E11D48;      --sx-rose-soft: #FDE8ED;   --sx-rose-ink: #BE123C;
+    --sx-orange: #EA580C;    --sx-orange-soft: #FFEEE4; --sx-orange-ink: #C2410C;
+    --sx-gold: #CA8A04;      --sx-gold-soft: #FDF6D8;   --sx-gold-ink: #A16207;
+    --sx-slate: #64748B;     --sx-slate-soft: #EEF2F6;  --sx-slate-ink: #475569;
+
+    --sx-hero: linear-gradient(125deg, #00508A 0%, #0072BC 38%, #4F46E5 78%, #7C3AED 100%);
+    --sx-hero-text: #FFFFFF;
+    --sx-card-glow: 0 10px 30px rgba(15, 23, 42, .08);
+    --sx-ring: 0 0 0 3px rgba(0, 114, 188, .25);
+}
+
+:root[data-theme="dark"] {
+    --sx-blue: #3B9BE0;      --sx-blue-soft: rgba(59, 155, 224, .16);   --sx-blue-ink: #8CC8F2;
+    --sx-indigo: #818CF8;    --sx-indigo-soft: rgba(129, 140, 248, .16); --sx-indigo-ink: #C7D2FE;
+    --sx-violet: #A78BFA;    --sx-violet-soft: rgba(167, 139, 250, .16); --sx-violet-ink: #DDD6FE;
+    --sx-cyan: #22D3EE;      --sx-cyan-soft: rgba(34, 211, 238, .14);    --sx-cyan-ink: #A5F3FC;
+    --sx-teal: #2DD4BF;      --sx-teal-soft: rgba(45, 212, 191, .14);    --sx-teal-ink: #99F6E4;
+    --sx-green: #4ADE80;     --sx-green-soft: rgba(74, 222, 128, .14);   --sx-green-ink: #BBF7D0;
+    --sx-amber: #FBBF24;     --sx-amber-soft: rgba(251, 191, 36, .14);   --sx-amber-ink: #FDE68A;
+    --sx-rose: #FB7185;      --sx-rose-soft: rgba(251, 113, 133, .15);   --sx-rose-ink: #FECDD3;
+    --sx-orange: #FB923C;    --sx-orange-soft: rgba(251, 146, 60, .15);  --sx-orange-ink: #FED7AA;
+    --sx-gold: #FACC15;      --sx-gold-soft: rgba(250, 204, 21, .13);    --sx-gold-ink: #FEF08A;
+    --sx-slate: #94A3B8;     --sx-slate-soft: rgba(148, 163, 184, .14);  --sx-slate-ink: #E2E8F0;
+
+    --sx-hero: linear-gradient(125deg, #062B4A 0%, #0B4F85 40%, #3730A3 80%, #4C1D95 100%);
+    --sx-card-glow: 0 10px 30px rgba(0, 0, 0, .35);
+    --sx-ring: 0 0 0 3px rgba(59, 155, 224, .35);
+}
+
+/* ---------- Tông màu dùng lại: gán --tone/--tone-soft/--tone-ink cho mọi thành phần ---------- */
+.sx-tone-blue    { --tone: var(--sx-blue);   --tone-soft: var(--sx-blue-soft);   --tone-ink: var(--sx-blue-ink); }
+.sx-tone-indigo  { --tone: var(--sx-indigo); --tone-soft: var(--sx-indigo-soft); --tone-ink: var(--sx-indigo-ink); }
+.sx-tone-violet  { --tone: var(--sx-violet); --tone-soft: var(--sx-violet-soft); --tone-ink: var(--sx-violet-ink); }
+.sx-tone-cyan    { --tone: var(--sx-cyan);   --tone-soft: var(--sx-cyan-soft);   --tone-ink: var(--sx-cyan-ink); }
+.sx-tone-teal    { --tone: var(--sx-teal);   --tone-soft: var(--sx-teal-soft);   --tone-ink: var(--sx-teal-ink); }
+.sx-tone-green   { --tone: var(--sx-green);  --tone-soft: var(--sx-green-soft);  --tone-ink: var(--sx-green-ink); }
+.sx-tone-amber   { --tone: var(--sx-amber);  --tone-soft: var(--sx-amber-soft);  --tone-ink: var(--sx-amber-ink); }
+.sx-tone-rose    { --tone: var(--sx-rose);   --tone-soft: var(--sx-rose-soft);   --tone-ink: var(--sx-rose-ink); }
+.sx-tone-orange  { --tone: var(--sx-orange); --tone-soft: var(--sx-orange-soft); --tone-ink: var(--sx-orange-ink); }
+.sx-tone-gold    { --tone: var(--sx-gold);   --tone-soft: var(--sx-gold-soft);   --tone-ink: var(--sx-gold-ink); }
+.sx-tone-slate   { --tone: var(--sx-slate);  --tone-soft: var(--sx-slate-soft);  --tone-ink: var(--sx-slate-ink); }
+
+/* Trạng thái đơn -> tông màu (dùng cho thẻ, badge, tab, mốc lịch sử) */
+.sx-status-pending_pickup { --tone: var(--sx-amber);  --tone-soft: var(--sx-amber-soft);  --tone-ink: var(--sx-amber-ink); }
+.sx-status-picked_up      { --tone: var(--sx-violet); --tone-soft: var(--sx-violet-soft); --tone-ink: var(--sx-violet-ink); }
+.sx-status-in_transit     { --tone: var(--sx-cyan);   --tone-soft: var(--sx-cyan-soft);   --tone-ink: var(--sx-cyan-ink); }
+.sx-status-delivered      { --tone: var(--sx-green);  --tone-soft: var(--sx-green-soft);  --tone-ink: var(--sx-green-ink); }
+.sx-status-failed         { --tone: var(--sx-rose);   --tone-soft: var(--sx-rose-soft);   --tone-ink: var(--sx-rose-ink); }
+.sx-status-returned       { --tone: var(--sx-orange); --tone-soft: var(--sx-orange-soft); --tone-ink: var(--sx-orange-ink); }
+.sx-status-cancelled      { --tone: var(--sx-slate);  --tone-soft: var(--sx-slate-soft);  --tone-ink: var(--sx-slate-ink); }
+
+/* ---------- Badge trạng thái màu (chỉ trong khu vực Shipper) ---------- */
+.shipper-workspace .badge[class*="badge-status-"], .sx-pill {
+    display: inline-flex; align-items: center; gap: .4rem; border-radius: 2rem; padding: .38rem .75rem;
+    font-size: .74rem; font-weight: 700; letter-spacing: .01em;
+    background: var(--tone-soft, var(--sx-slate-soft)); color: var(--tone-ink, var(--sx-slate-ink));
+    border: 1px solid color-mix(in srgb, var(--tone, var(--sx-slate)) 30%, transparent);
+}
+.shipper-workspace .badge[class*="badge-status-"]::before, .sx-pill.sx-dot::before {
+    content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: var(--tone, var(--sx-slate));
+}
+.shipper-workspace .badge-status-pending_pickup { --tone: var(--sx-amber);  --tone-soft: var(--sx-amber-soft);  --tone-ink: var(--sx-amber-ink); }
+.shipper-workspace .badge-status-picked_up      { --tone: var(--sx-violet); --tone-soft: var(--sx-violet-soft); --tone-ink: var(--sx-violet-ink); }
+.shipper-workspace .badge-status-in_transit     { --tone: var(--sx-cyan);   --tone-soft: var(--sx-cyan-soft);   --tone-ink: var(--sx-cyan-ink); }
+.shipper-workspace .badge-status-delivered      { --tone: var(--sx-green);  --tone-soft: var(--sx-green-soft);  --tone-ink: var(--sx-green-ink); }
+.shipper-workspace .badge-status-failed         { --tone: var(--sx-rose);   --tone-soft: var(--sx-rose-soft);   --tone-ink: var(--sx-rose-ink); }
+.shipper-workspace .badge-status-returned       { --tone: var(--sx-orange); --tone-soft: var(--sx-orange-soft); --tone-ink: var(--sx-orange-ink); }
+.shipper-workspace .badge-status-cancelled      { --tone: var(--sx-slate);  --tone-soft: var(--sx-slate-soft);  --tone-ink: var(--sx-slate-ink); }
+
+/* ---------- Hero gradient ---------- */
+.shipper-workspace .shipper-hero {
+    position: relative; overflow: hidden; isolation: isolate; border: 0; color: var(--sx-hero-text);
+    background: var(--sx-hero); box-shadow: 0 18px 40px rgba(0, 80, 138, .22);
+}
+.shipper-workspace .shipper-hero::before, .shipper-workspace .shipper-hero::after {
+    content: ''; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none;
+}
+.shipper-workspace .shipper-hero::before { width: 320px; height: 320px; right: -80px; top: -140px; background: radial-gradient(circle, rgba(255,255,255,.22), transparent 70%); }
+.shipper-workspace .shipper-hero::after { width: 240px; height: 240px; left: 35%; bottom: -170px; background: radial-gradient(circle, rgba(45,212,191,.35), transparent 70%); }
+.shipper-workspace .shipper-hero { flex-wrap: wrap; }
+@media (min-width: 768px) { .shipper-workspace .shipper-hero > div:first-child { flex: 1 1 340px; min-width: 0; } }
+.shipper-workspace .shipper-hero-actions { justify-content: flex-start; flex-wrap: wrap; }
+.shipper-workspace .shipper-hero-actions .btn { white-space: nowrap; }
+.shipper-workspace .shipper-hero h2 { color: #fff; }
+.shipper-workspace .shipper-hero p { color: rgba(255, 255, 255, .86); }
+.shipper-workspace .shipper-hero .shipper-eyebrow { color: rgba(255, 255, 255, .85); }
+.shipper-workspace .shipper-hero-date { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .28); color: #fff; backdrop-filter: blur(6px); }
+.shipper-workspace .shipper-hero .btn-light { color: var(--sx-blue-ink); font-weight: 700; border: 0; }
+:root[data-theme="dark"] .shipper-workspace .shipper-hero .btn-light { background: #fff; color: #00508A; }
+.sx-btn-glass { background: rgba(255, 255, 255, .14); color: #fff; border: 1px solid rgba(255, 255, 255, .35); font-weight: 600; }
+.sx-btn-glass:hover, .sx-btn-glass:focus-visible { background: rgba(255, 255, 255, .26); color: #fff; border-color: rgba(255, 255, 255, .6); }
+.shipper-workspace .shipper-hero .shipper-hero-status { background: #fff; border: 0; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+:root[data-theme="dark"] .shipper-workspace .shipper-hero .shipper-hero-status { background: #0E1621; }
+.sx-hero-stats { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .25rem; }
+.sx-hero-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .75rem; border-radius: 2rem; font-size: .78rem; font-weight: 600; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); color: #fff; }
+
+/* ---------- Thẻ số liệu có màu ---------- */
+.shipper-workspace .shipper-metric { position: relative; overflow: hidden; border-top: 3px solid var(--tone, var(--sx-blue)); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.shipper-workspace .shipper-metric > i { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: .8rem; font-size: 1.2rem; background: var(--tone-soft, var(--sx-blue-soft)); color: var(--tone, var(--sx-blue)); }
+.shipper-workspace .shipper-metric > strong { color: var(--tone-ink, var(--ute-ink)); }
+.shipper-workspace a.shipper-metric:hover { transform: translateY(-2px); box-shadow: var(--sx-card-glow); border-color: var(--tone, var(--sx-blue)); }
+.shipper-workspace .shipper-metric.sx-metric-wide { grid-column: span 2; }
+.sx-metrics-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+.sx-metric-money > strong { font-size: clamp(1.15rem, 1.6vw, 1.45rem) !important; }
+.sx-metric-sub { grid-column: 1 / -1; font-size: .72rem; color: var(--tone-ink); font-weight: 600; }
+
+/* ---------- Thanh chọn công việc ---------- */
+.shipper-workspace .shipper-work-switch { background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: var(--ute-shadow); }
+.shipper-workspace .shipper-work-switch a { display: inline-flex; align-items: center; gap: .4rem; transition: background .15s ease, color .15s ease; }
+.shipper-workspace .shipper-work-switch a:hover { color: var(--sx-blue-ink); background: var(--sx-blue-soft); }
+.shipper-workspace .shipper-work-switch a.active { background: linear-gradient(120deg, var(--sx-blue), var(--sx-indigo)); color: #fff; box-shadow: 0 6px 16px rgba(0, 114, 188, .3); }
+.sx-switch-count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; border-radius: 1rem; font-size: .7rem; background: var(--sx-rose); color: #fff; }
+
+/* ---------- Tab trạng thái dạng chip màu ---------- */
+.shipper-workspace .shipper-status-tabs a { display: inline-flex; align-items: center; gap: .45rem; font-weight: 600; transition: all .15s ease; }
+.shipper-workspace .shipper-status-tabs a::before { content: ''; width: .55rem; height: .55rem; border-radius: 50%; background: var(--tone, var(--sx-blue)); }
+.shipper-workspace .shipper-status-tabs a:hover { border-color: var(--tone, var(--sx-blue)); color: var(--tone-ink, var(--sx-blue-ink)); }
+.shipper-workspace .shipper-status-tabs a.active { background: var(--tone, var(--sx-blue)); border-color: var(--tone, var(--sx-blue)); color: #fff; }
+.shipper-workspace .shipper-status-tabs a.active::before { background: #fff; }
+:root[data-theme="dark"] .shipper-workspace .shipper-status-tabs a.active { color: #0B1220; }
+:root[data-theme="dark"] .shipper-workspace .shipper-status-tabs a.active::before { background: #0B1220; }
+
+/* ---------- Thẻ vận đơn ---------- */
+.shipper-workspace .shipper-order-card { position: relative; border-left: 4px solid var(--tone, var(--sx-blue)); transition: transform .18s ease, box-shadow .18s ease; }
+.shipper-workspace .shipper-order-card:hover { transform: translateY(-2px); box-shadow: var(--sx-card-glow); }
+.shipper-workspace .shipper-order-card.sx-selected { box-shadow: var(--sx-ring), var(--sx-card-glow); }
+.shipper-workspace .shipper-card-head > strong { color: var(--tone-ink, var(--sx-blue-ink)); font-size: 1rem; letter-spacing: .02em; }
+.sx-card-title { display: inline-flex; align-items: center; gap: .6rem; min-width: 0; }
+.sx-select { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; flex-shrink: 0; cursor: pointer; }
+.sx-select input { width: 1.15rem; height: 1.15rem; accent-color: var(--sx-blue); cursor: pointer; }
+.shipper-workspace .shipper-card-meta { align-items: center; }
+.sx-chip { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .55rem; border-radius: 1rem; font-size: .7rem; font-weight: 700; background: var(--tone-soft, var(--sx-slate-soft)); color: var(--tone-ink, var(--sx-slate-ink)); }
+.sx-service-super_express { --tone: var(--sx-rose); --tone-soft: var(--sx-rose-soft); --tone-ink: var(--sx-rose-ink); }
+.sx-service-express { --tone: var(--sx-amber); --tone-soft: var(--sx-amber-soft); --tone-ink: var(--sx-amber-ink); }
+.sx-service-standard { --tone: var(--sx-slate); --tone-soft: var(--sx-slate-soft); --tone-ink: var(--sx-slate-ink); }
+.shipper-workspace .shipper-route > div:first-child > i { background: var(--sx-amber-soft); color: var(--sx-amber); }
+.shipper-workspace .shipper-route > div + div > i { background: var(--sx-green-soft); color: var(--sx-green); }
+.shipper-workspace .shipper-route > div > i { position: relative; }
+.shipper-workspace .shipper-route:not(.shipper-route-detail) > div:first-child > i::after { content: ''; position: absolute; left: 50%; top: 2.2rem; height: 1.3rem; border-left: 2px dashed var(--ute-border); }
+.shipper-workspace .shipper-card-money { background: var(--sx-gold-soft); border: 1px dashed color-mix(in srgb, var(--sx-gold) 45%, transparent); }
+.shipper-workspace .shipper-card-money > strong { color: var(--sx-gold-ink); font-size: 1.1rem; }
+.shipper-workspace .shipper-card-money.sx-paid { background: var(--sx-green-soft); border-color: color-mix(in srgb, var(--sx-green) 40%, transparent); }
+.shipper-workspace .shipper-card-money.sx-paid > strong, .shipper-workspace .shipper-card-money.sx-paid small { color: var(--sx-green-ink); }
+.shipper-workspace .shipper-card-money small { color: var(--sx-gold-ink); font-weight: 600; }
+.sx-btn-call { color: var(--sx-green-ink); border-color: color-mix(in srgb, var(--sx-green) 50%, transparent); }
+.sx-btn-call:hover, .sx-btn-call:focus-visible { background: var(--sx-green); border-color: var(--sx-green); color: #fff; }
+.sx-btn-map { color: var(--sx-blue-ink); border-color: color-mix(in srgb, var(--sx-blue) 50%, transparent); }
+.sx-btn-map:hover, .sx-btn-map:focus-visible { background: var(--sx-blue); border-color: var(--sx-blue); color: #fff; }
+
+/* Ô nhắc lịch hẹn: giao lại (hồng) và lấy lại hàng (hổ phách) */
+.shipper-workspace .shipper-retry { background: var(--tone-soft, var(--sx-rose-soft)); color: var(--tone-ink, var(--sx-rose-ink)); border: 1px solid color-mix(in srgb, var(--tone, var(--sx-rose)) 30%, transparent); }
+.shipper-workspace .shipper-retry > i { color: var(--tone, var(--sx-rose)); }
+.shipper-workspace .shipper-retry .sx-attempts, .sx-attempts { display: flex; gap: .25rem; margin-top: .45rem; }
+.shipper-workspace .shipper-retry .sx-attempts span, .sx-attempts span { display: inline-block; width: 1.6rem; height: .38rem; border-radius: 1rem; background: color-mix(in srgb, var(--tone, var(--sx-rose)) 22%, transparent); }
+.shipper-workspace .shipper-retry .sx-attempts span.on, .sx-attempts span.on { background: var(--tone, var(--sx-rose)); }
+
+/* ---------- Thông báo theo ngữ cảnh ---------- */
+.shipper-workspace .shipper-notice { display: flex; gap: .65rem; align-items: flex-start; background: var(--tone-soft, var(--sx-blue-soft)); border-color: color-mix(in srgb, var(--tone, var(--sx-blue)) 28%, transparent); border-left: 4px solid var(--tone, var(--sx-blue)); color: var(--ute-ink); }
+.shipper-workspace .shipper-notice > i { color: var(--tone, var(--sx-blue)); font-size: 1.05rem; line-height: 1.6; }
+.sx-notice-success { --tone: var(--sx-green); --tone-soft: var(--sx-green-soft); --tone-ink: var(--sx-green-ink); }
+.sx-notice-danger { --tone: var(--sx-rose); --tone-soft: var(--sx-rose-soft); --tone-ink: var(--sx-rose-ink); }
+.sx-notice-warning { --tone: var(--sx-amber); --tone-soft: var(--sx-amber-soft); --tone-ink: var(--sx-amber-ink); }
+.sx-notice-info { --tone: var(--sx-blue); --tone-soft: var(--sx-blue-soft); --tone-ink: var(--sx-blue-ink); }
+
+/* ---------- Nút theo ý nghĩa ---------- */
+.shipper-workspace .btn-primary { background: linear-gradient(120deg, var(--sx-blue), #1D5FD0); border: 0; box-shadow: 0 6px 14px rgba(0, 114, 188, .25); }
+.shipper-workspace .btn-primary:hover, .shipper-workspace .btn-primary:focus-visible { background: linear-gradient(120deg, #00609F, #1A4FB0); }
+.shipper-workspace .shipper-hero .btn-primary { background: #fff; color: var(--sx-blue-ink); box-shadow: none; }
+.sx-btn-success { background: linear-gradient(120deg, #16A34A, #0D9488); color: #fff; border: 0; box-shadow: 0 6px 14px rgba(22, 163, 74, .28); font-weight: 700; }
+.sx-btn-success:hover, .sx-btn-success:focus-visible { color: #fff; filter: brightness(1.06); }
+.sx-btn-success:disabled { background: var(--sx-slate-soft); color: var(--sx-slate-ink); box-shadow: none; opacity: 1; }
+.sx-btn-violet { background: linear-gradient(120deg, #7C3AED, #4F46E5); color: #fff; border: 0; box-shadow: 0 6px 14px rgba(124, 58, 237, .25); font-weight: 700; }
+.sx-btn-violet:hover, .sx-btn-violet:focus-visible { color: #fff; filter: brightness(1.07); }
+.sx-btn-cyan { background: linear-gradient(120deg, #0891B2, #0072BC); color: #fff; border: 0; box-shadow: 0 6px 14px rgba(8, 145, 178, .25); font-weight: 700; }
+.sx-btn-cyan:hover, .sx-btn-cyan:focus-visible { color: #fff; filter: brightness(1.07); }
+.sx-btn-gold { background: linear-gradient(120deg, #D97706, #CA8A04); color: #fff; border: 0; box-shadow: 0 6px 14px rgba(202, 138, 4, .28); font-weight: 700; }
+.sx-btn-gold:hover, .sx-btn-gold:focus-visible { color: #fff; filter: brightness(1.06); }
+.sx-btn-soft { background: var(--tone-soft); color: var(--tone-ink); border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent); font-weight: 600; }
+.sx-btn-soft:hover, .sx-btn-soft:focus-visible { background: var(--tone); color: #fff; border-color: var(--tone); }
+:root[data-theme="dark"] .sx-btn-soft:hover { color: #0B1220; }
+.shipper-workspace .btn:disabled, .shipper-workspace .btn.disabled { cursor: not-allowed; }
+.shipper-workspace .btn.sx-busy { pointer-events: none; opacity: .75; }
+
+/* ---------- Khối hành động (form có màu theo ngữ cảnh) ---------- */
+.sx-action-box { border: 1px solid color-mix(in srgb, var(--tone, var(--sx-blue)) 30%, var(--ute-border)); border-radius: .85rem; padding: .25rem 1rem .9rem; background: color-mix(in srgb, var(--tone-soft, var(--sx-blue-soft)) 55%, var(--ute-card)); margin-top: 1rem; }
+.sx-action-box > summary { color: var(--tone-ink, var(--sx-blue-ink)); font-weight: 700; padding: .75rem 0 .35rem; cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem; }
+.sx-action-box > summary::-webkit-details-marker { display: none; }
+.sx-action-box > summary::after { content: '\F282'; font-family: 'bootstrap-icons'; margin-left: auto; transition: transform .2s ease; }
+.sx-action-box[open] > summary::after { transform: rotate(180deg); }
+.sx-step-card { border-radius: .85rem; padding: 1rem; background: var(--tone-soft); border: 1px solid color-mix(in srgb, var(--tone) 25%, transparent); margin-bottom: 1rem; }
+.sx-step-card h4 { color: var(--tone-ink); display: flex; align-items: center; gap: .5rem; }
+.sx-count-hint { font-size: .72rem; color: var(--ute-gray); text-align: right; margin-top: .25rem; }
+.sx-count-hint.sx-over { color: var(--sx-rose); font-weight: 700; }
+.shipper-workspace .form-control:focus, .shipper-workspace .form-select:focus { border-color: var(--sx-blue); box-shadow: var(--sx-ring); }
+.shipper-workspace .is-invalid { border-color: var(--sx-rose) !important; }
+.shipper-workspace .invalid-feedback { color: var(--sx-rose-ink); font-weight: 600; }
+
+/* ---------- Panel chung ---------- */
+.shipper-workspace .ute-panel { border-radius: 1rem; }
+.shipper-workspace .shipper-section-head > i { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .8rem; background: var(--tone-soft, var(--sx-blue-soft)); color: var(--tone, var(--sx-blue)); font-size: 1.15rem; }
+.shipper-workspace .shipper-eyebrow { color: var(--tone-ink, var(--sx-blue-ink)); }
+.shipper-workspace .shipper-payment { background: linear-gradient(150deg, var(--sx-gold-soft), var(--ute-card) 70%); border-top: 3px solid var(--sx-gold); }
+.shipper-workspace .shipper-due { color: var(--sx-gold-ink); }
+.shipper-workspace .shipper-empty > i { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%; margin: 0 auto 1rem; background: linear-gradient(135deg, var(--sx-blue-soft), var(--sx-violet-soft)); color: var(--sx-indigo); font-size: 2rem; }
+
+/* ---------- Thanh cập nhật hàng loạt ---------- */
+/* Nổi cố định ở đáy màn hình, căn giữa vùng nội dung (chừa sidebar trên màn hình lớn) */
+.sx-bulkbar { position: fixed; bottom: 1rem; left: 1rem; right: 1rem; max-width: 980px; margin: 0 auto; z-index: 1030; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .85rem 1rem; border-radius: 1rem; color: #fff; background: linear-gradient(120deg, #0B2540, #1E3A8A 60%, #4C1D95); box-shadow: 0 16px 36px rgba(11, 37, 64, .35); }
+.sx-bulkbar[hidden] { display: none !important; }
+@media (min-width: 992px) { .ute-shell-with-sidebar .sx-bulkbar { left: calc(var(--ute-sidebar-width) + 1.5rem); } }
+/* Chừa chỗ để thanh nổi không che thẻ đơn cuối cùng */
+body:has(.sx-bulkbar:not([hidden])) .ute-main { padding-bottom: 7rem; }
+.sx-metric-money > strong { white-space: nowrap; }
+.shipper-workspace .shipper-filters .btn { white-space: nowrap; }
+.sx-bulkbar strong { font-size: 1rem; }
+.sx-bulkbar .sx-bulk-hint { font-size: .75rem; opacity: .8; flex: 1 1 200px; }
+.sx-bulkbar .btn { min-height: 40px; }
+.sx-bulkbar .btn-link { color: #fff; opacity: .85; }
+.sx-selectall { display: inline-flex; align-items: center; gap: .5rem; font-size: .82rem; font-weight: 600; color: var(--ute-gray); cursor: pointer; }
+.sx-selectall input { width: 1.05rem; height: 1.05rem; accent-color: var(--sx-blue); }
+
+/* ---------- Lộ trình ---------- */
+.sx-route-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.sx-legs { display: flex; flex-wrap: wrap; gap: .75rem; }
+.sx-leg { display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem; border-radius: .9rem; text-decoration: none; color: #fff; background: linear-gradient(120deg, var(--sx-blue), var(--sx-indigo)); box-shadow: 0 8px 20px rgba(0, 114, 188, .28); font-weight: 600; transition: transform .15s ease; }
+.sx-leg:nth-child(3n+2) { background: linear-gradient(120deg, var(--sx-teal), var(--sx-cyan)); }
+.sx-leg:nth-child(3n+3) { background: linear-gradient(120deg, var(--sx-violet), #DB2777); }
+.sx-leg:hover { color: #fff; transform: translateY(-2px); }
+.sx-leg small { display: block; font-weight: 400; opacity: .85; font-size: .72rem; }
+.sx-leg > i { font-size: 1.4rem; }
+.sx-stops { list-style: none; margin: 0; padding: 0; counter-reset: stop; }
+.sx-stop { position: relative; display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 1rem; padding-bottom: 1.25rem; }
+.sx-stop::before { content: ''; position: absolute; left: 1.3rem; top: 2.6rem; bottom: 0; border-left: 2px dashed var(--ute-border); }
+.sx-stop:last-child::before { display: none; }
+.sx-stop-num { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; font-weight: 800; color: #fff; background: var(--tone); box-shadow: 0 0 0 4px var(--tone-soft); }
+.sx-stop.sx-mixed .sx-stop-num { background: linear-gradient(135deg, var(--sx-amber) 50%, var(--sx-green) 50%); }
+.sx-stop.sx-due .sx-stop-num { box-shadow: 0 0 0 4px var(--sx-rose-soft), 0 0 0 6px var(--sx-rose); }
+.sx-stop-body { border: 1px solid var(--ute-border); border-radius: .9rem; padding: .9rem 1rem; background: var(--ute-card); box-shadow: var(--ute-shadow); min-width: 0; }
+.sx-stop-body p { margin: 0 0 .5rem; font-weight: 600; overflow-wrap: anywhere; }
+.sx-task { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .45rem 0; border-top: 1px dashed var(--ute-border); font-size: .82rem; }
+.sx-task a.sx-task-code { font-weight: 700; color: var(--tone-ink); }
+.sx-task .sx-task-actions { margin-left: auto; display: inline-flex; gap: .4rem; }
+
+/* ---------- Đối soát COD ---------- */
+.sx-cod-hero-amount { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: -.03em; color: #fff; display: block; margin: .2rem 0; }
+.sx-cod-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 1.25rem; align-items: start; }
+.sx-cod-table td, .sx-cod-table th { vertical-align: middle; }
+.sx-cod-table tbody tr.sx-selected { background: var(--sx-gold-soft); }
+.sx-cod-table input[type=checkbox] { width: 1.1rem; height: 1.1rem; accent-color: var(--sx-gold); }
+.sx-total-box { border-radius: 1rem; padding: 1.1rem; background: linear-gradient(140deg, var(--sx-gold-soft), var(--ute-card)); border: 1px solid color-mix(in srgb, var(--sx-gold) 35%, transparent); }
+.sx-total-box strong { display: block; font-size: 1.7rem; color: var(--sx-gold-ink); }
+.sx-diff { font-weight: 700; }
+.sx-diff.sx-short { color: var(--sx-rose); }
+.sx-diff.sx-even { color: var(--sx-green); }
+.sx-history-item { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding: .85rem 0; border-top: 1px solid var(--ute-border); }
+.sx-history-item:first-child { border-top: 0; }
+.sx-history-item > div { min-width: 0; flex: 1 1 180px; }
+.sx-cod-status-submitted { --tone: var(--sx-amber); --tone-soft: var(--sx-amber-soft); --tone-ink: var(--sx-amber-ink); }
+.sx-cod-status-confirmed { --tone: var(--sx-green); --tone-soft: var(--sx-green-soft); --tone-ink: var(--sx-green-ink); }
+.sx-cod-status-rejected { --tone: var(--sx-rose); --tone-soft: var(--sx-rose-soft); --tone-ink: var(--sx-rose-ink); }
+
+/* ---------- Thống kê ---------- */
+.shipper-workspace .shipper-rate { background: linear-gradient(120deg, var(--sx-green), var(--sx-teal)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shipper-workspace .progress { height: .75rem; border-radius: 1rem; }
+.shipper-workspace .progress-bar { background: linear-gradient(90deg, var(--sx-teal), var(--sx-green)); border-radius: 1rem; }
+.shipper-workspace .shipper-chart-bars span:first-child { background: linear-gradient(180deg, var(--sx-green), var(--sx-teal)); }
+.shipper-workspace .shipper-chart-bars span + span { background: linear-gradient(180deg, var(--sx-rose), var(--sx-orange)); }
+.shipper-workspace .shipper-chart-legend span::before { background: var(--sx-green); }
+.shipper-workspace .shipper-chart-legend span + span::before { background: var(--sx-rose); }
+.shipper-workspace .shipper-cod-total { border-top: 3px solid var(--sx-gold); background: linear-gradient(150deg, var(--sx-gold-soft), var(--ute-card) 70%); }
+.shipper-workspace .shipper-cod-total > i { background: var(--sx-gold); color: #fff; }
+.shipper-workspace .shipper-cod-total > div > strong { color: var(--sx-gold-ink); }
+
+/* ---------- Lịch sử hành trình có màu ---------- */
+.shipper-workspace .logistics-timeline > li::before { background: var(--tone, var(--sx-blue)) !important; box-shadow: 0 0 0 4px var(--tone-soft, var(--sx-blue-soft)) !important; }
+.sx-tl-title { color: var(--tone-ink, inherit); }
+.sx-tl-reason { display: inline-flex; align-items: center; gap: .35rem; margin-top: .25rem; padding: .2rem .55rem; border-radius: .5rem; font-size: .8rem; font-weight: 600; background: var(--tone-soft); color: var(--tone-ink); }
+
+/* ---------- Thông báo, quét QR ---------- */
+.shipper-workspace .shipper-notification.unread { border-left: 4px solid var(--sx-indigo); background: linear-gradient(90deg, var(--sx-indigo-soft), var(--ute-card) 45%); }
+.shipper-workspace .shipper-notification-icon { background: linear-gradient(135deg, var(--sx-indigo), var(--sx-violet)); color: #fff; }
+.shipper-workspace .shipper-camera { background: radial-gradient(circle at 50% 40%, var(--sx-cyan-soft), var(--ute-surface)); border-color: color-mix(in srgb, var(--sx-cyan) 45%, transparent); }
+.shipper-workspace .shipper-camera-placeholder > i { color: var(--sx-cyan); }
+.shipper-workspace .shipper-camera-frame { border-color: var(--sx-cyan); }
+.shipper-workspace .shipper-camera-frame::after { content: ''; position: absolute; left: 6%; right: 6%; top: 10%; height: 2px; background: linear-gradient(90deg, transparent, #22D3EE, transparent); box-shadow: 0 0 12px #22D3EE; animation: sx-scan 2.2s ease-in-out infinite; }
+@keyframes sx-scan { 0%, 100% { top: 10%; } 50% { top: 88%; } }
+
+/* ---------- Trang lỗi ---------- */
+.sx-error-panel { display: flex; gap: 1.25rem; align-items: flex-start; max-width: 760px; margin: 2rem auto; border-top: 4px solid var(--sx-rose); }
+.sx-error-icon { display: grid; place-items: center; flex: 0 0 3.5rem; height: 3.5rem; border-radius: 1rem; background: var(--sx-rose-soft); color: var(--sx-rose); font-size: 1.6rem; }
+
+/* ---------- Menu Shipper: icon màu ---------- */
+.ute-nav .sx-nav i { width: 1.9rem; height: 1.9rem; display: inline-grid; place-items: center; border-radius: .55rem; background: var(--tone-soft); color: var(--tone); font-size: 1rem; }
+.ute-nav .sx-nav.active i, .ute-nav .sx-nav:hover i { background: var(--tone); color: #fff; }
+
+/* ---------- Màn hình nhỏ ---------- */
+@media (max-width: 1199px) {
+    .sx-metrics-5 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+    .sx-route-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 991px) {
+    .sx-cod-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+    .sx-metrics-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .shipper-workspace .shipper-metric.sx-metric-wide { grid-column: 1 / -1; }
+    .sx-bulkbar { left: .75rem; right: .75rem; bottom: .75rem; gap: .5rem; padding: .7rem; }
+    .sx-bulkbar .sx-bulk-hint { display: none; }
+    .sx-bulkbar strong { flex: 1 1 100%; }
+    .sx-bulkbar .btn { flex: 1 1 40%; white-space: nowrap; font-size: .85rem; }
+    .sx-bulkbar .btn-link { flex: 0 0 auto; }
+    .shipper-workspace .shipper-hero > div:first-child { flex: 0 0 auto; }
+    .shipper-workspace .shipper-hero-actions .btn { flex: 1 1 auto; }
+    .sx-leg { flex: 1 1 100%; }
+    .sx-stop { grid-template-columns: 2.2rem minmax(0, 1fr); gap: .75rem; }
+    .sx-stop-num { width: 2.2rem; height: 2.2rem; }
+    .sx-stop::before { left: 1.1rem; top: 2.2rem; }
+    .sx-task .sx-task-actions { margin-left: 0; width: 100%; }
+    .sx-task .sx-task-actions .btn { flex: 1; }
+    .sx-error-panel { flex-direction: column; }
+    .sx-hero-stats { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .shipper-workspace .shipper-order-card, .shipper-workspace .shipper-metric, .sx-leg { transition: none; }
+    .shipper-workspace .shipper-order-card:hover, .shipper-workspace a.shipper-metric:hover, .sx-leg:hover { transform: none; }
+    .shipper-workspace .shipper-camera-frame::after { animation: none; }
+}
+
+/* =====================================================================
+   Đợt giao diện 2: hình minh họa, chuông chấm đỏ, hồ sơ Shipper,
+   ô chọn tệp ở chế độ tối và danh sách điều kiện camera.
+   ===================================================================== */
+
+/* ---------- Nền khu vực Shipper: vệt màu nhẹ phía sau nội dung ---------- */
+body:has(.shipper-workspace) .ute-main {
+    background:
+        radial-gradient(900px 420px at 100% -10%, color-mix(in srgb, var(--sx-violet) 10%, transparent), transparent 70%),
+        radial-gradient(700px 380px at -10% 30%, color-mix(in srgb, var(--sx-teal) 9%, transparent), transparent 70%);
+}
+
+/* ---------- Hero có hình minh họa ---------- */
+.shipper-workspace .shipper-hero { align-items: center; }
+.sx-hero-main { min-width: 0; position: relative; z-index: 1; }
+.sx-hero-main .shipper-hero-actions { margin-top: 1.1rem; }
+.sx-hero-art {
+    flex: 0 0 auto; width: clamp(210px, 24vw, 320px); height: auto; margin: -.75rem -.5rem -1.4rem 0;
+    filter: drop-shadow(0 18px 22px rgba(0, 0, 0, .2)); animation: sx-float 6s ease-in-out infinite;
+    pointer-events: none; user-select: none; position: relative; z-index: 1;
+}
+@keyframes sx-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+/* ---------- Trạng thái trống có hình ---------- */
+.sx-empty-art { display: block; width: min(200px, 60%); height: auto; margin: 0 auto 1rem; }
+
+/* ---------- Chuông thông báo: chấm đỏ + rung khi có mới ---------- */
+.sx-bell { position: relative; display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; transition: background .15s ease; }
+.sx-bell:hover, .sx-bell:focus-visible { background: rgba(255, 255, 255, .16); }
+.sx-bell > i { font-size: 1.1rem; }
+.sx-bell .sx-bell-dot {
+    position: absolute; top: -3px; right: -5px; min-width: 1.2rem; height: 1.2rem; padding: 0 .32rem; border-radius: 1rem;
+    background: #EF4444; color: #FFFFFF; font-size: .66rem; font-weight: 800; line-height: calc(1.2rem - 4px); text-align: center;
+    border: 2px solid var(--ute-blue); box-shadow: 0 2px 6px rgba(239, 68, 68, .45);
+}
+.sx-bell.sx-has-unread .sx-bell-dot { animation: sx-ping 1.8s ease-out infinite; }
+.sx-bell.sx-ring > i { animation: sx-ring 1.1s ease-in-out 2; transform-origin: 50% 10%; }
+@keyframes sx-ping { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, .6); } 70%, 100% { box-shadow: 0 0 0 9px rgba(239, 68, 68, 0); } }
+@keyframes sx-ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-14deg); } 45% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(3deg); } }
+.ute-nav .badge.sx-count-red { background: #EF4444; color: #FFFFFF; border-radius: 1rem; }
+
+/* ---------- Thẻ hồ sơ Shipper trong menu ---------- */
+.sx-profile { display: flex; align-items: center; gap: .75rem; margin: .25rem .75rem 1rem; padding: .8rem; border-radius: 1rem; color: #FFFFFF;
+    background: linear-gradient(125deg, #0072BC, #4F46E5 70%, #7C3AED); box-shadow: 0 10px 22px rgba(79, 70, 229, .25); }
+.sx-avatar { flex: 0 0 2.6rem; height: 2.6rem; display: grid; place-items: center; border-radius: 50%; font-weight: 800; font-size: 1.1rem;
+    background: rgba(255, 255, 255, .2); border: 2px solid rgba(255, 255, 255, .55); }
+.sx-profile > div { min-width: 0; display: flex; flex-direction: column; }
+.sx-profile strong { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-profile .sx-profile-status { font-size: .74rem; opacity: .92; display: flex; align-items: center; gap: .4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sx-online { display: inline-block; flex: 0 0 .55rem; width: .55rem; height: .55rem; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 0 3px rgba(74, 222, 128, .3); }
+
+/* ---------- Ô chọn tệp: dễ đọc ở cả sáng/tối ---------- */
+/* Bootstrap lấy nền nút chọn tệp từ biến sáng nên ở chế độ tối thành nền trắng chữ trắng. */
+:root[data-theme="dark"] input[type=file].form-control::file-selector-button { background-color: #24344A; color: #E7EEF6; border-color: var(--ute-border); }
+:root[data-theme="dark"] input[type=file].form-control:hover:not(:disabled):not([readonly])::file-selector-button { background-color: #2E4260; }
+.shipper-workspace input[type=file].form-control { padding: .45rem .6rem; }
+.shipper-workspace input[type=file].form-control::file-selector-button {
+    margin: -.45rem .85rem -.45rem -.6rem; padding: .55rem 1rem; border: 0; color: #FFFFFF; font-weight: 600;
+    background: linear-gradient(120deg, var(--sx-indigo), var(--sx-violet));
+}
+.shipper-workspace input[type=file].form-control:hover:not(:disabled):not([readonly])::file-selector-button { background: linear-gradient(120deg, #4338CA, #6D28D9); }
+:root[data-theme="dark"] .shipper-workspace input[type=file].form-control::file-selector-button { color: #FFFFFF; background: linear-gradient(120deg, #6366F1, #8B5CF6); }
+
+/* ---------- Danh sách điều kiện camera + ô tick đồng ý ---------- */
+.sx-checklist { display: grid; gap: .6rem; margin: .5rem 0 1rem; }
+.sx-check-item { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem .9rem; border-radius: .85rem;
+    border: 1px solid var(--ute-border); background: var(--ute-card); transition: border-color .15s ease, background .15s ease; }
+.sx-check-item strong { display: block; font-size: .86rem; }
+.sx-check-item span:not(.sx-check-mark) { display: block; font-size: .76rem; color: var(--ute-gray); line-height: 1.55; }
+.sx-check-mark { flex: 0 0 1.7rem; height: 1.7rem; display: grid; place-items: center; border-radius: 50%; background: var(--sx-slate-soft); color: var(--sx-slate); font-size: .95rem; }
+.sx-check-item.sx-ok { border-color: color-mix(in srgb, var(--sx-green) 45%, transparent); background: color-mix(in srgb, var(--sx-green-soft) 70%, var(--ute-card)); }
+.sx-check-item.sx-ok .sx-check-mark { background: var(--sx-green); color: #FFFFFF; }
+.sx-check-item.sx-fail { border-color: color-mix(in srgb, var(--sx-rose) 45%, transparent); background: color-mix(in srgb, var(--sx-rose-soft) 70%, var(--ute-card)); }
+.sx-check-item.sx-fail .sx-check-mark { background: var(--sx-rose); color: #FFFFFF; }
+.sx-consent { cursor: pointer; position: relative; }
+.sx-consent-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.sx-check-box { border-radius: .45rem; background: var(--ute-card); border: 2px solid var(--sx-cyan); color: transparent; }
+.sx-consent:hover .sx-check-box { box-shadow: 0 0 0 4px var(--sx-cyan-soft); }
+.sx-consent-input:focus-visible + .sx-check-box { box-shadow: var(--sx-ring); }
+.sx-consent-input:checked + .sx-check-box { background: var(--sx-green); border-color: var(--sx-green); color: #FFFFFF; }
+.shipper-workspace #qrCameraStart:disabled { background: var(--sx-slate-soft); color: var(--sx-slate-ink); box-shadow: none; opacity: 1; }
+
+/* ---------- Kích thước theo màn hình ---------- */
+@media (min-width: 576px) and (max-width: 767px) {
+    .shipper-workspace .shipper-hero:has(> .sx-hero-art) { flex-direction: row; align-items: center; }
+    .sx-hero-art { width: 150px; margin: 0; }
+}
+@media (min-width: 768px) and (max-width: 991px) { .sx-hero-art { width: 190px; } }
+@media (max-width: 575px) { .sx-hero-art { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .sx-hero-art, .sx-bell.sx-ring > i, .sx-bell.sx-has-unread .sx-bell-dot { animation: none; }
+}
