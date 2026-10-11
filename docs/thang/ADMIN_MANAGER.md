@@ -1,5 +1,9 @@
 # Manager và Admin thuộc phần Thắng
 
+> Cập nhật mới nhất: chỉ Admin CRUD tài khoản cả Admin/Manager/User/Shipper tại `/admin/quan-ly-tai-khoan`. Xem [ADMIN_ACCOUNT_CRUD.md](ADMIN_ACCOUNT_CRUD.md) cho chức năng, hạn chế xóa và schema tài khoản mới. Các giới hạn “không sửa AppUser/không xóa tài khoản” bên dưới chỉ là lịch sử đợt tháng 09, đã được yêu cầu mới thay thế.
+
+> Phần bên dưới mô tả đợt triển khai ban đầu tháng 09/2026. Phiên bản 10/10/2026 đã có điều phối, khuyến mãi, cước, báo cáo và nhật ký; phạm vi shared code/schema đã được Thắng cho phép mở rộng. Dùng [OPERATIONS_UPGRADE.md](OPERATIONS_UPGRADE.md) cho chức năng/validation mới và [COMMIT_PLAN_2026_10_10.md](COMMIT_PLAN_2026_10_10.md) cho lệnh commit. Cấu hình SQL Server cũ đã gỡ, database/bảng local được giữ nhưng không sử dụng.
+
 ## Phạm vi
 
 Đợt này bổ sung tài khoản nội bộ được cấp, phân cấp Admin/Manager, validation, bảo vệ phiên và tra soát đơn hàng. Không sửa `AppUser.java`, `Order.java`, repository dùng chung, `SecurityConfig.java`, `AuthServiceImpl.java`, controller/template của Guest/User/Shipper hoặc các script DB có sẵn.
