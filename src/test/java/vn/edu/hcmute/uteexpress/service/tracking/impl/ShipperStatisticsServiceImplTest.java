@@ -25,6 +25,7 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
+import vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository;
 import vn.edu.hcmute.uteexpress.repository.tracking.ShipperStatisticsRepository;
 import vn.edu.hcmute.uteexpress.service.tracking.ShipperStatisticsService;
 
@@ -40,6 +41,10 @@ class ShipperStatisticsServiceImplTest {
     @Mock
     private ShipperStatisticsRepository statisticsRepository;
 
+    @Mock
+    private OrderStatusHistoryRepository historyRepository;
+    private long nextOrderId;
+
     private ShipperStatisticsService statisticsService;
     private AppUser shipper;
 
@@ -49,11 +54,13 @@ class ShipperStatisticsServiceImplTest {
         statisticsService = new ShipperStatisticsServiceImpl(
                 appUserRepository,
                 statisticsRepository,
+                historyRepository,
                 FIXED_CLOCK);
 
         shipper = new AppUser();
         shipper.setUsername("nguyentai");
         shipper.setRole(AppUser.Role.SHIPPER);
+        shipper.setEnabled(true);
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
     }
@@ -179,6 +186,8 @@ class ShipperStatisticsServiceImplTest {
 
     private Order order(Order.OrderStatus status) {
         Order order = new Order();
+        order.setId(++nextOrderId);
+        order.setUpdatedAt(LocalDateTime.of(2026, 9, 13, 9, 0));
         order.setShipper(shipper);
         order.setStatus(status);
         return order;

@@ -4,6 +4,9 @@
 Website cho người gửi hàng tạo đơn, theo dõi hành trình và thanh toán cước; shipper nhận đơn
 và cập nhật trạng thái giao hàng.
 
+Các tính năng Shipper bổ sung và luồng dùng thử: [hướng dẫn Shipper](docs/tai/SHIPPER_FEATURES.md).
+Project hiện dùng MySQL trên Aiven; xem [SETUP.md](SETUP.md) để cấu hình hiện tại.
+
 ## Công nghệ
 
 Spring Boot 3.3.4 · Java 17 · Maven · Thymeleaf + Bootstrap 5.3.3 ·

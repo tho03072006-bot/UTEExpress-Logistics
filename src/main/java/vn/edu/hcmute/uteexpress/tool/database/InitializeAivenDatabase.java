@@ -60,7 +60,7 @@ public final class InitializeAivenDatabase {
                 }
             }
             if (statements.isEmpty() || statements.stream().anyMatch(sql ->
-                    !(sql.startsWith("create table ") || sql.startsWith("alter table ")))) {
+                    !(sql.startsWith("create table ") || sql.startsWith("alter table ") || sql.startsWith("create index ")))) {
                 throw new IllegalArgumentException("DDL không hợp lệ; chưa thay đổi database.");
             }
             try (var statement = connection.createStatement()) {

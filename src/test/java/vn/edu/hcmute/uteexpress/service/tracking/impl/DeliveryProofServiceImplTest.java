@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.service.tracking.impl;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,11 +11,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.time.*;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -41,6 +44,9 @@ class DeliveryProofServiceImplTest {
     @Mock
     private DeliveryProofStorageService storageService;
 
+    @Spy
+    private Clock clock = Clock.fixed(Instant.parse("2026-10-11T02:00:00Z"), ZoneId.of("Asia/Ho_Chi_Minh"));
+
     @InjectMocks
     private DeliveryProofServiceImpl deliveryProofService;
 
@@ -56,7 +62,7 @@ class DeliveryProofServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(storageService.storeProofImage(image))
                 .thenReturn("/uploads/giao-hang/proof.png");
@@ -75,6 +81,7 @@ class DeliveryProofServiceImplTest {
 
         assertSame(order, result.getOrder());
         assertSame(shipper, result.getShipper());
+        assertEquals(LocalDateTime.of(2026, 10, 11, 9, 0), result.getUpdatedAt());
         assertTrue(result.getProofImagePath().endsWith("proof.png"));
         assertTrue(result.getSignaturePath().endsWith("signature.png"));
         verify(deliveryProofRepository).save(result);
@@ -86,7 +93,7 @@ class DeliveryProofServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(99L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(99L, shipper))
                 .thenReturn(Optional.empty());
 
         assertThrows(
@@ -110,7 +117,7 @@ class DeliveryProofServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -156,6 +163,7 @@ class DeliveryProofServiceImplTest {
         AppUser shipper = new AppUser();
         shipper.setUsername("nguyentai");
         shipper.setRole(AppUser.Role.SHIPPER);
+        shipper.setEnabled(true);
         return shipper;
     }
 

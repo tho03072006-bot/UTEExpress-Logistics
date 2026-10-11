@@ -12,5 +12,10 @@ public record ShipperStatisticsResponse(
         long failedOrReturnedOrders,
         long inProgressOrders,
         BigDecimal successRate,
-        BigDecimal collectedCod) {
+        BigDecimal collectedCod,
+        java.util.List<ShipperDailyStatistics> days,
+        long legacyOrders) {
+    public long getChartMax() {
+        return Math.max(1, days.stream().mapToLong(d -> Math.max(d.delivered(), d.getUnsuccessful())).max().orElse(1));
+    }
 }

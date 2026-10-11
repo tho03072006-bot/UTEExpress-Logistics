@@ -1,6 +1,12 @@
 package vn.edu.hcmute.uteexpress.controller.shipper;
 
 import java.util.Optional;
+import java.time.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason;
+import vn.edu.hcmute.uteexpress.service.tracking.OrderJourneyService;
+import vn.edu.hcmute.uteexpress.service.tracking.OrderComplaintService;
+import vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,28 +33,55 @@ public class ShipperController {
     private final TrackingService trackingService;
     private final DeliveryProofService deliveryProofService;
     private final ShipperStatisticsService shipperStatisticsService;
+    private final OrderJourneyService journey;
+    private final OrderComplaintService complaints;
+    private final ShipmentQrService qr;
+    private final vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace;
 
     public ShipperController(
             TrackingService trackingService,
             DeliveryProofService deliveryProofService,
-            ShipperStatisticsService shipperStatisticsService) {
+            ShipperStatisticsService shipperStatisticsService,
+            OrderJourneyService journey, OrderComplaintService complaints, ShipmentQrService qr,
+            vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace) {
         this.trackingService = trackingService;
         this.deliveryProofService = deliveryProofService;
         this.shipperStatisticsService = shipperStatisticsService;
+        this.journey = journey;
+        this.complaints = complaints;
+        this.qr = qr;
+        this.workspace = workspace;
     }
 
     @GetMapping("/trang-chu")
     public String dashboard(
+            @RequestParam(defaultValue = "ALL") vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView work,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) Order.OrderStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "0") int page,
             Authentication authentication,
             Model model) {
         if (isAnonymous(authentication)) {
             return "redirect:/dang-nhap";
         }
 
-        model.addAttribute(
-                "orders",
-                trackingService.findAssignedOrders(
-                        authentication.getName()));
+        var orderPage = work == vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView.ALL
+                ? trackingService.searchAssignedOrders(authentication.getName(), keyword, status, from, to, page)
+                : workspace.work(authentication.getName(), work, keyword, status, from, to, page);
+        model.addAttribute("work", work);
+        model.addAttribute("workCounts", workspace.counts(authentication.getName()));
+        model.addAttribute("money", workspace.money(authentication.getName(), orderPage.getContent()));
+        model.addAttribute("retries", workspace.retries(authentication.getName(), orderPage.getContent()));
+        model.addAttribute("now", workspace.now());
+        model.addAttribute("orders", orderPage.getContent());
+        model.addAttribute("orderPage", orderPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("statuses", Order.OrderStatus.values());
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
 
         return "shipper/dashboard";
     }
@@ -59,6 +92,8 @@ public class ShipperController {
                     name = "period",
                     defaultValue = "DAY")
                     ShipperStatisticsPeriod period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             Authentication authentication,
             Model model) {
         if (isAnonymous(authentication)) {
@@ -68,12 +103,25 @@ public class ShipperController {
         model.addAttribute(
                 "summary",
                 shipperStatisticsService.getStatistics(
-                        authentication.getName(), period));
+                        authentication.getName(), period, from, to));
+        model.addAttribute("customRange", from != null);
         model.addAttribute(
                 "periods",
                 ShipperStatisticsPeriod.values());
 
         return "shipper/statistics";
+    }
+
+    @GetMapping("/thong-ke/xuat.csv")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<byte[]> export(
+            @RequestParam(defaultValue = "DAY") ShipperStatisticsPeriod period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, Authentication auth) {
+        return org.springframework.http.ResponseEntity.ok().header("Content-Disposition", "attachment; filename=thong-ke-shipper.csv")
+                .header("X-Content-Type-Options", "nosniff").cacheControl(org.springframework.http.CacheControl.noStore())
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .body(shipperStatisticsService.exportCsv(auth.getName(), period, from, to));
     }
 
     @GetMapping("/don/{id}")
@@ -100,6 +148,14 @@ public class ShipperController {
         Order assignedOrder = order.get();
 
         model.addAttribute("order", assignedOrder);
+        model.addAttribute("money", workspace.money(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
+        model.addAttribute("retry", workspace.retries(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
+        model.addAttribute("now", workspace.now());
+        model.addAttribute("history", journey.history(id, authentication.getName(), 0));
+        model.addAttribute("canRetry", trackingService.canRetry(assignedOrder));
+        model.addAttribute("currentProof", trackingService.hasCurrentProof(assignedOrder));
+        model.addAttribute("failureReasons", DeliveryFailureReason.values());
+        model.addAttribute("complaint", complaints.forOrder(assignedOrder, authentication.getName()).orElse(null));
         model.addAttribute(
                 "deliveryProof",
                 deliveryProofService.findByOrder(assignedOrder)
@@ -147,6 +203,9 @@ public class ShipperController {
             @PathVariable Long id,
             @RequestParam("status")
                     Order.OrderStatus newStatus,
+            @RequestParam(required = false) DeliveryFailureReason failureReason,
+            @RequestParam(defaultValue = "") String note,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime nextAttemptAt,
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
         if (isAnonymous(authentication)) {
@@ -157,18 +216,43 @@ public class ShipperController {
             trackingService.updateStatus(
                     id,
                     authentication.getName(),
-                    newStatus);
+                    newStatus, failureReason, note, nextAttemptAt);
 
             redirectAttributes.addFlashAttribute(
                     "message",
                     "Cập nhật trạng thái đơn thành công.");
-        } catch (IllegalStateException exception) {
+        } catch (IllegalStateException | IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     exception.getMessage());
         }
 
         return "redirect:/shipper/don/" + id;
+    }
+
+    @GetMapping("/quet-ma")
+    public String scanPage() { return "shipper/scan"; }
+
+    @PostMapping("/quet-ma/ma")
+    public String scanCode(@RequestParam String code, Authentication auth, RedirectAttributes flash) {
+        try {
+            code = code.strip(); qr.checkCode(code);
+            var order = trackingService.findAssignedOrderByCode(code, auth.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("QR này không thuộc đơn được phân công cho bạn."));
+            return "redirect:/shipper/don/" + order.getId();
+        } catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return "redirect:/shipper/quet-ma";
+    }
+
+    @PostMapping("/quet-ma")
+    public String scan(@RequestParam("qrImage") MultipartFile image, Authentication authentication,
+            RedirectAttributes flash) {
+        try {
+            var order = trackingService.findAssignedOrderByCode(qr.decode(image), authentication.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn được phân công cho bạn với QR này."));
+            return "redirect:/shipper/don/" + order.getId();
+        } catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return "redirect:/shipper/quet-ma";
     }
 
     private boolean isAnonymous(Authentication authentication) {

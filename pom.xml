@@ -24,6 +24,16 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Web MVC + Thymeleaf -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

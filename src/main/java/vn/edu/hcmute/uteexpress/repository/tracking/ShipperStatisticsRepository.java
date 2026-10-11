@@ -15,10 +15,22 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 public interface ShipperStatisticsRepository
         extends Repository<Order, Long> {
 
+    @Query("""
+            select o from Order o where o.shipper = :shipper and o.updatedAt >= :fromInclusive and o.updatedAt < :toExclusive
+              and not exists (select h.id from OrderStatusHistory h where h.order = o and h.previousStatus <> h.status)
+            """)
     List<Order> findByShipperAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThan(
-            AppUser shipper,
-            LocalDateTime fromInclusive,
-            LocalDateTime toExclusive);
+            @Param("shipper") AppUser shipper, @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive);
+
+    interface DailyCod { java.time.LocalDate getDate(); BigDecimal getAmount(); }
+    @Query("""
+            select cast(p.paidAt as LocalDate) as date, sum(p.amount) as amount from OrderPayment p
+            where p.order.shipper = :shipper and p.method = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.COD
+              and p.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
+              and p.paidAt >= :from and p.paidAt < :to group by cast(p.paidAt as LocalDate)
+            """)
+    List<DailyCod> dailyCod(@Param("shipper") AppUser shipper, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("""
             select coalesce(sum(payment.amount), 0)

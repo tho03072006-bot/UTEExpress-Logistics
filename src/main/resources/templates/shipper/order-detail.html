@@ -1,311 +1,46 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
-<head>
-    <title th:text="|Chi tiết ${order.trackingCode} - UTEExpress|">
-        Chi tiết đơn - UTEExpress
-    </title>
-</head>
-<body>
-
-<section th:attr="data-tracking-code=${order.trackingCode}">
-<div class="ute-page-head">
-    <div>
-        <h2>Chi tiết đơn được phân công</h2>
-        <p>Thông tin lấy hàng và giao hàng của Shipper.</p>
-    </div>
-
-    <a class="btn btn-outline-secondary"
-       th:href="@{/shipper/trang-chu}">
-        Quay lại danh sách
-    </a>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title th:text="|Chi tiết ${order.trackingCode} - UTEExpress|"></title></head><body>
+<section class="shipper-workspace" th:attr="data-tracking-code=${order.trackingCode}">
+<a class="shipper-back" th:href="@{/shipper/trang-chu}"><i class="bi bi-arrow-left"></i> Quay lại danh sách</a>
+<header class="shipper-hero"><div><span class="shipper-eyebrow">CHI TIẾT ĐƠN ĐƯỢC PHÂN CÔNG</span><h2 th:text="${order.trackingCode}"></h2><p><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block> · <span th:text="|${order.weightKg} kg|"></span> · Tạo lúc <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span></p></div><span class="badge shipper-hero-status" data-order-status th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span></header>
+<div class="shipper-notice" role="status" th:if="${message}" th:text="${message}"></div><div class="shipper-notice" role="alert" th:if="${error}" th:text="${error}"></div><div id="realtimeStatusMessage" class="shipper-notice d-none" role="status"></div>
+<div class="shipper-retry mb-4" th:if="${order.status.name() == 'FAILED' and retry != null and canRetry}"><i class="bi bi-clock-history"></i><div><strong th:if="${retry.failureReason != null}" th:text="${retry.failureReason.label}"></strong><span th:if="${retry.nextAttemptAt != null}" th:text="|${retry.nextAttemptAt.isAfter(now) ? 'Hẹn giao lại' : 'Đã đến hẹn giao lại'}: ${#temporals.format(retry.nextAttemptAt, 'dd/MM/yyyy HH:mm')}|"></span><p th:if="${!#strings.isEmpty(retry.note)}" th:text="${retry.note}" class="mb-0"></p></div></div>
+<div class="shipper-detail-grid">
+<div class="shipper-detail-main">
+    <article class="ute-panel"><div class="shipper-section-head"><div><span class="shipper-eyebrow">LỘ TRÌNH VẬN ĐƠN</span><h3>Lấy hàng và giao hàng</h3></div><i class="bi bi-geo-alt"></i></div>
+        <div class="shipper-route shipper-route-detail"><div><i class="bi bi-box-seam"></i><div><span>THÔNG TIN LẤY HÀNG</span><strong th:text="${order.senderName}"></strong><p th:text="${order.senderAddress}"></p><div class="shipper-inline-actions"><a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${order.senderAddress})}" target="_blank" rel="noopener noreferrer"><i class="bi bi-signpost"></i> Chỉ đường tới điểm lấy</a><button type="button" th:attr="data-copy-text=${order.senderAddress}"><i class="bi bi-copy"></i> Sao chép</button></div></div></div>
+            <div><i class="bi bi-geo-alt"></i><div><span>THÔNG TIN GIAO HÀNG</span><strong th:text="${order.receiverName}"></strong><p th:text="${order.receiverAddress}"></p><a class="shipper-phone" th:href="${'tel:' + order.receiverPhone}"><i class="bi bi-telephone"></i> <span th:text="${order.receiverPhone}"></span></a><div class="shipper-inline-actions"><a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${order.receiverAddress})}" target="_blank" rel="noopener noreferrer"><i class="bi bi-signpost"></i> Chỉ đường tới người nhận</a><button type="button" th:attr="data-copy-text=${order.receiverAddress}"><i class="bi bi-copy"></i> Sao chép</button></div></div></div></div>
+        <div class="shipper-hint mt-2" data-copy-status role="status" aria-live="polite"></div>
+    </article>
+    <article class="ute-panel mt-4" id="delivery-evidence"><div class="shipper-section-head"><div><span class="shipper-eyebrow">XÁC NHẬN GIAO NHẬN</span><h3>Bằng chứng giao hàng</h3></div><i class="bi bi-shield-check"></i></div><p class="shipper-hint">Ảnh và chữ ký chỉ được xem bởi người gửi, Shipper được phân công và quản lý có quyền.</p>
+        <div th:if="${deliveryProof != null}" class="mb-4"><div class="shipper-proof-grid"><div><span class="shipper-field-label">Ảnh giao hàng đã lưu</span><a th:href="@{/shipper/don/{id}/bang-chung/anh(id=${order.id})}" target="_blank" rel="noopener"><img class="shipper-proof-image" th:src="@{/shipper/don/{id}/bang-chung/anh(id=${order.id})}" alt="Ảnh bằng chứng giao hàng"></a></div><div><span class="shipper-field-label">Chữ ký người nhận đã lưu</span><a th:href="@{/shipper/don/{id}/bang-chung/chu-ky(id=${order.id})}" target="_blank" rel="noopener"><img class="shipper-proof-image" th:src="@{/shipper/don/{id}/bang-chung/chu-ky(id=${order.id})}" alt="Chữ ký người nhận"></a></div></div><p class="shipper-hint mt-2" th:text="|Lưu lúc ${#temporals.format(deliveryProof.updatedAt, 'dd/MM/yyyy HH:mm')}|"></p></div>
+        <div class="shipper-notice" th:if="${order.status.name() == 'IN_TRANSIT' and deliveryProof != null and !currentProof}">Đây là lần giao lại. Hãy lưu ảnh và chữ ký mới trước khi xác nhận thành công.</div>
+        <form id="deliveryProofForm" method="post" enctype="multipart/form-data" th:if="${order.status.name() == 'IN_TRANSIT'}" th:action="@{/shipper/don/{id}/bang-chung(id=${order.id})}">
+            <div class="mb-4"><label for="proofImage" class="form-label">1. Ảnh bằng chứng giao hàng</label><input id="proofImage" name="proofImage" class="form-control" type="file" accept="image/jpeg,image/png" capture="environment" required><div class="form-text">JPG/PNG tối đa 5 MB. Chụp rõ gói hàng và thông tin xác nhận.</div><img id="proofPreview" class="shipper-proof-image mt-3" alt="Xem trước ảnh bằng chứng" hidden></div>
+            <div><label for="signatureCanvas" class="form-label">2. Chữ ký người nhận</label><canvas id="signatureCanvas" class="shipper-signature" width="700" height="240" aria-label="Vùng vẽ chữ ký người nhận"></canvas><input id="signatureData" name="signatureData" type="hidden"><button id="clearSignature" type="button" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-arrow-counterclockwise"></i> Ký lại</button></div>
+            <button type="submit" class="btn btn-primary mt-4"><i class="bi bi-cloud-arrow-up"></i> Lưu bằng chứng giao hàng</button>
+        </form><p class="shipper-hint mb-0" th:if="${deliveryProof == null and order.status.name() != 'IN_TRANSIT'}">Chưa có bằng chứng giao hàng. Bạn có thể thêm ảnh và chữ ký khi đơn đang giao.</p>
+    </article>
+    <article class="ute-panel mt-4"><div class="shipper-section-head"><div><span class="shipper-eyebrow">NHẬT KÝ VẬN ĐƠN</span><h3>Lịch sử hành trình</h3></div><i class="bi bi-clock-history"></i></div><div th:replace="~{fragments/logistics :: history(${history})}"></div><a class="btn btn-outline-primary mt-3" th:href="@{/shipper/don/{id}/hanh-trinh(id=${order.id})}">Xem toàn bộ lịch sử <i class="bi bi-arrow-right"></i></a></article>
 </div>
-
-<div th:if="${message}"
-     class="alert alert-success"
-     th:text="${message}">
-</div>
-
-<div th:if="${error}"
-     class="alert alert-danger"
-     th:text="${error}">
-</div>
-
-<div id="realtimeStatusMessage"
-     class="alert alert-success d-none">
-</div>
-
-<div class="ute-panel mb-4">
-    <div class="d-flex flex-wrap justify-content-between gap-3">
-        <div>
-            <div class="text-muted small">Mã vận đơn</div>
-            <h3 class="mb-1" th:text="${order.trackingCode}">
-                UTE00000000
-            </h3>
-            <div class="text-muted">
-                Ngày tạo:
-                <span th:text="${#temporals.format(
-                        order.createdAt, 'dd/MM/yyyy HH:mm')}">
-                    -
-                </span>
-            </div>
+<aside class="shipper-detail-aside">
+    <article class="ute-panel shipper-payment"><span class="shipper-eyebrow"><i class="bi bi-wallet2"></i> THANH TOÁN CƯỚC</span><h3>Cước cần thu</h3><strong class="shipper-due" th:if="${money.available}"><th:block th:replace="~{fragments/components :: money(${money.due})}"></th:block></strong>
+        <div th:if="${money.available}"><div class="shipper-payment-row"><span>Cước gốc</span><strong><th:block th:replace="~{fragments/components :: money(${order.shippingFee})}"></th:block></strong></div><div class="shipper-payment-row"><span>Giảm giá</span><strong><th:block th:replace="~{fragments/components :: money(${money.discount})}"></th:block></strong></div><div class="shipper-payment-row"><span>Cước thực trả</span><strong><th:block th:replace="~{fragments/components :: money(${money.amount})}"></th:block></strong></div><div class="shipper-payment-row"><span>Phương thức</span><strong th:text="${money.method.displayName}"></strong></div>
+            <p class="shipper-notice mt-3 mb-0" th:if="${money.prepaid}"><i class="bi bi-check2-circle"></i> Đã thanh toán. Không thu lại tiền mặt.</p><p class="shipper-hint mt-3 mb-0" th:if="${money.cod and !money.prepaid}">Thu đúng cước thực trả khi giao thành công. Số tiền này là cước vận chuyển.</p><p class="shipper-notice mt-3 mb-0" th:if="${!money.cod and !money.prepaid}">Chưa thanh toán trực tuyến. Liên hệ Manager trước khi hoàn tất; không thu tiền mặt thay thanh toán trực tuyến.</p></div>
+        <p th:unless="${money.available}" class="shipper-hint">Chưa có thông tin thanh toán. Trao đổi với Manager trước khi thu cước.</p>
+    </article>
+    <article class="ute-panel mt-4"><span class="shipper-eyebrow">BƯỚC TIẾP THEO</span><h3>Cập nhật trạng thái</h3>
+        <form method="post" th:if="${order.status.name() == 'PENDING_PICKUP'}" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="PICKED_UP"><p class="shipper-hint">Kiểm tra gói hàng tại điểm lấy trước khi xác nhận.</p><button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-seam"></i> Xác nhận đã lấy hàng</button></form>
+        <form method="post" th:if="${order.status.name() == 'PICKED_UP'}" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="IN_TRANSIT"><p class="shipper-hint">Gọi người nhận và kiểm tra địa chỉ trước khi bắt đầu.</p><button type="submit" class="btn btn-primary w-100"><i class="bi bi-truck"></i> Bắt đầu giao hàng</button></form>
+        <div th:if="${order.status.name() == 'IN_TRANSIT'}"><form method="post" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="DELIVERED"><button type="submit" class="btn btn-primary w-100" th:disabled="${!currentProof}" th:title="${!currentProof ? 'Hãy lưu ảnh và chữ ký trước' : 'Xác nhận giao thành công'}"><i class="bi bi-check2-circle"></i> Giao hàng thành công</button></form><a th:if="${!currentProof}" class="shipper-hint d-block mt-2" href="#delivery-evidence">Lưu ảnh và chữ ký để mở bước xác nhận.</a>
+            <details class="shipper-failure-form mt-4"><summary>Ghi nhận giao thất bại</summary><form class="mt-3" method="post" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="FAILED"><div class="mb-3"><label for="failureReason" class="form-label">Lý do giao thất bại</label><select id="failureReason" name="failureReason" class="form-select" required><option value="">Chọn lý do</option><option th:each="reason : ${failureReasons}" th:value="${reason}" th:text="${reason.label}"></option></select></div><div class="mb-3"><label for="nextAttemptAt" class="form-label">Hẹn giao lại (nếu có)</label><input id="nextAttemptAt" name="nextAttemptAt" type="datetime-local" class="form-control"><div class="form-text">Giờ Việt Nam, trong 30 ngày tới.</div></div><div class="mb-3"><label for="failureNote" class="form-label">Ghi chú</label><textarea id="failureNote" name="note" class="form-control" maxlength="500" rows="3" placeholder="Lý do khác cần mô tả ít nhất 5 ký tự."></textarea></div><button class="btn btn-outline-primary w-100" type="submit">Giao hàng thất bại</button></form></details>
         </div>
-
-        <div>
-            <div class="text-muted small mb-1">Trạng thái</div>
-            <span class="badge"
-                  data-order-status
-                  th:classappend="${'badge-status-'
-                      + #strings.toLowerCase(order.status.name())}">
-                <th:block th:switch="${order.status.name()}">
-                    <span th:case="'PENDING_PICKUP'">Chờ lấy hàng</span>
-                    <span th:case="'PICKED_UP'">Đã lấy hàng</span>
-                    <span th:case="'IN_TRANSIT'">Đang giao</span>
-                    <span th:case="'DELIVERED'">Giao thành công</span>
-                    <span th:case="'FAILED'">Giao thất bại</span>
-                    <span th:case="'CANCELLED'">Đã hủy</span>
-                    <span th:case="'RETURNED'">Đã hoàn trả</span>
-                    <span th:case="*" th:text="${order.status}">-</span>
-                </th:block>
-            </span>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="ute-panel h-100">
-            <h4 class="mb-3">Thông tin lấy hàng</h4>
-
-            <div class="mb-3">
-                <div class="text-muted small">Người gửi</div>
-                <div th:text="${order.senderName}">Người gửi</div>
-            </div>
-
-            <div>
-                <div class="text-muted small">Địa chỉ lấy hàng</div>
-                <div th:text="${order.senderAddress}">
-                    Địa chỉ lấy hàng
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="ute-panel h-100">
-            <h4 class="mb-3">Thông tin giao hàng</h4>
-
-            <div class="mb-3">
-                <div class="text-muted small">Người nhận</div>
-                <div th:text="${order.receiverName}">Người nhận</div>
-            </div>
-
-            <div class="mb-3">
-                <div class="text-muted small">Số điện thoại</div>
-                <div th:text="${order.receiverPhone}">0900000000</div>
-            </div>
-
-            <div>
-                <div class="text-muted small">Địa chỉ giao hàng</div>
-                <div th:text="${order.receiverAddress}">
-                    Địa chỉ giao hàng
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="ute-panel mt-4">
-    <h4 class="mb-3">Thông tin gói hàng</h4>
-
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="text-muted small">Khối lượng</div>
-            <div th:text="|${order.weightKg} kg|">0 kg</div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="text-muted small">Dịch vụ</div>
-            <div th:switch="${order.serviceType.name()}">
-                <span th:case="'STANDARD'">Tiêu chuẩn</span>
-                <span th:case="'EXPRESS'">Nhanh</span>
-                <span th:case="'SUPER_EXPRESS'">Hỏa tốc</span>
-                <span th:case="*" th:text="${order.serviceType}">-</span>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="text-muted small">Phí vận chuyển</div>
-            <div>
-                <span th:replace="~{fragments/components
-                        :: money(${order.shippingFee})}">
-                    0 đ
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="ute-panel mt-4">
-    <h4 class="mb-3">Bằng chứng giao hàng</h4>
-
-    <div class="row g-4 mb-4"
-         th:if="${deliveryProof != null}">
-        <div class="col-md-6">
-            <div class="text-muted small mb-2">
-                Ảnh giao hàng đã lưu
-            </div>
-            <img class="img-fluid rounded border bg-white"
-                 style="max-height: 280px; width: 100%; object-fit: contain;"
-                 th:src="${deliveryProof.proofImagePath}"
-                 alt="Ảnh bằng chứng giao hàng">
-        </div>
-
-        <div class="col-md-6">
-            <div class="text-muted small mb-2">
-                Chữ ký người nhận đã lưu
-            </div>
-            <img class="img-fluid rounded border bg-white"
-                 style="max-height: 280px; width: 100%; object-fit: contain;"
-                 th:src="${deliveryProof.signaturePath}"
-                 alt="Chữ ký người nhận">
-        </div>
-    </div>
-
-    <form id="deliveryProofForm"
-          method="post"
-          enctype="multipart/form-data"
-          th:if="${order.status.name() == 'IN_TRANSIT'}"
-          th:action="@{/shipper/don/{id}/bang-chung(id=${order.id})}">
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <label for="proofImage" class="form-label">
-                    Ảnh bằng chứng giao hàng
-                </label>
-                <input id="proofImage"
-                       name="proofImage"
-                       class="form-control"
-                       type="file"
-                       accept="image/jpeg,image/png"
-                       required>
-                <div class="form-text">
-                    Chấp nhận JPG, JPEG hoặc PNG; tối đa 5 MB.
-                </div>
-                <img id="proofPreview"
-                     class="img-fluid rounded border mt-3"
-                     style="max-height: 260px; width: 100%; object-fit: contain;"
-                     alt="Xem trước ảnh bằng chứng"
-                     hidden>
-            </div>
-
-            <div class="col-lg-6">
-                <label for="signatureCanvas" class="form-label">
-                    Chữ ký người nhận
-                </label>
-                <canvas id="signatureCanvas"
-                        class="border rounded d-block"
-                        width="700"
-                        height="240"
-                        style="width: 100%; height: auto; touch-action: none; background: #fff;">
-                </canvas>
-                <input id="signatureData"
-                       name="signatureData"
-                       type="hidden">
-                <button id="clearSignature"
-                        type="button"
-                        class="btn btn-sm btn-outline-secondary mt-2">
-                    Ký lại
-                </button>
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary mt-4">
-            Lưu bằng chứng giao hàng
-        </button>
-    </form>
-
-    <div class="text-muted"
-         th:if="${deliveryProof == null
-                 and order.status.name() != 'IN_TRANSIT'}">
-        Chưa có bằng chứng giao hàng cho đơn này.
-    </div>
-</div>
-
-<div class="ute-panel mt-4">
-    <h4 class="mb-3">Cập nhật trạng thái</h4>
-
-    <form method="post"
-          th:if="${order.status.name() == 'PENDING_PICKUP'}"
-          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-        <input type="hidden" name="status" value="PICKED_UP">
-        <button type="submit" class="btn btn-primary">
-            Xác nhận đã lấy hàng
-        </button>
-    </form>
-
-    <form method="post"
-          th:if="${order.status.name() == 'PICKED_UP'}"
-          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-        <input type="hidden" name="status" value="IN_TRANSIT">
-        <button type="submit" class="btn btn-primary">
-            Bắt đầu giao hàng
-        </button>
-    </form>
-
-    <div class="d-flex flex-wrap gap-2"
-         th:if="${order.status.name() == 'IN_TRANSIT'}">
-        <form method="post"
-              th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-            <input type="hidden" name="status" value="DELIVERED">
-            <button type="submit"
-                    class="btn btn-success"
-                    th:disabled="${deliveryProof == null}"
-                    th:title="${deliveryProof == null
-                        ? 'Hãy lưu ảnh và chữ ký trước'
-                        : 'Xác nhận giao thành công'}">
-                Giao hàng thành công
-            </button>
-        </form>
-
-        <form method="post"
-              th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-            <input type="hidden" name="status" value="FAILED">
-            <button type="submit" class="btn btn-outline-danger">
-                Giao hàng thất bại
-            </button>
-        </form>
-    </div>
-
-    <form method="post"
-          th:if="${order.status.name() == 'FAILED'}"
-          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-        <input type="hidden" name="status" value="RETURNED">
-        <button type="submit" class="btn btn-warning">
-            Xác nhận đã hoàn trả
-        </button>
-    </form>
-
-    <div class="alert alert-light border mb-0"
-         th:if="${order.status.name() == 'DELIVERED'}">
-        Đơn hàng đã được giao thành công.
-    </div>
-
-    <div class="alert alert-light border mb-0"
-         th:if="${order.status.name() == 'RETURNED'}">
-        Đơn hàng đã được hoàn trả.
-    </div>
-
-    <div class="alert alert-light border mb-0"
-         th:if="${order.status.name() == 'CANCELLED'}">
-        Đơn hàng đã bị hủy và không thể cập nhật.
-    </div>
-</div>
-
-<script th:src="@{/js/delivery-proof.js}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-<script th:src="@{/js/tracking-realtime.js}"></script>
-</section>
-
-</body>
-</html>
+        <form method="post" th:if="${canRetry}" class="mb-3" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="IN_TRANSIT"><input type="hidden" name="note" value="Shipper bắt đầu giao lại."><button type="submit" class="btn btn-primary w-100"><i class="bi bi-arrow-repeat"></i> Bắt đầu giao lại</button><p class="shipper-hint mt-2">Tối đa 3 lần giao thất bại.</p></form>
+        <p class="shipper-notice" th:if="${order.status.name() == 'FAILED' and !canRetry}">Đã đủ 3 lần giao thất bại. Trao đổi với Manager và hoàn trả hàng.</p><form method="post" th:if="${order.status.name() == 'FAILED'}" th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}"><input type="hidden" name="status" value="RETURNED"><button type="submit" class="btn btn-outline-secondary w-100">Xác nhận đã hoàn trả</button></form>
+        <p class="shipper-notice mb-0" th:if="${order.status.name() == 'DELIVERED'}"><i class="bi bi-check2-circle"></i> Đơn hàng đã được giao thành công.</p><p class="shipper-notice mb-0" th:if="${order.status.name() == 'RETURNED'}">Đơn hàng đã được hoàn trả.</p><p class="shipper-notice mb-0" th:if="${order.status.name() == 'CANCELLED'}">Đơn hàng đã bị hủy và không thể cập nhật.</p>
+    </article>
+    <article class="ute-panel mt-4 shipper-qr-card"><span class="shipper-eyebrow">NHẬN DIỆN VẬN ĐƠN</span><h3>QR vận đơn</h3><img width="200" height="200" th:src="@{/shipper/don/{id}/qr.png(id=${order.id})}" alt="QR mã vận đơn"><p class="shipper-hint">Quét QR trong khu vực Shipper để mở đơn nhanh.</p><a class="btn btn-outline-primary" download="van-don.png" th:href="@{/shipper/don/{id}/qr.png(id=${order.id})}"><i class="bi bi-download"></i> Tải ảnh QR</a></article>
+    <article class="ute-panel mt-4"><span class="shipper-eyebrow">HỖ TRỢ NGƯỜI GỬI</span><h3>Khiếu nại vận đơn</h3><p class="shipper-hint" th:if="${complaint == null}">Người gửi chưa có khiếu nại cho vận đơn này.</p><div th:if="${complaint != null}"><p th:text="${complaint.subject}"></p><span class="badge badge-ute" th:text="${complaint.status.label}"></span><a class="btn btn-outline-primary mt-3 w-100" th:href="@{/shipper/khieu-nai/{id}(id=${complaint.id})}">Xem và bổ sung thông tin</a></div></article>
+</aside></div><script th:src="@{/js/delivery-proof.js}"></script><script th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

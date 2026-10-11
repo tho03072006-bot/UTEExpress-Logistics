@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OrderFeeEstimateTest {
 
     private final OrderServiceImpl orderService =
-            new OrderServiceImpl(null, null, null, null, null);
+            new OrderServiceImpl(null, null, null, null, null, null, null);
 
     @Test
     @DisplayName("Trả về đủ ba loại dịch vụ, đúng thứ tự tiêu chuẩn - nhanh - hoả tốc")

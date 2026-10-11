@@ -14,6 +14,86 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    long countByShipperAndStatus(AppUser shipper, Order.OrderStatus status);
+
+    @Query("""
+            select o from Order o where o.shipper = :shipper
+              and (:status is null or o.status = :status)
+              and (:keyword is null or lower(o.trackingCode) like lower(concat('%', :keyword, '%')) escape '!'
+                   or lower(o.receiverName) like lower(concat('%', :keyword, '%')) escape '!'
+                   or o.receiverPhone like concat('%', :keyword, '%') escape '!')
+              and (:from is null or o.createdAt >= :from) and (:to is null or o.createdAt < :to)
+              and ((:work = 1 and o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP,
+                    vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
+                    vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT))
+                   or (o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                       and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
+                         and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < 3
+                       and exists (
+                       select h.id from OrderStatusHistory h where h.order = o
+                         and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                         and h.id = (select max(h2.id) from OrderStatusHistory h2 where h2.order = o
+                           and h2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
+                         and ((:work = 1 and h.nextAttemptAt < :tomorrow) or (:work = 2 and h.nextAttemptAt <= :now)))))
+            order by case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and exists (
+                       select due.id from OrderStatusHistory due where due.order = o and due.nextAttemptAt <= :now
+                         and due.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                         and due.id = (select max(latest.id) from OrderStatusHistory latest where latest.order = o
+                           and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)) then 0
+                     when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT then 1
+                     when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED then 2 else 3 end,
+                     case when o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.SUPER_EXPRESS then 0
+                     when o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.EXPRESS then 1 else 2 end,
+                     o.createdAt, o.id
+            """)
+    Page<Order> searchWorkOrders(@Param("shipper") AppUser shipper, @Param("status") Order.OrderStatus status,
+            @Param("keyword") String keyword, @Param("from") java.time.LocalDateTime from,
+            @Param("to") java.time.LocalDateTime to, @Param("work") int work,
+            @Param("now") java.time.LocalDateTime now, @Param("tomorrow") java.time.LocalDateTime tomorrow, Pageable pageable);
+
+    @Query("""
+            select count(o) from Order o where o.shipper = :shipper
+            and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+            and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
+              and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < 3 and exists (
+              select h.id from OrderStatusHistory h where h.order = o and h.nextAttemptAt <= :now
+                and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                and h.id = (select max(h2.id) from OrderStatusHistory h2 where h2.order = o
+                  and h2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED))
+            """)
+    long countDueRetries(@Param("shipper") AppUser shipper, @Param("now") java.time.LocalDateTime now);
+
+    @Query("""
+            select o from Order o where o.shipper = :shipper
+              and (:status is null or o.status = :status)
+              and (:keyword is null
+                   or lower(o.trackingCode) like lower(concat('%', :keyword, '%')) escape '!'
+                   or lower(o.receiverName) like lower(concat('%', :keyword, '%')) escape '!'
+                   or o.receiverPhone like concat('%', :keyword, '%') escape '!')
+              and (:from is null or o.createdAt >= :from)
+              and (:to is null or o.createdAt < :to)
+            """)
+    Page<Order> searchOrdersOfShipper(@Param("shipper") AppUser shipper,
+            @Param("status") Order.OrderStatus status, @Param("keyword") String keyword,
+            @Param("from") java.time.LocalDateTime from, @Param("to") java.time.LocalDateTime to,
+            Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.id = :id and o.shipper = :shipper")
+    Optional<Order> findLockedByIdAndShipper(@Param("id") Long id, @Param("shipper") AppUser shipper);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.trackingCode = :code")
+    Optional<Order> findLockedByTrackingCode(@Param("code") String code);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.id = :id")
+    Optional<Order> findLockedById(@Param("id") Long id);
+
+    Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
+
+    Optional<Order> findByTrackingCodeAndShipper(String trackingCode, AppUser shipper);
+
     Optional<Order> findByTrackingCode(String trackingCode);
 
     /**
