@@ -2,24 +2,42 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Đăng nhập nội bộ - UTEExpress</title></head>
-<body><section>
-<div class="mx-auto ute-panel p-4" style="max-width:560px">
-<span class="badge text-bg-dark mb-3">Dành cho Admin và Manager</span>
-<h1 class="h3">Đăng nhập nội bộ</h1>
-<p>Tài khoản do quản trị viên cấp. Không đăng ký hoặc kích hoạt bằng OTP.</p>
-<p class="alert alert-danger" role="alert" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu hoặc liên hệ quản trị viên. Nếu sai 5 lần, hãy đợi 15 phút.</p>
-<p class="alert alert-warning" role="status" th:if="${param.expired}">Phiên đã hết hiệu lực do tài khoản, quyền hoặc mật khẩu thay đổi. Vui lòng đăng nhập lại.</p>
-<p class="alert alert-success" role="status" th:if="${param.changed}">Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>
-<p class="alert alert-info" role="status" th:if="${param.logout}">Đã đăng xuất.</p>
-<form th:action="@{/noi-bo/dang-nhap}" method="post">
-<div class="mb-3"><label for="username" class="form-label">Tên tài khoản được cấp</label>
-<input id="username" name="username" class="form-control" required maxlength="50" autocomplete="username" autocapitalize="none"></div>
-<div class="mb-3"><label for="password" class="form-label">Mật khẩu</label>
-<input id="password" name="password" type="password" class="form-control" required maxlength="64" autocomplete="current-password"></div>
-<button type="submit" class="btn btn-primary w-100">Đăng nhập nội bộ</button>
-</form>
-<p class="small text-muted mt-3 mb-0">Quên mật khẩu: liên hệ Admin để được cấp lại. Admin cuối cùng cần người quản trị cơ sở dữ liệu hỗ trợ theo quy trình phục hồi nội bộ.</p>
+<body><section class="shipper-workspace sx-public sx-auth sx-auth-staff-theme">
+<div class="sx-auth-card">
+    <aside class="sx-auth-side" aria-hidden="true">
+        <span class="shipper-eyebrow"><i class="bi bi-building-lock"></i> KHU VỰC NỘI BỘ</span>
+        <h2>Quản lý vận hành UTEExpress</h2>
+        <p>Dành cho Admin và Manager được cấp tài khoản.</p>
+        <img th:src="@{/images/shipper/secure-lock.svg}" alt="" width="320" height="213">
+        <ul>
+            <li><i class="bi bi-check-circle-fill"></i> Phân công Shipper, tra soát đơn hàng</li>
+            <li><i class="bi bi-check-circle-fill"></i> Xử lý khiếu nại, đối soát COD</li>
+            <li><i class="bi bi-check-circle-fill"></i> Khóa tạm thời sau 5 lần đăng nhập sai</li>
+        </ul>
+    </aside>
+    <div class="sx-auth-form">
+        <span class="sx-pill sx-dot sx-tone-indigo mb-3">Dành cho Admin và Manager</span>
+        <h1>Đăng nhập nội bộ</h1>
+        <p class="shipper-hint">Tài khoản do quản trị viên cấp. Không đăng ký hoặc kích hoạt bằng OTP.</p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error}"><i class="bi bi-exclamation-octagon-fill"></i><span>Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu hoặc liên hệ quản trị viên. Nếu sai 5 lần, hãy đợi 15 phút.</span></p>
+        <p class="shipper-notice sx-notice-warning" role="status" th:if="${param.expired}"><i class="bi bi-hourglass-bottom"></i><span>Phiên đã hết hiệu lực do tài khoản, quyền hoặc mật khẩu thay đổi. Vui lòng đăng nhập lại.</span></p>
+        <p class="shipper-notice sx-notice-success" role="status" th:if="${param.changed}"><i class="bi bi-check-circle-fill"></i><span>Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</span></p>
+        <p class="shipper-notice sx-notice-info" role="status" th:if="${param.logout}"><i class="bi bi-box-arrow-right"></i><span>Đã đăng xuất.</span></p>
+        <form th:action="@{/noi-bo/dang-nhap}" method="post">
+            <div class="mb-3"><label for="username" class="form-label">Tên tài khoản được cấp</label>
+                <div class="sx-input-icon"><i class="bi bi-person-badge" aria-hidden="true"></i>
+                    <input id="username" name="username" class="form-control" required maxlength="50" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tên tài khoản nội bộ"></div></div>
+            <div class="mb-3"><label for="password" class="form-label">Mật khẩu</label>
+                <div class="sx-input-icon"><i class="bi bi-lock" aria-hidden="true"></i>
+                    <input id="password" name="password" type="password" class="form-control" required maxlength="64" autocomplete="current-password" placeholder="Mật khẩu">
+                    <button type="button" class="sx-eye" data-toggle-password="password" aria-label="Hiện mật khẩu" title="Hiện / ẩn mật khẩu"><i class="bi bi-eye"></i></button></div>
+                <div class="sx-caps" data-caps-warning hidden><i class="bi bi-capslock-fill"></i> Caps Lock đang bật</div></div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập nội bộ</button>
+        </form>
+        <p class="sx-auth-staff"><i class="bi bi-info-circle"></i> Quên mật khẩu: liên hệ Admin để được cấp lại. Admin cuối cùng cần người quản trị cơ sở dữ liệu hỗ trợ theo quy trình phục hồi nội bộ.</p>
+        <p class="small mb-0"><a th:href="@{/dang-nhap}"><i class="bi bi-arrow-left"></i> Đăng nhập khách hàng / Shipper</a></p>
+    </div>
 </div>
+<div th:replace="~{fragments/auth :: scripts}"></div>
 </section></body>
 </html>
-

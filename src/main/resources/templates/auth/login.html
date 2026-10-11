@@ -30,7 +30,7 @@
         <div th:if="${param.logout}" class="shipper-notice sx-notice-info" role="status"><i class="bi bi-box-arrow-right"></i><span>Bạn đã đăng xuất.</span></div>
 
         <!-- Form này do Spring Security formLogin xử lý (action /dang-nhap, POST) -->
-        <form method="post" th:action="@{/dang-nhap}" data-sx-once>
+        <form method="post" th:action="@{/dang-nhap}">
             <div class="mb-3">
                 <label class="form-label" for="loginUsername">Tên đăng nhập</label>
                 <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
@@ -55,35 +55,7 @@
         <p class="sx-auth-staff"><i class="bi bi-building-lock"></i> Nhân viên quản lý? <a th:href="@{/noi-bo/dang-nhap}">Đăng nhập nội bộ</a></p>
     </div>
 </div>
-<script th:inline="none">
-    (function () {
-        'use strict';
-        document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
-            var input = document.getElementById(button.getAttribute('data-toggle-password'));
-            button.addEventListener('click', function () {
-                var show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                button.querySelector('i').className = 'bi ' + (show ? 'bi-eye-slash' : 'bi-eye');
-                button.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
-            });
-        });
-        var password = document.getElementById('loginPassword');
-        var caps = document.querySelector('[data-caps-warning]');
-        if (password && caps) {
-            ['keydown', 'keyup'].forEach(function (name) {
-                password.addEventListener(name, function (event) {
-                    if (event.getModifierState) caps.hidden = !event.getModifierState('CapsLock');
-                });
-            });
-        }
-        // Chống bấm đăng nhập hai lần
-        var form = document.querySelector('.sx-auth form');
-        if (form) form.addEventListener('submit', function () {
-            var submit = form.querySelector('button[type=submit]');
-            setTimeout(function () { submit.disabled = true; }, 0);
-        });
-    }());
-</script>
+<div th:replace="~{fragments/auth :: scripts}"></div>
 </section>
 
 </body>

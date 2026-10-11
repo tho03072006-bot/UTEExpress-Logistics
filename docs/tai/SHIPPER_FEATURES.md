@@ -141,3 +141,10 @@ Làm lại giao diện 4 trang chung theo cùng phong cách khu vực Shipper (f
 - **Ước tính cước** (`uoc-tinh-cuoc.html`): ô nhập cân nặng trong hero, lỗi kiểm tra hiển thị ngay dưới ô, kết quả là 3 thẻ giá màu theo dịch vụ.
 - **Đăng nhập** (`auth/login.html`): bố cục hai cột (giới thiệu + form), biểu tượng trong ô nhập, nút hiện/ẩn mật khẩu, cảnh báo Caps Lock, chống bấm hai lần, liên kết đăng nhập nội bộ.
 - Thêm hình `track-parcel.svg`, `fee-calc.svg`. Thẻ hồ sơ Shipper trong menu rút gọn thành "Đang hoạt động".
+
+## Đồng bộ giao diện toàn bộ trang (11/10/2026)
+
+- **`static/css/theme.css`** (nạp sau cùng): đổi cách hiển thị các thành phần dùng chung trên mọi trang — tiêu đề trang `.ute-page-head` thành băng màu chuyển có hình minh họa (chọn hình bằng lớp `sx-art-track/route/cod/stats/bell/lock`), thẻ số liệu và lối tắt có màu theo vị trí, bảng có đầu bảng màu, thông báo `.alert-*`, nhãn trạng thái đơn/thanh toán màu theo ý nghĩa, nút, ô nhập, phân trang, thanh chức năng nội bộ dạng tab có màu và tự đánh dấu mục đang mở.
+- **Trang tài khoản** (đăng ký, quên mật khẩu, xác thực OTP, đặt lại mật khẩu, đăng nhập nội bộ): bố cục hai cột như trang đăng nhập; script dùng chung ở `fragments/auth.html` (hiện/ẩn mật khẩu, Caps Lock, ô OTP chỉ nhận số, chống bấm hai lần). Thêm hình `secure-lock.svg`.
+- **Menu bên trái**: biểu tượng màu và thẻ hồ sơ cho mọi vai trò (Khách hàng, Shipper, Quản lý vận hành, Quản trị hệ thống).
+- Các trang chưa có khung tiêu đề (tạo đơn, sổ địa chỉ, đổi mật khẩu, thanh toán, xác thực email, tài khoản nội bộ, quản trị, tra soát đơn) được bọc vào `.ute-page-head`; giữ nguyên chữ, tên ô nhập, đường dẫn và controller.

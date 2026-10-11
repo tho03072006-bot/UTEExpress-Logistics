@@ -4,8 +4,8 @@
 <head><title>Quản lý tài khoản nội bộ - UTEExpress</title></head>
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><div><h1 class="h3">Tài khoản nội bộ</h1>
-<p class="text-muted">Admin kiểm soát cấp quyền và trạng thái. Mọi thay đổi quyền hoặc mật khẩu đều thu hồi phiên cũ.</p></div>
+<div class="ute-page-head sx-art-lock"><div><h1 class="h3">Tài khoản nội bộ</h1>
+<p>Admin kiểm soát cấp quyền và trạng thái. Mọi thay đổi quyền hoặc mật khẩu đều thu hồi phiên cũ.</p></div>
 <a class="btn btn-primary align-self-start" th:href="@{/admin/tai-khoan/cap-moi}">Cấp tài khoản mới</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
