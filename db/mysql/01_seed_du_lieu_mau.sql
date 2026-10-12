@@ -21,8 +21,7 @@
 --   Script tra cuu id qua username / tracking_code de khong de len du lieu nguoi khac.
 --
 -- MAT KHAU
---   Tat ca tai khoan: Test@12345
---   Rieng newuser1   : MatKhauMoi@2026
+--   Tat ca tai khoan demo: 123456
 --   Ma bam BCrypt sinh bang chinh BCryptPasswordEncoder cua ung dung.
 -- ============================================================================
 
@@ -32,29 +31,30 @@
 INSERT INTO app_user (username, password, full_name, email, phone, role, enabled, created_at)
 VALUES
   -- Nguoi gui hang
-  ('thotest',      '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('thotest',      '$2a$10$0hGJ5LYVtTcmLXytwgffrO69gXAmwwThl1kIDFV4F0WD7FVEUlZk.',
    'Nguyễn Văn Thọ',    'thotest@example.com',      '0901234567', 'USER',    1, DATE_SUB(NOW(6), INTERVAL 120 DAY)),
-  ('newuser1',     '$2a$10$5p3HVFVFnBsxbAIxEMR9puvg8rIjMsFH0VX5SLCRe5ZcIKj3SYQEe',
+  ('newuser1',     '$2a$10$ECEYLR.HgA9C1pJjI3CeRuEGk.6DgHue7/Jj8JscLJiPS2Vgw2dom',
    'Người Dùng Mới',    'newuser1@example.com',     NULL,         'USER',    1, DATE_SUB(NOW(6), INTERVAL 30 DAY)),
-  ('chuakichhoat', '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('chuakichhoat', '$2a$10$KJ12Zf0T30rZbOy3KqhRYO.O5Rd3.rFihCOppDhm.jKrY/BHwvAJC',
    'Chưa Kích Hoạt',    'chuakichhoat@example.com', NULL,         'USER',    0, DATE_SUB(NOW(6), INTERVAL 5 DAY)),
-  ('huongshop',    '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('huongshop',    '$2a$10$SrNaMwqb0.pMerLW4W4F8eAdt92RK/3FTtJRpFQW9CbYA0KeLZJAW',
    'Trần Thị Hương',    'huongshop@example.com',    '0902345678', 'USER',    1, DATE_SUB(NOW(6), INTERVAL 100 DAY)),
-  ('minhstore',    '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('minhstore',    '$2a$10$fp1h13rNAVEqxHVu0L9xiOj21bgn5UOZtrqkAjRRF1Pc0LbGGwq8u',
    'Lê Quang Minh',     'minhstore@example.com',    '0903456789', 'USER',    1, DATE_SUB(NOW(6), INTERVAL 85 DAY)),
-  ('lanboutique',  '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('lanboutique',  '$2a$10$57hCYjRdRpGSk9d.PB04JOB1aZg0egRi8VPYXFBrjmi3yl9WshXvK',
    'Phạm Thị Lan',      'lanboutique@example.com',  '0904567890', 'USER',    1, DATE_SUB(NOW(6), INTERVAL 60 DAY)),
   -- Shipper
-  ('shipper1',     '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('shipper1',     '$2a$10$6qoLvyWlVLeJd5zeotY7neyQUZ.LBccvxcLNqHy4BGJxN3oQyjYsC',
    'Trần Văn Dũng',     'shipper1@uteexpress.test', '0909111222', 'SHIPPER', 1, DATE_SUB(NOW(6), INTERVAL 150 DAY)),
-  ('shipper2',     '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('shipper2',     '$2a$10$7kle2Igns.IEp9IKDiwjFOVTqXhzuvX/IEazkJpgCDOEQyeT2n7Dy',
    'Nguyễn Hữu Phát',   'shipper2@uteexpress.test', '0909222333', 'SHIPPER', 1, DATE_SUB(NOW(6), INTERVAL 140 DAY)),
-  ('shipper3',     '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('shipper3',     '$2a$10$jC46pmttSM0L7GuT/gb/QeX0nSgnt.IUt3/jnMluQmA1FuntChYLa',
    'Võ Thành Long',     'shipper3@uteexpress.test', '0909333444', 'SHIPPER', 1, DATE_SUB(NOW(6), INTERVAL 90 DAY)),
   -- Quan ly
-  ('manager1',     '$2a$10$Yt.pNX5AkCKM8IkiIZphoOhUBEJ/ufe0yETdjL3b14zFizixxKuLm',
+  ('manager1',     '$2a$10$d4EFDsFiqJQQs/VkzNbsxeaDszOzLoOOPnFSdYJfx.E4z4rkfLjE2',
    'Lê Thị Quản Lý',    'manager1@uteexpress.test', '0908000111', 'MANAGER', 1, DATE_SUB(NOW(6), INTERVAL 150 DAY))
 ON DUPLICATE KEY UPDATE
+  password  = VALUES(password),
   full_name = VALUES(full_name),
   phone     = VALUES(phone),
   role      = VALUES(role),

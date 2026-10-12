@@ -172,8 +172,15 @@ của người khác.
 
 Nội dung: 11 tài khoản, 80 vận đơn `UTE250001` → `UTE250080` trải đều 3 tháng gần nhất với đủ 7
 trạng thái, kèm thanh toán và đánh giá — đủ số liệu thật để nhìn phân trang, bộ lọc, thống kê
-Shipper và bảng điều khiển Manager. Mật khẩu mọi tài khoản mẫu là `Test@12345`, riêng `newuser1`
-là `MatKhauMoi@2026`.
+Shipper và bảng điều khiển Manager. Mật khẩu thống nhất cho các tài khoản demo của cả 4 role
+`USER`, `SHIPPER`, `MANAGER`, `ADMIN` là **`123456`**. Tài khoản `chuakichhoat` cũng dùng mật
+khẩu này nhưng vẫn bị vô hiệu hóa để thử trường hợp từ chối đăng nhập.
+
+Danh sách tài khoản, đường dẫn đăng nhập và cách đồng bộ mật khẩu bằng công cụ
+`ResetDemoAccounts --apply` xem [hướng dẫn demo](docs/DEMO_ACCOUNTS.md). Công cụ lưu mật khẩu
+bằng BCrypt, tạo bản sao lưu local trong `config/demo-account-backups/` (không lên Git) và
+chỉ chạy thủ công; ứng dụng không tự đặt lại mật khẩu khi khởi động. Quy tắc mật khẩu của
+form đăng ký/đổi mật khẩu vẫn giữ nguyên.
 
 Cách chạy: mở DBeaver trên kết nối Aiven → `SQL Editor` → mở file → `Execute script`.
 

@@ -140,18 +140,20 @@ Chưa cấu hình mail thì ba chức năng trên sẽ báo "Không gửi đư�
 
 ---
 
-## Tài khoản test
+## Tài khoản demo
 
-Mật khẩu đều là `Test@12345`, riêng `newuser1` là `MatKhauMoi@2026`.
+Mật khẩu thống nhất cho tất cả tài khoản demo thuộc `USER`, `SHIPPER`, `MANAGER`, `ADMIN`: **`123456`**.
 
-| Tên đăng nhập | Vai trò | Ghi chú |
-|---|---|---|
-| `thotest` | USER | Có sẵn đơn hàng, địa chỉ, đánh giá — dùng để demo |
-| `newuser1` | USER | Mật khẩu khác |
-| `chuakichhoat` | USER | Chưa kích hoạt OTP, dùng để thử ca đăng nhập lỗi |
-| `shipper1` | SHIPPER | |
-| `manager1` | MANAGER | |
-| `admin` | ADMIN | |
+| Tên đăng nhập | Role | Đường vào |
+| --- | --- | --- |
+| `thotest`, `huongshop`, `minhstore`, `lanboutique`, `newuser1` | USER | `/dang-nhap` |
+| `shipper1`, `shipper2`, `shipper3` | SHIPPER | Mở `/shipper/trang-chu` trước khi đăng nhập |
+| `manager1` | MANAGER | `/noi-bo/dang-nhap` |
+| `admin` | ADMIN | `/noi-bo/dang-nhap` |
+
+`chuakichhoat` cũng dùng mật khẩu `123456`, nhưng giữ trạng thái chưa kích hoạt để thử đăng nhập bị từ chối.
+
+Xem [hướng dẫn tài khoản demo](docs/DEMO_ACCOUNTS.md) để đồng bộ database bằng công cụ chạy thủ công, sao lưu dữ liệu đăng nhập và bổ sung hồ sơ nội bộ cho Manager/Admin. Mật khẩu trong database được lưu bằng BCrypt; ứng dụng không tự reset khi khởi động.
 
 Mã giảm giá: `UTE10` (giảm 10%), `FREESHIP15` (giảm 15.000đ cho đơn từ 30.000đ),
 `HETHAN` (đã hết hạn), `DATAT` (đã tắt) — hai mã sau dùng để thử ca lỗi.
