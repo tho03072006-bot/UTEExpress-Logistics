@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Điện thoại quét mã QR trên gói hàng">
+  <ellipse cx="180" cy="220" rx="122" ry="8" fill="#000" opacity=".2"/>
+  <!-- gói hàng có tem -->
+  <g transform="translate(44 106)">
+    <rect width="134" height="106" rx="8" fill="#F59E0B"/>
+    <rect width="134" height="14" rx="6" fill="#FBBF24"/>
+    <rect x="58" width="20" height="106" fill="#FCD34D"/>
+    <rect x="12" y="36" width="42" height="54" rx="4" fill="#FFFFFF"/>
+    <g fill="#0B2540">
+      <rect x="16" y="40" width="11" height="11"/><rect x="39" y="40" width="11" height="11"/><rect x="16" y="63" width="11" height="11"/>
+      <rect x="30" y="42" width="4" height="4"/><rect x="30" y="52" width="4" height="4"/><rect x="40" y="56" width="4" height="4"/>
+      <rect x="34" y="62" width="4" height="4"/><rect x="44" y="66" width="4" height="4"/><rect x="30" y="70" width="4" height="4"/>
+    </g>
+    <g fill="#FFFFFF"><rect x="19.5" y="43.5" width="4" height="4"/><rect x="42.5" y="43.5" width="4" height="4"/><rect x="19.5" y="66.5" width="4" height="4"/></g>
+    <rect x="16" y="80" width="34" height="4" rx="2" fill="#CBD5E1"/>
+    <rect x="88" y="62" width="34" height="6" rx="3" fill="#FFFFFF" opacity=".6"/>
+    <rect x="88" y="74" width="24" height="5" rx="2.5" fill="#FFFFFF" opacity=".45"/>
+  </g>
+  <!-- tia quét -->
+  <path d="M212 112 L 98 142 L 98 194 L 214 154 Z" fill="#F43F5E" opacity=".2"/>
+  <!-- điện thoại -->
+  <g transform="translate(212 34) rotate(10)">
+    <rect width="92" height="172" rx="16" fill="#0B2540"/>
+    <rect x="7" y="12" width="78" height="148" rx="9" fill="#1E293B"/>
+    <path d="M18 52 v-12 h12 M62 40 h12 v12 M74 84 v12 h-12 M30 96 h-12 v-12" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#FFFFFF" opacity=".9"><rect x="28" y="50" width="10" height="10"/><rect x="54" y="50" width="10" height="10"/><rect x="28" y="76" width="10" height="10"/><rect x="44" y="64" width="5" height="5"/><rect x="54" y="74" width="5" height="5"/><rect x="60" y="82" width="5" height="5"/></g>
+    <rect x="12" y="66" width="68" height="3" rx="1.5" fill="#F43F5E"/>
+    <rect x="18" y="114" width="56" height="13" rx="6.5" fill="#22C55E"/>
+    <rect x="26" y="136" width="40" height="6" rx="3" fill="#475569"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M70 46 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M330 196 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

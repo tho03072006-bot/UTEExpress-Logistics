@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Định vị gói hàng trên bản đồ">
+  <defs><clipPath id="map"><path d="M40 156 L 180 100 L 320 156 L 180 212 Z"/></clipPath></defs>
+  <ellipse cx="180" cy="222" rx="126" ry="7" fill="#000" opacity=".18"/>
+  <!-- bản đồ nghiêng -->
+  <path d="M40 156 L 180 100 L 320 156 L 180 212 Z" fill="#FFFFFF"/>
+  <g clip-path="url(#map)">
+    <ellipse cx="240" cy="150" rx="26" ry="11" fill="#BBF7D0"/>
+    <ellipse cx="112" cy="162" rx="20" ry="9" fill="#BAE6FD"/>
+    <g stroke="#E2E8F0" stroke-width="9" stroke-linecap="round" fill="none">
+      <path d="M70 140 L 250 210"/><path d="M110 120 L 300 196"/><path d="M190 96 L 100 196"/><path d="M262 120 L 160 214"/>
+    </g>
+  </g>
+  <path d="M96 166 Q 150 134 182 152 T 262 140" fill="none" stroke="#4F46E5" stroke-width="4" stroke-dasharray="6 6" stroke-linecap="round"/>
+  <!-- vòng định vị -->
+  <ellipse cx="262" cy="140" rx="40" ry="16" fill="none" stroke="#7C3AED" stroke-width="3" opacity=".35"/>
+  <ellipse cx="262" cy="140" rx="24" ry="9.5" fill="none" stroke="#7C3AED" stroke-width="3" opacity=".6"/>
+  <g transform="translate(262 138)">
+    <path d="M0 0 C -14 -18 -18 -26 -18 -36 A18 18 0 0 1 18 -36 C 18 -26 14 -18 0 0 Z" fill="#FB7185"/>
+    <circle cy="-36" r="7" fill="#FFFFFF"/>
+  </g>
+  <!-- gói hàng ở điểm đi -->
+  <g transform="translate(70 128)">
+    <path d="M0 12 L 26 0 L 52 12 L 26 24 Z" fill="#FCD34D"/><path d="M0 12 L 26 24 L 26 50 L 0 38 Z" fill="#F59E0B"/><path d="M52 12 L 26 24 L 26 50 L 52 38 Z" fill="#D97706"/>
+  </g>
+  <!-- thẻ trạng thái -->
+  <g transform="translate(44 34)">
+    <rect width="112" height="42" rx="12" fill="#FFFFFF"/>
+    <circle cx="21" cy="21" r="11" fill="#22C55E"/>
+    <path d="M16 21 l4 4 7 -7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="13" width="58" height="7" rx="3.5" fill="#C7D2FE"/>
+    <rect x="40" y="25" width="38" height="5" rx="2.5" fill="#E2E8F0"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M300 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M206 30 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>

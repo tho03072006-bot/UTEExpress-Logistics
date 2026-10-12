@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Màn hình bảng điều khiển vận hành">
+  <ellipse cx="180" cy="222" rx="110" ry="8" fill="#000" opacity=".2"/>
+  <!-- chân màn hình -->
+  <path d="M160 182 L 154 210 H 206 L 200 182 Z" fill="#334155"/>
+  <rect x="128" y="206" width="104" height="10" rx="5" fill="#0B2540"/>
+  <!-- màn hình -->
+  <rect x="58" y="26" width="244" height="158" rx="14" fill="#0B2540"/>
+  <rect x="68" y="36" width="224" height="136" rx="8" fill="#F8FAFC"/>
+  <rect x="82" y="48" width="62" height="8" rx="4" fill="#CBD5E1"/><rect x="82" y="62" width="40" height="6" rx="3" fill="#E2E8F0"/>
+  <!-- biểu đồ cột -->
+  <rect x="84" y="120" width="16" height="38" rx="3" fill="#A5B4FC"/>
+  <rect x="106" y="100" width="16" height="58" rx="3" fill="#6366F1"/>
+  <rect x="128" y="82" width="16" height="76" rx="3" fill="#4F46E5"/>
+  <rect x="150" y="108" width="16" height="50" rx="3" fill="#818CF8"/>
+  <line x1="80" y1="160" x2="172" y2="160" stroke="#CBD5E1" stroke-width="2"/>
+  <!-- biểu đồ tròn -->
+  <g transform="translate(234 82)">
+    <circle r="26" fill="none" stroke="#E2E8F0" stroke-width="12"/>
+    <circle r="26" fill="none" stroke="#22C55E" stroke-width="12" stroke-dasharray="104 200" transform="rotate(-90)"/>
+    <circle r="26" fill="none" stroke="#F59E0B" stroke-width="12" stroke-dasharray="32 200" stroke-dashoffset="-104" transform="rotate(-90)"/>
+  </g>
+  <!-- ô chỉ số -->
+  <rect x="194" y="124" width="40" height="36" rx="7" fill="#DCFCE7"/><rect x="242" y="124" width="40" height="36" rx="7" fill="#FFE4E6"/>
+  <rect x="202" y="133" width="24" height="7" rx="3.5" fill="#22C55E"/><rect x="250" y="133" width="24" height="7" rx="3.5" fill="#F43F5E"/>
+  <rect x="202" y="146" width="16" height="5" rx="2.5" fill="#86EFAC"/><rect x="250" y="146" width="16" height="5" rx="2.5" fill="#FDA4AF"/>
+  <!-- chấm trực tuyến -->
+  <circle cx="282" cy="50" r="5" fill="#22C55E"/>
+  <g fill="#FFFFFF">
+    <path d="M32 60 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M326 200 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

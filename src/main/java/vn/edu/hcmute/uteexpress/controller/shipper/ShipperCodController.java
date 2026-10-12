@@ -15,7 +15,9 @@ public class ShipperCodController {
     private final CodSettlementService settlements;
     public ShipperCodController(CodSettlementService settlements) { this.settlements = settlements; }
 
+    /** Cả trang chung một giao dịch chỉ đọc (như trang chủ Shipper) để bớt lượt đi về database. */
     @GetMapping
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String overview(@RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
         String username = auth.getName();
         model.addAttribute("held", settlements.held(username));
@@ -44,6 +46,7 @@ public class ShipperCodController {
     }
 
     @GetMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         var settlement = settlements.viewOwn(id, auth.getName());
         model.addAttribute("settlement", settlement);

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Danh sách tài khoản nhân sự">
+  <ellipse cx="180" cy="222" rx="126" ry="8" fill="#000" opacity=".2"/>
+  <!-- thẻ trái -->
+  <g transform="rotate(-10 108 132)">
+    <rect x="58" y="66" width="100" height="132" rx="14" fill="#FFFFFF" opacity=".9"/>
+    <circle cx="108" cy="106" r="22" fill="#CCFBF1"/><circle cx="108" cy="100" r="8" fill="#14B8A6"/><path d="M94 120 a14 10 0 0 1 28 0 z" fill="#14B8A6"/>
+    <rect x="78" y="142" width="60" height="7" rx="3.5" fill="#CBD5E1"/><rect x="88" y="156" width="40" height="6" rx="3" fill="#E2E8F0"/>
+    <rect x="86" y="172" width="44" height="12" rx="6" fill="#99F6E4"/>
+  </g>
+  <!-- thẻ phải -->
+  <g transform="rotate(10 252 132)">
+    <rect x="202" y="66" width="100" height="132" rx="14" fill="#FFFFFF" opacity=".9"/>
+    <circle cx="252" cy="106" r="22" fill="#FFE4E6"/><circle cx="252" cy="100" r="8" fill="#F43F5E"/><path d="M238 120 a14 10 0 0 1 28 0 z" fill="#F43F5E"/>
+    <rect x="222" y="142" width="60" height="7" rx="3.5" fill="#CBD5E1"/><rect x="232" y="156" width="40" height="6" rx="3" fill="#E2E8F0"/>
+    <rect x="230" y="172" width="44" height="12" rx="6" fill="#FECDD3"/>
+  </g>
+  <!-- thẻ giữa -->
+  <rect x="124" y="42" width="112" height="158" rx="16" fill="#FFFFFF"/>
+  <circle cx="180" cy="90" r="28" fill="#E0E7FF"/><circle cx="180" cy="82" r="10" fill="#4F46E5"/><path d="M162 108 a18 13 0 0 1 36 0 z" fill="#4F46E5"/>
+  <rect x="146" y="132" width="68" height="8" rx="4" fill="#CBD5E1"/><rect x="156" y="146" width="48" height="7" rx="3.5" fill="#E2E8F0"/>
+  <rect x="150" y="164" width="60" height="16" rx="8" fill="#4F46E5"/>
+  <!-- huy hiệu khóa quyền -->
+  <g transform="translate(232 50)">
+    <circle r="17" fill="#FCD34D" stroke="#FFFFFF" stroke-width="4"/>
+    <rect x="-7" y="-2" width="14" height="10" rx="2" fill="#B45309"/>
+    <path d="M-4 -2 v-3 a4 4 0 0 1 8 0 v3" fill="none" stroke="#B45309" stroke-width="2.5"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M60 36 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M316 40 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

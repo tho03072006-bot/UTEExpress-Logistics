@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" role="img" aria-label="Chưa có lộ trình hôm nay">
+  <ellipse cx="120" cy="154" rx="88" ry="8" fill="#64748B" opacity=".18"/>
+  <!-- bản đồ gấp -->
+  <path d="M38 52 L 86 38 L 134 52 L 182 38 V 136 L 134 150 L 86 136 L 38 150 Z" fill="#E0F2FE"/>
+  <path d="M86 38 V 136 L 134 150 V 52 Z" fill="#BAE6FD"/>
+  <path d="M182 38 V 136 L 196 132 V 42 Z" fill="#7DD3FC" opacity=".6"/>
+  <path d="M58 122 Q 88 92 112 110 T 160 80" fill="none" stroke="#4F46E5" stroke-width="4" stroke-dasharray="5 7" stroke-linecap="round"/>
+  <circle cx="58" cy="122" r="7" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2.5"/>
+  <!-- cờ đích -->
+  <g transform="translate(160 82)">
+    <path d="M0 0 V -48" stroke="#0B2540" stroke-width="4" stroke-linecap="round"/>
+    <path d="M0 -48 L 30 -39 L 0 -30 Z" fill="#22C55E"/>
+  </g>
+  <g fill="#7C3AED" opacity=".55">
+    <path d="M214 70 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z"/><circle cx="22" cy="96" r="3"/>
+  </g>
+</svg>

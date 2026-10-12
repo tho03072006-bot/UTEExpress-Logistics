@@ -50,6 +50,27 @@
     .ute-page-head.sx-art-stats::after { background-image: url("../images/shipper/stats-chart.svg"); }
     .ute-page-head.sx-art-bell::after { background-image: url("../images/shipper/notify-bell.svg"); }
     .ute-page-head.sx-art-lock::after { background-image: url("../images/shipper/secure-lock.svg"); }
+    /* Mỗi trang một hình riêng để không bị trùng giữa các trang */
+    .ute-page-head.sx-art-mascot::after { background-image: url("../images/shipper/parcel-mascot.svg"); }
+    .ute-page-head.sx-art-create::after { background-image: url("../images/shipper/create-order.svg"); }
+    .ute-page-head.sx-art-journey::after { background-image: url("../images/shipper/journey-timeline.svg"); }
+    .ute-page-head.sx-art-support::after { background-image: url("../images/shipper/support-chat.svg"); }
+    .ute-page-head.sx-art-complaint::after { background-image: url("../images/shipper/complaint-review.svg"); }
+    .ute-page-head.sx-art-mail::after { background-image: url("../images/shipper/email-verify.svg"); }
+    .ute-page-head.sx-art-orders::after { background-image: url("../images/shipper/order-list.svg"); }
+    .ute-page-head.sx-art-warehouse::after { background-image: url("../images/shipper/warehouse.svg"); }
+    .ute-page-head.sx-art-receipt::after { background-image: url("../images/shipper/order-receipt.svg"); }
+    .ute-page-head.sx-art-address::after { background-image: url("../images/shipper/address-book.svg"); }
+    .ute-page-head.sx-art-house::after { background-image: url("../images/shipper/house-pin.svg"); }
+    .ute-page-head.sx-art-dispatch::after { background-image: url("../images/shipper/dispatch-hub.svg"); }
+    .ute-page-head.sx-art-cart::after { background-image: url("../images/shipper/cart-boxes.svg"); }
+    .ute-page-head.sx-art-pay::after { background-image: url("../images/shipper/payment-card.svg"); }
+    .ute-page-head.sx-art-monitor::after { background-image: url("../images/shipper/manager-monitor.svg"); }
+    .ute-page-head.sx-art-review::after { background-image: url("../images/shipper/review-stars.svg"); }
+    .ute-page-head.sx-art-team::after { background-image: url("../images/shipper/team-accounts.svg"); }
+    .ute-page-head.sx-art-server::after { background-image: url("../images/shipper/admin-server.svg"); }
+    .ute-page-head.sx-art-password::after { background-image: url("../images/shipper/password-refresh.svg"); }
+    .ute-page-head.sx-art-profile::after { background-image: url("../images/shipper/profile-card.svg"); }
 }
 
 /* ---------- Thẻ, panel ---------- */

@@ -419,6 +419,26 @@ class ShipperOperationsIntegrationTest {
             .andExpect(content().string(not(containsString("Loi he thong"))));
     }
 
+    @Test void publicPagesOfferQrLookupDistanceQuotesAndChartsWithValidation() throws Exception {
+        mvc.perform(get("/tra-cuu").accept("text/html")).andExpect(status().isOk())
+            .andExpect(content().string(containsString("data-qr-panel")))
+            .andExpect(content().string(containsString("/js/public-qr-lookup.js")));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2.5").param("distanceKm", "12").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Phụ phí khoảng cách")))
+            .andExpect(content().string(containsString("29.500 đ")));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("distanceKm", "80").param("serviceType", "SUPER_EXPRESS").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Hỏa tốc chỉ nhận đơn trong bán kính 30 km")));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("distanceKm", "5000").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Khoảng cách tối đa 2.000 km")))
+            .andExpect(content().string(not(containsString("Phụ phí khoảng cách</span>"))));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("serviceType", "TELEPORT").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Loại dịch vụ không hợp lệ")));
+        mvc.perform(get("/shipper/thong-ke").with(user(shipper.getUsername()).roles("SHIPPER")))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("sx-donut")))
+            .andExpect(content().string(containsString("data-stats-days")))
+            .andExpect(content().string(containsString("Cước COD thu theo ngày")));
+    }
+
     /* ===================== Dữ liệu thử ===================== */
 
     private Order deliveredCod(String code, AppUser assigned, int amount) {

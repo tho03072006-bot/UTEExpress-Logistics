@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Xe tải nhỏ chở nhiều kiện hàng">
+  <defs>
+    <linearGradient id="vanBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E0F2FE"/></linearGradient>
+    <linearGradient id="cab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2DD4BF"/><stop offset="1" stop-color="#0D9488"/></linearGradient>
+  </defs>
+  <!-- mặt trời, mây -->
+  <circle cx="304" cy="48" r="22" fill="#FCD34D" opacity=".95"/>
+  <g fill="#FFFFFF" opacity=".28"><circle cx="58" cy="60" r="14"/><circle cx="76" cy="52" r="18"/><circle cx="96" cy="62" r="12"/><rect x="44" y="60" width="62" height="14" rx="7"/></g>
+  <!-- mặt đường -->
+  <g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".5"><line x1="16" y1="228" x2="52" y2="228"/><line x1="88" y1="228" x2="124" y2="228"/><line x1="236" y1="228" x2="272" y2="228"/><line x1="308" y1="228" x2="344" y2="228"/></g>
+  <ellipse cx="178" cy="208" rx="124" ry="8" fill="#000" opacity=".2"/>
+  <!-- vạch tốc độ -->
+  <g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".55"><line x1="14" y1="118" x2="44" y2="118"/><line x1="6" y1="136" x2="42" y2="136"/><line x1="16" y1="154" x2="44" y2="154"/></g>
+  <!-- kiện trên nóc -->
+  <rect x="74" y="60" width="36" height="26" rx="4" fill="#F59E0B"/><rect x="88" y="60" width="7" height="26" fill="#FDE68A"/>
+  <rect x="114" y="68" width="30" height="18" rx="4" fill="#FB7185"/><rect x="126" y="68" width="6" height="18" fill="#FECDD3"/>
+  <rect x="150" y="64" width="32" height="22" rx="4" fill="#A78BFA"/><rect x="163" y="64" width="6" height="22" fill="#DDD6FE"/>
+  <!-- thùng xe -->
+  <rect x="58" y="86" width="154" height="104" rx="10" fill="url(#vanBody)"/>
+  <rect x="58" y="150" width="154" height="10" fill="#4F46E5" opacity=".85"/>
+  <g transform="translate(112 102)">
+    <path d="M0 10 L 22 0 L 44 10 L 22 20 Z" fill="#FCD34D"/><path d="M0 10 L 22 20 L 22 42 L 0 32 Z" fill="#F59E0B"/><path d="M44 10 L 22 20 L 22 42 L 44 32 Z" fill="#D97706"/>
+  </g>
+  <!-- cabin -->
+  <path d="M212 112 h42 q12 0 18 10 l20 32 q4 6 4 14 v18 q0 4 -4 4 h-80 z" fill="url(#cab)"/>
+  <path d="M222 122 h30 q6 0 9 5 l15 25 h-54 z" fill="#E0F2FE"/>
+  <path d="M250 160 v24" stroke="#0F766E" stroke-width="2"/>
+  <rect x="236" y="164" width="10" height="3" rx="1.5" fill="#0F766E"/>
+  <rect x="286" y="166" width="10" height="8" rx="3" fill="#FCD34D"/>
+  <rect x="54" y="184" width="246" height="9" rx="4.5" fill="#0B2540" opacity=".85"/>
+  <!-- bánh xe -->
+  <circle cx="100" cy="194" r="20" fill="#0B2540"/><circle cx="100" cy="194" r="8" fill="#E2E8F0"/>
+  <circle cx="254" cy="194" r="20" fill="#0B2540"/><circle cx="254" cy="194" r="8" fill="#E2E8F0"/>
+  <g fill="#FFFFFF">
+    <path d="M232 34 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M30 26 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>

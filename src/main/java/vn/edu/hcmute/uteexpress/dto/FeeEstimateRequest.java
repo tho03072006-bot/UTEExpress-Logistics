@@ -1,7 +1,9 @@
 package vn.edu.hcmute.uteexpress.dto;
 
 import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Positive;
+import vn.edu.hcmute.uteexpress.entity.Order;
 
 /**
  * Dữ liệu của form ước tính cước phí ở trang công khai - TV1 phụ trách.
@@ -26,6 +28,17 @@ public class FeeEstimateRequest {
     @DecimalMax(value = "100.0", message = "Đơn trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng")
     private Double weightKg;
 
+    /**
+     * Khoảng cách lấy - giao (km), không bắt buộc. Để trống thì chỉ tính cước gốc như khi tạo đơn;
+     * có nhập thì cộng thêm phụ phí khoảng cách tham khảo (xem FeeEstimateService).
+     */
+    @DecimalMin(value = "0.0", inclusive = false, message = "Khoảng cách phải lớn hơn 0 km")
+    @DecimalMax(value = "2000.0", message = "Khoảng cách tối đa 2.000 km trong lãnh thổ Việt Nam")
+    private Double distanceKm;
+
+    /** Loại dịch vụ muốn xem; để trống thì so sánh cả ba loại. */
+    private Order.ServiceType serviceType;
+
     public FeeEstimateRequest() {
     }
 
@@ -37,5 +50,21 @@ public class FeeEstimateRequest {
 
     public void setWeightKg(Double weightKg) {
         this.weightKg = weightKg;
+    }
+
+    public Double getDistanceKm() {
+        return distanceKm;
+    }
+
+    public void setDistanceKm(Double distanceKm) {
+        this.distanceKm = distanceKm;
+    }
+
+    public Order.ServiceType getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(Order.ServiceType serviceType) {
+        this.serviceType = serviceType;
     }
 }

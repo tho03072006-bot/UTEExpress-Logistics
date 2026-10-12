@@ -440,3 +440,43 @@ body:has(.shipper-workspace) .ute-main {
 @media (prefers-reduced-motion: reduce) {
     .sx-hero-art, .sx-bell.sx-ring > i, .sx-bell.sx-has-unread .sx-bell-dot { animation: none; }
 }
+
+/* =====================================================================
+   Thống kê: biểu đồ tròn, biểu đồ đường, thẻ điểm nhấn
+   ===================================================================== */
+.sx-stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.25rem; }
+.sx-donut-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.sx-donut { --a: 0%; --b: 0%; --c: 0%; position: relative; flex: 0 0 170px; width: 170px; aspect-ratio: 1; border-radius: 50%;
+    background: conic-gradient(var(--sx-green) 0 var(--a), var(--sx-rose) var(--a) var(--b), var(--sx-cyan) var(--b) var(--c), var(--sx-slate) var(--c) 100%); }
+.sx-donut.sx-donut-empty { background: var(--ute-gray-soft); }
+.sx-donut::before { content: ''; position: absolute; inset: 24px; border-radius: 50%; background: var(--ute-card); box-shadow: inset 0 2px 8px rgba(15, 23, 42, .08); }
+.sx-donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.sx-donut-center strong { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--ute-ink); }
+.sx-donut-center span { font-size: .78rem; color: var(--ute-gray); }
+.sx-donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; flex: 1 1 180px; }
+.sx-donut-legend li { display: flex; align-items: center; gap: .55rem; font-size: .88rem; }
+.sx-donut-legend li i { width: .8rem; height: .8rem; border-radius: .25rem; background: var(--tone); flex-shrink: 0; }
+.sx-donut-legend li span { color: var(--ute-gray); }
+.sx-donut-legend li strong { margin-left: auto; color: var(--tone-ink); font-size: 1rem; }
+.sx-line-chart { min-height: 150px; }
+.sx-chart-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sx-chart-grid { stroke: var(--ute-border); stroke-dasharray: 3 5; }
+.sx-chart-axis { fill: var(--ute-gray); font-size: 11px; font-family: inherit; }
+.sx-chart-line { fill: none; stroke: var(--tone); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.sx-chart-stop-top { stop-color: var(--tone); stop-opacity: .32; }
+.sx-chart-stop-bottom { stop-color: var(--tone); stop-opacity: 0; }
+.sx-chart-dot { fill: var(--ute-card); stroke: var(--tone); stroke-width: 2.5; }
+.sx-chart-dot:hover { r: 6.5; }
+.sx-chart-value { fill: var(--tone-ink); font-size: 12px; font-weight: 700; font-family: inherit; }
+.sx-chart-empty { fill: var(--ute-gray); font-size: 13px; font-family: inherit; }
+.sx-kpi-list { display: grid; gap: .75rem; }
+.sx-kpi { display: flex; align-items: center; gap: .85rem; padding: .8rem .95rem; border-radius: .85rem; background: var(--tone-soft); }
+.sx-kpi > i { display: grid; place-items: center; flex: 0 0 2.4rem; height: 2.4rem; border-radius: .75rem; background: var(--tone); color: #FFFFFF; font-size: 1.1rem; }
+.sx-kpi span { display: block; font-size: .78rem; color: var(--ute-gray); }
+.sx-kpi strong { font-size: 1.15rem; color: var(--tone-ink); }
+/* Biểu đồ cột: ít ngày thì căn giữa (margin auto không cắt nội dung khi cần cuộn ngang) */
+.shipper-workspace .shipper-chart-day:first-child { margin-left: auto; }
+.shipper-workspace .shipper-chart-day:last-child { margin-right: auto; }
+@media (max-width: 991px) { .sx-stats-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .sx-donut { flex-basis: 140px; width: 140px; } .sx-donut::before { inset: 20px; } }
+.sx-chart-peak { fill: var(--tone); stroke: var(--ute-card); stroke-width: 2.5; }

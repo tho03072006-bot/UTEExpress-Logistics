@@ -148,3 +148,39 @@ Làm lại giao diện 4 trang chung theo cùng phong cách khu vực Shipper (f
 - **Trang tài khoản** (đăng ký, quên mật khẩu, xác thực OTP, đặt lại mật khẩu, đăng nhập nội bộ): bố cục hai cột như trang đăng nhập; script dùng chung ở `fragments/auth.html` (hiện/ẩn mật khẩu, Caps Lock, ô OTP chỉ nhận số, chống bấm hai lần). Thêm hình `secure-lock.svg`.
 - **Menu bên trái**: biểu tượng màu và thẻ hồ sơ cho mọi vai trò (Khách hàng, Shipper, Quản lý vận hành, Quản trị hệ thống).
 - Các trang chưa có khung tiêu đề (tạo đơn, sổ địa chỉ, đổi mật khẩu, thanh toán, xác thực email, tài khoản nội bộ, quản trị, tra soát đơn) được bọc vào `.ute-page-head`; giữ nguyên chữ, tên ô nhập, đường dẫn và controller.
+
+## Bổ sung 12/10/2026
+
+- **Tra cứu bằng QR** (`/tra-cuu`, nút "Quét QR"; trang chủ có nút mở thẳng `/tra-cuu#quet-qr`): quét bằng camera (có ô tick đồng ý) hoặc chọn ảnh JPG/PNG/WEBP ≤ 5 MB. Giải mã ngay trên trình duyệt (ZXing có sẵn trong project), không gửi ảnh lên máy chủ; chỉ nhận mã dạng `[A-Za-z0-9-]{1,20}` rồi tự tra cứu.
+- **Ước tính cước**: thêm ô khoảng cách (không bắt buộc, 0 - 2.000 km) và chọn loại dịch vụ. `FeeEstimateService` = cước gốc (đúng công thức khi tạo đơn) + phụ phí khoảng cách tham khảo: 5 km đầu miễn phí; 5-30 km 1.000 đ/km; 30-300 km 25.000 đ + 300 đ/km; trên 300 km 106.000 đ + 100 đ/km; hệ số x1 / x1,3 / x1,6; Hỏa tốc chỉ nhận trong 30 km. Luồng tạo đơn không đổi.
+- **Thống kê Shipper**: thêm biểu đồ tròn phân bố kết quả, biểu đồ đường cước COD và tỷ lệ thành công theo ngày (SVG thuần, `js/shipper-charts.js`), thẻ năng suất (trung bình/ngày, ngày nhiều đơn nhất).
+- Trang chủ: khoảng cách nút - ô tìm - nhãn đều nhau, hai nút bằng nhau; số bước hiển thị rõ dạng "Bước 1".
+- Kiểm tra: 213 test, 0 lỗi; đã thử quét QR từ ảnh trên H2 riêng (đọc đúng mã và mở kết quả).
+
+## Tăng tốc trang (12/10/2026)
+
+Đo trên Aiven (tài khoản shipper1): mỗi câu SQL mất ~100 ms chỉ vì đường mạng tới máy chủ, còn mỗi giao dịch tốn thêm ~4 lượt đi về (SET autocommit, SET read only) ngoài COMMIT. Trang chủ cũ chạy 21 câu trong 8 giao dịch.
+
+| Trang | Trước | Sau |
+|---|---|---|
+| Trang chủ `/shipper/trang-chu` | 6,2 s (21 SQL) | 1,2 s (10 SQL) |
+| Chi tiết đơn `/shipper/don/{id}` | 8,0 s (17 SQL) | 1,1 s (9 SQL) |
+| Đối soát COD | 3,0 s (9 SQL) | 0,7 s (5 SQL) |
+| Lộ trình | 1,3 s | 0,6 s |
+| Thông báo | 1,5 s | 0,5 s |
+| Thống kê | 1,1 s | 0,7 s |
+
+- `database-aiven.properties` (file chung của nhóm): tắt auto-commit ở pool Hikari + `provider_disables_autocommit`, `useLocalSessionState`, `readOnlyPropagatesToServer=false` (bỏ lệnh SET thừa mỗi giao dịch); `default_batch_fetch_size=20` (nạp người gửi của 10 đơn bằng một câu). Áp dụng cho mọi trang của cả nhóm. Mọi thao tác ghi đều nằm trong `@Transactional`/repository nên tắt auto-commit an toàn.
+- Trang chủ, chi tiết đơn, đối soát COD, thông báo, trang COD của Manager: cả trang chạy trong **một** giao dịch chỉ đọc (`@Transactional(readOnly = true)` trên hàm controller). Bộ lọc được kiểm tra trước (`LogisticsInput.workFilter`) vì lỗi ném ra từ service bên trong sẽ đánh dấu giao dịch chung phải rollback.
+- `TransactionCache`: tài khoản (theo tên đăng nhập) và phiếu COD đang chờ chỉ đọc một lần trong mỗi giao dịch (trước đây trang chủ đọc tài khoản 7 lần).
+- Gộp truy vấn: đếm đơn theo trạng thái bằng một câu `group by` (`countStatuses`); lần thất bại gần nhất + số lần giao/lấy hàng thất bại đọc bằng một câu (`failureEntries`, `ShipperWorkspaceService.failures`). Bỏ `latestFailures`, `pickupFailureCounts`, `OrderCount` không còn dùng.
+- Kiểm tra: 213 test, 0 lỗi.
+
+## Hình minh họa không trùng lặp (12/10/2026)
+
+Thêm 35 hình SVG mới (cùng phong cách, `static/images/shipper/`) để mỗi trang có một hình riêng; mỗi template chỉ đổi đúng 1 dòng (đường dẫn hình hoặc lớp `sx-art-*`).
+
+- Trang tài khoản: đăng nhập `login-phone`, đăng ký `register-welcome`, quên mật khẩu `forgot-key`, OTP `otp-phone`, đăng nhập nội bộ `admin-badge` (đặt lại mật khẩu giữ `secure-lock`).
+- Trang công khai: tra cứu `track-radar` + khung quét `qr-phone` + không tìm thấy `not-found`; ước tính cước `fee-scale`; thẻ "Dịch vụ" ở trang chủ `service-types` (trang chủ giữ `hero-delivery`).
+- Shipper/Manager: trang chủ Shipper `shipper-van`; đối soát COD của Manager `manager-safe`; ô trống: đối soát `empty-wallet`, thông báo `empty-bell`, lộ trình `empty-route`.
+- Tiêu đề trang (`theme.css`, lớp mới): `sx-art-mascot/create/journey/support/complaint/mail/orders/warehouse/receipt/address/house/dispatch/cart/pay/monitor/review/team/server/password/profile`. Lớp cũ (`track/route/cod/stats/bell/lock`) vẫn giữ cho trang mới sau này.

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" role="img" aria-label="Không tìm thấy vận đơn">
+  <ellipse cx="116" cy="154" rx="78" ry="8" fill="#64748B" opacity=".18"/>
+  <!-- khung nét đứt -->
+  <rect x="34" y="36" width="164" height="110" rx="14" fill="none" stroke="#CBD5E1" stroke-width="3" stroke-dasharray="8 7"/>
+  <!-- gói hàng -->
+  <g transform="translate(76 54)">
+    <path d="M0 18 L 40 0 L 80 18 L 40 36 Z" fill="#FCD34D"/>
+    <path d="M0 18 L 40 36 L 40 88 L 0 70 Z" fill="#F59E0B"/>
+    <path d="M80 18 L 40 36 L 40 88 L 80 70 Z" fill="#D97706"/>
+    <path d="M20 9 L 60 27 L 60 38 L 54 35 L 54 30 L 14 12 Z" fill="#FEF3C7" opacity=".9"/>
+  </g>
+  <!-- dấu hỏi -->
+  <g transform="translate(190 42)">
+    <circle r="22" fill="#F43F5E" stroke="#FFFFFF" stroke-width="4"/>
+    <path d="M-7 -6 a7 7 0 1 1 10 6 c-3 1.5 -3 3 -3 6" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cy="12" r="3" fill="#FFFFFF"/>
+  </g>
+  <g fill="#7C3AED" opacity=".55"><circle cx="22" cy="70" r="3"/><circle cx="214" cy="126" r="2.5"/></g>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Ba gói dịch vụ: tiêu chuẩn, nhanh, hỏa tốc">
+  <defs>
+    <path id="spark" d="M0 -8 l3 5 5 3 -5 3 -3 5 -3 -5 -5 -3 5 -3 z"/>
+  </defs>
+  <ellipse cx="180" cy="216" rx="128" ry="8" fill="#000" opacity=".18"/>
+  <path d="M62 182 C 120 130 236 214 300 140" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" opacity=".7"/>
+  <!-- tiêu chuẩn: đồng hồ -->
+  <g transform="translate(80 152)">
+    <circle r="42" fill="#FFFFFF"/><circle r="31" fill="#CCFBF1"/>
+    <g fill="#0D9488"><circle cy="-24" r="2.5"/><circle cx="24" r="2.5"/><circle cy="24" r="2.5"/><circle cx="-24" r="2.5"/></g>
+    <path d="M0 -16 V 0 L 12 9" fill="none" stroke="#0D9488" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- nhanh: tia sét -->
+  <g transform="translate(180 104)">
+    <circle r="50" fill="#FFFFFF"/><circle r="38" fill="#FEF3C7"/>
+    <path d="M7 -28 L -16 4 H 0 L -7 28 L 17 -7 H 2 Z" fill="#F59E0B" stroke="#D97706" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+  <!-- hỏa tốc: tên lửa -->
+  <g transform="translate(282 146)">
+    <circle r="42" fill="#FFFFFF"/><circle r="31" fill="#FFE4E6"/>
+    <g transform="rotate(45)">
+      <path d="M-5 13 Q 0 28 5 13 Z" fill="#FCD34D"/>
+      <path d="M-8 2 L -16 13 L -8 11 Z M8 2 L 16 13 L 8 11 Z" fill="#BE123C"/>
+      <path d="M0 -24 C 9 -14 10 -2 8 12 H -8 C -10 -2 -9 -14 0 -24 Z" fill="#F43F5E"/>
+      <circle cy="-6" r="4" fill="#FFFFFF"/>
+    </g>
+  </g>
+  <g fill="#FFFFFF">
+    <use href="#spark" x="96" y="56" opacity=".85"/>
+    <use href="#spark" x="300" y="56" opacity=".7"/>
+    <use href="#spark" x="236" y="210" opacity=".55"/>
+  </g>
+</svg>

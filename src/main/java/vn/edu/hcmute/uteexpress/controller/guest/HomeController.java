@@ -24,10 +24,13 @@ public class HomeController {
 
     private final OrderService orderService;
     private final ServiceReviewService serviceReviewService;
+    private final vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService;
 
-    public HomeController(OrderService orderService, ServiceReviewService serviceReviewService) {
+    public HomeController(OrderService orderService, ServiceReviewService serviceReviewService,
+                          vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService) {
         this.orderService = orderService;
         this.serviceReviewService = serviceReviewService;
+        this.feeEstimateService = feeEstimateService;
     }
 
     @GetMapping("/")
@@ -53,6 +56,8 @@ public class HomeController {
         }
 
         model.addAttribute("bangCuoc", orderService.estimateAllServices(form.getWeightKg()));
+        // Báo giá chi tiết: cước gốc + phụ phí khoảng cách tham khảo (nếu có nhập khoảng cách).
+        model.addAttribute("quotes", feeEstimateService.quotes(form.getWeightKg(), form.getDistanceKm(), form.getServiceType()));
         return "uoc-tinh-cuoc";
     }
 
