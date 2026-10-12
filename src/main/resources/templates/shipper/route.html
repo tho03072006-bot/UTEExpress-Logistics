@@ -11,7 +11,7 @@
     <div class="shipper-hero-actions" th:unless="${route.empty}"><a class="btn btn-light" th:href="${route.legs[0].url}" target="_blank" rel="noopener noreferrer"><i class="bi bi-map"></i> Mở chặng đầu</a></div></div>
     <img class="sx-hero-art" th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
 
-<div class="shipper-empty ute-panel" th:if="${route.empty}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-box.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Hôm nay chưa có điểm cần đi</h3><p>Không có đơn chờ lấy, đang giao hoặc hẹn giao lại hôm nay.</p><a class="btn btn-outline-primary" th:href="@{/shipper/trang-chu}">Xem tất cả đơn</a></div>
+<div class="shipper-empty ute-panel" th:if="${route.empty}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-route.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Hôm nay chưa có điểm cần đi</h3><p>Không có đơn chờ lấy, đang giao hoặc hẹn giao lại hôm nay.</p><a class="btn btn-outline-primary" th:href="@{/shipper/trang-chu}">Xem tất cả đơn</a></div>
 
 <th:block th:unless="${route.empty}">
 <div class="shipper-notice sx-notice-warning" th:if="${route.truncated}"><i class="bi bi-exclamation-triangle"></i><span>Lộ trình chỉ gồm 60 đơn ưu tiên đầu tiên. Hoàn tất bớt đơn rồi tải lại để xem tiếp.</span></div>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Thẻ thanh toán, đồng xu và xác nhận">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#C026D3"/></linearGradient>
+  </defs>
+  <ellipse cx="180" cy="222" rx="116" ry="8" fill="#000" opacity=".2"/>
+  <!-- thẻ phía sau -->
+  <g transform="rotate(-10 205 104)">
+    <rect x="120" y="50" width="170" height="106" rx="14" fill="#14B8A6"/>
+    <rect x="120" y="72" width="170" height="18" fill="#0F766E"/>
+  </g>
+  <!-- thẻ phía trước -->
+  <rect x="80" y="92" width="180" height="114" rx="14" fill="url(#card)"/>
+  <rect x="100" y="116" width="34" height="26" rx="5" fill="#FCD34D"/>
+  <path d="M100 125 h34 M100 133 h34 M117 116 v26" stroke="#D97706" stroke-width="1.5"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M150 120 a10 10 0 0 1 0 16"/><path d="M158 114 a18 18 0 0 1 0 28"/></g>
+  <g fill="#FFFFFF" opacity=".9"><rect x="100" y="160" width="28" height="7" rx="3.5"/><rect x="134" y="160" width="28" height="7" rx="3.5"/><rect x="168" y="160" width="28" height="7" rx="3.5"/><rect x="202" y="160" width="28" height="7" rx="3.5"/></g>
+  <rect x="100" y="180" width="60" height="6" rx="3" fill="#FFFFFF" opacity=".6"/>
+  <circle cx="222" cy="182" r="11" fill="#FB7185" opacity=".9"/><circle cx="236" cy="182" r="11" fill="#FCD34D" opacity=".9"/>
+  <!-- xác nhận -->
+  <g transform="translate(276 176)"><circle r="25" fill="#22C55E" stroke="#FFFFFF" stroke-width="5"/><path d="M-10 0 l7 7 13 -14" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <!-- đồng xu -->
+  <g transform="translate(62 170)"><circle r="18" fill="#FCD34D"/><circle r="12" fill="none" stroke="#F59E0B" stroke-width="3"/></g>
+  <g transform="translate(46 130)"><circle r="11" fill="#FDE68A"/><circle r="6" fill="none" stroke="#F59E0B" stroke-width="2.5"/></g>
+  <g fill="#FFFFFF">
+    <path d="M66 46 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M320 98 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

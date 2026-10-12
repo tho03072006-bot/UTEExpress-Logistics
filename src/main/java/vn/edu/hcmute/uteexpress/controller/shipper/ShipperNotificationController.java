@@ -13,6 +13,7 @@ public class ShipperNotificationController {
     private final ShipperNotificationService service;
     public ShipperNotificationController(ShipperNotificationService service) { this.service = service; }
     @GetMapping
+    @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String list(@RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
         model.addAttribute("notifications", service.list(auth.getName(), page));
         model.addAttribute("unread", service.unread(auth.getName()));

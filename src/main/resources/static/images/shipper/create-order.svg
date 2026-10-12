@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Đóng gói đơn hàng mới">
+  <ellipse cx="172" cy="222" rx="112" ry="8" fill="#000" opacity=".2"/>
+  <!-- nắp phía sau -->
+  <path d="M90 116 L 62 92 L 142 62 L 170 86 Z" fill="#FCD34D"/>
+  <path d="M250 116 L 278 92 L 198 62 L 170 86 Z" fill="#FBBF24"/>
+  <!-- miệng hộp -->
+  <path d="M90 116 L 170 86 L 250 116 L 170 146 Z" fill="#92400E" opacity=".6"/>
+  <!-- món đồ đang cho vào -->
+  <g transform="translate(138 48) rotate(-12)">
+    <rect width="40" height="54" rx="6" fill="#FFFFFF"/>
+    <rect x="8" y="10" width="24" height="5" rx="2.5" fill="#A5B4FC"/><rect x="8" y="21" width="18" height="5" rx="2.5" fill="#E2E8F0"/><rect x="8" y="32" width="22" height="5" rx="2.5" fill="#E2E8F0"/>
+  </g>
+  <circle cx="198" cy="92" r="18" fill="#34D399"/><circle cx="192" cy="86" r="6" fill="#FFFFFF" opacity=".6"/>
+  <rect x="104" y="80" width="30" height="30" rx="7" fill="#A78BFA" transform="rotate(15 119 95)"/>
+  <!-- thân hộp -->
+  <path d="M90 116 L 170 146 L 170 220 L 90 190 Z" fill="#F59E0B"/>
+  <path d="M250 116 L 170 146 L 170 220 L 250 190 Z" fill="#D97706"/>
+  <path d="M90 116 L 72 140 L 152 170 L 170 146 Z" fill="#FDE68A"/>
+  <path d="M250 116 L 268 140 L 188 170 L 170 146 Z" fill="#FCD34D"/>
+  <!-- cuộn băng keo -->
+  <g transform="translate(52 196)"><circle r="20" fill="#FFFFFF" opacity=".95"/><circle r="9" fill="#93C5FD"/><path d="M14 14 L 40 22" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity=".7"/></g>
+  <!-- dấu cộng tạo mới -->
+  <g transform="translate(286 64)"><circle r="21" fill="#22C55E" stroke="#FFFFFF" stroke-width="5"/><path d="M-8 0 h16 M0 -8 v16" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/></g>
+  <g fill="#FFFFFF">
+    <path d="M62 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M318 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

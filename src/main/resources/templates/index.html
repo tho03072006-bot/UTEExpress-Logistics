@@ -23,6 +23,7 @@
             <i class="bi bi-upc-scan" aria-hidden="true"></i>
             <input type="text" id="heroTrackingCode" name="trackingCode" class="form-control"
                    placeholder="Nhập mã vận đơn, ví dụ UTE250001" maxlength="30" required autocomplete="off">
+            <a class="btn sx-qr-btn" th:href="@{/tra-cuu} + '#quet-qr'" title="Tra cứu bằng mã QR"><i class="bi bi-qr-code-scan"></i> Quét QR</a>
             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tra cứu</button>
         </form>
         <div class="sx-hero-stats">
@@ -57,7 +58,7 @@
         <span class="sx-feature-link">Tính cước ngay <i class="bi bi-arrow-right"></i></span>
     </a>
     <div class="sx-feature sx-tone-violet">
-        <img th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="240" height="160">
+        <img th:src="@{/images/shipper/service-types.svg}" alt="" aria-hidden="true" width="240" height="160">
         <h3>Dịch vụ giao hàng</h3>
         <ul class="sx-service-list">
             <li><span class="sx-chip sx-service-standard"><i class="bi bi-box"></i> Tiêu chuẩn</span> 3 - 5 ngày</li>

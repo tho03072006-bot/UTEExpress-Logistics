@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Thẻ hồ sơ cá nhân và bút chỉnh sửa">
+  <ellipse cx="180" cy="222" rx="122" ry="8" fill="#000" opacity=".2"/>
+  <!-- thẻ hồ sơ -->
+  <rect x="56" y="54" width="236" height="152" rx="16" fill="#FFFFFF"/>
+  <path d="M56 92 V 70 a16 16 0 0 1 16 -16 h204 a16 16 0 0 1 16 16 v22 z" fill="#0EA5E9"/>
+  <g fill="#FFFFFF" opacity=".8"><circle cx="74" cy="73" r="4"/><circle cx="88" cy="73" r="4"/><circle cx="102" cy="73" r="4"/></g>
+  <rect x="76" y="104" width="72" height="84" rx="10" fill="#E0F2FE"/>
+  <circle cx="112" cy="134" r="14" fill="#0284C7"/>
+  <path d="M90 182 a22 18 0 0 1 44 0 z" fill="#0284C7"/>
+  <rect x="164" y="108" width="98" height="10" rx="5" fill="#CBD5E1"/>
+  <rect x="164" y="128" width="76" height="8" rx="4" fill="#E2E8F0"/>
+  <rect x="164" y="144" width="86" height="8" rx="4" fill="#E2E8F0"/>
+  <rect x="164" y="164" width="52" height="15" rx="7.5" fill="#22C55E"/>
+  <!-- bút chỉnh sửa -->
+  <g transform="translate(296 142) rotate(40)">
+    <rect x="-8" y="-58" width="16" height="72" rx="3" fill="#FCD34D"/>
+    <rect x="-8" y="-58" width="16" height="13" rx="3" fill="#FB7185"/>
+    <rect x="-8" y="-45" width="16" height="4" fill="#E2E8F0"/>
+    <path d="M-8 14 L 0 30 L 8 14 Z" fill="#FDE2C4"/>
+    <path d="M-3 24 L 0 30 L 3 24 Z" fill="#0B2540"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M40 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M318 40 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

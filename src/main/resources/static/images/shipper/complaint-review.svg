@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Hồ sơ khiếu nại và kính lúp xem xét">
+  <ellipse cx="180" cy="224" rx="112" ry="8" fill="#000" opacity=".2"/>
+  <!-- bảng kẹp hồ sơ -->
+  <rect x="104" y="34" width="140" height="184" rx="14" fill="#B45309"/>
+  <rect x="114" y="46" width="120" height="164" rx="8" fill="#FFFFFF"/>
+  <rect x="148" y="26" width="52" height="22" rx="7" fill="#0B2540"/>
+  <rect x="166" y="31" width="16" height="5" rx="2.5" fill="#64748B"/>
+  <circle cx="132" cy="76" r="7" fill="#22C55E"/><rect x="146" y="72" width="70" height="8" rx="4" fill="#CBD5E1"/>
+  <circle cx="132" cy="106" r="7" fill="#F59E0B"/><rect x="146" y="102" width="58" height="8" rx="4" fill="#CBD5E1"/>
+  <circle cx="132" cy="136" r="7" fill="#F43F5E"/><rect x="146" y="132" width="64" height="8" rx="4" fill="#CBD5E1"/>
+  <rect x="126" y="160" width="92" height="7" rx="3.5" fill="#E2E8F0"/><rect x="126" y="174" width="70" height="7" rx="3.5" fill="#E2E8F0"/><rect x="126" y="188" width="80" height="7" rx="3.5" fill="#E2E8F0"/>
+  <!-- tam giác cảnh báo -->
+  <g transform="translate(82 96)">
+    <path d="M0 -30 L 31 23 H -31 Z" fill="#FCD34D" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+    <rect x="-3.5" y="-12" width="7" height="20" rx="3.5" fill="#0B2540"/><circle cy="15" r="4" fill="#0B2540"/>
+  </g>
+  <!-- kính lúp -->
+  <g transform="translate(258 150)">
+    <circle r="30" fill="#E0F2FE" opacity=".55"/>
+    <circle r="30" fill="none" stroke="#FFFFFF" stroke-width="9"/>
+    <circle r="30" fill="none" stroke="#4F46E5" stroke-width="4"/>
+    <path d="M-14 -10 a18 18 0 0 1 11 -9" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M22 22 L 46 46" stroke="#0B2540" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M300 44 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M50 176 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

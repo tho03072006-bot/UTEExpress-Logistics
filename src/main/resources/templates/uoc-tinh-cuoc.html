@@ -11,49 +11,76 @@
     <div class="sx-hero-main">
         <span class="shipper-eyebrow"><i class="bi bi-calculator"></i> BẢNG GIÁ THAM KHẢO</span>
         <h2>Ước tính cước phí</h2>
-        <p>Nhập khối lượng kiện hàng để xem cước của cả ba loại dịch vụ, không cần đăng nhập.</p>
+        <p>Nhập khối lượng, khoảng cách và chọn loại dịch vụ để xem cước dự kiến. Không cần đăng nhập.</p>
         <!-- Dùng GET để kết quả nằm trên đường dẫn: lưu lại hay gửi cho người khác đều xem được -->
-        <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="sx-hero-search">
-            <label class="visually-hidden" for="weightKg">Khối lượng kiện hàng (kg)</label>
-            <i class="bi bi-box2" aria-hidden="true"></i>
-            <input type="number" id="weightKg" th:field="*{weightKg}" class="form-control"
-                   step="0.1" min="0.1" max="100" placeholder="Khối lượng (kg), ví dụ 2.5" required inputmode="decimal">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-calculator"></i> Xem bảng cước</button>
+        <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="sx-hero-form">
+            <label class="sx-hero-field" for="weightKg"><span>Khối lượng (kg)</span>
+                <span class="sx-hero-input"><i class="bi bi-box2" aria-hidden="true"></i>
+                    <input type="number" id="weightKg" th:field="*{weightKg}" step="0.1" min="0.1" max="100"
+                           placeholder="Ví dụ 2.5" required inputmode="decimal"></span></label>
+            <label class="sx-hero-field" for="distanceKm"><span>Khoảng cách (km) <small>không bắt buộc</small></span>
+                <span class="sx-hero-input"><i class="bi bi-signpost-2" aria-hidden="true"></i>
+                    <input type="number" id="distanceKm" th:field="*{distanceKm}" step="0.1" min="0.1" max="2000"
+                           placeholder="Ví dụ 12" inputmode="decimal"></span></label>
+            <label class="sx-hero-field" for="serviceType"><span>Loại dịch vụ</span>
+                <span class="sx-hero-input"><i class="bi bi-truck" aria-hidden="true"></i>
+                    <select id="serviceType" th:field="*{serviceType}">
+                        <option value="">So sánh cả 3 loại</option>
+                        <option value="STANDARD">Tiêu chuẩn</option>
+                        <option value="EXPRESS">Nhanh</option>
+                        <option value="SUPER_EXPRESS">Hỏa tốc (trong 30 km)</option>
+                    </select></span></label>
+            <button type="submit" class="btn btn-light"><i class="bi bi-calculator"></i> Tính cước</button>
         </form>
         <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.weightKg}')}"><i class="bi bi-exclamation-circle"></i>
             <span class="ute-field-error" th:errors="${form.weightKg}"></span></div>
+        <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.distanceKm}')}"><i class="bi bi-exclamation-circle"></i>
+            <span class="ute-field-error" th:errors="${form.distanceKm}"></span></div>
+        <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.serviceType}')}"><i class="bi bi-exclamation-circle"></i>
+            <span class="ute-field-error">Loại dịch vụ không hợp lệ. Hãy chọn lại trong danh sách.</span></div>
+        <a class="sx-hero-link" href="https://www.google.com/maps/dir/" target="_blank" rel="noopener noreferrer"><i class="bi bi-map"></i> Chưa biết khoảng cách? Đo trên Google Maps</a>
     </div>
-    <img class="sx-hero-art" th:src="@{/images/shipper/fee-calc.svg}" alt="" aria-hidden="true" width="320" height="213">
+    <img class="sx-hero-art" th:src="@{/images/shipper/fee-scale.svg}" alt="" aria-hidden="true" width="320" height="213">
 </header>
 
-<!-- Chỉ hiện bảng sau khi người dùng đã nhập, lần đầu mở trang thì không có gì -->
-<div th:if="${bangCuoc != null}">
+<!-- Chỉ hiện kết quả sau khi người dùng đã nhập, lần đầu mở trang thì không có gì -->
+<div th:if="${quotes != null}">
     <div class="sx-section-title"><span class="shipper-eyebrow">KẾT QUẢ</span>
-        <h2 th:text="|Cước cho kiện ${form.weightKg} kg|">Cước cho kiện hàng</h2></div>
-    <div class="sx-price-grid">
-        <article class="sx-price" th:each="dong : ${bangCuoc}"
-                 th:classappend="${dong.key.name() == 'SUPER_EXPRESS'} ? 'sx-tone-rose' : (${dong.key.name() == 'EXPRESS'} ? 'sx-tone-amber' : 'sx-tone-teal')">
-            <span class="sx-price-icon"><i class="bi" th:classappend="${dong.key.name() == 'SUPER_EXPRESS'} ? 'bi-lightning-charge-fill' : (${dong.key.name() == 'EXPRESS'} ? 'bi-lightning' : 'bi-box-seam')"></i></span>
-            <h3><th:block th:replace="~{fragments/components :: serviceTypeText(${dong.key})}"></th:block></h3>
-            <p class="sx-price-time" th:switch="${dong.key.name()}">
-                <span th:case="'STANDARD'"><i class="bi bi-clock"></i> 3 - 5 ngày</span>
-                <span th:case="'EXPRESS'"><i class="bi bi-clock"></i> 1 - 2 ngày</span>
-                <span th:case="'SUPER_EXPRESS'"><i class="bi bi-clock"></i> Trong ngày</span>
-                <span th:case="*">—</span>
-            </p>
-            <strong class="sx-price-value"><span th:replace="~{fragments/components :: money(${dong.value})}">0 đ</span></strong>
+        <h2><th:block th:text="|Cước cho kiện ${form.weightKg} kg|">Cước</th:block><th:block th:if="${form.distanceKm != null}" th:text="| · ${form.distanceKm} km|"></th:block></h2></div>
+    <div class="sx-price-grid" th:classappend="${#lists.size(quotes) == 1} ? 'sx-price-single'">
+        <article class="sx-price" th:each="q : ${quotes}"
+                 th:classappend="${!q.available} ? 'sx-price-off sx-tone-slate' : (${q.serviceType.name() == 'SUPER_EXPRESS'} ? 'sx-tone-rose' : (${q.serviceType.name() == 'EXPRESS'} ? 'sx-tone-amber' : 'sx-tone-teal'))">
+            <span class="sx-price-icon"><i class="bi" th:classappend="${q.serviceType.name() == 'SUPER_EXPRESS'} ? 'bi-lightning-charge-fill' : (${q.serviceType.name() == 'EXPRESS'} ? 'bi-lightning' : 'bi-box-seam')"></i></span>
+            <h3><th:block th:replace="~{fragments/components :: serviceTypeText(${q.serviceType})}"></th:block></h3>
+            <p class="sx-price-time"><i class="bi bi-clock"></i> <span th:text="${q.deliveryTime}">3 - 5 ngày</span></p>
+            <strong class="sx-price-value" th:if="${q.available}"><span th:replace="~{fragments/components :: money(${q.total})}">0 đ</span></strong>
+            <strong class="sx-price-value" th:unless="${q.available}">Không hỗ trợ</strong>
+            <div class="sx-price-rows" th:if="${q.available}">
+                <div><span>Cước gốc</span><strong><span th:replace="~{fragments/components :: money(${q.baseFee})}">0 đ</span></strong></div>
+                <div><span>Phụ phí khoảng cách</span><strong><span th:replace="~{fragments/components :: money(${q.distanceFee})}">0 đ</span></strong></div>
+            </div>
+            <p class="sx-price-note" th:if="${q.note != null}" th:text="${q.note}"></p>
         </article>
     </div>
     <div class="d-flex flex-wrap gap-2 mt-4">
-        <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo đơn với mức cước này</a>
+        <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng</a>
         <a th:href="@{/tra-cuu}" class="btn btn-outline-secondary"><i class="bi bi-search"></i> Tra cứu vận đơn</a>
     </div>
 </div>
 
+<details class="ute-panel sx-fee-rules mt-4">
+    <summary><i class="bi bi-info-circle"></i> Cách tính cước tham khảo</summary>
+    <div class="sx-fee-rules-grid">
+        <div><strong>Cước gốc</strong><p>Tiêu chuẩn 15.000 đ · Nhanh 25.000 đ · Hỏa tốc 40.000 đ, cộng 3.000 đ cho mỗi kilôgam.</p></div>
+        <div><strong>Phụ phí khoảng cách</strong><p>5 km đầu miễn phí · 5 - 30 km: 1.000 đ/km · 30 - 300 km: 25.000 đ + 300 đ/km · trên 300 km: 106.000 đ + 100 đ/km.</p></div>
+        <div><strong>Hệ số dịch vụ</strong><p>Phụ phí khoảng cách nhân x1 (Tiêu chuẩn), x1,3 (Nhanh), x1,6 (Hỏa tốc). Hỏa tốc chỉ nhận trong 30 km.</p></div>
+    </div>
+</details>
+
 <div class="shipper-notice sx-notice-info mt-4">
     <i class="bi bi-info-circle"></i>
-    <span>Cước trên là mức tham khảo, tính theo công thức phí cơ bản của từng loại dịch vụ cộng 3.000đ cho mỗi kilôgam.
-    Cước thực tế khi tạo đơn có thể thay đổi nếu bạn áp mã giảm giá. Kiện trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng.</span>
+    <span>Đây là mức tham khảo. Cước khi tạo đơn hiện tính theo loại dịch vụ và cân nặng, có thể thay đổi nếu bạn áp mã giảm giá.
+    Kiện trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng.</span>
 </div>
 </section>
 

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Tai nghe hỗ trợ và tin nhắn tra soát">
+  <circle cx="130" cy="128" r="76" fill="#FFFFFF" opacity=".12"/>
+  <ellipse cx="180" cy="222" rx="112" ry="8" fill="#000" opacity=".2"/>
+  <!-- tai nghe -->
+  <g transform="translate(128 126)">
+    <path d="M-50 12 V -4 A50 50 0 0 1 50 -4 V12" fill="none" stroke="#0B2540" stroke-width="10" stroke-linecap="round"/>
+    <rect x="-66" y="-4" width="28" height="48" rx="12" fill="#4F46E5"/>
+    <rect x="38" y="-4" width="28" height="48" rx="12" fill="#4F46E5"/>
+    <rect x="-60" y="4" width="8" height="30" rx="4" fill="#818CF8"/>
+    <path d="M52 42 Q 52 70 18 72" fill="none" stroke="#0B2540" stroke-width="5" stroke-linecap="round"/>
+    <rect x="2" y="65" width="20" height="13" rx="6.5" fill="#0B2540"/>
+  </g>
+  <!-- tin nhắn đang gõ -->
+  <g transform="translate(262 70)">
+    <path d="M-48 -26 h96 a12 12 0 0 1 12 12 v26 a12 12 0 0 1 -12 12 h-68 l-16 14 v-14 h-12 a12 12 0 0 1 -12 -12 v-26 a12 12 0 0 1 12 -12 z" fill="#FFFFFF"/>
+    <g fill="#7C3AED"><circle cx="-20" cy="-1" r="5.5"/><circle cx="0" cy="-1" r="5.5" opacity=".7"/><circle cx="20" cy="-1" r="5.5" opacity=".45"/></g>
+  </g>
+  <!-- tin nhắn khiếu nại -->
+  <g transform="translate(276 156)">
+    <path d="M-40 -22 h80 a12 12 0 0 1 12 12 v20 a12 12 0 0 1 -12 12 h-8 v14 l-16 -14 h-56 a12 12 0 0 1 -12 -12 v-20 a12 12 0 0 1 12 -12 z" fill="#FB7185"/>
+    <circle cx="-26" cy="0" r="9" fill="#FFFFFF"/>
+    <rect x="-27.5" y="-6" width="3" height="7" rx="1.5" fill="#F43F5E"/><circle cx="-26" cy="4" r="1.8" fill="#F43F5E"/>
+    <path d="M-10 -5 h36 M-10 6 h24" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M44 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M330 116 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

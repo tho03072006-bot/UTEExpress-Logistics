@@ -49,7 +49,7 @@ a.sx-feature:hover .sx-feature-link i { transform: translateX(3px); }
 /* ---------- Quy trình 4 bước ---------- */
 .sx-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; counter-reset: step; }
 .sx-steps li { position: relative; padding: 1.25rem; border-radius: 1rem; background: var(--ute-card); border: 1px solid var(--ute-border); box-shadow: var(--ute-shadow); counter-increment: step; }
-.sx-steps li::after { content: counter(step); position: absolute; top: .9rem; right: 1rem; font-size: 2rem; font-weight: 800; color: var(--tone-soft); line-height: 1; }
+.sx-steps li::after { content: "Bước " counter(step); position: absolute; top: 1.1rem; right: 1rem; padding: .3rem .7rem; border-radius: 2rem; font-size: .74rem; font-weight: 800; line-height: 1.2; background: var(--tone-soft); color: var(--tone-ink); border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent); }
 .sx-step-icon { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: .9rem; margin-bottom: .85rem; color: #FFFFFF; font-size: 1.25rem;
     background: linear-gradient(135deg, var(--tone), color-mix(in srgb, var(--tone) 55%, #4F46E5)); box-shadow: 0 8px 18px color-mix(in srgb, var(--tone) 35%, transparent); }
 .sx-steps strong { display: block; font-size: .98rem; }
@@ -151,4 +151,69 @@ a.sx-feature:hover .sx-feature-link i { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) {
     .sx-feature, .sx-price, .sx-feature-link i { transition: none; }
     a.sx-feature:hover, .sx-price:hover { transform: none; }
+}
+
+/* =====================================================================
+   Đợt chỉnh 3: nhịp khoảng cách hero trang chủ, nút quét QR, form tính cước,
+   thẻ báo giá chi tiết, khung tra cứu bằng QR
+   ===================================================================== */
+
+/* Nhịp dọc đều nhau trong hero: tiêu đề -> mô tả -> nút -> ô tìm -> nhãn */
+.shipper-workspace .shipper-hero .sx-hero-main > p { margin-bottom: 0; }
+.sx-home-hero .shipper-hero-actions { margin-top: 1.25rem; gap: .75rem; flex-wrap: nowrap; }
+.sx-home-hero .sx-hero-search { margin-top: 1.25rem; }
+.sx-home-hero .sx-hero-stats { margin-top: 1.25rem; gap: .5rem; }
+.sx-home-hero .shipper-hero-actions, .sx-home-hero .sx-hero-search { max-width: 620px; }
+.sx-home-hero .shipper-hero-actions .btn { flex: 1 1 0; min-width: 0; }
+.shipper-workspace .shipper-hero .sx-hero-main > .sx-hero-search:first-child { margin-top: 0; }
+
+/* Nút quét QR nằm trong ô tìm kiếm */
+.shipper-workspace .sx-hero-search .btn.sx-qr-btn { background: rgba(255, 255, 255, .16); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, .45); font-weight: 600; }
+.shipper-workspace .sx-hero-search .btn.sx-qr-btn:hover { background: rgba(255, 255, 255, .3); color: #FFFFFF; }
+
+/* Form tính cước 3 ô trong hero */
+.sx-hero-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr) auto; gap: .65rem; align-items: end;
+    max-width: 760px; margin-top: 1.25rem; padding: .8rem; border-radius: 1rem; background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .32); backdrop-filter: blur(8px); }
+.sx-hero-field { margin: 0; min-width: 0; }
+.sx-hero-field > span:first-child { display: block; margin-bottom: .35rem; font-size: .76rem; font-weight: 700; color: rgba(255, 255, 255, .92); }
+.sx-hero-field small { font-weight: 500; opacity: .75; }
+.sx-hero-input { display: flex; align-items: center; gap: .5rem; padding: 0 .75rem; border-radius: .7rem; background: #FFFFFF; border: 2px solid transparent; }
+.sx-hero-input:focus-within { border-color: #7DD3FC; box-shadow: 0 0 0 3px rgba(255, 255, 255, .25); }
+.sx-hero-input > i { color: #0072BC; }
+.sx-hero-input input, .sx-hero-input select { width: 100%; min-width: 0; padding: .62rem 0; border: 0; outline: 0; background: transparent; color: #0B2540; font-size: .95rem; }
+.sx-hero-input select { cursor: pointer; }
+.sx-hero-form .btn { height: 2.95rem; white-space: nowrap; font-weight: 700; color: #00508A; }
+.sx-hero-error { margin-right: .5rem; }
+.sx-hero-link { display: inline-flex; align-items: center; gap: .4rem; margin-top: .85rem; font-size: .84rem; color: #FFFFFF !important; opacity: .9; }
+.sx-hero-link:hover { opacity: 1; }
+
+/* Thẻ báo giá chi tiết */
+.sx-price-single { grid-template-columns: minmax(0, 440px); }
+.sx-price-rows { position: relative; z-index: 1; display: grid; gap: .4rem; margin-top: 1rem; padding-top: .8rem; border-top: 1px dashed var(--ute-border); font-size: .85rem; }
+.sx-price-rows > div { display: flex; justify-content: space-between; gap: .5rem; }
+.sx-price-rows span { color: var(--ute-gray); }
+.sx-price-note { position: relative; z-index: 1; margin: .8rem 0 0; font-size: .82rem; font-weight: 600; color: var(--sx-rose-ink); }
+.sx-price-off .sx-price-value { font-size: 1.35rem; color: var(--ute-gray); }
+.sx-fee-rules summary { cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: .5rem; }
+.sx-fee-rules-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; margin-top: 1rem; }
+.sx-fee-rules-grid > div { padding: .9rem 1rem; border-radius: .85rem; background: var(--ute-surface); border: 1px solid var(--ute-border); }
+.sx-fee-rules-grid p { margin: .35rem 0 0; font-size: .82rem; color: var(--ute-gray); line-height: 1.6; }
+
+/* Khung tra cứu bằng QR */
+.sx-qr-lookup { margin-bottom: 1.5rem; border-top: 4px solid var(--sx-cyan); }
+.sx-qr-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.sx-qr-upload { display: flex; flex-direction: column; padding: 1.1rem; border-radius: 1rem; background: var(--sx-violet-soft);
+    border: 1px dashed color-mix(in srgb, var(--sx-violet) 45%, transparent); }
+.sx-qr-upload img { display: block; width: 100%; max-width: 230px; height: auto; margin: 0 auto 1rem; padding: .6rem; border-radius: 1rem;
+    background: linear-gradient(135deg, var(--sx-indigo), var(--sx-violet)); }
+
+@media (max-width: 991px) {
+    .sx-hero-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-hero-form .btn { grid-column: 1 / -1; }
+    .sx-fee-rules-grid, .sx-qr-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 575px) {
+    .sx-hero-form { grid-template-columns: minmax(0, 1fr); }
+    .sx-home-hero .shipper-hero-actions .btn { min-width: 0; }
 }

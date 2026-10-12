@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.dto.tracking.ShipperRoute;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderStatusHistory;
 import vn.edu.hcmute.uteexpress.repository.*;
 
 /**
@@ -40,9 +41,11 @@ public class ShipperRouteService {
         var ids = page.getContent().stream().map(Order::getId).toList();
         Set<Long> due = new HashSet<>();
         if (!ids.isEmpty()) {
-            history.latestFailures(ids).stream().filter(h -> h.getNextAttemptAt() != null && !h.getNextAttemptAt().isAfter(now))
-                    .forEach(h -> due.add(h.getOrder().getId()));
-            history.latestPickupFailures(ids).stream().filter(h -> h.getNextAttemptAt() != null && !h.getNextAttemptAt().isAfter(now))
+            // Lần giao thất bại và lần lấy hàng thất bại gần nhất của từng đơn (một truy vấn, cũ trước mới sau).
+            Map<Long, OrderStatusHistory> latestDelivery = new HashMap<>(), latestPickup = new HashMap<>();
+            for (var h : history.failureEntries(ids)) (h.isPickupFailure() ? latestPickup : latestDelivery).put(h.getOrder().getId(), h);
+            for (var latest : List.of(latestDelivery, latestPickup)) latest.values().stream()
+                    .filter(h -> h.getNextAttemptAt() != null && !h.getNextAttemptAt().isAfter(now))
                     .forEach(h -> due.add(h.getOrder().getId()));
         }
         Map<String, List<ShipperRoute.Task>> grouped = new LinkedHashMap<>();

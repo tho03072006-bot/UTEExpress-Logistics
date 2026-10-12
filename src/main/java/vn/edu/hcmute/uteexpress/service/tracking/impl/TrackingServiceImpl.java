@@ -8,6 +8,7 @@ import org.springframework.data.domain.*;
 import vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason;
 import vn.edu.hcmute.uteexpress.entity.OrderStatusHistory;
 import vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository;
+import vn.edu.hcmute.uteexpress.service.tracking.LogisticsAccess;
 import vn.edu.hcmute.uteexpress.service.tracking.LogisticsInput;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -69,15 +70,8 @@ public class TrackingServiceImpl implements TrackingService {
     public Page<Order> searchAssignedOrders(String username, String keyword, Order.OrderStatus status,
             LocalDate from, LocalDate to, int page) {
         AppUser shipper = findShipper(username);
-        String term = LogisticsInput.text(keyword, 0, 100, "Từ khóa");
-        if (from != null && to != null && from.isAfter(to))
-            throw new IllegalArgumentException("Từ ngày không được sau đến ngày.");
-        for (LocalDate date : new LocalDate[]{from, to}) {
-            if (date != null && (date.getYear() < 2000 || date.getYear() > 2100))
-                throw new IllegalArgumentException("Ngày lọc phải nằm trong năm 2000–2100.");
-        }
-        String escaped = term.isEmpty() ? null : term.replace("!", "!!").replace("%", "!%").replace("_", "!_");
-        var request = PageRequest.of(LogisticsInput.page(page), 10, Sort.by("createdAt", "id").descending());
+        String escaped = LogisticsInput.workFilter(keyword, from, to, page);
+        var request = PageRequest.of(page, 10, Sort.by("createdAt", "id").descending());
         var result = orderRepository.searchOrdersOfShipper(shipper, status, escaped,
                 from == null ? null : from.atStartOfDay(), to == null ? null : to.plusDays(1).atStartOfDay(), request);
         if (result.getTotalPages() > 0 && page >= result.getTotalPages()) {
@@ -216,7 +210,7 @@ public class TrackingServiceImpl implements TrackingService {
     @Override
     public boolean canRetry(Order order) {
         return order.getStatus() == Order.OrderStatus.FAILED
-                && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < 3;
+                && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < MAX_DELIVERY_FAILURES;
     }
 
     @Override
@@ -282,8 +276,8 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     private AppUser findShipper(String shipperUsername) {
-        AppUser shipper = appUserRepository
-                .findByUsername(shipperUsername)
+        AppUser shipper = LogisticsAccess
+                .findUser(appUserRepository, shipperUsername)
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 

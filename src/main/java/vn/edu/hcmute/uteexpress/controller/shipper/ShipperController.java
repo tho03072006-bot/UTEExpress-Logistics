@@ -3,7 +3,9 @@ package vn.edu.hcmute.uteexpress.controller.shipper;
 import java.util.Optional;
 import java.time.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason;
+import vn.edu.hcmute.uteexpress.service.tracking.LogisticsInput;
 import vn.edu.hcmute.uteexpress.service.tracking.OrderJourneyService;
 import vn.edu.hcmute.uteexpress.service.tracking.OrderComplaintService;
 import vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService;
@@ -56,7 +58,14 @@ public class ShipperController {
         this.codSettlements = codSettlements;
     }
 
+    /*
+     * Các trang đọc nhiều thứ (trang chủ, chi tiết đơn) chạy trong MỘT giao dịch chỉ đọc: các service bên trong
+     * tham gia chung giao dịch này. Với database ở xa (Aiven), mỗi giao dịch riêng tốn thêm lượt đi về máy chủ,
+     * nên gộp lại giúp trang mở nhanh hơn rõ rệt. Lưu ý: lỗi ném ra từ service sẽ đánh dấu giao dịch chung phải
+     * rollback, vì vậy dữ liệu người dùng nhập (bộ lọc) được kiểm tra trước khi gọi service.
+     */
     @GetMapping("/trang-chu")
+    @Transactional(readOnly = true)
     public String dashboard(
             @RequestParam(defaultValue = "ALL") vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView work,
             @RequestParam(defaultValue = "") String keyword,
@@ -72,6 +81,7 @@ public class ShipperController {
 
         org.springframework.data.domain.Page<Order> orderPage;
         try {
+            LogisticsInput.workFilter(keyword, from, to, page);
             orderPage = work == vn.edu.hcmute.uteexpress.dto.tracking.ShipperWorkView.ALL
                     ? trackingService.searchAssignedOrders(authentication.getName(), keyword, status, from, to, page)
                     : workspace.work(authentication.getName(), work, keyword, status, from, to, page);
@@ -83,12 +93,13 @@ public class ShipperController {
         }
         String username = authentication.getName();
         var visible = orderPage.getContent();
+        var failures = workspace.failures(username, visible);
         model.addAttribute("work", work);
         model.addAttribute("workCounts", workspace.counts(username));
         model.addAttribute("money", workspace.money(username, visible));
-        model.addAttribute("retries", workspace.retries(username, visible));
-        model.addAttribute("pickupFailures", workspace.pickupFailures(username, visible));
-        model.addAttribute("pickupCounts", workspace.pickupCounts(username, visible));
+        model.addAttribute("retries", failures.retries());
+        model.addAttribute("pickupFailures", failures.pickups());
+        model.addAttribute("pickupCounts", failures.pickupCounts());
         model.addAttribute("codHeld", codSettlements.held(username));
         model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
         model.addAttribute("bulkMax", vn.edu.hcmute.uteexpress.service.tracking.ShipperBulkService.MAX_ORDERS);
@@ -149,6 +160,7 @@ public class ShipperController {
     }
 
     @GetMapping("/don/{id}")
+    @Transactional(readOnly = true)
     public String orderDetail(
             @PathVariable Long id,
             Authentication authentication,
@@ -170,16 +182,17 @@ public class ShipperController {
         }
 
         Order assignedOrder = order.get();
+        var failures = workspace.failures(authentication.getName(), java.util.List.of(assignedOrder));
 
         model.addAttribute("order", assignedOrder);
         model.addAttribute("money", workspace.money(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
-        model.addAttribute("retry", workspace.retries(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
+        model.addAttribute("retry", failures.retries().get(id));
         model.addAttribute("now", workspace.now());
         model.addAttribute("history", journey.history(id, authentication.getName(), 0));
-        model.addAttribute("canRetry", trackingService.canRetry(assignedOrder));
-        model.addAttribute("pickupFailure", workspace.pickupFailures(authentication.getName(), java.util.List.of(assignedOrder)).get(id));
-        model.addAttribute("pickupCount", trackingService.pickupFailures(assignedOrder));
-        model.addAttribute("canReportPickupFailure", trackingService.canReportPickupFailure(assignedOrder));
+        model.addAttribute("canRetry", failures.canRetry(assignedOrder));
+        model.addAttribute("pickupFailure", failures.pickups().get(id));
+        model.addAttribute("pickupCount", failures.pickupCounts().getOrDefault(id, 0L));
+        model.addAttribute("canReportPickupFailure", failures.canReportPickupFailure(assignedOrder));
         model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
         model.addAttribute("currentProof", trackingService.hasCurrentProof(assignedOrder));
         model.addAttribute("failureReasons", DeliveryFailureReason.values());

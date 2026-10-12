@@ -29,6 +29,9 @@ public interface TrackingService {
     /** Tối đa 3 lần lấy hàng thất bại cho mỗi vận đơn. */
     int MAX_PICKUP_FAILURES = 3;
 
+    /** Giao thất bại đủ 3 lần thì không giao lại nữa (hoàn trả hoặc trao đổi với Manager). */
+    int MAX_DELIVERY_FAILURES = 3;
+
     /** Ghi nhận lấy hàng thất bại; đơn vẫn chờ lấy hàng, có lý do và hẹn lấy lại nếu có. */
     vn.edu.hcmute.uteexpress.entity.OrderStatusHistory reportPickupFailure(Long orderId, String shipperUsername,
             DeliveryFailureReason reason, String note, LocalDateTime nextAttemptAt);

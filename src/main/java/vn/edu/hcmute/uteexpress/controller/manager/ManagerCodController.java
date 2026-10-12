@@ -2,6 +2,7 @@ package vn.edu.hcmute.uteexpress.controller.manager;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -16,6 +17,7 @@ public class ManagerCodController {
     public ManagerCodController(CodSettlementService settlements) { this.settlements = settlements; }
 
     @GetMapping
+    @Transactional(readOnly = true) // một giao dịch cho cả trang: bớt lượt đi về database ở xa
     public String list(@RequestParam(required = false) CodSettlement.Status status,
             @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
         model.addAttribute("settlements", settlements.search(auth.getName(), status, page));
@@ -26,6 +28,7 @@ public class ManagerCodController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         var settlement = settlements.viewAsManager(id, auth.getName());
         model.addAttribute("settlement", settlement);

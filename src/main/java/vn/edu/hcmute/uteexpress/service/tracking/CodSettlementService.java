@@ -38,8 +38,7 @@ public class CodSettlementService {
     public Held held(String username) {
         var shipper = access.shipper(username);
         CodTotals totals = items.unsettledTotals(shipper);
-        BigDecimal pending = settlements.findFirstByShipperAndStatusOrderByIdDesc(shipper, CodSettlement.Status.SUBMITTED)
-                .map(CodSettlement::getDeclaredAmount).orElse(BigDecimal.ZERO);
+        BigDecimal pending = pendingOf(shipper).map(CodSettlement::getDeclaredAmount).orElse(BigDecimal.ZERO);
         return new Held(totals.count(), totals.amount(), pending);
     }
 
@@ -48,7 +47,13 @@ public class CodSettlementService {
     }
 
     public Optional<CodSettlement> pending(String username) {
-        return settlements.findFirstByShipperAndStatusOrderByIdDesc(access.shipper(username), CodSettlement.Status.SUBMITTED);
+        return pendingOf(access.shipper(username));
+    }
+
+    /** Trang đối soát cần phiếu chờ xác nhận ở hai chỗ (số tiền và cảnh báo): chỉ đọc một lần mỗi giao dịch. */
+    private Optional<CodSettlement> pendingOf(AppUser shipper) {
+        return TransactionCache.get("cod-pending:" + shipper.getId(), () ->
+                settlements.findFirstByShipperAndStatusOrderByIdDesc(shipper, CodSettlement.Status.SUBMITTED));
     }
 
     public Page<CodSettlement> history(String username, int page) {

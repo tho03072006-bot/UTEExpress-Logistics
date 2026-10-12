@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head><title>Quản lý khiếu nại - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head sx-art-bell"><div><h2>Khiếu nại vận đơn</h2><p>Tiếp nhận, kiểm tra và phản hồi vấn đề của người gửi.</p></div></div>
+<div class="ute-page-head sx-art-complaint"><div><h2>Khiếu nại vận đơn</h2><p>Tiếp nhận, kiểm tra và phản hồi vấn đề của người gửi.</p></div></div>
 <form class="ute-panel d-flex flex-wrap gap-3 align-items-end mb-4" method="get" th:action="@{/manager/khieu-nai}">
     <div><label for="complaintStatus" class="form-label">Trạng thái xử lý</label>
         <select name="status" id="complaintStatus" class="form-select"><option value="">Tất cả</option>

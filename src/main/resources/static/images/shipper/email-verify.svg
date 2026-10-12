@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Phong thư xác thực email">
+  <ellipse cx="180" cy="222" rx="112" ry="8" fill="#000" opacity=".2"/>
+  <!-- mặt sau phong thư, nắp mở -->
+  <path d="M90 104 L 180 46 L 270 104 V 206 H 90 Z" fill="#C7D2FE"/>
+  <!-- lá thư -->
+  <rect x="112" y="62" width="136" height="112" rx="8" fill="#FFFFFF"/>
+  <rect x="128" y="80" width="70" height="8" rx="4" fill="#A5B4FC"/>
+  <rect x="128" y="96" width="100" height="6" rx="3" fill="#E2E8F0"/>
+  <rect x="128" y="108" width="88" height="6" rx="3" fill="#E2E8F0"/>
+  <!-- mặt trước phong thư -->
+  <path d="M90 104 L 180 160 L 270 104 V 206 H 90 Z" fill="#6366F1"/>
+  <path d="M94 202 L 160 150 M266 202 L 200 150" stroke="#4F46E5" stroke-width="4" stroke-linecap="round"/>
+  <!-- huy hiệu đã xác thực -->
+  <g transform="translate(262 80)">
+    <circle r="25" fill="#22C55E" stroke="#FFFFFF" stroke-width="5"/>
+    <path d="M-10 0 l7 7 13 -14" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- máy bay giấy -->
+  <g transform="translate(66 64) rotate(-14)">
+    <path d="M0 0 L 40 -14 L 18 16 Z" fill="#FFFFFF"/>
+    <path d="M18 16 L 16 4 L 40 -14 Z" fill="#E0E7FF"/>
+  </g>
+  <path d="M30 98 Q 44 84 58 78" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round" opacity=".8"/>
+  <g fill="#FFFFFF">
+    <path d="M316 150 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M200 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>

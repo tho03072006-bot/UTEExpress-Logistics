@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Két sắt, tiền xu và dấu duyệt">
+  <circle cx="96" cy="84" r="56" fill="#FFFFFF" opacity=".12"/>
+  <ellipse cx="184" cy="222" rx="118" ry="8" fill="#000" opacity=".2"/>
+  <!-- két sắt -->
+  <rect x="96" y="208" width="20" height="12" rx="3" fill="#0B2540"/><rect x="198" y="208" width="20" height="12" rx="3" fill="#0B2540"/>
+  <rect x="86" y="56" width="142" height="156" rx="14" fill="#0B2540"/>
+  <rect x="98" y="68" width="118" height="132" rx="9" fill="#1E3A5F"/>
+  <circle cx="152" cy="132" r="32" fill="#334155"/><circle cx="152" cy="132" r="24" fill="#CBD5E1"/><circle cx="152" cy="132" r="8" fill="#0B2540"/>
+  <g stroke="#0B2540" stroke-width="3" stroke-linecap="round"><line x1="152" y1="111" x2="152" y2="117"/><line x1="173" y1="132" x2="167" y2="132"/><line x1="152" y1="153" x2="152" y2="147"/><line x1="131" y1="132" x2="137" y2="132"/></g>
+  <rect x="196" y="114" width="9" height="36" rx="4.5" fill="#FCD34D"/>
+  <!-- tiền giấy -->
+  <g transform="translate(236 58) rotate(-12)">
+    <rect width="78" height="42" rx="6" fill="#34D399"/>
+    <rect x="5" y="5" width="68" height="32" rx="4" fill="none" stroke="#FFFFFF" stroke-width="2" opacity=".7"/>
+    <circle cx="39" cy="21" r="9" fill="#FFFFFF" opacity=".85"/>
+  </g>
+  <!-- chồng xu -->
+  <g transform="translate(262 190)">
+    <ellipse cy="12" rx="22" ry="7" fill="#D97706"/><rect x="-22" y="0" width="44" height="12" fill="#F59E0B"/><ellipse rx="22" ry="7" fill="#FCD34D"/>
+    <ellipse cy="-2" rx="22" ry="7" fill="#D97706"/><rect x="-22" y="-14" width="44" height="12" fill="#F59E0B"/><ellipse cy="-14" rx="22" ry="7" fill="#FCD34D"/>
+    <ellipse cy="-16" rx="22" ry="7" fill="#D97706"/><rect x="-22" y="-28" width="44" height="12" fill="#F59E0B"/><ellipse cy="-28" rx="22" ry="7" fill="#FCD34D"/>
+  </g>
+  <g transform="translate(310 200)">
+    <ellipse cy="12" rx="18" ry="6" fill="#D97706"/><rect x="-18" y="0" width="36" height="12" fill="#F59E0B"/><ellipse rx="18" ry="6" fill="#FCD34D"/>
+  </g>
+  <!-- dấu đã duyệt -->
+  <g transform="translate(74 176)">
+    <circle r="25" fill="#FFFFFF"/>
+    <circle r="18" fill="none" stroke="#22C55E" stroke-width="4" stroke-dasharray="4 3"/>
+    <path d="M-8 0 l5 5 11 -11" fill="none" stroke="#22C55E" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M58 34 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M330 120 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

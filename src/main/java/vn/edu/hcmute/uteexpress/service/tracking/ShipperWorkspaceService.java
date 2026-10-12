@@ -22,21 +22,20 @@ public class ShipperWorkspaceService {
     }
     public Map<String, Long> counts(String username) {
         var shipper = access.shipper(username);
-        return Map.of("pending", orders.countByShipperAndStatus(shipper, Order.OrderStatus.PENDING_PICKUP),
-                "pickedUp", orders.countByShipperAndStatus(shipper, Order.OrderStatus.PICKED_UP),
-                "inTransit", orders.countByShipperAndStatus(shipper, Order.OrderStatus.IN_TRANSIT),
+        var byStatus = new EnumMap<Order.OrderStatus, Long>(Order.OrderStatus.class);
+        for (var row : orders.countStatuses(shipper, List.of(Order.OrderStatus.PENDING_PICKUP,
+                Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT))) byStatus.put(row.status(), row.count());
+        return Map.of("pending", byStatus.getOrDefault(Order.OrderStatus.PENDING_PICKUP, 0L),
+                "pickedUp", byStatus.getOrDefault(Order.OrderStatus.PICKED_UP, 0L),
+                "inTransit", byStatus.getOrDefault(Order.OrderStatus.IN_TRANSIT, 0L),
                 "retryDue", orders.countDueRetries(shipper, LocalDateTime.now(clock)));
     }
     public Page<Order> work(String username, ShipperWorkView work, String keyword, Order.OrderStatus status,
             LocalDate from, LocalDate to, int page) {
         var shipper = access.shipper(username);
-        String term = LogisticsInput.text(keyword, 0, 100, "Từ khóa");
-        if (from != null && to != null && from.isAfter(to)) throw new IllegalArgumentException("Từ ngày không được sau đến ngày.");
-        for (var date : new LocalDate[]{from, to}) if (date != null && (date.getYear() < 2000 || date.getYear() > 2100))
-            throw new IllegalArgumentException("Ngày lọc phải nằm trong năm 2000–2100.");
-        String escaped = term.isEmpty() ? null : term.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+        String escaped = LogisticsInput.workFilter(keyword, from, to, page);
         var now = LocalDateTime.now(clock);
-        var request = PageRequest.of(LogisticsInput.page(page), 10);
+        var request = PageRequest.of(page, 10);
         var result = orders.searchWorkOrders(shipper, status, escaped, from == null ? null : from.atStartOfDay(),
                 to == null ? null : to.plusDays(1).atStartOfDay(), work == ShipperWorkView.TODAY ? 1 : 2,
                 now, now.toLocalDate().plusDays(1).atStartOfDay(), request);
@@ -51,26 +50,37 @@ public class ShipperWorkspaceService {
             result.put(payment.getOrder().getId(), ShipperMoneyView.from(payment));
         return result;
     }
-    public Map<Long, OrderStatusHistory> retries(String username, List<Order> visible) {
-        var result = new HashMap<Long, OrderStatusHistory>();
-        access.checkOrders(visible, username);
-        if (!visible.isEmpty()) for (var entry : history.latestFailures(visible.stream().map(Order::getId).toList()))
-            result.put(entry.getOrder().getId(), entry);
-        return result;
+
+    /**
+     * Thất bại của các đơn đang hiển thị: lần giao thất bại gần nhất (để hẹn giao lại), lần lấy hàng thất bại
+     * gần nhất và số lần của từng loại. Đọc bằng một truy vấn thay vì ba.
+     */
+    public record Failures(Map<Long, OrderStatusHistory> retries, Map<Long, OrderStatusHistory> pickups,
+            Map<Long, Long> pickupCounts, Map<Long, Long> deliveryCounts) {
+        public boolean canRetry(Order order) {
+            return order.getStatus() == Order.OrderStatus.FAILED
+                    && deliveryCounts.getOrDefault(order.getId(), 0L) < TrackingService.MAX_DELIVERY_FAILURES;
+        }
+        public boolean canReportPickupFailure(Order order) {
+            return order.getStatus() == Order.OrderStatus.PENDING_PICKUP
+                    && pickupCounts.getOrDefault(order.getId(), 0L) < TrackingService.MAX_PICKUP_FAILURES;
+        }
     }
-    /** Lần lấy hàng thất bại gần nhất của các đơn đang hiển thị. */
-    public Map<Long, OrderStatusHistory> pickupFailures(String username, List<Order> visible) {
-        var result = new HashMap<Long, OrderStatusHistory>();
+
+    public Failures failures(String username, List<Order> visible) {
+        var result = new Failures(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         access.checkOrders(visible, username);
-        if (!visible.isEmpty()) for (var entry : history.latestPickupFailures(visible.stream().map(Order::getId).toList()))
-            result.put(entry.getOrder().getId(), entry);
-        return result;
-    }
-    public Map<Long, Long> pickupCounts(String username, List<Order> visible) {
-        var result = new HashMap<Long, Long>();
-        access.checkOrders(visible, username);
-        if (!visible.isEmpty()) for (var count : history.pickupFailureCounts(visible.stream().map(Order::getId).toList()))
-            result.put(count.orderId(), count.count());
+        if (visible.isEmpty()) return result;
+        for (var entry : history.failureEntries(visible.stream().map(Order::getId).toList())) {
+            Long id = entry.getOrder().getId();
+            if (entry.isPickupFailure()) {
+                result.pickups().put(id, entry);
+                result.pickupCounts().merge(id, 1L, Long::sum);
+            } else {
+                result.retries().put(id, entry);
+                result.deliveryCounts().merge(id, 1L, Long::sum);
+            }
+        }
         return result;
     }
     public LocalDateTime now() { return LocalDateTime.now(clock); }

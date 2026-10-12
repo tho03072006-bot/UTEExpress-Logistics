@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Chìa khóa và dấu hỏi lấy lại mật khẩu">
+  <defs>
+    <linearGradient id="key" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F59E0B"/></linearGradient>
+  </defs>
+  <circle cx="110" cy="124" r="72" fill="#FFFFFF" opacity=".12"/>
+  <ellipse cx="172" cy="218" rx="106" ry="8" fill="#000" opacity=".2"/>
+  <!-- chìa khóa lớn -->
+  <g transform="translate(110 150) rotate(-35)">
+    <path fill-rule="evenodd" d="M-38 0 a38 38 0 1 0 76 0 a38 38 0 1 0 -76 0 Z M-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z" fill="url(#key)"/>
+    <rect x="34" y="-10" width="112" height="20" rx="6" fill="url(#key)"/>
+    <rect x="106" y="8" width="14" height="22" rx="3" fill="#F59E0B"/>
+    <rect x="126" y="8" width="12" height="15" rx="3" fill="#F59E0B"/>
+    <rect x="42" y="-5" width="96" height="4" rx="2" fill="#FFFFFF" opacity=".45"/>
+  </g>
+  <!-- bóng nói có dấu hỏi -->
+  <g transform="translate(272 140)">
+    <path d="M-34 -30 h68 a14 14 0 0 1 14 14 v32 a14 14 0 0 1 -14 14 h-40 l-14 14 v-14 h-14 a14 14 0 0 1 -14 -14 v-32 a14 14 0 0 1 14 -14 z" fill="#FFFFFF"/>
+    <path d="M-10 -10 a10 10 0 1 1 14 9 c-4 2 -4 4 -4 8" fill="none" stroke="#7C3AED" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="0" cy="18" r="3.8" fill="#7C3AED"/>
+  </g>
+  <!-- phong thư gửi liên kết -->
+  <g transform="translate(252 30) rotate(8)">
+    <rect width="56" height="38" rx="6" fill="#FFFFFF" opacity=".95"/>
+    <path d="M4 5 L 28 22 L 52 5" fill="none" stroke="#FB7185" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M62 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M330 206 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

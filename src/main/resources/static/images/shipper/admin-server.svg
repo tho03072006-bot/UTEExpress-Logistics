@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Máy chủ và bánh răng quản trị hệ thống">
+  <ellipse cx="184" cy="222" rx="118" ry="8" fill="#000" opacity=".2"/>
+  <!-- tủ máy chủ -->
+  <rect x="88" y="24" width="144" height="194" rx="14" fill="#0B2540"/>
+  <g>
+    <rect x="100" y="38" width="120" height="48" rx="8" fill="#1E3A5F"/>
+    <circle cx="116" cy="62" r="5" fill="#22C55E"/><circle cx="132" cy="62" r="5" fill="#FCD34D"/>
+    <rect x="152" y="54" width="54" height="5" rx="2.5" fill="#334155"/><rect x="152" y="65" width="54" height="5" rx="2.5" fill="#334155"/>
+  </g>
+  <g>
+    <rect x="100" y="96" width="120" height="48" rx="8" fill="#1E3A5F"/>
+    <circle cx="116" cy="120" r="5" fill="#22C55E"/><circle cx="132" cy="120" r="5" fill="#22C55E"/>
+    <rect x="152" y="112" width="54" height="5" rx="2.5" fill="#334155"/><rect x="152" y="123" width="54" height="5" rx="2.5" fill="#334155"/>
+  </g>
+  <g>
+    <rect x="100" y="154" width="120" height="48" rx="8" fill="#1E3A5F"/>
+    <circle cx="116" cy="178" r="5" fill="#22C55E"/><circle cx="132" cy="178" r="5" fill="#FB7185"/>
+    <rect x="152" y="170" width="54" height="5" rx="2.5" fill="#334155"/><rect x="152" y="181" width="54" height="5" rx="2.5" fill="#334155"/>
+  </g>
+  <!-- đường nhịp hoạt động -->
+  <path d="M20 112 H 44 L 52 92 L 62 132 L 70 112 H 84" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+  <!-- bánh răng lớn -->
+  <g transform="translate(270 158)" fill="#A78BFA">
+    <rect x="-6" y="-41" width="12" height="15" rx="3"/><rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(45)"/>
+    <rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(90)"/><rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(135)"/>
+    <rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(180)"/><rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(225)"/>
+    <rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(270)"/><rect x="-6" y="-41" width="12" height="15" rx="3" transform="rotate(315)"/>
+    <circle r="30"/><circle r="12" fill="#7C3AED"/><circle r="5" fill="#FFFFFF"/>
+  </g>
+  <!-- bánh răng nhỏ -->
+  <g transform="translate(296 84)" fill="#FCD34D">
+    <rect x="-4" y="-24" width="8" height="10" rx="2"/><rect x="-4" y="-24" width="8" height="10" rx="2" transform="rotate(60)"/>
+    <rect x="-4" y="-24" width="8" height="10" rx="2" transform="rotate(120)"/><rect x="-4" y="-24" width="8" height="10" rx="2" transform="rotate(180)"/>
+    <rect x="-4" y="-24" width="8" height="10" rx="2" transform="rotate(240)"/><rect x="-4" y="-24" width="8" height="10" rx="2" transform="rotate(300)"/>
+    <circle r="16"/><circle r="6" fill="#B45309"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M50 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M318 30 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  </g>
+</svg>

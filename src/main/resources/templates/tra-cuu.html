@@ -12,20 +12,48 @@
         <span class="shipper-eyebrow"><i class="bi bi-search"></i> TRA CỨU HÀNH TRÌNH</span>
         <h2>Tra cứu vận đơn</h2>
         <p>Nhập mã vận đơn để biết hàng của bạn đang ở đâu. Không cần đăng nhập.</p>
-        <form method="get" th:action="@{/tra-cuu}" class="sx-hero-search">
+        <form method="get" th:action="@{/tra-cuu}" class="sx-hero-search" data-lookup-form>
             <label class="visually-hidden" for="trackingCode">Mã vận đơn</label>
             <i class="bi bi-upc-scan" aria-hidden="true"></i>
             <input type="text" id="trackingCode" name="trackingCode" class="form-control" th:value="${param.trackingCode}"
                    placeholder="Nhập mã vận đơn (VD: UTE12345678)" maxlength="30" required autocomplete="off">
+            <button type="button" class="btn sx-qr-btn" data-qr-open title="Tra cứu bằng mã QR"><i class="bi bi-qr-code-scan"></i> Quét QR</button>
             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Tra cứu</button>
         </form>
     </div>
-    <img class="sx-hero-art" th:src="@{/images/shipper/track-parcel.svg}" alt="" aria-hidden="true" width="320" height="213">
+    <img class="sx-hero-art" th:src="@{/images/shipper/track-radar.svg}" alt="" aria-hidden="true" width="320" height="213">
 </header>
+
+<!-- Tra cứu bằng QR: giải mã ngay trên trình duyệt (camera hoặc ảnh), không gửi ảnh lên máy chủ -->
+<div class="ute-panel sx-qr-lookup sx-tone-cyan" id="quet-qr" data-qr-panel hidden>
+    <div class="shipper-section-head"><div><span class="shipper-eyebrow">TRA CỨU BẰNG QR</span><h3>Quét mã QR trên vận đơn</h3></div>
+        <button type="button" class="btn-close" data-qr-close aria-label="Đóng khung quét QR"></button></div>
+    <div class="sx-qr-grid">
+        <div>
+            <div class="shipper-camera"><video id="lookupVideo" playsinline muted aria-label="Camera quét QR"></video>
+                <div id="lookupPlaceholder" class="shipper-camera-placeholder"><i class="bi bi-qr-code-scan"></i><p>Đưa mã QR vào giữa khung hình,<br>đủ sáng và rõ nét.</p></div>
+                <div id="lookupFrame" class="shipper-camera-frame" hidden></div></div>
+            <label class="sx-check-item sx-consent" for="lookupConsent">
+                <input type="checkbox" id="lookupConsent" class="sx-consent-input">
+                <span class="sx-check-mark sx-check-box" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                <div><strong>Tôi đồng ý cho phép dùng camera để quét QR</strong><span>Hình ảnh chỉ xử lý trên máy của bạn để đọc mã, không gửi hay lưu lại.</span></div>
+            </label>
+            <div class="d-flex flex-wrap gap-2 mt-3"><button id="lookupStart" type="button" class="btn sx-btn-cyan" disabled><i class="bi bi-camera-video"></i> Bắt đầu quét</button>
+                <button id="lookupStop" type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-stop-circle"></i> Dừng camera</button></div>
+        </div>
+        <div class="sx-qr-upload">
+            <img th:src="@{/images/shipper/qr-phone.svg}" alt="" aria-hidden="true" width="240" height="160">
+            <label for="lookupImage" class="form-label">Hoặc chọn ảnh có mã QR</label>
+            <input type="file" id="lookupImage" accept="image/jpeg,image/png,image/webp" class="form-control">
+            <p class="shipper-hint mt-2 mb-0">Ảnh JPG/PNG tối đa 5 MB, chụp đủ và rõ mã QR. Camera cần HTTPS hoặc localhost; nếu không bật được camera, hãy chọn ảnh.</p>
+        </div>
+    </div>
+    <p id="lookupStatus" class="shipper-hint mt-3 mb-0" role="status" aria-live="polite">Tick ô đồng ý để bật camera, hoặc chọn ảnh có mã QR.</p>
+</div>
 
 <div th:if="${searched}">
     <div th:if="${order == null}" class="ute-panel shipper-empty">
-        <img class="sx-empty-art" th:src="@{/images/shipper/empty-box.svg}" alt="" aria-hidden="true" width="200" height="142">
+        <img class="sx-empty-art" th:src="@{/images/shipper/not-found.svg}" alt="" aria-hidden="true" width="200" height="142">
         <h3>Không tìm thấy vận đơn này</h3>
         <p>Kiểm tra lại mã vận đơn (thường bắt đầu bằng <strong>UTE</strong>) hoặc hỏi người gửi hàng.</p>
     </div>
@@ -70,6 +98,8 @@
     <div class="sx-tip sx-tone-teal"><i class="bi bi-qr-code"></i><div><strong>Có mã QR?</strong><p>Mã QR trên vận đơn chứa đúng mã để tra cứu.</p></div></div>
     <div class="sx-tip sx-tone-amber"><i class="bi bi-bell"></i><div><strong>Nhận thông báo</strong><p>Người gửi nhận email khi đơn giao thành công hoặc gặp sự cố.</p></div></div>
 </div>
+<script th:src="@{/js/vendor/zxing/zxing-browser-0.1.5.min.js}" defer></script>
+<script th:src="@{/js/public-qr-lookup.js}" defer></script>
 </section>
 
 </body>
