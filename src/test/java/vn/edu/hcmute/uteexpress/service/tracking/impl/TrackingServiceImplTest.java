@@ -121,10 +121,17 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
 
+        if (newStatus == Order.OrderStatus.PICKED_UP || newStatus == Order.OrderStatus.IN_TRANSIT
+                || newStatus == Order.OrderStatus.DELIVERED) {
+            OrderPayment payment = new OrderPayment();
+            payment.setOrder(order);
+            payment.setMethod(OrderPayment.PaymentMethod.COD);
+            when(orderPaymentService.findByOrder(order)).thenReturn(Optional.of(payment));
+        }
         if (newStatus == Order.OrderStatus.DELIVERED) {
             when(deliveryProofService.hasCompleteProof(order))
                     .thenReturn(true);
@@ -147,7 +154,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -167,7 +174,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(99L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(99L, shipper))
                 .thenReturn(Optional.empty());
 
         assertThrows(
@@ -189,7 +196,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -216,7 +223,7 @@ class TrackingServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         when(deliveryProofService.hasCompleteProof(order))
@@ -241,10 +248,11 @@ class TrackingServiceImplTest {
         OrderPayment payment = new OrderPayment();
         payment.setOrder(order);
         payment.setMethod(OrderPayment.PaymentMethod.VNPAY);
+        payment.setStatus(OrderPayment.PaymentStatus.PAID);
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         when(deliveryProofService.hasCompleteProof(order))
@@ -258,6 +266,49 @@ class TrackingServiceImplTest {
                 Order.OrderStatus.DELIVERED);
 
         verify(orderPaymentService, never()).markCodCollected(1L);
+    }
+
+    @ParameterizedTest
+    @MethodSource("prepaidTransitions")
+    void updateStatus_rejectsUnpaidWalletBeforePickupOrDelivery(
+            Order.OrderStatus before, Order.OrderStatus after) {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, before);
+        OrderPayment payment = new OrderPayment();
+        payment.setOrder(order);
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO);
+        payment.setStatus(OrderPayment.PaymentStatus.UNPAID);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper)).thenReturn(Optional.of(order));
+        when(orderPaymentService.findByOrder(order)).thenReturn(Optional.of(payment));
+        if (after == Order.OrderStatus.DELIVERED) {
+            when(deliveryProofService.hasCompleteProof(order)).thenReturn(true);
+        }
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                () -> trackingService.updateStatus(1L, "nguyentai", after));
+        assertTrue(failure.getMessage().contains("phải thanh toán cước"));
+        assertEquals(before, order.getStatus());
+        verify(orderRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test void updateStatus_rejectsMissingPaymentBeforePickup() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.PENDING_PICKUP);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper)).thenReturn(Optional.of(order));
+        assertThrows(IllegalStateException.class,
+                () -> trackingService.updateStatus(1L, "nguyentai", Order.OrderStatus.PICKED_UP));
+        verify(orderRepository, never()).save(any());
+    }
+
+    private static Stream<Arguments> prepaidTransitions() {
+        return Stream.of(
+                Arguments.of(Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PICKED_UP),
+                Arguments.of(Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT),
+                Arguments.of(Order.OrderStatus.FAILED, Order.OrderStatus.IN_TRANSIT),
+                Arguments.of(Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.DELIVERED));
     }
 
     @Test
@@ -276,6 +327,14 @@ class TrackingServiceImplTest {
         verify(orderRepository, never()).findByShipper(user);
     }
 
+    @Test void findAssignedOrders_rejectsDisabledShipperSession() {
+        AppUser shipper = createShipper();
+        shipper.setEnabled(false);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        assertThrows(IllegalStateException.class, () -> trackingService.findAssignedOrders("nguyentai"));
+        verify(orderRepository, never()).findByShipper(any());
+    }
+
     private static Stream<Arguments> validTransitions() {
         return Stream.of(
                 Arguments.of(
@@ -292,6 +351,9 @@ class TrackingServiceImplTest {
                         Order.OrderStatus.FAILED),
                 Arguments.of(
                         Order.OrderStatus.FAILED,
+                        Order.OrderStatus.IN_TRANSIT),
+                Arguments.of(
+                        Order.OrderStatus.FAILED,
                         Order.OrderStatus.RETURNED));
     }
 
@@ -299,6 +361,7 @@ class TrackingServiceImplTest {
         AppUser shipper = new AppUser();
         shipper.setUsername("nguyentai");
         shipper.setRole(AppUser.Role.SHIPPER);
+        shipper.setEnabled(true);
         return shipper;
     }
 

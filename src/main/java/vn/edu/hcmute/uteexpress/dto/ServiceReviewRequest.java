@@ -44,7 +44,8 @@ public class ServiceReviewRequest {
     }
 
     public void setContent(String content) {
-        this.content = content;
+        // Validate the same trimmed content that is persisted by the review service.
+        this.content = content == null ? null : content.trim();
     }
 
     public MultipartFile getMediaFile() {

@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Kiểm tra bảng cước dùng cho trang "Ước tính cước phí" của khách chưa đăng nhập.
@@ -62,5 +65,23 @@ class OrderFeeEstimateTest {
             assertThat(bangCuoc.get(serviceType))
                     .isEqualByComparingTo(orderService.estimateFee(serviceType, 3.2));
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = {-1, 0, 0.099, 100.001, 1000, 1.0001,
+            Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void rejectsUnsupportedWeightsBeforeCalculatingMoney(double weight) {
+        assertThatThrownBy(() -> orderService.estimateAllServices(weight))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("0,1 đến 100 kg");
+    }
+
+    @Test
+    void feeIsAnIntegerVndAtWeightBoundaries() {
+        assertThat(orderService.estimateFee(Order.ServiceType.STANDARD, 0.1))
+                .isEqualByComparingTo("15300").hasScaleOf(0);
+        assertThat(orderService.estimateFee(Order.ServiceType.STANDARD, 0.333))
+                .isEqualByComparingTo("15999").hasScaleOf(0);
+        assertThat(orderService.estimateFee(Order.ServiceType.STANDARD, 100))
+                .isEqualByComparingTo("315000").hasScaleOf(0);
     }
 }

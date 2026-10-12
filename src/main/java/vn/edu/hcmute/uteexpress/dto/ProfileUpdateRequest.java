@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
 
 /**
  * Dữ liệu người dùng nhập ở trang hồ sơ tài khoản - TV1 phụ trách.
@@ -18,6 +19,7 @@ public class ProfileUpdateRequest {
 
     @NotBlank(message = "Vui lòng nhập họ tên")
     @Size(max = 100, message = "Họ tên không được quá 100 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Họ tên không được chứa ký tự điều khiển")
     private String fullName;
 
     @NotBlank(message = "Vui lòng nhập email")
@@ -48,7 +50,7 @@ public class ProfileUpdateRequest {
     }
 
     public void setFullName(String fullName) {
-        this.fullName = fullName;
+        this.fullName = AuthInputRules.trim(fullName);
     }
 
     public String getEmail() {
@@ -56,7 +58,7 @@ public class ProfileUpdateRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = AuthInputRules.normalizeEmail(email);
     }
 
     public String getPhone() {
@@ -64,6 +66,6 @@ public class ProfileUpdateRequest {
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        this.phone = AuthInputRules.trim(phone);
     }
 }

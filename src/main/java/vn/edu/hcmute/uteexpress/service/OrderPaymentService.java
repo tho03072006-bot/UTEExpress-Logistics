@@ -3,6 +3,7 @@ package vn.edu.hcmute.uteexpress.service;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.entity.PromoCode;
+import vn.edu.hcmute.uteexpress.dto.MomoPaymentAttempt;
 
 import java.math.BigDecimal;
 
@@ -13,9 +14,7 @@ import java.util.Optional;
  * Nghiệp vụ thanh toán cước vận chuyển - TV1 phụ trách (việc 3).
  *
  * COD chạy thật theo đúng nghĩa: lưu và hiển thị trạng thái chưa/đã thanh toán trong CSDL.
- * VNPay / MoMo là bản MÔ PHỎNG - đồ án môn học không có API key thật của cổng thanh toán,
- * nên không có lời gọi nào ra ngoài Internet; người dùng đi qua một trang giả lập
- * rồi bấm xác nhận để diễn lại đúng luồng nghiệp vụ.
+ * MoMo được xác nhận bằng API TEST hoặc IPN có chữ ký. VNPay chưa tích hợp.
  */
 public interface OrderPaymentService {
 
@@ -44,11 +43,18 @@ public interface OrderPaymentService {
     OrderPayment findOwnedPayment(Long orderId, String username);
 
     /**
-     * Xác nhận đã thanh toán ở trang ví điện tử giả lập.
-     * Ném IllegalStateException nếu đơn là COD (COD thu tiền lúc giao, không trả trước)
-     * hoặc đơn đã thanh toán rồi.
+     * API cũ được giữ để từ chối mọi xác nhận từ trình duyệt; không thể ghi PAID.
      */
     OrderPayment confirmWalletPayment(Long orderId, String username);
+
+    /** Chốt một mã yêu cầu duy nhất dưới khóa DB; gọi cổng thanh toán sau khi commit. */
+    MomoPaymentAttempt reserveMomoAttempt(Long orderId, String username, boolean qr);
+
+    /** Snapshot của đúng giao dịch hiện tại, sau khi kiểm quyền chủ đơn. */
+    MomoPaymentAttempt findOwnedMomoAttempt(Long orderId, String username);
+
+    /** Chỉ gọi sau khi service MoMo đã xác thực phản hồi; khóa đơn rồi khóa thanh toán. */
+    OrderPayment settleVerifiedMomo(Long orderId, String reference, long amount, String providerTransactionId);
 
     /**
      * Đánh dấu đã thu tiền COD. Dành cho lúc Shipper giao hàng thành công.

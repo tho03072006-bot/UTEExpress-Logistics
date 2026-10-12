@@ -12,6 +12,9 @@ public interface AuthService {
     /** Kiem tra OTP dang ky, neu dung thi kich hoat tai khoan (enabled = true). */
     boolean verifyOtp(String username, String otpCode);
 
+    /** Send a new activation code, including after expiry; neutral for unknown/enabled accounts. */
+    void resendActivationOtp(String username);
+
     /**
      * Gui ma OTP dat lai mat khau toi email.
      *

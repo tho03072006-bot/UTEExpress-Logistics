@@ -1,85 +1,60 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
-<head>
-    <title>Thanh toán cước - UTEExpress</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Thanh toán cước - UTEExpress</title></head>
 <body>
-
 <section class="ute-narrow-sm">
-<!--
-  Ghi ro day la trang gia lap ngay tren dau trang: nguoi cham, ban trong nhom hay bat ky ai
-  mo trang nay deu phai biet ngay khong co giao dich that nao xay ra. Khong dung logo,
-  mau sac hay ten thuong hieu cua VNPay/MoMo - chi goi ten phuong thuc bang chu.
--->
-<div class="payment-simulation-banner mb-4">
-    <strong>Trang thanh toán mô phỏng</strong>
-    <p class="mb-0 small">
-        Đây là màn hình giả lập phục vụ đồ án môn học Lập trình Web. Hệ thống
-        <strong>không kết nối tới cổng thanh toán thật</strong>, không gửi dữ liệu ra ngoài
-        và không phát sinh giao dịch tiền thật. Bấm xác nhận chỉ để diễn lại luồng nghiệp vụ.
-    </p>
-</div>
-
-<h2 class="mb-4">Thanh toán cước vận chuyển</h2>
-
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex justify-content-between mb-2">
-            <span class="text-muted">Mã vận đơn</span>
-            <strong th:text="${order.trackingCode}">UTE00000000</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-2">
-            <span class="text-muted">Người nhận</span>
-            <span th:text="${order.receiverName}">-</span>
-        </div>
-        <div class="d-flex justify-content-between mb-2">
-            <span class="text-muted">Phương thức</span>
-            <span th:text="${payment.method.displayName}">-</span>
-        </div>
-        <div class="d-flex justify-content-between mb-2" th:if="${payment.hasDiscount()}">
-            <span class="text-muted">Cước gốc</span>
-            <span th:replace="~{fragments/components :: money(${payment.originalAmount})}">0 đ</span>
-        </div>
-        <div class="d-flex justify-content-between mb-2" th:if="${payment.hasDiscount()}">
-            <span class="text-muted">
-                Giảm giá
-                <span th:if="${payment.promoCode != null}" th:text="'(' + ${payment.promoCode.code} + ')'">(mã)</span>
-            </span>
-            <span>-<span th:replace="~{fragments/components :: money(${payment.discountAmount})}">0 đ</span></span>
-        </div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h2 class="mb-0">Thanh toán cước</h2>
+        <span th:if="${payment.method.name() == 'MOMO'}" class="badge text-bg-info">MoMo TEST</span>
+    </div>
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+    <div class="card mb-4"><div class="card-body">
+        <div class="d-flex justify-content-between gap-3 mb-2"><span class="text-muted">Mã vận đơn</span><strong th:text="${order.trackingCode}"></strong></div>
+        <div class="d-flex justify-content-between gap-3 mb-2"><span class="text-muted">Người nhận</span><span th:text="${order.receiverName}"></span></div>
+        <div class="d-flex justify-content-between gap-3 mb-2"><span class="text-muted">Phương thức</span><span th:text="${payment.method.displayName}"></span></div>
+        <div class="d-flex justify-content-between gap-3 mb-2" th:if="${payment.hasDiscount()}"><span class="text-muted">Cước gốc</span><span th:replace="~{fragments/components :: money(${payment.originalAmount})}"></span></div>
+        <div class="d-flex justify-content-between gap-3 mb-2" th:if="${payment.hasDiscount()}"><span class="text-muted">Giảm giá</span><span>-<span th:replace="~{fragments/components :: money(${payment.discountAmount})}"></span></span></div>
         <hr>
-        <div class="d-flex justify-content-between align-items-center">
-            <span class="fs-5">Số tiền cần trả</span>
-            <span class="fs-4 fw-bold">
-                <span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span>
-            </span>
+        <div class="d-flex justify-content-between align-items-center gap-3"><span class="fs-5">Số tiền cần trả</span><strong class="fs-4"><span th:replace="~{fragments/components :: money(${payment.amount})}"></span></strong></div>
+    </div></div>
+
+    <div th:if="${payment.status.name() == 'PAID'}" class="alert alert-success">
+        <strong>Cước đã thanh toán.</strong>
+        <span th:if="${payment.paidAt != null}" th:text="${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span>
+        <div class="small mt-2 text-break" th:if="${payment.transactionRef != null}">Mã giao dịch: <span th:text="${payment.transactionRef}"></span></div>
+        <div th:if="${order.status.name() == 'CANCELLED' or order.status.name() == 'RETURNED'}" class="mt-2">Đơn đã kết thúc. Vui lòng liên hệ trung tâm điều phối để đối soát cước hoặc hoàn phí.</div>
+    </div>
+
+    <div th:if="${payment.status.name() != 'PAID'}">
+        <div th:if="${payment.method.name() == 'COD'}" class="alert alert-info">Cước được thu khi giao hàng. Bạn không cần thanh toán trực tuyến.</div>
+        <div th:if="${payment.method.name() == 'VNPAY'}" class="alert alert-warning">VNPay chưa được tích hợp. Vui lòng liên hệ trung tâm điều phối để đổi phương thức.</div>
+        <div th:if="${payment.method.name() == 'MOMO'}">
+            <div class="alert alert-info small">Thanh toán qua môi trường thử nghiệm MoMo. Dùng ứng dụng hoặc thẻ thử nghiệm do MoMo cung cấp; không phát sinh tiền thật.</div>
+            <div th:unless="${momoEnabled}" class="alert alert-warning">MoMo chưa sẵn sàng. Đơn của bạn vẫn ở trạng thái chưa thanh toán.</div>
+            <div th:if="${momoEnabled}">
+                <div th:if="${order.status.name() == 'CANCELLED' or order.status.name() == 'RETURNED'}" class="alert alert-warning">Đơn đã kết thúc nên không tạo giao dịch mới. Nếu đã thanh toán, hãy kiểm tra trạng thái để đối soát.</div>
+                <div th:if="${checkout != null}" class="card mb-3"><div class="card-body text-center">
+                    <div th:if="${qrSvg != null}">
+                        <h5 class="mb-3">Quét QR bằng ứng dụng MoMo TEST</h5>
+                        <div th:utext="${qrSvg}"></div>
+                    </div>
+                    <a th:href="${checkout.payUrl}" class="btn btn-outline-primary mt-3" rel="noopener">Tiếp tục tại MoMo</a>
+                </div></div>
+                <div class="row g-2 mb-3" th:if="${checkout == null and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED'}">
+                    <div class="col-sm-6"><form method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/momo-qr'}"><button class="btn btn-primary w-100 py-3" type="submit"><i class="bi bi-qr-code-scan me-2"></i>Tạo QR MoMo</button></form></div>
+                    <div class="col-sm-6"><form method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/momo'}"><button class="btn btn-outline-primary w-100 py-3" type="submit"><i class="bi bi-credit-card me-2"></i>Ví / thẻ qua MoMo</button></form></div>
+                </div>
+                <form id="momoCheckForm" method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/momo/kiem-tra'}" th:if="${payment.transactionRef != null and #strings.startsWith(payment.transactionRef, 'UTE-')}">
+                    <button type="submit" class="btn btn-outline-secondary w-100 py-2">Kiểm tra kết quả thanh toán</button>
+                </form>
+                <p id="momoStatus" class="small text-muted mt-3" role="status" aria-live="polite">Hệ thống chỉ xác nhận khi MoMo báo đã nhận cước.</p>
+                <div id="momoPolling" hidden th:if="${payment.transactionRef != null and #strings.startsWith(payment.transactionRef, 'UTE-')}" th:attr="data-url=@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/momo/trang-thai'},data-check-now=${momoReturned == true}"></div>
+            </div>
         </div>
     </div>
-</div>
-
-<!-- Da thanh toan roi thi khong hien nut nua, tranh tru tien (gia lap) hai lan -->
-<div th:if="${payment.status.name() == 'PAID'}" class="alert alert-success">
-    Đơn này đã thanh toán
-    <span th:if="${payment.paidAt != null}"
-          th:text="'lúc ' + ${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span>.
-    Mã giao dịch mô phỏng: <strong th:text="${payment.transactionRef}">-</strong>
-</div>
-
-<div th:unless="${payment.status.name() == 'PAID'}">
-    <form method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/xac-nhan'}">
-        <button type="submit" class="btn btn-primary w-100 py-2">Xác nhận đã thanh toán</button>
-    </form>
-    <p class="text-muted small mt-3 mb-0">
-        Chưa muốn trả ngay? Đơn vẫn được giữ ở trạng thái "Chưa thanh toán",
-        bạn có thể quay lại thanh toán bất cứ lúc nào từ trang đơn hàng.
-    </p>
-</div>
-
-<div class="d-flex gap-2 mt-4">
-    <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Về đơn hàng của tôi</a>
-</div>
+    <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary mt-4">Về đơn hàng của tôi</a>
+    <script th:src="@{/js/momo-payment.js}" defer></script>
 </section>
-
 </body>
 </html>

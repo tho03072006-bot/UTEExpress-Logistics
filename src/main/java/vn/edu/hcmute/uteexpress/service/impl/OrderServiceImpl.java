@@ -20,12 +20,14 @@ import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import vn.edu.hcmute.uteexpress.validation.OrderRequestRules;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -73,8 +75,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public Order createOrder(OrderCreateRequest request, String senderUsername) {
-        AppUser sender = appUserRepository.findByUsername(senderUsername)
+        OrderRequestRules.validate(request);
+        AppUser sender = appUserRepository.findByUsernameForUpdate(senderUsername)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
 
         Order order = new Order();
@@ -226,8 +230,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrder(Long orderId, String username) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này."));
 
         if (!order.getSender().getUsername().equals(username)) {
@@ -278,13 +283,17 @@ public class OrderServiceImpl implements OrderService {
      * TODO (TV3): thay bang bang gia that theo khu vuc khi lam xong Manager.
      */
     private BigDecimal calculateFee(Order.ServiceType serviceType, double weightKg) {
+        OrderRequestRules.requireWeight(weightKg);
+        if (serviceType == null) {
+            throw new IllegalStateException("Vui lòng chọn dịch vụ.");
+        }
         BigDecimal baseFee = switch (serviceType) {
             case STANDARD -> BASE_FEE_STANDARD;
             case EXPRESS -> BASE_FEE_EXPRESS;
             case SUPER_EXPRESS -> BASE_FEE_SUPER_EXPRESS;
         };
         BigDecimal weightFee = FEE_PER_KG.multiply(BigDecimal.valueOf(weightKg));
-        return baseFee.add(weightFee);
+        return baseFee.add(weightFee).setScale(0, RoundingMode.HALF_UP);
     }
 
     /** Sinh ma tracking dang UTE + 4 so cuoi timestamp + 4 so ngau nhien, du dung cho demo. */

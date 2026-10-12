@@ -11,10 +11,15 @@ import vn.edu.hcmute.uteexpress.entity.EmailChangeRequest;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository;
 import vn.edu.hcmute.uteexpress.service.EmailChangeService;
+import vn.edu.hcmute.uteexpress.service.OtpRejectedException;
 import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
+import vn.edu.hcmute.uteexpress.util.OtpGuard;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -29,6 +34,7 @@ public class EmailChangeServiceImpl implements EmailChangeService {
 
     /** Số lần nhập sai tối đa trước khi huỷ yêu cầu và bắt gửi lại mã. */
     private static final int MAX_ATTEMPTS = 5;
+    private final OtpGuard sendGuard = new OtpGuard();
 
     private final EmailChangeRequestRepository emailChangeRequestRepository;
     private final AppUserRepository appUserRepository;
@@ -53,8 +59,8 @@ public class EmailChangeServiceImpl implements EmailChangeService {
 
     @Override
     public void requestChange(String username, String newEmail) {
-        AppUser appUser = requireUser(username);
-        String target = newEmail.trim();
+        AppUser appUser = requireUserForUpdate(username);
+        String target = AuthInputRules.email(newEmail);
 
         if (target.equalsIgnoreCase(appUser.getEmail())) {
             throw new IllegalStateException("Email mới trùng với email đang dùng.");
@@ -65,6 +71,7 @@ public class EmailChangeServiceImpl implements EmailChangeService {
         // tránh tình trạng còn tồn nhiều mã cùng hiệu lực cho nhiều địa chỉ khác nhau.
         EmailChangeRequest request = emailChangeRequestRepository.findByUser(appUser)
                 .orElseGet(() -> new EmailChangeRequest());
+        requireSendAllowed(appUser, request);
         request.setUser(appUser);
         request.setNewEmail(target);
         applyFreshOtp(request);
@@ -75,8 +82,9 @@ public class EmailChangeServiceImpl implements EmailChangeService {
 
     @Override
     public void resendOtp(String username) {
-        AppUser appUser = requireUser(username);
+        AppUser appUser = requireUserForUpdate(username);
         EmailChangeRequest request = requirePending(appUser);
+        requireSendAllowed(appUser, request);
 
         // Cấp mã hoàn toàn mới thay vì gửi lại mã cũ: nếu email lần trước lỡ lọt vào tay
         // người khác thì mã trong đó cũng hết tác dụng ngay.
@@ -87,13 +95,19 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     }
 
     @Override
+    @Transactional(noRollbackFor = OtpRejectedException.class)
     public void confirm(String username, String otpCode) {
-        AppUser appUser = requireUser(username);
+        AppUser appUser = requireUserForUpdate(username);
         EmailChangeRequest request = requirePending(appUser);
 
         if (request.isExpired()) {
             emailChangeRequestRepository.delete(request);
-            throw new IllegalStateException("Mã xác thực đã hết hạn. Vui lòng yêu cầu đổi email lại từ đầu.");
+            throw new OtpRejectedException("Mã xác thực đã hết hạn. Vui lòng yêu cầu đổi email lại từ đầu.");
+        }
+
+        if (request.getAttemptCount() >= MAX_ATTEMPTS) {
+            emailChangeRequestRepository.delete(request);
+            throw new OtpRejectedException("Bạn đã dùng hết 5 lần thử. Vui lòng yêu cầu mã mới.");
         }
 
         if (!request.getOtpCode().equals(otpCode == null ? null : otpCode.trim())) {
@@ -101,12 +115,12 @@ public class EmailChangeServiceImpl implements EmailChangeService {
             request.setUpdatedAt(LocalDateTime.now());
             if (request.getAttemptCount() >= MAX_ATTEMPTS) {
                 emailChangeRequestRepository.delete(request);
-                throw new IllegalStateException(
-                        "Bạn đã nhập sai mã quá " + MAX_ATTEMPTS + " lần. Yêu cầu đổi email đã bị huỷ, "
+                throw new OtpRejectedException(
+                        "Bạn đã nhập sai mã " + MAX_ATTEMPTS + " lần. Yêu cầu đổi email đã bị huỷ, "
                                 + "vui lòng thực hiện lại từ trang tài khoản.");
             }
             emailChangeRequestRepository.save(request);
-            throw new IllegalStateException("Mã xác thực không đúng. Bạn còn "
+            throw new OtpRejectedException("Mã xác thực không đúng. Bạn còn "
                     + (MAX_ATTEMPTS - request.getAttemptCount()) + " lần thử.");
         }
 
@@ -115,13 +129,16 @@ public class EmailChangeServiceImpl implements EmailChangeService {
         requireEmailAvailable(request.getNewEmail(), appUser);
 
         appUser.setEmail(request.getNewEmail());
+        // A recovery code sent to the previous mailbox must no longer change this account.
+        appUser.setOtpCode(null);
+        appUser.setOtpExpiry(null);
         appUserRepository.save(appUser);
         emailChangeRequestRepository.delete(request);
     }
 
     @Override
     public void cancel(String username) {
-        emailChangeRequestRepository.findByUser(requireUser(username))
+        emailChangeRequestRepository.findByUser(requireUserForUpdate(username))
                 .ifPresent(emailChangeRequestRepository::delete);
     }
 
@@ -132,6 +149,17 @@ public class EmailChangeServiceImpl implements EmailChangeService {
         request.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
         request.setAttemptCount(0);
         request.setUpdatedAt(LocalDateTime.now());
+    }
+
+    private void requireSendAllowed(AppUser appUser, EmailChangeRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+        if (request.getExpiresAt() != null
+                && request.getExpiresAt().minusMinutes(OTP_EXPIRY_MINUTES).plusSeconds(60).isAfter(now)) {
+            throw new IllegalStateException("Vui lòng chờ 60 giây trước khi yêu cầu mã OTP mới.");
+        }
+        if (sendGuard.take("email:" + appUser.getUsername().toLowerCase(Locale.ROOT), 1, Duration.ofSeconds(60)) < 0) {
+            throw new IllegalStateException("Vui lòng chờ 60 giây trước khi yêu cầu mã OTP mới.");
+        }
     }
 
     /**
@@ -153,6 +181,11 @@ public class EmailChangeServiceImpl implements EmailChangeService {
 
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
+    }
+
+    private AppUser requireUserForUpdate(String username) {
+        return appUserRepository.findByUsernameForUpdate(username)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
     }
 

@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -21,9 +23,11 @@ import org.springframework.mock.web.MockMultipartFile;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.DeliveryProof;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.DeliveryProofRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
+import vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository;
 import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofStorageService;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,11 +45,14 @@ class DeliveryProofServiceImplTest {
     @Mock
     private DeliveryProofStorageService storageService;
 
+    @Mock private OrderPaymentRepository paymentRepository;
+
     @InjectMocks
     private DeliveryProofServiceImpl deliveryProofService;
 
-    @Test
-    void saveProof_savesFilesAndProofForAssignedShipper() {
+    @ParameterizedTest
+    @EnumSource(OrderPayment.PaymentMethod.class)
+    void saveProof_savesFilesAndProofForAssignedShipper(OrderPayment.PaymentMethod method) {
         AppUser shipper = createShipper();
         Order order = createOrder(shipper, Order.OrderStatus.IN_TRANSIT);
         MockMultipartFile image = new MockMultipartFile(
@@ -56,8 +63,12 @@ class DeliveryProofServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
+        OrderPayment payment = new OrderPayment();
+        payment.setMethod(method);
+        payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        when(paymentRepository.findByOrderForUpdate(order)).thenReturn(Optional.of(payment));
         when(storageService.storeProofImage(image))
                 .thenReturn("/uploads/giao-hang/proof.png");
         when(storageService.storeSignature("signature-data"))
@@ -80,13 +91,47 @@ class DeliveryProofServiceImplTest {
         verify(deliveryProofRepository).save(result);
     }
 
+    @Test void saveProof_rejectsUnpaidWalletBeforeWritingAnyFile() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.IN_TRANSIT);
+        OrderPayment payment = new OrderPayment();
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO);
+        payment.setStatus(OrderPayment.PaymentStatus.UNPAID);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper)).thenReturn(Optional.of(order));
+        when(paymentRepository.findByOrderForUpdate(order)).thenReturn(Optional.of(payment));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> deliveryProofService.saveProof(1L, "nguyentai", new MockMultipartFile("proofImage", new byte[]{1}), "signature"));
+        assertTrue(error.getMessage().contains("phải thanh toán cước"));
+        org.mockito.Mockito.verifyNoInteractions(storageService, deliveryProofRepository);
+    }
+
+    @Test void saveProof_rejectsMissingPaymentBeforeWritingAnyFile() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.IN_TRANSIT);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper)).thenReturn(Optional.of(order));
+        assertThrows(IllegalStateException.class,
+                () -> deliveryProofService.saveProof(1L, "nguyentai", new MockMultipartFile("proofImage", new byte[]{1}), "signature"));
+        org.mockito.Mockito.verifyNoInteractions(storageService, deliveryProofRepository);
+    }
+
+    @Test void saveProof_rejectsDisabledShipperEvenForAnAuthenticatedStaleSession() {
+        AppUser shipper = createShipper();
+        shipper.setEnabled(false);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        assertThrows(IllegalStateException.class,
+                () -> deliveryProofService.saveProof(1L, "nguyentai", new MockMultipartFile("proofImage", new byte[]{1}), "signature"));
+        org.mockito.Mockito.verifyNoInteractions(storageService, deliveryProofRepository, orderRepository, paymentRepository);
+    }
+
     @Test
     void saveProof_rejectsOrderAssignedToAnotherShipper() {
         AppUser shipper = createShipper();
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(99L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(99L, shipper))
                 .thenReturn(Optional.empty());
 
         assertThrows(
@@ -110,7 +155,7 @@ class DeliveryProofServiceImplTest {
 
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
-        when(orderRepository.findByIdAndShipper(1L, shipper))
+        when(orderRepository.findByIdAndShipperForUpdate(1L, shipper))
                 .thenReturn(Optional.of(order));
 
         assertThrows(
@@ -156,6 +201,7 @@ class DeliveryProofServiceImplTest {
         AppUser shipper = new AppUser();
         shipper.setUsername("nguyentai");
         shipper.setRole(AppUser.Role.SHIPPER);
+        shipper.setEnabled(true);
         return shipper;
     }
 

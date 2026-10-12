@@ -24,16 +24,30 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PromoCode requireUsableCode(String code, BigDecimal orderFee) {
         if (code == null || code.isBlank()) {
             throw new IllegalStateException("Vui lòng nhập mã giảm giá.");
         }
 
-        PromoCode promoCode = promoCodeRepository.findByCodeIgnoreCase(code.trim())
+        if (code.strip().length() > 30) {
+            throw new IllegalStateException("Mã giảm giá tối đa 30 ký tự.");
+        }
+        // This lock remains held by the outer create-order transaction until payment and usage commit.
+        PromoCode promoCode = promoCodeRepository.findByCodeIgnoreCaseForUpdate(code.strip())
                 .orElseThrow(() -> new IllegalStateException(
                         "Mã \"" + code.trim() + "\" không tồn tại. Vui lòng kiểm tra lại."));
 
+        requireAvailable(promoCode);
+
+        BigDecimal fee = orderFee != null ? orderFee : BigDecimal.ZERO;
+        if (promoCode.getMinOrderAmount() != null && fee.compareTo(promoCode.getMinOrderAmount()) < 0) {
+            throw new IllegalStateException("Mã này chỉ áp dụng cho đơn có cước từ "
+                    + formatMoney(promoCode.getMinOrderAmount()) + "đ trở lên.");
+        }
+        return promoCode;
+    }
+
+    private void requireAvailable(PromoCode promoCode) {
         if (!promoCode.isActive()) {
             throw new IllegalStateException("Mã này đã ngừng áp dụng.");
         }
@@ -43,13 +57,13 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         if (!promoCode.hasRemainingUsage()) {
             throw new IllegalStateException("Mã này đã hết lượt sử dụng.");
         }
-
-        BigDecimal fee = orderFee != null ? orderFee : BigDecimal.ZERO;
-        if (promoCode.getMinOrderAmount() != null && fee.compareTo(promoCode.getMinOrderAmount()) < 0) {
-            throw new IllegalStateException("Mã này chỉ áp dụng cho đơn có cước từ "
-                    + formatMoney(promoCode.getMinOrderAmount()) + "đ trở lên.");
+        if (promoCode.getDiscountType() == null || promoCode.getDiscountValue() == null
+                || promoCode.getDiscountValue().signum() < 0
+                || (promoCode.getDiscountType() == PromoCode.DiscountType.PERCENT
+                    && promoCode.getDiscountValue().compareTo(ONE_HUNDRED) > 0)
+                || (promoCode.getMaxDiscountAmount() != null && promoCode.getMaxDiscountAmount().signum() < 0)) {
+            throw new IllegalStateException("Mã giảm giá chưa được cấu hình hợp lệ.");
         }
-        return promoCode;
     }
 
     /** Hiện số tiền kiểu Việt Nam trong thông báo lỗi: 30000 -> "30.000". */
@@ -78,7 +92,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         }
 
         // Giam toi da bang dung so cuoc - khong bao gio de khach phai tra so am.
-        return discount.min(fee).max(BigDecimal.ZERO);
+        return discount.min(fee).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
     }
 
     @Override
@@ -86,9 +100,16 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         if (promoCode == null) {
             return;
         }
-        promoCode.setUsedCount(promoCode.getUsedCount() + 1);
-        promoCode.setUpdatedAt(LocalDateTime.now());
-        promoCodeRepository.save(promoCode);
+        // Re-read under lock even for callers outside createOrder; never increment a stale detached value.
+        PromoCode locked = promoCodeRepository.findByCodeIgnoreCaseForUpdate(promoCode.getCode())
+                .orElseThrow(() -> new IllegalStateException("Mã giảm giá không còn tồn tại."));
+        requireAvailable(locked);
+        if (locked.getUsedCount() == Integer.MAX_VALUE) {
+            throw new IllegalStateException("Mã này đã hết lượt sử dụng.");
+        }
+        locked.setUsedCount(locked.getUsedCount() + 1);
+        locked.setUpdatedAt(LocalDateTime.now());
+        promoCodeRepository.save(locked);
     }
 
     @Override

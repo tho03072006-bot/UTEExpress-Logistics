@@ -14,7 +14,9 @@ import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import vn.edu.hcmute.uteexpress.validation.OrderRequestRules;
 
 @Service
 @Transactional
@@ -61,7 +63,8 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public DraftOrder addDraft(OrderCreateRequest request, String username) {
-        AppUser owner = requireUser(username);
+        OrderRequestRules.validate(request);
+        AppUser owner = requireUserForUpdate(username);
 
         if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER) {
             throw new IllegalStateException("Giỏ đơn chỉ chứa tối đa " + MAX_DRAFTS_PER_USER
@@ -98,7 +101,8 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public void clearDrafts(String username) {
-        draftOrderRepository.deleteByUser(requireUser(username));
+        AppUser owner = requireUserForUpdate(username);
+        draftOrderRepository.deleteAll(draftOrderRepository.findByUserOrderByCreatedAtDesc(owner));
     }
 
     @Override
@@ -111,11 +115,18 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public List<Order> confirmAllDrafts(String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireUserForUpdate(username);
         List<DraftOrder> drafts = draftOrderRepository.findByUserOrderByCreatedAtDesc(owner);
         if (drafts.isEmpty()) {
             throw new IllegalStateException("Giỏ đơn đang trống, chưa có đơn nào để xác nhận.");
         }
+
+        drafts.forEach(draft -> OrderRequestRules.validate(toCreateRequest(draft)));
+        // Different owners may confirm batches sharing several codes; lock codes in one order.
+        drafts.stream().filter(draft -> draft.getPromoCode() != null && !draft.getPromoCode().isBlank())
+                .sorted(Comparator.comparing(draft -> draft.getPromoCode().strip().toUpperCase(java.util.Locale.ROOT)))
+                .forEach(draft -> promoCodeService.requireUsableCode(draft.getPromoCode(),
+                        orderService.estimateFee(draft.getServiceType(), draft.getWeightKg())));
 
         List<Order> created = new ArrayList<>();
         for (DraftOrder draft : drafts) {
@@ -135,8 +146,14 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     }
 
     private DraftOrder requireOwnedDraft(Long draftId, String username) {
-        return draftOrderRepository.findByIdAndUser(draftId, requireUser(username))
+        return draftOrderRepository.findByIdAndUser(draftId, requireUserForUpdate(username))
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn nháp này trong giỏ đơn của bạn"));
+    }
+
+    /** Serialize all cart writers for an owner before checking quota or consuming drafts. */
+    private AppUser requireUserForUpdate(String username) {
+        return appUserRepository.findByUsernameForUpdate(username)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng: " + username));
     }
 
     /**

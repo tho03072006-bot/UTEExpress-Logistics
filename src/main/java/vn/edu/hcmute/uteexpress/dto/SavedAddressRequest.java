@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import vn.edu.hcmute.uteexpress.entity.SavedAddress;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
 
 /**
  * Dữ liệu người dùng nhập từ form thêm/sửa địa chỉ đã lưu.
@@ -14,10 +15,12 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập nhãn gợi nhớ cho địa chỉ")
     @Size(max = 50, message = "Nhãn địa chỉ tối đa 50 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Nhãn không được chứa ký tự điều khiển")
     private String label;
 
     @NotBlank(message = "Vui lòng nhập họ tên người liên hệ")
     @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Họ tên không được chứa ký tự điều khiển")
     private String contactName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại")
@@ -26,6 +29,7 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ chi tiết")
     @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Địa chỉ không được chứa ký tự điều khiển")
     private String addressLine;
 
     @NotNull(message = "Vui lòng chọn loại địa chỉ")
@@ -56,7 +60,7 @@ public class SavedAddressRequest {
     }
 
     public void setLabel(String label) {
-        this.label = label;
+        this.label = AuthInputRules.trim(label);
     }
 
     public String getContactName() {
@@ -64,7 +68,7 @@ public class SavedAddressRequest {
     }
 
     public void setContactName(String contactName) {
-        this.contactName = contactName;
+        this.contactName = AuthInputRules.trim(contactName);
     }
 
     public String getContactPhone() {
@@ -72,7 +76,7 @@ public class SavedAddressRequest {
     }
 
     public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
+        this.contactPhone = AuthInputRules.trim(contactPhone);
     }
 
     public String getAddressLine() {
@@ -80,7 +84,7 @@ public class SavedAddressRequest {
     }
 
     public void setAddressLine(String addressLine) {
-        this.addressLine = addressLine;
+        this.addressLine = AuthInputRules.trim(addressLine);
     }
 
     public SavedAddress.AddressType getAddressType() {

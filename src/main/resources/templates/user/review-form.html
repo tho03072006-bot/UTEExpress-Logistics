@@ -24,42 +24,42 @@
     <form method="post" enctype="multipart/form-data" th:object="${form}"
           th:action="@{'/nguoi-dung/danh-gia/' + ${order.id}}">
 
-        <div class="mb-4">
-            <label class="form-label d-block">Bạn hài lòng ở mức nào?</label>
+        <fieldset class="mb-4">
+            <legend class="form-label">Bạn hài lòng ở mức nào?</legend>
             <!-- Xep nguoc 5..1 de dung meo CSS ~ to lam sang cac sao ben trai khi di chuot -->
             <div class="ute-rating">
-                <input type="radio" th:field="*{rating}" value="5" id="rating5">
+                <input type="radio" th:field="*{rating}" value="5" id="rating5" aria-label="5 sao: Rất hài lòng" required>
                 <label for="rating5" title="Rất hài lòng"><i class="bi bi-star-fill"></i></label>
-                <input type="radio" th:field="*{rating}" value="4" id="rating4">
+                <input type="radio" th:field="*{rating}" value="4" id="rating4" aria-label="4 sao: Hài lòng" required>
                 <label for="rating4" title="Hài lòng"><i class="bi bi-star-fill"></i></label>
-                <input type="radio" th:field="*{rating}" value="3" id="rating3">
+                <input type="radio" th:field="*{rating}" value="3" id="rating3" aria-label="3 sao: Bình thường" required>
                 <label for="rating3" title="Bình thường"><i class="bi bi-star-fill"></i></label>
-                <input type="radio" th:field="*{rating}" value="2" id="rating2">
+                <input type="radio" th:field="*{rating}" value="2" id="rating2" aria-label="2 sao: Chưa hài lòng" required>
                 <label for="rating2" title="Chưa hài lòng"><i class="bi bi-star-fill"></i></label>
-                <input type="radio" th:field="*{rating}" value="1" id="rating1">
+                <input type="radio" th:field="*{rating}" value="1" id="rating1" aria-label="1 sao: Rất không hài lòng" required>
                 <label for="rating1" title="Rất không hài lòng"><i class="bi bi-star-fill"></i></label>
             </div>
-            <div class="text-danger small" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}"></div>
-        </div>
+            <div class="ute-field-error" id="ratingError" data-error-for="rating5" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}"></div>
+        </fieldset>
 
         <div class="mb-3">
-            <label class="form-label" for="content">Nhận xét của bạn</label>
+            <label class="form-label" for="reviewContent">Nhận xét của bạn</label>
             <textarea th:field="*{content}" class="form-control" rows="5" id="reviewContent"
-                      data-min-length="50"
+                      data-min-length="50" minlength="50" maxlength="1000" required aria-describedby="reviewContentHelp"
                       placeholder="Shipper giao đúng hẹn không, hàng còn nguyên vẹn không, thái độ phục vụ thế nào..."></textarea>
-            <div class="form-text">
+            <div class="form-text" id="reviewContentHelp">
                 Cần ít nhất <strong>50 ký tự</strong> — đã nhập
                 <span id="reviewCharCount">0</span> ký tự.
             </div>
-            <div class="text-danger small" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+            <div class="ute-field-error" id="reviewContentError" data-error-for="reviewContent" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
         </div>
 
         <div class="mb-4">
             <label class="form-label" for="mediaFile">Ảnh hoặc video (không bắt buộc)</label>
             <input type="file" th:field="*{mediaFile}" class="form-control"
-                   accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm">
-            <div class="form-text">
-                Nhận ảnh (jpg, png, gif, webp) hoặc video (mp4, webm), tối đa 10 MB.
+                   id="mediaFile" accept=".jpg,.jpeg,.png,.gif,.mp4,.webm" data-max-file-bytes="10485760" aria-describedby="mediaFileHelp">
+            <div class="form-text" id="mediaFileHelp">
+                Nhận ảnh (JPG, PNG, GIF) hoặc video (MP4, WebM), tối đa 10 MB.
             </div>
         </div>
 

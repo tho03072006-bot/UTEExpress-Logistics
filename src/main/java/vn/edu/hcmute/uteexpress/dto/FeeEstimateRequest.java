@@ -1,7 +1,6 @@
 package vn.edu.hcmute.uteexpress.dto;
 
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.Positive;
+import vn.edu.hcmute.uteexpress.validation.ShipmentWeight;
 
 /**
  * Dữ liệu của form ước tính cước phí ở trang công khai - TV1 phụ trách.
@@ -22,8 +21,7 @@ public class FeeEstimateRequest {
      * phải báo giá riêng chứ không tính theo bảng giá thường. Không chặn thì người
      * dùng gõ nhầm một số rất lớn và nhận về con số cước vô nghĩa.
      */
-    @Positive(message = "Khối lượng phải lớn hơn 0")
-    @DecimalMax(value = "100.0", message = "Đơn trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng")
+    @ShipmentWeight
     private Double weightKg;
 
     public FeeEstimateRequest() {

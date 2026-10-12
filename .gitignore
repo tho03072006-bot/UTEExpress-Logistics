@@ -47,6 +47,7 @@ application-local.properties
 /config/sqlserver-before-aiven.properties
 /config/certificates/
 /config/demo-account-backups/
+/ca.pem
 
 # Cau hinh ket noi database chung tren MonsterASP (co mat khau that).
 # Ban mau khong chua mat khau la application-cloud.properties.example, file do

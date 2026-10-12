@@ -9,6 +9,7 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.EmailChangeService;
 import vn.edu.hcmute.uteexpress.service.UserProfileService;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
 
 @Service
 @Transactional
@@ -33,12 +34,14 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public boolean updateProfile(String username, ProfileUpdateRequest form) {
-        AppUser appUser = requireUser(username);
-        String newEmail = form.getEmail().trim();
+        String newEmail = AuthInputRules.email(form.getEmail());
+        String name = AuthInputRules.text(form.getFullName(), 100, "họ tên", true);
+        String phone = AuthInputRules.phone(form.getPhone());
+        AppUser appUser = requireUserForUpdate(username);
 
         // Họ tên và số điện thoại sai thì người dùng tự sửa lại được, lưu ngay không sao.
-        appUser.setFullName(form.getFullName().trim());
-        appUser.setPhone(form.getPhone().trim());
+        appUser.setFullName(name);
+        appUser.setPhone(phone);
         appUserRepository.save(appUser);
 
         // Email thì khác: đây là đường khôi phục tài khoản duy nhất khi quên mật khẩu.
@@ -53,7 +56,13 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public void changePassword(String username, PasswordChangeRequest form) {
-        AppUser appUser = requireUser(username);
+        AuthInputRules.password(form.getCurrentPassword(), false);
+        AuthInputRules.password(form.getNewPassword(), true);
+        AuthInputRules.password(form.getConfirmPassword(), true);
+        if (!form.isPasswordConfirmed()) {
+            throw new IllegalStateException("Hai ô mật khẩu mới chưa khớp nhau.");
+        }
+        AppUser appUser = requireUserForUpdate(username);
 
         // Mật khẩu trong DB là chuỗi băm BCrypt, không thể so sánh bằng equals.
         // matches() băm lại chuỗi người dùng vừa nhập rồi mới đối chiếu.
@@ -65,6 +74,8 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         appUser.setPassword(passwordEncoder.encode(form.getNewPassword()));
+        appUser.setOtpCode(null);
+        appUser.setOtpExpiry(null);
         appUserRepository.save(appUser);
     }
 
@@ -74,6 +85,11 @@ public class UserProfileServiceImpl implements UserProfileService {
      */
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
+    }
+
+    private AppUser requireUserForUpdate(String username) {
+        return appUserRepository.findByUsernameForUpdate(username)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
     }
 }

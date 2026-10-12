@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- Test ket noi Aiven chi chay khi chu dong bat profile tuong ung. -->
+        <excludedTestGroups>aiven</excludedTestGroups>
     </properties>
 
     <dependencies>
@@ -92,6 +94,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -108,17 +116,34 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <!-- Khong dong goi bi mat SMTP/JWT local vao JAR. -->
+                    <!-- Ca cau hinh local va cloud cu deu co the chua bi mat. -->
                     <exclude>application-local.properties</exclude>
+                    <exclude>application-cloud.properties</exclude>
                 </excludes>
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${excludedTestGroups}</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>aiven-integration</id>
+            <properties>
+                <excludedTestGroups></excludedTestGroups>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

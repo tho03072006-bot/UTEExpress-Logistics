@@ -29,7 +29,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // toUri() tự sinh đúng dạng "file:///..." cho cả Windows lẫn Linux,
         // khỏi phải tự nối chuỗi đường dẫn rồi lệch dấu gạch chéo giữa hai hệ điều hành.
-        String location = uploadRoot.toUri().toString();
+        String location = uploadRoot.resolve("danh-gia").toUri().toString();
 
         // BẮT BUỘC có dấu "/" ở cuối. Thiếu dấu này, Spring ghép thẳng tên tệp vào sau
         // đường dẫn thư mục (".../uploadsdanh-gia/anh.png") và luôn báo không tìm thấy tệp.
@@ -37,6 +37,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
             location = location + "/";
         }
 
-        registry.addResourceHandler("/uploads/**").addResourceLocations(location);
+        registry.addResourceHandler("/uploads/danh-gia/**").addResourceLocations(location);
     }
 }

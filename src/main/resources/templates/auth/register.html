@@ -12,23 +12,26 @@
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
 <form method="post" th:action="@{/dang-ky}" th:object="${form}">
+    <ul class="alert alert-danger" role="alert" th:if="${#fields.hasAnyErrors()}">
+        <li th:each="issue : ${#fields.allErrors()}" th:text="${issue}"></li>
+    </ul>
     <div class="mb-3">
-        <label class="form-label">Họ tên</label>
-        <input type="text" th:field="*{fullName}" class="form-control">
+        <label class="form-label" for="fullName">Họ tên</label>
+        <input type="text" th:field="*{fullName}" class="form-control" maxlength="100" autocomplete="name">
     </div>
     <div class="mb-3">
-        <label class="form-label">Tên đăng nhập</label>
-        <input type="text" th:field="*{username}" class="form-control" required>
+        <label class="form-label" for="username">Tên đăng nhập</label>
+        <input type="text" th:field="*{username}" class="form-control" required minlength="4" maxlength="50" autocomplete="username">
         <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Email (nhận mã OTP)</label>
-        <input type="email" th:field="*{email}" class="form-control" required>
+        <label class="form-label" for="email">Email (nhận mã OTP)</label>
+        <input type="email" th:field="*{email}" class="form-control" required maxlength="100" autocomplete="email">
         <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Mật khẩu</label>
-        <input type="password" th:field="*{password}" class="form-control" required>
+        <label class="form-label" for="password">Mật khẩu</label>
+        <input type="password" th:field="*{password}" class="form-control" required minlength="6" maxlength="72" autocomplete="new-password">
         <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
     </div>
     <button type="submit" class="btn btn-primary w-100">Đăng ký</button>

@@ -71,7 +71,7 @@ public class TrackingServiceImpl implements TrackingService {
         AppUser shipper = findShipper(shipperUsername);
 
         Order order = orderRepository
-                .findByIdAndShipper(orderId, shipper)
+                .findByIdAndShipperForUpdate(orderId, shipper)
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy đơn hoặc đơn không được "
                                 + "phân công cho bạn."));
@@ -91,6 +91,12 @@ public class TrackingServiceImpl implements TrackingService {
                             + "trước khi xác nhận giao thành công.");
         }
 
+        if (newStatus == Order.OrderStatus.PICKED_UP
+                || newStatus == Order.OrderStatus.IN_TRANSIT
+                || newStatus == Order.OrderStatus.DELIVERED) {
+            requirePrepaidPayment(order);
+        }
+
         order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
 
@@ -101,6 +107,16 @@ public class TrackingServiceImpl implements TrackingService {
         publishStatusChanged(savedOrder);
 
         return savedOrder;
+    }
+
+    private void requirePrepaidPayment(Order order) {
+        // Payment writers lock the same order first, so the checked amount/status cannot race pickup.
+        OrderPayment payment = orderPaymentService.findByOrder(order)
+                .orElseThrow(() -> new IllegalStateException("Đơn hàng chưa có thông tin thanh toán hợp lệ."));
+        if (payment.getMethod() == null || (payment.getMethod().isOnlineWallet()
+                && payment.getStatus() != OrderPayment.PaymentStatus.PAID)) {
+            throw new IllegalStateException("Đơn thanh toán qua ví phải thanh toán cước trước khi lấy hoặc giao hàng.");
+        }
     }
 
     private void publishStatusChanged(Order order) {
@@ -139,7 +155,8 @@ public class TrackingServiceImpl implements TrackingService {
                     newStatus == Order.OrderStatus.DELIVERED
                             || newStatus == Order.OrderStatus.FAILED;
             case FAILED ->
-                    newStatus == Order.OrderStatus.RETURNED;
+                    newStatus == Order.OrderStatus.IN_TRANSIT
+                            || newStatus == Order.OrderStatus.RETURNED;
             default -> false;
         };
     }
@@ -150,7 +167,7 @@ public class TrackingServiceImpl implements TrackingService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 
-        if (shipper.getRole() != AppUser.Role.SHIPPER) {
+        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled()) {
             throw new IllegalStateException(
                     "Tài khoản hiện tại không có vai trò SHIPPER.");
         }

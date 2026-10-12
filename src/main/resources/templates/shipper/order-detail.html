@@ -32,7 +32,7 @@
 </div>
 
 <div id="realtimeStatusMessage"
-     class="alert alert-success d-none">
+     class="alert alert-success d-none" role="status" aria-live="polite">
 </div>
 
 <div class="ute-panel mb-4">
@@ -54,7 +54,7 @@
         <div>
             <div class="text-muted small mb-1">Trạng thái</div>
             <span class="badge"
-                  data-order-status
+                  th:attr="data-order-status=${order.status.name()}"
                   th:classappend="${'badge-status-'
                       + #strings.toLowerCase(order.status.name())}">
                 <th:block th:switch="${order.status.name()}">
@@ -102,7 +102,10 @@
 
             <div class="mb-3">
                 <div class="text-muted small">Số điện thoại</div>
-                <div th:text="${order.receiverPhone}">0900000000</div>
+                <a class="btn btn-outline-primary mt-1" th:href="|tel:${order.receiverPhone}|">
+                    <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+                    Gọi <span th:text="${order.receiverPhone}">0900000000</span>
+                </a>
             </div>
 
             <div>
@@ -157,7 +160,7 @@
             </div>
             <img class="img-fluid rounded border bg-white"
                  style="max-height: 280px; width: 100%; object-fit: contain;"
-                 th:src="${deliveryProof.proofImagePath}"
+                 th:src="@{/tep-giao-hang/{id}/anh(id=${order.id})}"
                  alt="Ảnh bằng chứng giao hàng">
         </div>
 
@@ -167,12 +170,13 @@
             </div>
             <img class="img-fluid rounded border bg-white"
                  style="max-height: 280px; width: 100%; object-fit: contain;"
-                 th:src="${deliveryProof.signaturePath}"
+                 th:src="@{/tep-giao-hang/{id}/chu-ky(id=${order.id})}"
                  alt="Chữ ký người nhận">
         </div>
     </div>
 
     <form id="deliveryProofForm"
+          data-order-action
           method="post"
           enctype="multipart/form-data"
           th:if="${order.status.name() == 'IN_TRANSIT'}"
@@ -186,9 +190,9 @@
                        name="proofImage"
                        class="form-control"
                        type="file"
-                       accept="image/jpeg,image/png"
+                       accept="image/jpeg,image/png" data-max-file-bytes="5242880" aria-describedby="proofImageHelp"
                        required>
-                <div class="form-text">
+                <div class="form-text" id="proofImageHelp">
                     Chấp nhận JPG, JPEG hoặc PNG; tối đa 5 MB.
                 </div>
                 <img id="proofPreview"
@@ -231,10 +235,13 @@
     </div>
 </div>
 
-<div class="ute-panel mt-4">
+<div class="ute-panel ute-order-actions mt-4">
     <h4 class="mb-3">Cập nhật trạng thái</h4>
+    <p class="form-text" th:if="${order.status.name() == 'IN_TRANSIT' and deliveryProof == null}">
+        Lưu ảnh và chữ ký người nhận ở trên để bật nút giao hàng thành công.
+    </p>
 
-    <form method="post"
+    <form method="post" data-order-action
           th:if="${order.status.name() == 'PENDING_PICKUP'}"
           th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
         <input type="hidden" name="status" value="PICKED_UP">
@@ -243,7 +250,7 @@
         </button>
     </form>
 
-    <form method="post"
+    <form method="post" data-order-action
           th:if="${order.status.name() == 'PICKED_UP'}"
           th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
         <input type="hidden" name="status" value="IN_TRANSIT">
@@ -254,7 +261,7 @@
 
     <div class="d-flex flex-wrap gap-2"
          th:if="${order.status.name() == 'IN_TRANSIT'}">
-        <form method="post"
+        <form method="post" data-order-action
               th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
             <input type="hidden" name="status" value="DELIVERED">
             <button type="submit"
@@ -267,7 +274,7 @@
             </button>
         </form>
 
-        <form method="post"
+        <form method="post" data-order-action
               th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
             <input type="hidden" name="status" value="FAILED">
             <button type="submit" class="btn btn-outline-danger">
@@ -276,14 +283,16 @@
         </form>
     </div>
 
-    <form method="post"
-          th:if="${order.status.name() == 'FAILED'}"
-          th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
-        <input type="hidden" name="status" value="RETURNED">
-        <button type="submit" class="btn btn-warning">
-            Xác nhận đã hoàn trả
-        </button>
-    </form>
+    <div class="d-flex flex-wrap gap-2" th:if="${order.status.name() == 'FAILED'}">
+        <form method="post" data-order-action th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+            <input type="hidden" name="status" value="IN_TRANSIT">
+            <button type="submit" class="btn btn-primary">Bắt đầu giao lại</button>
+        </form>
+        <form method="post" data-order-action th:action="@{/shipper/don/{id}/trang-thai(id=${order.id})}">
+            <input type="hidden" name="status" value="RETURNED">
+            <button type="submit" class="btn btn-outline-secondary">Xác nhận đã hoàn trả</button>
+        </form>
+    </div>
 
     <div class="alert alert-light border mb-0"
          th:if="${order.status.name() == 'DELIVERED'}">

@@ -12,9 +12,13 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.AuthService;
 import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
+import vn.edu.hcmute.uteexpress.util.OtpGuard;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -23,6 +27,9 @@ public class AuthServiceImpl implements AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int OTP_EXPIRY_MINUTES = 10;
+    private static final int MAX_OTP_ATTEMPTS = 5;
+    private static final Duration SEND_COOLDOWN = Duration.ofSeconds(60);
+    private final OtpGuard otpGuard = new OtpGuard();
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -40,12 +47,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void register(String username, String rawPassword, String email, String fullName) {
+        username = AuthInputRules.username(username);
+        email = AuthInputRules.email(email);
+        fullName = AuthInputRules.text(fullName, 100, "họ tên", false);
+        AuthInputRules.password(rawPassword, true);
         if (appUserRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
         }
         if (appUserRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email đã được đăng ký");
         }
+        requireSendAllowed(email, null);
 
         AppUser appUser = new AppUser(username, passwordEncoder.encode(rawPassword), email);
         appUser.setFullName(fullName);
@@ -61,14 +73,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public boolean verifyOtp(String username, String otpCode) {
-        Optional<AppUser> found = appUserRepository.findByUsername(username);
+        if (username == null || username.length() > 50) return false;
+        Optional<AppUser> found = appUserRepository.findByUsernameForUpdate(username.strip());
         if (found.isEmpty() || found.get().isEnabled()) {
             return false;
         }
         AppUser appUser = found.get();
 
-        if (!isOtpValid(appUser, otpCode)) {
+        if (!consumeAttempt(appUser, otpCode, "activation")) {
             return false;
         }
 
@@ -81,7 +95,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void sendPasswordResetOtp(String email) {
-        Optional<AppUser> found = appUserRepository.findByEmail(email);
+        email = AuthInputRules.email(email);
+        Optional<AppUser> found = appUserRepository.findByEmailForUpdate(email);
 
         if (found.isEmpty()) {
             // Khong bao loi ra man hinh - xem giai thich o AuthService. Chi ghi log de nguoi
@@ -97,6 +112,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("Co yeu cau dat lai mat khau cho tai khoan chua kich hoat, bo qua.");
             return;
         }
+        requireSendAllowed(appUser.getEmail(), appUser);
 
         String otp = generateOtp();
         appUser.setOtpCode(otp);
@@ -107,14 +123,32 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    public void resendActivationOtp(String username) {
+        if (username == null || username.length() > 50) return;
+        Optional<AppUser> found = appUserRepository.findByUsernameForUpdate(username.strip());
+        if (found.isEmpty() || found.get().isEnabled()) return;
+        AppUser appUser = found.get();
+        requireSendAllowed(appUser.getEmail(), appUser);
+        String otp = generateOtp();
+        appUser.setOtpCode(otp);
+        appUser.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        appUserRepository.save(appUser);
+        sendOtpEmail(appUser.getEmail(), otp, "Mã xác thực đăng ký", "kích hoạt tài khoản");
+    }
+
+    @Override
+    @Transactional
     public boolean resetPassword(String email, String otpCode, String newRawPassword) {
-        Optional<AppUser> found = appUserRepository.findByEmail(email);
+        AuthInputRules.password(newRawPassword, true);
+        email = AuthInputRules.email(email);
+        Optional<AppUser> found = appUserRepository.findByEmailForUpdate(email);
         if (found.isEmpty()) {
             return false;
         }
 
         AppUser appUser = found.get();
-        if (!appUser.isEnabled() || !isOtpValid(appUser, otpCode)) {
+        if (!appUser.isEnabled() || !consumeAttempt(appUser, otpCode, "reset")) {
             return false;
         }
 
@@ -127,13 +161,37 @@ public class AuthServiceImpl implements AuthService {
 
     // ----- Phần dùng chung trong service -----
 
-    /** Mã đúng và còn trong hạn 10 phút thì mới hợp lệ. */
-    private boolean isOtpValid(AppUser appUser, String otpCode) {
-        return otpCode != null
-                && appUser.getOtpCode() != null
-                && otpCode.equals(appUser.getOtpCode())
-                && appUser.getOtpExpiry() != null
-                && appUser.getOtpExpiry().isAfter(LocalDateTime.now());
+    /** Lock is held until commit; failures return normally so cleanup is committed. */
+    private boolean consumeAttempt(AppUser appUser, String otpCode, String purpose) {
+        if (appUser.getOtpCode() == null || appUser.getOtpExpiry() == null) return false;
+        LocalDateTime now = LocalDateTime.now();
+        if (!appUser.getOtpExpiry().isAfter(now)) {
+            clearOtp(appUser);
+            appUserRepository.save(appUser);
+            return false;
+        }
+        String key = purpose + ":" + appUser.getUsername().toLowerCase(Locale.ROOT)
+                + ":" + appUser.getOtpCode() + ":" + appUser.getOtpExpiry();
+        int remaining = otpGuard.take(key, MAX_OTP_ATTEMPTS, Duration.between(now, appUser.getOtpExpiry()));
+        boolean valid = remaining >= 0 && otpCode != null
+                && otpCode.strip().matches("[0-9]{6}") && otpCode.strip().equals(appUser.getOtpCode());
+        if (!valid && remaining <= 0) {
+            clearOtp(appUser);
+            appUserRepository.save(appUser);
+        }
+        return valid;
+    }
+
+    private void requireSendAllowed(String email, AppUser appUser) {
+        LocalDateTime now = LocalDateTime.now();
+        // Expiry records the issue time without adding a database column.
+        if (appUser != null && appUser.getOtpExpiry() != null
+                && appUser.getOtpExpiry().minusMinutes(OTP_EXPIRY_MINUTES).plusSeconds(60).isAfter(now)) {
+            throw new IllegalStateException("Vui lòng chờ 60 giây trước khi yêu cầu mã OTP mới.");
+        }
+        if (otpGuard.take("send:" + email.toLowerCase(Locale.ROOT), 1, SEND_COOLDOWN) < 0) {
+            throw new IllegalStateException("Vui lòng chờ 60 giây trước khi yêu cầu mã OTP mới.");
+        }
     }
 
     private void clearOtp(AppUser appUser) {

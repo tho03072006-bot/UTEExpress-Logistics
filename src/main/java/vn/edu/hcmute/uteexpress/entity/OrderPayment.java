@@ -56,8 +56,8 @@ public class OrderPayment {
     private PromoCode promoCode;
 
     /**
-     * Mã giao dịch. Với ví điện tử mô phỏng thì đây là mã do hệ thống tự sinh,
-     * KHÔNG phải mã từ cổng thanh toán thật - đồ án không tích hợp API thật.
+     * MoMo: requestId lúc chờ; requestId.transId sau khi gateway TEST xác nhận.
+     * WAIVED-orderId: toàn bộ cước được miễn theo tính toán của máy chủ.
      */
     @Column(name = "transaction_ref", length = 50)
     private String transactionRef;
@@ -73,7 +73,7 @@ public class OrderPayment {
 
     /**
      * Phương thức thanh toán.
-     * onlineWallet = true nghĩa là phải trả trước qua trang thanh toán mô phỏng;
+     * onlineWallet = true nghĩa là phải trả trước qua cổng thanh toán;
      * COD thì thu tiền lúc giao hàng nên không có bước đó.
      */
     public enum PaymentMethod {

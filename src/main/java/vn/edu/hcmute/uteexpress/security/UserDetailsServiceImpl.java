@@ -18,15 +18,31 @@ import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final AppUserRepository appUserRepository;
+    private final PublicLoginAttempts attempts;
 
     public UserDetailsServiceImpl(AppUserRepository appUserRepository) {
+        this(appUserRepository, new PublicLoginAttempts());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public UserDetailsServiceImpl(AppUserRepository appUserRepository, PublicLoginAttempts attempts) {
         this.appUserRepository = appUserRepository;
+        this.attempts = attempts;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        var attributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (attributes instanceof org.springframework.web.context.request.ServletRequestAttributes servlet
+                && attempts.blocked(username, servlet.getRequest().getRemoteAddr())) {
+            throw new UsernameNotFoundException("Thông tin đăng nhập không hợp lệ. Vui lòng thử lại sau.");
+        }
         AppUser appUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Khong tim thay tai khoan: " + username));
+
+        if (appUser.getRole() != AppUser.Role.USER && appUser.getRole() != AppUser.Role.SHIPPER) {
+            throw new UsernameNotFoundException("Vui lòng dùng trang đăng nhập nội bộ.");
+        }
 
         return User.builder()
                 .username(appUser.getUsername())

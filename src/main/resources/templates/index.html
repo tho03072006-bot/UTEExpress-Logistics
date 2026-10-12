@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head>
     <title>UTEExpress - Giao nhận nhanh chóng, tin cậy</title>
@@ -13,8 +14,14 @@
         UTEExpress kết nối người gửi và người nhận trên toàn quốc.
         Tạo đơn, theo dõi hành trình và nhận hàng chỉ trong vài bước.
     </p>
-    <a th:href="@{/dang-ky}" class="btn btn-accent btn-lg">Tạo đơn ngay</a>
-    <a th:href="@{/tra-cuu}" class="btn btn-outline-light btn-lg">Tra cứu vận đơn</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a sec:authorize="isAnonymous()" th:href="@{/dang-ky}" class="btn btn-accent btn-lg">Tạo đơn ngay</a>
+        <a sec:authorize="hasRole('USER')" th:href="@{/nguoi-dung/tao-don}" class="btn btn-accent btn-lg">Tạo đơn ngay</a>
+        <a sec:authorize="hasRole('SHIPPER')" th:href="@{/shipper/trang-chu}" class="btn btn-accent btn-lg">Xem đơn được phân công</a>
+        <a sec:authorize="hasRole('MANAGER')" th:href="@{/manager/trang-chu}" class="btn btn-accent btn-lg">Mở trang điều phối</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/trang-chu}" class="btn btn-accent btn-lg">Mở trang quản trị</a>
+        <a th:href="@{/tra-cuu}" class="btn btn-outline-light btn-lg">Tra cứu vận đơn</a>
+    </div>
 
     <!-- Ô tra cứu đặt thẳng ở đây thay vì bắt bấm sang trang khác: người ghé trang
          giao nhận phần lớn chỉ muốn hỏi "hàng tôi tới đâu rồi". Các bên lớn như
@@ -22,7 +29,7 @@
     <form method="get" th:action="@{/tra-cuu}" class="ute-hero-search mt-4">
         <label class="visually-hidden" for="heroTrackingCode">Mã vận đơn</label>
         <input type="text" id="heroTrackingCode" name="trackingCode" class="form-control"
-               placeholder="Nhập mã vận đơn, ví dụ UTE250001" required>
+               placeholder="Nhập mã vận đơn, ví dụ UTE250001" maxlength="50" autocomplete="off" required>
         <button type="submit" class="btn btn-accent">
             <i class="bi bi-search"></i> Tra cứu
         </button>

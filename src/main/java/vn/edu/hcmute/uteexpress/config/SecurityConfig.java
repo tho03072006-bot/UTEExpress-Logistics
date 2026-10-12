@@ -7,18 +7,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
- * Cau hinh Spring Security cho toan he thong.
- *
- * Da bat dang nhap that (UserDetailsServiceImpl doc tu bang app_user) nen tu day
- * "/nguoi-dung/**" bat buoc dang nhap. Cac vai tro Shipper/Manager/Admin van dang
- * permitAll tam thoi (chua co du lieu that de test) - siet lai khi TV2/TV3 lam xong
- * dang nhap phan quyen theo role cho phan cua minh.
+ * Bao ve cac trang cong khai, User va Shipper bang dang nhap session va CSRF.
+ * StaffSecurityConfig xu ly rieng Admin/Manager voi filter chain uu tien cao hon.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private vn.edu.hcmute.uteexpress.security.PublicLoginAttempts publicAttempts;
 
     // Dung de ma hoa mat khau truoc khi luu DB (theo dung yeu cau de bai)
     @Bean
@@ -31,28 +30,47 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
-                        "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
+                        "/dang-ky", "/dang-nhap", "/xac-thuc-otp", "/xac-thuc-otp/gui-lai",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
-                        "/css/**", "/js/**", "/images/**", "/uploads/**", "/api/tracking/**").permitAll()
-                .requestMatchers("/nguoi-dung/**").authenticated()
-             // TV2: khu vuc shipper chi danh cho vai tro SHIPPER.
-             // TODO (TV3): bao ve khu vuc manager/admin khi chuc nang quan ly hoan thien.
+                        "/css/**", "/js/**", "/images/**", "/uploads/danh-gia/**", "/api/tracking/**").permitAll()
+                .requestMatchers("/thanh-toan/momo/ket-qua", "/thanh-toan/momo/ipn").permitAll()
+                .requestMatchers("/uploads/**").denyAll()
+                .requestMatchers("/nguoi-dung/**").hasRole("USER")
                 .requestMatchers("/shipper/**").hasRole("SHIPPER")
-                .requestMatchers("/manager/**", "/admin/**").permitAll()
+                // Fail closed neu chain noi bo khong duoc nap.
+                .requestMatchers("/manager/**", "/admin/**", "/noi-bo/**").denyAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/dang-nhap")
-                .defaultSuccessUrl("/nguoi-dung/trang-chu", false)
+                .successHandler((request, response, authentication) -> {
+                    if (publicAttempts != null) publicAttempts.clear(authentication.getName(), request.getRemoteAddr());
+                    var handler = new org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler();
+                    boolean shipper = authentication.getAuthorities().stream()
+                            .anyMatch(role -> role.getAuthority().equals("ROLE_SHIPPER"));
+                    handler.setDefaultTargetUrl(shipper ? "/shipper/trang-chu" : "/nguoi-dung/trang-chu");
+                    handler.onAuthenticationSuccess(request, response, authentication);
+                })
+                .failureHandler((request, response, exception) -> {
+                    if (publicAttempts != null) publicAttempts.fail(request.getParameter("username"), request.getRemoteAddr());
+                    response.sendRedirect(request.getContextPath() + "/dang-nhap?error");
+                })
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            // Tam tat CSRF de nhom de test cac API (vd tra cuu van don) trong luc build.
-            // TODO: bat lai csrf cho cac form HTML khi hoan thien.
-            .csrf(csrf -> csrf.disable());
+            // Thymeleaf tu them CSRF token vao form POST dung th:action.
+            // SockJS POST transport khong gui duoc token trong HTTP form/header.
+            // Chi mien cac transport nay; /ws-tracking/** van bat buoc dang nhap.
+            .csrf(csrf -> csrf.ignoringRequestMatchers(
+                new AntPathRequestMatcher("/thanh-toan/momo/ipn", "POST"),
+                new AntPathRequestMatcher("/ws-tracking/*/*/xhr", "POST"),
+                new AntPathRequestMatcher("/ws-tracking/*/*/xhr_streaming", "POST"),
+                new AntPathRequestMatcher("/ws-tracking/*/*/xhr_send", "POST"),
+                new AntPathRequestMatcher("/ws-tracking/*/*/jsonp_send", "POST")
+            ));
 
         return http.build();
     }

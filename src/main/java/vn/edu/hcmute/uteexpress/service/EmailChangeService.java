@@ -26,6 +26,7 @@ public interface EmailChangeService {
 
     /**
      * Xác nhận mã OTP và ghi email mới vào tài khoản.
+     * OTP rejection commits the attempt counter/expiry cleanup before the controller handles it.
      * Ném IllegalStateException nếu không có yêu cầu nào, mã sai, mã hết hạn,
      * nhập sai quá số lần cho phép, hoặc email mới vừa bị tài khoản khác đăng ký mất.
      */

@@ -76,7 +76,7 @@ class AuthServiceImplTest {
     @Test
     void verifyOtpActivatesOnlyMatchingUnexpiredCodeAndConsumesIt() {
         AppUser user = unverifiedUser();
-        when(appUserRepository.findByUsername("khachhang"))
+        when(appUserRepository.findByUsernameForUpdate("khachhang"))
                 .thenReturn(Optional.of(user));
 
         assertFalse(authService.verifyOtp("khachhang", "000000"));
@@ -92,18 +92,19 @@ class AuthServiceImplTest {
     void verifyOtpRejectsExpiredAndUnknownAccount() {
         AppUser user = unverifiedUser();
         user.setOtpExpiry(LocalDateTime.now().minusMinutes(1));
-        when(appUserRepository.findByUsername("khachhang"))
+        when(appUserRepository.findByUsernameForUpdate("khachhang"))
                 .thenReturn(Optional.of(user));
 
         assertFalse(authService.verifyOtp("khachhang", "123456"));
         assertFalse(authService.verifyOtp("khongco", "123456"));
-        verify(appUserRepository, never()).save(any());
+        assertNull(user.getOtpCode());
+        verify(appUserRepository).save(user);
     }
 
     @Test
     void resetPasswordSendsOnlyForEnabledAccountAndUsesNewOtp() {
         AppUser user = enabledUser();
-        when(appUserRepository.findByEmail(user.getEmail()))
+        when(appUserRepository.findByEmailForUpdate(user.getEmail()))
                 .thenReturn(Optional.of(user));
 
         authService.sendPasswordResetOtp(user.getEmail());
@@ -123,9 +124,9 @@ class AuthServiceImplTest {
     @Test
     void resetPasswordDoesNotSendForUnknownOrDisabledAccount() {
         AppUser disabled = unverifiedUser();
-        when(appUserRepository.findByEmail("unknown@example.com"))
+        when(appUserRepository.findByEmailForUpdate("unknown@example.com"))
                 .thenReturn(Optional.empty());
-        when(appUserRepository.findByEmail(disabled.getEmail()))
+        when(appUserRepository.findByEmailForUpdate(disabled.getEmail()))
                 .thenReturn(Optional.of(disabled));
 
         authService.sendPasswordResetOtp("unknown@example.com");
@@ -143,6 +144,81 @@ class AuthServiceImplTest {
         assertThrows(IllegalStateException.class,
                 () -> authService.register(
                         "khachhang", "matkhau123", "uteexpress8@gmail.com", "Khách Hàng"));
+    }
+
+    @Test
+    void activationFifthFailureConsumesCodeAndNewServiceCannotReuseIt() {
+        AppUser user = unverifiedUser();
+        when(appUserRepository.findByUsernameForUpdate("khachhang")).thenReturn(Optional.of(user));
+        for (int i = 0; i < 5; i++) assertFalse(authService.verifyOtp("khachhang", "000000"));
+        assertNull(user.getOtpCode());
+        assertNull(user.getOtpExpiry());
+        setUp(); // Simulate a new application instance after the code was consumed in DB.
+        assertFalse(authService.verifyOtp("khachhang", "123456"));
+    }
+
+    @Test
+    void activationCorrectCodeOnFifthAttemptIsAllowed() {
+        AppUser user = unverifiedUser();
+        when(appUserRepository.findByUsernameForUpdate("khachhang")).thenReturn(Optional.of(user));
+        for (int i = 0; i < 4; i++) assertFalse(authService.verifyOtp("khachhang", "000000"));
+        assertTrue(authService.verifyOtp("khachhang", "123456"));
+    }
+
+    @Test
+    void resetFifthFailureConsumesCodeWithoutChangingPassword() {
+        AppUser user = unverifiedUser();
+        user.setEnabled(true);
+        when(appUserRepository.findByEmailForUpdate(user.getEmail())).thenReturn(Optional.of(user));
+        for (int i = 0; i < 5; i++) assertFalse(authService.resetPassword(user.getEmail(), "000000", "newPass123"));
+        assertNull(user.getOtpCode());
+        assertEquals("oldHash", user.getPassword());
+        assertFalse(authService.resetPassword(user.getEmail(), "123456", "newPass123"));
+    }
+
+    @Test
+    void resendActivationRecoversExpiredAccountAndEnforcesCooldown() {
+        AppUser user = unverifiedUser();
+        user.setOtpExpiry(LocalDateTime.now().minusMinutes(1));
+        when(appUserRepository.findByUsernameForUpdate("khachhang")).thenReturn(Optional.of(user));
+        authService.resendActivationOtp("khachhang");
+        assertTrue(user.getOtpExpiry().isAfter(LocalDateTime.now()));
+        assertThrows(IllegalStateException.class, () -> authService.resendActivationOtp("khachhang"));
+        verify(mailSender).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void resetSendCooldownSurvivesServiceRestartUsingIssueTimeInDatabase() {
+        AppUser user = enabledUser();
+        when(appUserRepository.findByEmailForUpdate(user.getEmail())).thenReturn(Optional.of(user));
+        authService.sendPasswordResetOtp(user.getEmail());
+        setUp();
+        assertThrows(IllegalStateException.class, () -> authService.sendPasswordResetOtp(user.getEmail()));
+        verify(mailSender).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void registrationNormalizesBeforeUniqueChecksAndPreservesSixDigitDemoPolicy() {
+        authService.register(" khachhang ", "123456", " CUSTOMER@EXAMPLE.COM ", " Khách Hàng ");
+        ArgumentCaptor<AppUser> userCaptor = ArgumentCaptor.forClass(AppUser.class);
+        verify(appUserRepository).save(userCaptor.capture());
+        assertEquals("khachhang", userCaptor.getValue().getUsername());
+        assertEquals("customer@example.com", userCaptor.getValue().getEmail());
+        assertEquals("Khách Hàng", userCaptor.getValue().getFullName());
+        assertTrue(passwordEncoder.matches("123456", userCaptor.getValue().getPassword()));
+        verify(appUserRepository).existsByUsername("khachhang");
+        verify(appUserRepository).existsByEmail("customer@example.com");
+    }
+
+    @Test
+    void serviceRejectsOversizedOrShortPasswordBeforeEncodingOrPersistence() {
+        assertThrows(IllegalStateException.class,
+                () -> authService.register("khachhang", "1", "customer@example.com", "Khách"));
+        assertThrows(IllegalStateException.class,
+                () -> authService.register("khachhang", "á".repeat(37), "customer@example.com", "Khách"));
+        assertThrows(IllegalStateException.class,
+                () -> authService.resetPassword("customer@example.com", "123456", "á".repeat(37)));
+        verify(appUserRepository, never()).save(any());
     }
 
     private AppUser unverifiedUser() {

@@ -13,14 +13,20 @@
 </p>
 
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+<div th:if="${message}" class="alert alert-success" role="status" th:text="${message}"></div>
 
 <form method="post" th:action="@{/xac-thuc-otp}">
     <input type="hidden" name="username" th:value="${username}">
     <div class="mb-3">
-        <label class="form-label">Mã OTP (6 số)</label>
-        <input type="text" name="otp" class="form-control" maxlength="6" required autofocus>
+        <label class="form-label" for="otp">Mã OTP (6 số)</label>
+        <input id="otp" type="text" name="otp" class="form-control" minlength="6" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" required autofocus>
     </div>
     <button type="submit" class="btn btn-primary w-100">Xác thực</button>
+</form>
+<form method="post" th:action="@{/xac-thuc-otp/gui-lai}" class="mt-3">
+    <input type="hidden" name="username" th:value="${username}">
+    <button type="submit" class="btn btn-outline-primary w-100">Gửi mã kích hoạt mới</button>
+    <p class="form-text">Có thể yêu cầu mã mới sau 60 giây.</p>
 </form>
 </section>
 

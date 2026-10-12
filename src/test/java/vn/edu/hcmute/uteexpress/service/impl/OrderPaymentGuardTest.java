@@ -101,26 +101,24 @@ class OrderPaymentGuardTest {
     }
 
     @Test
-    @DisplayName("Đơn giao thất bại vẫn thanh toán được vì shipper còn giao lại")
-    void donGiaoThatBaiVanThanhToanDuoc() {
+    @DisplayName("Đơn giao thất bại cũng không được tự xác nhận thanh toán từ trình duyệt")
+    void donGiaoThatBaiKhongTuXacNhan() {
         OrderPayment payment = chuanBiDon(Order.OrderStatus.FAILED, OrderPayment.PaymentMethod.MOMO);
-        when(orderPaymentRepository.save(any())).thenAnswer(goi -> goi.getArgument(0));
-
-        OrderPayment ketQua = orderPaymentService.confirmWalletPayment(10L, "thotest");
-
-        assertThat(ketQua.getStatus()).isEqualTo(OrderPayment.PaymentStatus.PAID);
-        assertThat(payment.getPaidAt()).isNotNull();
+        assertThatThrownBy(() -> orderPaymentService.confirmWalletPayment(10L, "thotest"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("Cần xác minh");
+        assertThat(payment.getStatus()).isEqualTo(OrderPayment.PaymentStatus.UNPAID);
+        assertThat(payment.getPaidAt()).isNull();
+        verify(orderPaymentRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Đơn đang giao bình thường thì thanh toán được")
-    void donDangGiaoThiThanhToanDuoc() {
-        chuanBiDon(Order.OrderStatus.IN_TRANSIT, OrderPayment.PaymentMethod.VNPAY);
-        when(orderPaymentRepository.save(any())).thenAnswer(goi -> goi.getArgument(0));
-
-        OrderPayment ketQua = orderPaymentService.confirmWalletPayment(10L, "thotest");
-
-        assertThat(ketQua.getStatus()).isEqualTo(OrderPayment.PaymentStatus.PAID);
-        assertThat(ketQua.getTransactionRef()).isNotBlank();
+    @DisplayName("Nút xác nhận cũ không thể tự ghi PAID cho VNPay chưa tích hợp")
+    void vnpayKhongTheTuXacNhan() {
+        OrderPayment payment = chuanBiDon(Order.OrderStatus.IN_TRANSIT, OrderPayment.PaymentMethod.VNPAY);
+        assertThatThrownBy(() -> orderPaymentService.confirmWalletPayment(10L, "thotest"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("Cần xác minh");
+        assertThat(payment.getStatus()).isEqualTo(OrderPayment.PaymentStatus.UNPAID);
+        assertThat(payment.getTransactionRef()).isNull();
+        verify(orderPaymentRepository, never()).save(any());
     }
 }

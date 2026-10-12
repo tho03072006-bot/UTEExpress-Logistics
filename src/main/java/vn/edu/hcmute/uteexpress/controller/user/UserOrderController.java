@@ -37,6 +37,29 @@ import vn.edu.hcmute.uteexpress.service.ServiceReviewService;
 @Controller
 @RequestMapping("/nguoi-dung")
 public class UserOrderController {
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private vn.edu.hcmute.uteexpress.config.MomoProperties momo;
+    private static final String SUBMISSIONS = "ute.order.submissions";
+    private record Submission(String username, Long orderId) implements java.io.Serializable { }
+
+    @SuppressWarnings("unchecked")
+    private java.util.LinkedHashMap<String, Submission> submissions(jakarta.servlet.http.HttpSession session) {
+        var map = (java.util.LinkedHashMap<String, Submission>) session.getAttribute(SUBMISSIONS);
+        if (map == null) { map = new java.util.LinkedHashMap<>(); session.setAttribute(SUBMISSIONS, map); }
+        return map;
+    }
+
+    @ModelAttribute("submissionToken")
+    public String submissionToken(Authentication authentication, jakarta.servlet.http.HttpSession session) {
+        if (authentication == null) return "";
+        synchronized (session) {
+            var map = submissions(session);
+            while (map.size() >= 30) map.remove(map.keySet().iterator().next());
+            String token = java.util.UUID.randomUUID().toString();
+            map.put(token, new Submission(authentication.getName(), null));
+            return token;
+        }
+    }
 
     /** So don hien tren moi trang cua lich su don. */
     private static final int ORDERS_PER_PAGE = 10;
@@ -61,7 +84,9 @@ public class UserOrderController {
     /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
     @ModelAttribute("paymentMethods")
     public OrderPayment.PaymentMethod[] paymentMethods() {
-        return OrderPayment.PaymentMethod.values();
+        return momo != null && momo.isEnabled()
+                ? new OrderPayment.PaymentMethod[]{OrderPayment.PaymentMethod.COD, OrderPayment.PaymentMethod.MOMO}
+                : new OrderPayment.PaymentMethod[]{OrderPayment.PaymentMethod.COD};
     }
 
     @GetMapping("/trang-chu")
@@ -83,7 +108,9 @@ public class UserOrderController {
 
     @PostMapping("/tao-don")
     public String createOrder(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
-                               Authentication authentication, Model model) {
+                               Authentication authentication, Model model,
+                               @RequestParam(required = false) String submissionToken,
+                               jakarta.servlet.http.HttpSession session) {
         if (bindingResult.hasErrors()) {
             // Ve lai form thi phai nap lai so dia chi, neu khong 2 o chon nhanh se rong.
             addSavedAddressesToModel(model, authentication.getName());
@@ -91,7 +118,17 @@ public class UserOrderController {
         }
         Order order;
         try {
-            order = orderService.createOrder(form, authentication.getName());
+            synchronized (session) {
+                var submission = submissions(session).get(submissionToken);
+                if (submission == null || !submission.username().equals(authentication.getName())) {
+                    throw new IllegalStateException("Phiên tạo đơn đã hết hạn. Kiểm tra form và gửi lại.");
+                }
+                if (submission.orderId() != null) {
+                    return "redirect:/nguoi-dung/don-hang/" + submission.orderId();
+                }
+                order = orderService.createOrder(form, authentication.getName());
+                submissions(session).put(submissionToken, new Submission(authentication.getName(), order.getId()));
+            }
         } catch (IllegalStateException ex) {
             // Hay gap nhat o day la ma giam gia sai/het han - phai ve lai form kem loi
             // de nguoi dung sua, khong de vang ra trang bao loi he thong.
@@ -106,9 +143,7 @@ public class UserOrderController {
             return "redirect:/nguoi-dung/thanh-toan/" + order.getId();
         }
 
-        model.addAttribute("order", order);
-        model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
-        return "user/order-created";
+        return "redirect:/nguoi-dung/don-hang/" + order.getId();
     }
 
     /**

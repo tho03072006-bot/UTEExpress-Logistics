@@ -2,6 +2,8 @@ package vn.edu.hcmute.uteexpress.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.AssertTrue;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
 
 /**
  * Dữ liệu của form đổi mật khẩu khi người dùng ĐANG đăng nhập - TV1 phụ trách.
@@ -14,13 +16,15 @@ import jakarta.validation.constraints.Size;
 public class PasswordChangeRequest {
 
     @NotBlank(message = "Vui lòng nhập mật khẩu hiện tại")
+    @Size(max = 72, message = "Mật khẩu tối đa 72 ký tự")
     private String currentPassword;
 
     @NotBlank(message = "Vui lòng nhập mật khẩu mới")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
+    @Size(min = 6, max = 72, message = "Mật khẩu mới cần từ 6 đến 72 ký tự")
     private String newPassword;
 
     @NotBlank(message = "Vui lòng nhập lại mật khẩu mới")
+    @Size(max = 72, message = "Mật khẩu tối đa 72 ký tự")
     private String confirmPassword;
 
     public PasswordChangeRequest() {
@@ -30,8 +34,16 @@ public class PasswordChangeRequest {
      * Hai ô mật khẩu mới có khớp nhau không. Kiểm tra bằng method thay vì viết
      * annotation kiểm tra chéo 2 field - làm giống PasswordResetRequest cho đồng bộ.
      */
+    @AssertTrue(message = "Hai ô mật khẩu mới chưa khớp nhau")
     public boolean isPasswordConfirmed() {
         return newPassword != null && newPassword.equals(confirmPassword);
+    }
+
+    @AssertTrue(message = "Mật khẩu không được vượt quá 72 byte UTF-8")
+    public boolean isPasswordWithinByteLimit() {
+        return AuthInputRules.passwordWithinByteLimit(currentPassword)
+                && AuthInputRules.passwordWithinByteLimit(newPassword)
+                && AuthInputRules.passwordWithinByteLimit(confirmPassword);
     }
 
     // ----- Getter / Setter -----

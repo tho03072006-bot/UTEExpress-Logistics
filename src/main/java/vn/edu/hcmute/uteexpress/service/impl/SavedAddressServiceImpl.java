@@ -8,6 +8,7 @@ import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.SavedAddressRepository;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
+import vn.edu.hcmute.uteexpress.util.AuthInputRules;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -74,7 +75,8 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public SavedAddress create(SavedAddressRequest request, String username) {
-        AppUser owner = requireUser(username);
+        validateRequest(request);
+        AppUser owner = requireUserForUpdate(username);
         SavedAddress.AddressType type = request.getAddressType();
 
         long currentCount = savedAddressRepository.countByUserAndAddressType(owner, type);
@@ -97,12 +99,17 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public SavedAddress update(Long id, SavedAddressRequest request, String username) {
-        AppUser owner = requireUser(username);
+        validateRequest(request);
+        AppUser owner = requireUserForUpdate(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
         SavedAddress.AddressType newType = request.getAddressType();
         SavedAddress.AddressType oldType = address.getAddressType();
+        if (newType != oldType && savedAddressRepository.countByUserAndAddressType(owner, newType) >= MAX_ADDRESS_PER_TYPE) {
+            throw new IllegalStateException("Mỗi loại địa chỉ chỉ lưu tối đa " + MAX_ADDRESS_PER_TYPE
+                    + " địa chỉ. Vui lòng xoá bớt trong nhóm đích trước khi chuyển.");
+        }
 
         // Chỉ kiểm tra trùng nhãn khi người dùng thực sự đổi nhãn hoặc đổi loại địa chỉ.
         boolean labelChanged = !address.getLabel().equalsIgnoreCase(request.getLabel().trim());
@@ -125,7 +132,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public void delete(Long id, String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireUserForUpdate(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
@@ -139,7 +146,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public void markAsDefault(Long id, String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireUserForUpdate(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
@@ -154,6 +161,21 @@ public class SavedAddressServiceImpl implements SavedAddressService {
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng: " + username));
+    }
+
+    private AppUser requireUserForUpdate(String username) {
+        return appUserRepository.findByUsernameForUpdate(username)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng đang đăng nhập."));
+    }
+
+    private void validateRequest(SavedAddressRequest request) {
+        if (request == null || request.getAddressType() == null) {
+            throw new IllegalStateException("Vui lòng chọn loại địa chỉ.");
+        }
+        request.setLabel(AuthInputRules.text(request.getLabel(), 50, "nhãn địa chỉ", true));
+        request.setContactName(AuthInputRules.text(request.getContactName(), 100, "họ tên", true));
+        request.setContactPhone(AuthInputRules.phone(request.getContactPhone()));
+        request.setAddressLine(AuthInputRules.text(request.getAddressLine(), 255, "địa chỉ", true));
     }
 
     /** Nhãn địa chỉ phải khác nhau trong cùng một loại, để danh sách chọn nhanh không bị rối. */

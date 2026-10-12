@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Thông báo — UTEExpress</title></head>
+<body><section class="ute-narrow-sm ute-panel p-4">
+<p class="text-muted" th:text="|Mã ${status}|">Thông báo</p>
+<h1 class="h3">Chưa thể hoàn tất yêu cầu</h1>
+<p role="alert" th:text="${message}"></p>
+<a class="btn btn-primary" th:href="@{/}">Về trang chủ</a>
+</section></body></html>

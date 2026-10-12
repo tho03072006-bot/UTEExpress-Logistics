@@ -37,7 +37,6 @@ public class FileStorageServiceImpl implements FileStorageService {
             "jpeg", ServiceReview.MediaType.IMAGE,
             "png", ServiceReview.MediaType.IMAGE,
             "gif", ServiceReview.MediaType.IMAGE,
-            "webp", ServiceReview.MediaType.IMAGE,
             "mp4", ServiceReview.MediaType.VIDEO,
             "webm", ServiceReview.MediaType.VIDEO
     );
@@ -58,6 +57,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         String extension = extractExtension(file.getOriginalFilename());
+        vn.edu.hcmute.uteexpress.util.MediaValidator.validate(file, MAX_FILE_SIZE_BYTES);
         if (!ALLOWED_EXTENSIONS.containsKey(extension)) {
             throw new IllegalStateException(
                     "Chỉ nhận ảnh (jpg, jpeg, png, gif, webp) hoặc video (mp4, webm).");
@@ -83,11 +83,16 @@ public class FileStorageServiceImpl implements FileStorageService {
             throw new IllegalStateException("Không lưu được tệp đính kèm, vui lòng thử lại.", ex);
         }
 
+        vn.edu.hcmute.uteexpress.util.StoredFileLifecycle.removeOnRollback(target);
         return PUBLIC_URL_PREFIX + REVIEW_SUB_FOLDER + "/" + storedName;
     }
 
     @Override
     public ServiceReview.MediaType detectMediaType(MultipartFile file) {
+        return vn.edu.hcmute.uteexpress.util.MediaValidator.validate(file, MAX_FILE_SIZE_BYTES);
+    }
+
+    private ServiceReview.MediaType extensionMediaType(MultipartFile file) {
         String extension = extractExtension(file == null ? null : file.getOriginalFilename());
         ServiceReview.MediaType type = ALLOWED_EXTENSIONS.get(extension);
         if (type == null) {

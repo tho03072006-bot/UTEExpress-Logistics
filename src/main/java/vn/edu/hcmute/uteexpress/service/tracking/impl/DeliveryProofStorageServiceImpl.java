@@ -1,7 +1,5 @@
 package vn.edu.hcmute.uteexpress.service.tracking.impl;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -13,13 +11,13 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofStorageService;
+import vn.edu.hcmute.uteexpress.util.StoredFileLifecycle;
 
 @Service
 public class DeliveryProofStorageServiceImpl
@@ -62,9 +60,10 @@ public class DeliveryProofStorageServiceImpl
                     "Ảnh bằng chứng chỉ nhận JPG, JPEG hoặc PNG.");
         }
 
-        validateImage(proofImage);
+        vn.edu.hcmute.uteexpress.util.MediaValidator.validate(proofImage, MAX_IMAGE_SIZE);
 
         Path target = createTarget(extension);
+        StoredFileLifecycle.removeOnRollback(target);
 
         try {
             try (InputStream input = proofImage.getInputStream()) {
@@ -74,6 +73,7 @@ public class DeliveryProofStorageServiceImpl
                         StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException exception) {
+            StoredFileLifecycle.remove(target);
             throw new IllegalStateException(
                     "Không lưu được ảnh bằng chứng.", exception);
         }
@@ -93,6 +93,10 @@ public class DeliveryProofStorageServiceImpl
 
         byte[] imageBytes;
 
+        if (signatureData.length() - prefix.length() > ((MAX_SIGNATURE_SIZE + 2) / 3) * 4) {
+            throw new IllegalStateException("Chữ ký vượt quá giới hạn dung lượng.");
+        }
+
         try {
             imageBytes = Base64.getDecoder().decode(
                     signatureData.substring(prefix.length()));
@@ -107,13 +111,15 @@ public class DeliveryProofStorageServiceImpl
                     "Chữ ký không hợp lệ hoặc vượt quá 2 MB.");
         }
 
-        validateImageBytes(imageBytes);
+        vn.edu.hcmute.uteexpress.util.MediaValidator.validateImageBytes(imageBytes, "png");
 
         Path target = createTarget("png");
+        StoredFileLifecycle.removeOnRollback(target);
 
         try {
             Files.write(target, imageBytes);
         } catch (IOException exception) {
+            StoredFileLifecycle.remove(target);
             throw new IllegalStateException(
                     "Không lưu được chữ ký.", exception);
         }
@@ -121,32 +127,20 @@ public class DeliveryProofStorageServiceImpl
         return toPublicPath(target);
     }
 
-    private void validateImage(MultipartFile file) {
-        try (InputStream input = file.getInputStream()) {
-            BufferedImage image = ImageIO.read(input);
-
-            if (image == null) {
-                throw new IllegalStateException(
-                        "Tệp đã chọn không phải là ảnh hợp lệ.");
-            }
-        } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "Không đọc được ảnh bằng chứng.", exception);
+    @Override
+    public void deleteStored(String storedPath) {
+        String prefix = PUBLIC_URL_PREFIX + PROOF_FOLDER + "/";
+        if (storedPath == null || !storedPath.startsWith(prefix)) {
+            return;
         }
-    }
-
-    private void validateImageBytes(byte[] imageBytes) {
-        try (ByteArrayInputStream input =
-                     new ByteArrayInputStream(imageBytes)) {
-            BufferedImage image = ImageIO.read(input);
-
-            if (image == null) {
-                throw new IllegalStateException(
-                        "Dữ liệu chữ ký không phải ảnh hợp lệ.");
-            }
-        } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "Không đọc được dữ liệu chữ ký.", exception);
+        String filename = storedPath.substring(prefix.length());
+        if (!filename.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,100}\\.(jpg|jpeg|png)")) {
+            return;
+        }
+        Path folder = uploadRoot.resolve(PROOF_FOLDER).normalize();
+        Path target = folder.resolve(filename).normalize();
+        if (target.startsWith(uploadRoot) && folder.equals(target.getParent())) {
+            StoredFileLifecycle.remove(target);
         }
     }
 

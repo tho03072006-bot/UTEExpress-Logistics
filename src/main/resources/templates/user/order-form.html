@@ -13,6 +13,11 @@
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
 <form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}">
+    <input type="hidden" name="submissionToken" th:value="${submissionToken}">
+    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert">
+        <p class="mb-1">Vui lòng kiểm tra các thông tin sau:</p>
+        <ul class="mb-0"><li th:each="issue : ${#fields.allErrors()}" th:text="${issue}"></li></ul>
+    </div>
     <h5 class="mt-2">Người gửi</h5>
 
     <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
@@ -42,12 +47,12 @@
 
     <div class="mb-3">
         <label class="form-label" for="senderName">Tên người gửi</label>
-        <input type="text" th:field="*{senderName}" class="form-control">
+        <input type="text" th:field="*{senderName}" class="form-control" required maxlength="100" autocomplete="name">
         <div class="text-danger small" th:if="${#fields.hasErrors('senderName')}" th:errors="*{senderName}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="senderAddress">Địa chỉ lấy hàng</label>
-        <input type="text" th:field="*{senderAddress}" class="form-control">
+        <input type="text" th:field="*{senderAddress}" class="form-control" required maxlength="255" autocomplete="street-address">
         <div class="text-danger small" th:if="${#fields.hasErrors('senderAddress')}" th:errors="*{senderAddress}"></div>
     </div>
 
@@ -78,17 +83,17 @@
 
     <div class="mb-3">
         <label class="form-label" for="receiverName">Tên người nhận</label>
-        <input type="text" th:field="*{receiverName}" class="form-control">
+        <input type="text" th:field="*{receiverName}" class="form-control" required maxlength="100">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverName')}" th:errors="*{receiverName}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
-        <input type="text" th:field="*{receiverPhone}" class="form-control">
+        <input type="tel" th:field="*{receiverPhone}" class="form-control" required maxlength="11" pattern="0[0-9]{9,10}" inputmode="tel">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverAddress">Địa chỉ giao hàng</label>
-        <input type="text" th:field="*{receiverAddress}" class="form-control">
+        <input type="text" th:field="*{receiverAddress}" class="form-control" required maxlength="255">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverAddress')}" th:errors="*{receiverAddress}"></div>
     </div>
 
@@ -96,16 +101,17 @@
     <div class="row">
         <div class="col-6 mb-3">
             <label class="form-label" for="weightKg">Khối lượng (kg)</label>
-            <input type="number" step="0.1" th:field="*{weightKg}" class="form-control">
+            <input type="number" step="0.001" min="0.1" max="100" required th:field="*{weightKg}" class="form-control">
             <div class="text-danger small" th:if="${#fields.hasErrors('weightKg')}" th:errors="*{weightKg}"></div>
         </div>
         <div class="col-6 mb-3">
             <label class="form-label" for="serviceType">Dịch vụ</label>
-            <select th:field="*{serviceType}" class="form-select">
+            <select th:field="*{serviceType}" class="form-select" required>
                 <option value="STANDARD">Tiêu chuẩn (15.000đ + 3.000đ/kg)</option>
                 <option value="EXPRESS">Nhanh (25.000đ + 3.000đ/kg)</option>
                 <option value="SUPER_EXPRESS">Hỏa tốc (40.000đ + 3.000đ/kg)</option>
             </select>
+            <div class="text-danger small" th:if="${#fields.hasErrors('serviceType')}" th:errors="*{serviceType}"></div>
         </div>
     </div>
 
@@ -113,7 +119,7 @@
     <div class="mb-4">
         <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
         <input type="text" th:field="*{promoCode}" class="form-control ute-promo-input"
-               placeholder="Ví dụ: UTE10" autocomplete="off">
+               placeholder="Ví dụ: UTE10" autocomplete="off" maxlength="30">
         <div class="form-text">
             Để trống nếu không có mã. Mã sai hoặc hết hạn sẽ được báo ngay khi bấm tạo đơn,
             đơn chưa bị tạo nên bạn sửa lại thoải mái.
@@ -127,15 +133,14 @@
             <input type="radio" th:field="*{paymentMethod}" th:value="${method}" class="form-check-input">
             <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
                 <span th:text="${method.displayName}">-</span>
-                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước, màn hình mô phỏng</span>
+                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước qua MoMo TEST bằng QR hoặc thẻ</span>
                 <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt cho shipper lúc nhận hàng</span>
             </label>
         </div>
         <div class="text-danger small" th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}"></div>
     </div>
     <div class="form-text mb-4">
-        VNPay và MoMo là bản mô phỏng phục vụ đồ án: hệ thống không kết nối cổng thanh toán thật
-        và không phát sinh giao dịch tiền thật.
+        MoMo dùng môi trường TEST, không trừ tiền thật. Cước chỉ được ghi đã thanh toán khi máy chủ xác minh kết quả từ MoMo.
     </div>
 
     <div class="d-flex flex-wrap gap-2">

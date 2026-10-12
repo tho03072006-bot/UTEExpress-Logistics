@@ -5,127 +5,177 @@
     <title>Đơn được phân công - UTEExpress</title>
 </head>
 <body>
-
 <section>
 <div class="ute-page-head">
     <div>
         <h2>Đơn được phân công</h2>
-        <p>Theo dõi các đơn hàng bạn cần lấy và giao cho khách.</p>
+        <p>Tìm điểm lấy hàng, gọi người nhận và xử lý đơn theo từng bước.</p>
     </div>
 </div>
 
-<div th:if="${error}"
-     class="alert alert-danger"
-     th:text="${error}">
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<div th:if="${#lists.isEmpty(orders)}" class="ute-panel text-muted">
+    <i class="bi bi-inbox me-2"></i> Hiện tại bạn chưa được phân công đơn hàng nào.
 </div>
 
-<div th:if="${#lists.isEmpty(orders)}"
-     class="ute-panel text-muted">
-    Hiện tại bạn chưa được phân công đơn hàng nào.
-</div>
+<div th:unless="${#lists.isEmpty(orders)}">
+    <div class="ute-panel mb-3" id="shipperFilters" hidden>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="shipperSearch" class="form-label">Tìm trong các đơn đang hiển thị</label>
+                <input id="shipperSearch" class="form-control" type="search" autocomplete="off"
+                       placeholder="Mã vận đơn, người nhận, số điện thoại hoặc địa chỉ">
+            </div>
+            <div class="col-md-4">
+                <label for="shipperStatus" class="form-label">Trạng thái</label>
+                <select id="shipperStatus" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="PENDING_PICKUP">Chờ lấy hàng</option>
+                    <option value="PICKED_UP">Đã lấy hàng</option>
+                    <option value="IN_TRANSIT">Đang giao</option>
+                    <option value="FAILED">Giao thất bại</option>
+                    <option value="DELIVERED">Giao thành công</option>
+                    <option value="RETURNED">Đã hoàn trả</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" type="button" id="shipperFilterReset">Đặt lại</button>
+            </div>
+        </div>
+        <p id="shipperFilterCount" class="form-text mb-0 mt-3" role="status" aria-live="polite"></p>
+    </div>
+    <div id="shipperFilterEmpty" class="ute-panel mb-3 text-muted" hidden>
+        Không có đơn phù hợp. Hãy thử mã khác hoặc chọn tất cả trạng thái.
+    </div>
 
-<div class="ute-panel ute-panel-flush table-responsive"
-     th:unless="${#lists.isEmpty(orders)}">
-    <table class="table align-middle mb-0">
-        <thead>
-        <tr>
-            <th>Mã vận đơn</th>
-            <th>Điểm lấy hàng</th>
-            <th>Người nhận</th>
-            <th>Địa chỉ giao</th>
-            <th>Dịch vụ</th>
-            <th>Trạng thái</th>
-            <th>Ngày tạo</th>
-            <th>Thao tác</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="order : ${orders}"
-            th:attr="data-tracking-code=${order.trackingCode}">
-            <td>
-                <strong th:text="${order.trackingCode}">
-                    UTE00000000
-                </strong>
-            </td>
-
-            <td>
-                <div th:text="${order.senderName}">Người gửi</div>
-                <small class="text-muted"
-                       th:text="${order.senderAddress}">
-                    Địa chỉ lấy hàng
-                </small>
-            </td>
-
-            <td>
-                <div th:text="${order.receiverName}">Người nhận</div>
-                <small class="text-muted"
-                       th:text="${order.receiverPhone}">
-                    Số điện thoại
-                </small>
-            </td>
-
-            <td th:text="${order.receiverAddress}">
-                Địa chỉ giao hàng
-            </td>
-
-            <td th:text="${order.serviceType}">STANDARD</td>
-
-            <td>
-                <span class="badge"
-                      data-order-status
-                      th:classappend="${'badge-status-'
-                          + #strings.toLowerCase(order.status.name())}">
-                    <th:block th:switch="${order.status.name()}">
-                        <span th:case="'PENDING_PICKUP'">
-                            Chờ lấy hàng
-                        </span>
-                        <span th:case="'PICKED_UP'">
-                            Đã lấy hàng
-                        </span>
-                        <span th:case="'IN_TRANSIT'">
-                            Đang giao
-                        </span>
-                        <span th:case="'DELIVERED'">
-                            Giao thành công
-                        </span>
-                        <span th:case="'FAILED'">
-                            Giao thất bại
-                        </span>
-                        <span th:case="'CANCELLED'">
-                            Đã hủy
-                        </span>
-                        <span th:case="'RETURNED'">
-                            Đã hoàn trả
-                        </span>
-                        <span th:case="*"
-                              th:text="${order.status}">
-                            -
-                        </span>
-                    </th:block>
+    <div class="ute-shipper-cards d-lg-none">
+        <article class="ute-panel ute-shipper-card" th:each="order : ${orders}" data-shipper-order
+                 th:attr="data-tracking-code=${order.trackingCode},data-order-filter-status=${order.status.name()},data-search=${order.trackingCode + ' ' + order.senderName + ' ' + order.senderAddress + ' ' + order.receiverName + ' ' + order.receiverPhone + ' ' + order.receiverAddress}">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <strong th:text="${order.trackingCode}">UTE00000000</strong>
+                <span class="badge" th:attr="data-order-status=${order.status.name()}"
+                      th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}">
+                    <th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block>
                 </span>
-            </td>
-
-            <td th:text="${#temporals.format(
-                    order.createdAt, 'dd/MM/yyyy HH:mm')}">
-                -
-            </td>
-
-            <td>
-                <a class="btn btn-sm btn-outline-primary"
-                   th:href="@{/shipper/don/{id}(id=${order.id})}">
-                    Xem chi tiết
+            </div>
+            <div class="ute-shipper-stop mb-3">
+                <i class="bi bi-box-seam" aria-hidden="true"></i>
+                <div>
+                    <div class="text-muted small">Lấy hàng từ <span th:text="${order.senderName}">Người gửi</span></div>
+                    <div th:text="${order.senderAddress}">Địa chỉ lấy hàng</div>
+                </div>
+            </div>
+            <div class="ute-shipper-stop mb-3">
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                <div>
+                    <div class="fw-semibold" th:text="${order.receiverName}">Người nhận</div>
+                    <div th:text="${order.receiverAddress}">Địa chỉ giao hàng</div>
+                    <small class="text-muted" th:text="${order.receiverPhone}">Số điện thoại</small>
+                </div>
+            </div>
+            <div class="small text-muted mb-3">
+                <th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block>
+                &middot; <span th:text="|${order.weightKg} kg|">0 kg</span>
+            </div>
+            <div class="ute-shipper-card-actions">
+                <a class="btn btn-primary" th:href="@{/shipper/don/{id}(id=${order.id})}" th:switch="${order.status.name()}">
+                    <span th:case="'PENDING_PICKUP'">Lấy hàng · Xem đơn</span>
+                    <span th:case="'PICKED_UP'">Bắt đầu giao · Xem đơn</span>
+                    <span th:case="'IN_TRANSIT'">Giao hàng · Xem đơn</span>
+                    <span th:case="'FAILED'">Giao lại / hoàn trả</span>
+                    <span th:case="*">Xem chi tiết</span>
                 </a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                <a class="btn btn-outline-primary" th:if="${order.receiverPhone != null and !#strings.isEmpty(order.receiverPhone)}"
+                   th:href="|tel:${order.receiverPhone}|" th:attr="aria-label=|Gọi người nhận ${order.receiverName}|">
+                    <i class="bi bi-telephone me-1" aria-hidden="true"></i> Gọi
+                </a>
+            </div>
+        </article>
+    </div>
+
+    <div class="ute-panel ute-panel-flush table-responsive d-none d-lg-block">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">Danh sách đơn hàng được phân công cho bạn</caption>
+            <thead>
+            <tr>
+                <th scope="col">Mã vận đơn</th>
+                <th scope="col">Điểm lấy hàng</th>
+                <th scope="col">Người nhận</th>
+                <th scope="col">Địa chỉ giao</th>
+                <th scope="col">Dịch vụ</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="order : ${orders}" data-shipper-order
+                th:attr="data-tracking-code=${order.trackingCode},data-order-filter-status=${order.status.name()},data-search=${order.trackingCode + ' ' + order.senderName + ' ' + order.senderAddress + ' ' + order.receiverName + ' ' + order.receiverPhone + ' ' + order.receiverAddress}">
+                <td><strong th:text="${order.trackingCode}">UTE00000000</strong></td>
+                <td>
+                    <div th:text="${order.senderName}">Người gửi</div>
+                    <small class="text-muted" th:text="${order.senderAddress}">Địa chỉ lấy hàng</small>
+                </td>
+                <td>
+                    <div th:text="${order.receiverName}">Người nhận</div>
+                    <a class="small" th:href="|tel:${order.receiverPhone}|" th:text="${order.receiverPhone}">Số điện thoại</a>
+                </td>
+                <td th:text="${order.receiverAddress}">Địa chỉ giao hàng</td>
+                <td><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></td>
+                <td>
+                    <span class="badge" th:attr="data-order-status=${order.status.name()}"
+                          th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}">
+                        <th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block>
+                    </span>
+                </td>
+                <td><a class="btn btn-sm btn-outline-primary" th:href="@{/shipper/don/{id}(id=${order.id})}">Xem chi tiết</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
+<script th:inline="none">
+    (function () {
+        var filters = document.getElementById('shipperFilters');
+        if (!filters) return;
+        var search = document.getElementById('shipperSearch');
+        var status = document.getElementById('shipperStatus');
+        var rows = document.querySelectorAll('[data-shipper-order]');
+        var count = document.getElementById('shipperFilterCount');
+        function normalize(value) {
+            return value.toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+        }
+        function filterOrders() {
+            var term = normalize(search.value.trim());
+            var visibleCodes = new Set();
+            var allCodes = new Set();
+            rows.forEach(function (row) {
+                var matches = (!status.value || row.dataset.orderFilterStatus === status.value)
+                    && normalize(row.dataset.search || '').indexOf(term) !== -1;
+                row.hidden = !matches;
+                allCodes.add(row.dataset.trackingCode);
+                if (matches) visibleCodes.add(row.dataset.trackingCode);
+            });
+            count.textContent = 'Đang hiển thị ' + visibleCodes.size + ' / ' + allCodes.size + ' đơn trên trang này.';
+            document.getElementById('shipperFilterEmpty').hidden = visibleCodes.size > 0;
+        }
+        search.addEventListener('input', filterOrders);
+        status.addEventListener('change', filterOrders);
+        document.getElementById('shipperFilterReset').addEventListener('click', function () {
+            search.value = '';
+            status.value = '';
+            filterOrders();
+            search.focus();
+        });
+        document.addEventListener('ute:order-status-change', filterOrders);
+        filters.hidden = false;
+        filterOrders();
+    }());
+</script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:src="@{/js/tracking-realtime.js}"></script>
 </section>
-
 </body>
 </html>

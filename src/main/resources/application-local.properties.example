@@ -19,3 +19,12 @@ spring.mail.username=email_that_cua_ban@gmail.com
 spring.mail.password=app_password_gmail_that_cua_ban
 
 app.jwt.secret=chuoi_bi_mat_that_toi_thieu_32_ky_tu_cua_ban
+
+# MoMo TEST only: obtain sandbox merchant keys from MoMo Developers / approved cinema TEST config.
+# Keep actual keys in ignored application-local.properties or environment variables.
+momo.enabled=false
+momo.endpoint=https://test-payment.momo.vn
+momo.partner-code=CHANGE_ME_TEST_PARTNER_CODE
+momo.access-key=CHANGE_ME_TEST_ACCESS_KEY
+momo.secret-key=CHANGE_ME_TEST_SECRET_KEY
+app.base-url=http://localhost:8080

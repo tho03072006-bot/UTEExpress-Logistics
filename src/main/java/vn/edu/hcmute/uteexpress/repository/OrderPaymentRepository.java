@@ -1,6 +1,10 @@
 package vn.edu.hcmute.uteexpress.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
@@ -11,6 +15,11 @@ import java.util.Optional;
 public interface OrderPaymentRepository extends JpaRepository<OrderPayment, Long> {
 
     Optional<OrderPayment> findByOrder(Order order);
+
+    /** Call after locking the order, keeping a consistent order -> payment lock order. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from OrderPayment p where p.order = :order")
+    Optional<OrderPayment> findByOrderForUpdate(@Param("order") Order order);
 
     /**
      * Lấy một lần toàn bộ thông tin thanh toán các đơn của người dùng, để trang lịch sử đơn

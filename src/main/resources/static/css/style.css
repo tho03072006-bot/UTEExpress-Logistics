@@ -196,6 +196,7 @@ a:hover {
     align-items: center;
     gap: .75rem;
     padding: 0 1.25rem;
+    min-width: 0;
 }
 .ute-brand {
     color: #fff;
@@ -205,6 +206,8 @@ a:hover {
     display: flex;
     align-items: center;
     gap: .5rem;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .ute-brand:hover {
     color: #fff;
@@ -221,6 +224,8 @@ a:hover {
     display: flex;
     align-items: center;
     gap: .75rem;
+    min-width: 0;
+    flex-shrink: 0;
 }
 .ute-topbar-link {
     color: rgba(255, 255, 255, .9);
@@ -240,6 +245,13 @@ a:hover {
     background: rgba(255, 255, 255, .15);
     padding: .25rem .7rem;
     border-radius: 999px;
+    max-width: 11rem;
+    min-width: 0;
+}
+.ute-user-chip > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .ute-btn-ghost {
     color: #fff;
@@ -296,7 +308,22 @@ a:hover {
     overflow-y: auto;
 }
 .ute-sidebar-offcanvas {
-    width: var(--ute-sidebar-width);
+    --bs-offcanvas-width: min(320px, 88vw);
+    --bs-offcanvas-bg: var(--ute-card);
+    --bs-offcanvas-color: var(--ute-ink);
+    width: var(--bs-offcanvas-width);
+}
+.ute-mobile-account {
+    overflow-wrap: anywhere;
+    color: var(--ute-ink);
+}
+:root[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+.modal-content {
+    background: var(--ute-card);
+    color: var(--ute-ink);
+    border-color: var(--ute-border);
 }
 .ute-nav {
     padding: 1rem .75rem;
@@ -862,6 +889,67 @@ a:hover {
     font-weight: 500;
     color: var(--ute-blue-dark);
 }
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--ute-blue-dark);
+    scroll-margin-top: calc(var(--ute-topbar-height) + 1rem);
+}
+.form-control.is-invalid {
+    background-image: none;
+}
+.form-select.is-invalid {
+    --bs-form-select-bg-icon: none;
+}
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    border-color: var(--ute-blue-dark);
+    box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .2);
+}
+.ute-form-errors a {
+    color: var(--ute-ink);
+    text-decoration: underline;
+}
+.ute-form-errors li + li {
+    margin-top: .35rem;
+}
+.ute-field-error.text-danger {
+    color: var(--ute-blue-dark) !important;
+}
+
+/* Thẻ thao tác cho shipper: trạng thái và nút xử lý nằm ngay trong tầm nhìn. */
+.ute-shipper-cards {
+    display: grid;
+    gap: 1rem;
+}
+.ute-shipper-card {
+    overflow-wrap: anywhere;
+}
+.ute-shipper-stop {
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+}
+.ute-shipper-stop > i {
+    flex-shrink: 0;
+    color: var(--ute-blue-dark);
+    margin-top: .1rem;
+}
+.ute-shipper-card-actions {
+    display: flex;
+    gap: .5rem;
+}
+.ute-shipper-card-actions .btn-primary {
+    flex: 1;
+}
+.ute-shipper-card-actions .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+[data-shipper-order][hidden] {
+    display: none !important;
+}
 
 /* ===================== Chuyen dong (TV1) =====================
    Nguyen tac: chuyen dong chi de dan mat nguoi dung, khong de trang tri. Moi hieu ung
@@ -968,6 +1056,18 @@ a:hover {
     }
     .ute-topbar-nav {
         gap: .5rem;
+    }
+    .hero-ute {
+        padding: 1.5rem !important;
+    }
+    .ute-order-actions form,
+    .ute-order-actions form .btn,
+    #deliveryProofForm > button[type="submit"] {
+        width: 100%;
+    }
+    .ute-order-actions .btn,
+    #deliveryProofForm > button[type="submit"] {
+        min-height: 44px;
     }
 }
 
