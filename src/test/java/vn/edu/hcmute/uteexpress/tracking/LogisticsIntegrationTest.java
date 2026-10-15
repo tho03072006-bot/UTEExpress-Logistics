@@ -445,10 +445,18 @@ class LogisticsIntegrationTest {
         assertEquals(1, result.deliveredOrders()); assertEquals(0, result.legacyOrders());
         assertEquals(1, result.days().get(0).delivered());
         assertEquals(0, result.days().get(0).collectedCod().compareTo(new BigDecimal("12000")));
-        mvc.perform(get("/shipper/thong-ke").param("from", yesterday.toString()).param("to", yesterday.toString())
+        // Biểu đồ theo ngày chỉ hiện khi kỳ có từ 2 ngày trở lên.
+        mvc.perform(get("/shipper/thong-ke").param("from", yesterday.minusDays(1).toString()).param("to", yesterday.toString())
                 .with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("12.000 đ")))
-            .andExpect(content().string(containsString("shipper-chart-day")));
+            .andExpect(content().string(containsString("shipper-chart-day")))
+            .andExpect(content().string(containsString("sx-donut")))
+            .andExpect(content().string(containsString("Cước COD thu theo ngày")));
+        // Kỳ một ngày: biểu đồ theo ngày chỉ có một điểm nên được ẩn, vẫn giữ biểu đồ tròn.
+        mvc.perform(get("/shipper/thong-ke").param("from", yesterday.toString()).param("to", yesterday.toString())
+                .with(user(shipper.getUsername()).roles("SHIPPER")))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("sx-donut")))
+            .andExpect(content().string(not(containsString("data-line-chart"))));
     }
 
     @Test void retryStatisticsCountEventsButSummaryCountsEachOrderOnceAndPreservesActor() {

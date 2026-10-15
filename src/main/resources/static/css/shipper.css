@@ -242,7 +242,6 @@ body:has(.sx-bulkbar:not([hidden])) .ute-main { padding-bottom: 7rem; }
 .sx-selectall input { width: 1.05rem; height: 1.05rem; accent-color: var(--sx-blue); }
 
 /* ---------- Lộ trình ---------- */
-.sx-route-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
 .sx-legs { display: flex; flex-wrap: wrap; gap: .75rem; }
 .sx-leg { display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem; border-radius: .9rem; text-decoration: none; color: #fff; background: linear-gradient(120deg, var(--sx-blue), var(--sx-indigo)); box-shadow: 0 8px 20px rgba(0, 114, 188, .28); font-weight: 600; transition: transform .15s ease; }
 .sx-leg:nth-child(3n+2) { background: linear-gradient(120deg, var(--sx-teal), var(--sx-cyan)); }
@@ -318,7 +317,6 @@ body:has(.sx-bulkbar:not([hidden])) .ute-main { padding-bottom: 7rem; }
 /* ---------- Màn hình nhỏ ---------- */
 @media (max-width: 1199px) {
     .sx-metrics-5 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-    .sx-route-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 991px) {
     .sx-cod-grid { grid-template-columns: minmax(0, 1fr); }
@@ -480,3 +478,105 @@ body:has(.shipper-workspace) .ute-main {
 @media (max-width: 991px) { .sx-stats-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 480px) { .sx-donut { flex-basis: 140px; width: 140px; } .sx-donut::before { inset: 20px; } }
 .sx-chart-peak { fill: var(--tone); stroke: var(--ute-card); stroke-width: 2.5; }
+
+/* ---------- QR vận đơn thu gọn (trang chi tiết đơn) ---------- */
+details.shipper-qr-card > summary { color: var(--tone-ink, var(--sx-blue-ink)); font-weight: 700; cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem; }
+details.shipper-qr-card > summary::-webkit-details-marker { display: none; }
+details.shipper-qr-card > summary::after { content: '\F282'; font-family: 'bootstrap-icons'; margin-left: auto; transition: transform .2s ease; }
+details.shipper-qr-card[open] > summary::after { transform: rotate(180deg); }
+
+/* ---------- Trang chủ Shipper gọn hơn ---------- */
+a.sx-hero-chip { text-decoration: none; transition: background .15s ease; }
+a.sx-hero-chip:hover { background: rgba(255,255,255,.28); color: #fff; }
+.sx-hero-chip.sx-chip-alert { background: rgba(244, 63, 94, .35); border-color: rgba(255, 255, 255, .5); }
+/* Khung "Tìm đơn" thu gọn chỉ còn một dòng mảnh */
+.shipper-workspace .shipper-filters { padding-top: .75rem; padding-bottom: .75rem; }
+.shipper-workspace .shipper-filters > summary { list-style: none; display: flex; align-items: center; gap: .5rem; color: var(--sx-blue-ink); font-weight: 700; }
+.shipper-workspace .shipper-filters > summary::-webkit-details-marker { display: none; }
+.shipper-workspace .shipper-filters > summary::after { content: '\F282'; font-family: 'bootstrap-icons'; margin-left: auto; transition: transform .2s ease; }
+.shipper-workspace .shipper-filters[open] > summary::after { transform: rotate(180deg); }
+/* Hàng nút trạng thái: xuống dòng trên màn hình rộng, vuốt ngang (ẩn thanh cuộn) trên điện thoại */
+.shipper-workspace .shipper-status-tabs { scrollbar-width: none; }
+.shipper-workspace .shipper-status-tabs::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) {
+    .shipper-workspace .shipper-status-tabs { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+}
+/* Bảng đơn COD: mã vận đơn, giờ thu và số tiền không bị ngắt dòng */
+.sx-cod-table td:nth-child(2), .sx-cod-table td:nth-child(4), .sx-cod-table td:last-child { white-space: nowrap; }
+.sx-cod-table td:nth-child(4) { font-size: .82rem; color: var(--ute-gray); }
+/* Màn hình vừa: bảng COD rộng hết khung, phiếu nộp tiền xuống dưới (đủ chỗ cho cột số tiền) */
+@media (max-width: 1199px) { .sx-cod-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ==========================================================================
+   Giao diện gọn, màu thống nhất (15/10/2026)
+   - Panel và thẻ số liệu: màu thương hiệu (#0072BC / #075985), cùng một phong cách.
+   - Biểu đồ: tím nhẹ. Xanh lá / cam / đỏ chỉ ở nhãn trạng thái và viền trạng thái thẻ đơn.
+   - Trang chủ: khối chào thấp, danh sách đơn lên cao (1366×768 thấy ngay đầu danh sách).
+   ========================================================================== */
+.shipper-workspace .ute-panel, .shipper-workspace .shipper-metric { --tone: var(--sx-blue); --tone-soft: var(--sx-blue-soft); --tone-ink: var(--sx-blue-ink); }
+.shipper-workspace .ute-panel.sx-chart-panel { --tone: var(--sx-violet); --tone-soft: var(--sx-violet-soft); --tone-ink: var(--sx-violet-ink); }
+.shipper-workspace .shipper-metric > strong { color: var(--ute-ink); }
+:root[data-theme="dark"] .shipper-workspace .shipper-metric > strong { color: var(--ute-ink); }
+.shipper-workspace .shipper-cod-total { border-top-color: var(--sx-blue); background: var(--ute-card); }
+.shipper-workspace .shipper-cod-total > i { background: var(--sx-blue); }
+.shipper-workspace .shipper-cod-total > div > strong { color: var(--sx-blue-ink); }
+
+/* Khối chào gọn: tiêu đề + một hàng (ngày, đến hẹn, nút) + hình nhỏ */
+.shipper-workspace .shipper-hero.sx-hero-compact { padding: 1rem 1.25rem; margin-bottom: 1rem; gap: .75rem; }
+.shipper-workspace .sx-hero-compact h2 { font-size: 1.35rem; margin: 0 0 .6rem; }
+.sx-hero-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.sx-hero-compact .sx-hero-main .shipper-hero-actions { margin: 0 0 0 .25rem; display: inline-flex; gap: .5rem; }
+.sx-hero-compact .shipper-hero-actions .btn { min-height: 36px; }
+.sx-hero-compact .sx-hero-art { width: 130px; margin: -.6rem -.25rem -.9rem 0; animation: none; }
+@media (max-width: 767px) {
+    .sx-hero-compact .sx-hero-main .shipper-hero-actions { margin: .25rem 0 0; width: 100%; }
+    .sx-hero-compact .shipper-hero-actions .btn { flex: 1 1 0; min-height: 42px; }
+}
+
+/* Ô số liệu gọn */
+.shipper-workspace .sx-metrics-compact { gap: .75rem; margin-bottom: 1rem; }
+.shipper-workspace .sx-metrics-compact .shipper-metric { padding: .75rem .9rem; row-gap: .15rem; }
+.shipper-workspace .sx-metrics-compact .shipper-metric > strong { font-size: 1.45rem; }
+.shipper-workspace .sx-metrics-compact .shipper-metric > i { width: 2.2rem; height: 2.2rem; font-size: 1.05rem; }
+.shipper-workspace .sx-metrics-compact .shipper-metric > span { font-size: .78rem; }
+
+/* Chọn công việc + "Tìm đơn" chung một hàng */
+.sx-toolbar { display: flex; flex-wrap: wrap; align-items: stretch; gap: .75rem; margin-bottom: .5rem; }
+.sx-toolbar .shipper-work-switch { margin: 0; }
+.sx-toolbar .shipper-filters { flex: 1 1 220px; margin: 0; padding: .7rem 1rem; }
+.sx-toolbar .shipper-filters[open] { flex-basis: 100%; }
+.shipper-workspace .shipper-status-tabs { margin: .25rem 0 .75rem; }
+.shipper-workspace .shipper-list-heading { margin-bottom: .75rem; }
+.shipper-workspace .shipper-list-heading h3 { font-size: 1.1rem; }
+
+/* Thẻ đơn: dễ đọc, thao tác nhanh */
+.shipper-workspace .shipper-order-card { padding: 1rem 1.1rem; gap: .65rem; }
+.sx-card-title { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .45rem; min-width: 0; }
+.shipper-workspace .shipper-order-card .shipper-retry { margin: 0; }
+.shipper-workspace .shipper-card-money { background: var(--sx-blue-soft); border: 0; padding: .6rem .85rem; }
+.shipper-workspace .shipper-card-money > strong { color: var(--sx-blue-ink); font-size: 1.15rem; }
+.shipper-workspace .shipper-card-money small { color: var(--ute-gray); font-weight: 500; }
+.shipper-workspace .shipper-card-money.sx-paid { background: var(--sx-green-soft); }
+.shipper-workspace .shipper-route > div:first-child > i, .shipper-workspace .shipper-route > div + div > i { background: var(--sx-blue-soft); color: var(--sx-blue); }
+.shipper-workspace .shipper-order-card .shipper-route > div { padding: .35rem 0; }
+.shipper-workspace .shipper-order-card .shipper-route:not(.shipper-route-detail) > div:first-child > i::after { display: none; }
+/* Địa chỉ dài tối đa hai dòng; xem đầy đủ trong chi tiết đơn (hoặc rê chuột) */
+.shipper-workspace .shipper-order-card .shipper-route p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.shipper-workspace .shipper-order-card .shipper-card-meta { padding: 0; font-size: .74rem; }
+/* Gọi / Chỉ đường là nút phụ cùng hàng; "Xem chi tiết" là nút chính chiếm cả hàng */
+.shipper-workspace .shipper-card-actions { padding-top: .1rem; margin-top: auto; gap: .5rem; }
+.shipper-workspace .shipper-card-actions .btn-outline-secondary { flex: 1 1 0; min-height: 40px; }
+.shipper-workspace .shipper-card-actions .btn-primary { flex: 1 1 100%; min-height: 42px; font-size: .85rem; font-weight: 700; }
+.sx-stats-empty > i { display: block; font-size: 2.4rem; color: var(--sx-violet); margin-bottom: .35rem; }
+/* Nút chọn công việc: màu thương hiệu thuần; điện thoại chia 3 ô đều nhau trên một hàng */
+.shipper-workspace .shipper-work-switch a.active { background: var(--sx-blue); box-shadow: 0 4px 12px rgba(0, 114, 188, .25); }
+@media (max-width: 575px) {
+    .sx-toolbar .shipper-work-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+    .sx-toolbar .shipper-work-switch a { justify-content: center; padding: .6rem .35rem; font-size: .8rem; min-height: 42px; }
+}
+@media (max-width: 575px) { .sx-toolbar .shipper-work-switch a > i { display: none; } }
+/* Nút phụ trên thẻ đơn dùng màu thương hiệu (xanh lá/đỏ để dành cho trạng thái) */
+.shipper-workspace .shipper-card-actions .sx-btn-call, .shipper-workspace .shipper-card-actions .sx-btn-map,
+.shipper-workspace .sx-task-actions .sx-btn-call, .shipper-workspace .sx-task-actions .sx-btn-map { color: var(--sx-blue-ink); border-color: var(--ute-border); background: var(--ute-card); }
+.shipper-workspace .shipper-card-actions .sx-btn-call:hover, .shipper-workspace .shipper-card-actions .sx-btn-map:hover,
+.shipper-workspace .sx-task-actions .sx-btn-call:hover, .shipper-workspace .sx-task-actions .sx-btn-map:hover { background: var(--sx-blue-soft); border-color: var(--sx-blue); color: var(--sx-blue-ink); }

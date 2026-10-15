@@ -181,3 +181,63 @@
     .ute-stat, .ute-quick { transition: none; }
     .ute-stat:hover, .ute-quick:hover { transform: none; }
 }
+
+/* ==========================================================================
+   Bảng màu thống nhất (15/10/2026)
+   Thương hiệu #0072BC, điểm nhấn #075985, nền #F6F8FC, thẻ #FFFFFF, chữ #0F172A,
+   chữ phụ #64748B, viền #E2E8F0. Tím nhẹ chỉ dùng cho minh họa và biểu đồ; xanh lá,
+   cam, đỏ dành cho nhãn trạng thái. Chế độ tối giữ giá trị riêng ở style.css/shipper.css
+   (bộ chọn :root[data-theme="dark"] mạnh hơn nên vẫn thắng các giá trị dưới đây).
+   ========================================================================== */
+:root {
+    --ute-blue: #0072BC;
+    --ute-blue-dark: #075985;
+    --ute-blue-soft: #E8F2FA;
+    --ute-surface: #F6F8FC;
+    --ute-card: #FFFFFF;
+    --ute-ink: #0F172A;
+    --ute-gray: #64748B;
+    --ute-gray-soft: #F1F5F9;
+    --ute-border: #E2E8F0;
+    --ute-radius: .75rem;
+    --ute-radius-lg: 1rem;
+    --ute-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 14px rgba(15, 23, 42, .06);
+    --sx-blue-ink: #075985;
+    --sx-card-glow: 0 8px 24px rgba(15, 23, 42, .08);
+    --sx-hero: linear-gradient(120deg, #075985 0%, #0072BC 58%, #2A8FD4 100%);
+}
+:root[data-theme="dark"] { --ute-radius-lg: 1rem; }
+body.ute-body { background: var(--ute-surface); color: var(--ute-ink); }
+
+/* Thẻ số liệu toàn site cùng một phong cách: nền thẻ, biểu tượng màu thương hiệu */
+.ute-stat { --tone: var(--ute-blue); --tone-soft: var(--ute-blue-soft); --tone-ink: var(--ute-ink); border-top-color: var(--ute-blue); }
+
+/* ---------- Thanh trên: thẳng hàng với nội dung, nút dễ bấm ---------- */
+.ute-topbar .btn, .ute-topbar .sx-bell { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; white-space: nowrap; }
+.ute-topbar .ute-theme-toggle, .ute-topbar .sx-bell { min-width: 38px; }
+.ute-logout i { font-size: 1rem; }
+@media (min-width: 992px) {
+    /* Logo thẳng với thẻ hồ sơ ở menu trái, nút bên phải thẳng với mép phải nội dung */
+    .ute-topbar-with-sidebar .ute-topbar-inner { padding-left: .75rem; padding-right: 1.25rem; }
+}
+@media (max-width: 575.98px) {
+    .ute-topbar .btn, .ute-topbar .sx-bell { min-height: 40px; min-width: 40px; padding: .25rem .55rem; }
+}
+
+/* ---------- Menu trái: mục đang mở nổi bật, mục dễ bấm trên điện thoại ---------- */
+.ute-nav .sx-nav { --tone: var(--ute-blue); --tone-soft: var(--ute-blue-soft); }
+.ute-nav-link { min-height: 44px; }
+.ute-nav-link.active { background: var(--ute-blue); color: #FFFFFF; border-left-color: var(--ute-blue-dark); box-shadow: 0 6px 16px rgba(0, 114, 188, .25); }
+.ute-nav-link.active:hover { background: var(--ute-blue-dark); color: #FFFFFF; }
+.ute-nav-link.active i, .ute-nav .sx-nav.active i { background: rgba(255, 255, 255, .2); color: #FFFFFF; }
+:root[data-theme="dark"] .ute-nav-link.active { color: #FFFFFF; }
+
+/* ---------- Nút đang xử lý: vòng quay nhỏ, khóa bấm lại ---------- */
+.btn.sx-busy { pointer-events: none; opacity: .8; }
+.btn.sx-busy::before {
+    content: ''; display: inline-block; width: .9em; height: .9em; margin-right: .45rem; vertical-align: -.1em;
+    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sx-spin .7s linear infinite;
+}
+.btn.sx-busy > i { display: none; }
+@keyframes sx-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn.sx-busy::before { animation-duration: 2s; } }

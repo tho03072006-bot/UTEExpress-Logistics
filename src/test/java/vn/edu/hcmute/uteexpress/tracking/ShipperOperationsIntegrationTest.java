@@ -216,6 +216,16 @@ class ShipperOperationsIntegrationTest {
             }
         }
         assertEquals("Phố cổ Hà Nội", vn.edu.hcmute.uteexpress.service.tracking.ShipperRouteServiceTestAccess.clean(" Phố |cổ\n Hà   Nội "));
+        // Điện thoại: Google Maps trên trình duyệt chỉ nhận 3 điểm dừng giữa đường -> mỗi chặng tối đa 4 điểm, nối liền nhau.
+        var mobile = vn.edu.hcmute.uteexpress.service.tracking.ShipperRouteServiceTestAccess.mobileLegs(stops);
+        assertEquals(6, mobile.size(), "23 điểm chia 4 điểm mỗi chặng");
+        assertEquals(23, mobile.get(mobile.size() - 1).toStop());
+        for (int i = 0; i < mobile.size(); i++) {
+            var leg = mobile.get(i);
+            assertTrue(leg.toStop() - leg.fromStop() + 1 <= 4, "tối đa 4 điểm mỗi chặng trên điện thoại");
+            assertTrue(leg.url().split("%7C", -1).length <= 3, "tối đa 3 điểm dừng giữa đường");
+            if (i > 0) assertEquals(mobile.get(i - 1).toStop() + 1, leg.fromStop());
+        }
     }
 
     /* ===================== Cập nhật hàng loạt ===================== */
@@ -433,10 +443,16 @@ class ShipperOperationsIntegrationTest {
             .andExpect(content().string(not(containsString("Phụ phí khoảng cách</span>"))));
         mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("serviceType", "TELEPORT").accept("text/html"))
             .andExpect(status().isOk()).andExpect(content().string(containsString("Loại dịch vụ không hợp lệ")));
-        mvc.perform(get("/shipper/thong-ke").with(user(shipper.getUsername()).roles("SHIPPER")))
+        mvc.perform(get("/shipper/thong-ke").param("period", "WEEK").with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("sx-donut")))
             .andExpect(content().string(containsString("data-stats-days")))
             .andExpect(content().string(containsString("Cước COD thu theo ngày")));
+        // Khoảng ngày không có hoạt động: báo ngắn kèm khoảng ngày thay cho biểu đồ trống.
+        mvc.perform(get("/shipper/thong-ke").param("from", "2001-01-01").param("to", "2001-01-07")
+                .with(user(shipper.getUsername()).roles("SHIPPER")))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Chưa có dữ liệu")))
+            .andExpect(content().string(containsString("Không có hoạt động giao nhận từ 01/01/2001 đến 07/01/2001")))
+            .andExpect(content().string(not(containsString("sx-donut"))));
     }
 
     /* ===================== Dữ liệu thử ===================== */

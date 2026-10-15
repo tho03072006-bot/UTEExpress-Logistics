@@ -226,6 +226,12 @@
             formDangCho = null;
             form.dataset.uteConfirmed = 'true';
             dialog.hide();
+            // Khoa nut gui va hien trang thai dang xu ly, tranh bam lai gui trung.
+            form.dataset.sxSubmitting = 'true';
+            form.querySelectorAll('button[type=submit], button:not([type])').forEach(function (button) {
+                button.disabled = true;
+                button.classList.add('sx-busy');
+            });
             form.submit();
         });
 
@@ -310,3 +316,21 @@
         }
     });
 })();
+
+/*
+ * Quay lai trang bang nut Back (trinh duyet lay trang tu bo nho dem): mo khoa cac nut
+ * dang o trang thai "dang xu ly" va hoi lai xac nhan o lan gui sau.
+ */
+window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) {
+        return;
+    }
+    document.querySelectorAll('form[data-sx-submitting]').forEach(function (form) {
+        delete form.dataset.sxSubmitting;
+        delete form.dataset.uteConfirmed;
+        form.querySelectorAll('.sx-busy').forEach(function (button) {
+            button.disabled = false;
+            button.classList.remove('sx-busy');
+        });
+    });
+});
