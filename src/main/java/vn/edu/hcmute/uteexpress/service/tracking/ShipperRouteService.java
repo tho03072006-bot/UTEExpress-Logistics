@@ -22,8 +22,9 @@ import vn.edu.hcmute.uteexpress.repository.*;
 public class ShipperRouteService {
     static final int MAX_ORDERS = 60;
     static final int MAX_STOPS_PER_LEG = 10;
+    /** Google Maps trên trình duyệt điện thoại nhận tối đa 3 điểm dừng giữa đường (+ điểm đến). */
+    static final int MAX_STOPS_PER_MOBILE_LEG = 4;
     static final int MAX_URL_LENGTH = 2000;
-    private static final String MAPS = "https://www.google.com/maps/dir/?api=1&travelmode=driving";
     private final LogisticsAccess access;
     private final OrderRepository orders;
     private final OrderStatusHistoryRepository history;
@@ -59,21 +60,23 @@ public class ShipperRouteService {
             labels.putIfAbsent(key, address);
             grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(new ShipperRoute.Task(order.getId(), order.getTrackingCode(),
                     pickup, pickup ? order.getSenderName() : order.getReceiverName(),
-                    pickup ? null : order.getReceiverPhone(), due.contains(order.getId())));
+                    pickup ? order.getSender().getPhone() : order.getReceiverPhone(), due.contains(order.getId())));
         }
         List<ShipperRoute.Stop> stops = new ArrayList<>();
         grouped.forEach((key, tasks) -> stops.add(new ShipperRoute.Stop(stops.size() + 1, labels.get(key), List.copyOf(tasks))));
         int taskCount = stops.stream().mapToInt(stop -> stop.tasks().size()).sum();
-        return new ShipperRoute(List.copyOf(stops), legs(stops), taskCount, missing, page.getTotalElements() > MAX_ORDERS);
+        return new ShipperRoute(List.copyOf(stops), legs(stops), legs(stops, MAX_STOPS_PER_MOBILE_LEG), taskCount, missing, page.getTotalElements() > MAX_ORDERS);
     }
 
-    static List<ShipperRoute.Leg> legs(List<ShipperRoute.Stop> stops) {
+    static List<ShipperRoute.Leg> legs(List<ShipperRoute.Stop> stops) { return legs(stops, MAX_STOPS_PER_LEG); }
+
+    static List<ShipperRoute.Leg> legs(List<ShipperRoute.Stop> stops, int maxStops) {
         List<ShipperRoute.Leg> legs = new ArrayList<>();
         int start = 0;
         String origin = null;
         while (start < stops.size()) {
             int end = start + 1;
-            while (end < stops.size() && end - start < MAX_STOPS_PER_LEG
+            while (end < stops.size() && end - start < maxStops
                     && url(origin, stops.subList(start, end + 1)).length() <= MAX_URL_LENGTH) end++;
             var chunk = stops.subList(start, end);
             legs.add(new ShipperRoute.Leg(legs.size() + 1, chunk.get(0).number(), chunk.get(chunk.size() - 1).number(),
@@ -85,11 +88,11 @@ public class ShipperRouteService {
     }
 
     static String url(String origin, List<ShipperRoute.Stop> chunk) {
-        var url = new StringBuilder(MAPS);
-        if (origin != null) url.append("&origin=").append(encode(origin));
-        url.append("&destination=").append(encode(chunk.get(chunk.size() - 1).address()));
+        var url = new StringBuilder(ShipperMaps.DIRECTIONS);
+        if (origin != null) url.append("&origin=").append(encode(ShipperMaps.place(origin)));
+        url.append("&destination=").append(encode(ShipperMaps.place(chunk.get(chunk.size() - 1).address())));
         if (chunk.size() > 1) url.append("&waypoints=").append(encode(String.join("|",
-                chunk.subList(0, chunk.size() - 1).stream().map(ShipperRoute.Stop::address).toList())));
+                chunk.subList(0, chunk.size() - 1).stream().map(stop -> ShipperMaps.place(stop.address())).toList())));
         return url.toString();
     }
 

@@ -184,3 +184,30 @@ Thêm 35 hình SVG mới (cùng phong cách, `static/images/shipper/`) để m�
 - Trang công khai: tra cứu `track-radar` + khung quét `qr-phone` + không tìm thấy `not-found`; ước tính cước `fee-scale`; thẻ "Dịch vụ" ở trang chủ `service-types` (trang chủ giữ `hero-delivery`).
 - Shipper/Manager: trang chủ Shipper `shipper-van`; đối soát COD của Manager `manager-safe`; ô trống: đối soát `empty-wallet`, thông báo `empty-bell`, lộ trình `empty-route`.
 - Tiêu đề trang (`theme.css`, lớp mới): `sx-art-mascot/create/journey/support/complaint/mail/orders/warehouse/receipt/address/house/dispatch/cart/pay/monitor/review/team/server/password/profile`. Lớp cũ (`track/route/cod/stats/bell/lock`) vẫn giữ cho trang mới sau này.
+
+## Chỉ đường đúng và giao diện gọn (15/10/2026)
+
+- **Chỉ đường**: mọi nút dùng chung `ShipperMaps` (`${@maps.to(địa chỉ)}`): `travelmode=driving` (chỉ đường bộ, không hiện máy bay/xe khách/tàu; Google chưa hỗ trợ chế độ xe máy ở Việt Nam), `dir_action=navigate` (điện thoại mở thẳng dẫn đường), địa chỉ luôn kèm ", Việt Nam". Lộ trình nhiều điểm cũng thêm quốc gia cho từng điểm.
+- **Đúng người, đúng chặng**: chờ lấy hàng thì gọi/chỉ đường tới **người gửi**; đã lấy, đang giao, giao thất bại thì tới **người nhận**; đơn đã xong chỉ còn nút "Xem chi tiết". Điểm lấy hàng trên trang Lộ trình có nút Gọi người gửi.
+- **Bỏ phần thừa**: trang Lộ trình bỏ 4 thẻ số liệu và khung "Chặng Google Maps" (chỉ hiện khi phải chia nhiều chặng), nút chính "Bắt đầu chỉ đường"; trang chi tiết đơn ẩn khung bằng chứng khi chưa giao, ẩn khung khiếu nại khi không có, thu gọn QR vận đơn.
+- Sửa bộ lọc trang chủ Shipper bị tràn gây cuộn ngang ở màn hình ~1000px.
+- Kiểm tra: 215 test, 0 lỗi (thêm `ShipperMapsTest`).
+
+## Dọn ghi chú thừa, giao diện gọn hơn (15/10/2026)
+
+- **Bỏ ghi chú không cần thiết** ở khu vực Shipper: dòng "Cước cần thu là…", giải thích dưới thanh chọn công việc, "Kiểm tra gói hàng…", "Gọi người nhận…", "Tối đa 3 lần…", "Giờ Việt Nam, sau hiện tại…", "Ảnh và chữ ký chỉ được xem…", "Manager xác nhận khi…", "Mặc định bằng tổng cước…", ghi chú biểu đồ thống kê, "Tối đa 92 ngày"… Giữ lại các thông báo trạng thái và giới hạn tệp (JPG/PNG, tối đa 5 MB).
+- **Trang chủ Shipper**: 4 ô số liệu đều một hàng (bỏ ô "Đến hẹn" vì đã có ở tab và nhãn đầu trang; bỏ nhãn COD trùng); bỏ nút "Nộp tiền COD" trùng menu; khung "Tìm đơn" thu thành một dòng (tự mở khi đang lọc), bỏ ô Trạng thái trùng với hàng nút trạng thái; hàng nút trạng thái xuống dòng thay vì thanh cuộn.
+- **Thống kê**: bỏ nút "Nộp tiền COD" trùng; kỳ một ngày ẩn biểu đồ đường/biểu đồ theo ngày (chỉ có một điểm); biểu đồ vẽ đúng bề rộng khung nên chữ trên trục đọc rõ, nhãn "Cao nhất" luôn nằm trên đỉnh.
+- **Đối soát COD**: mã vận đơn/giờ/số tiền không ngắt dòng; màn hình dưới 1200px bảng rộng hết khung, phiếu nộp tiền xuống dưới.
+- Kiểm tra: 215 test, 0 lỗi (cập nhật 2 test thống kê theo hành vi mới).
+
+## Giao diện gọn, màu thống nhất, điện thoại (15/10/2026)
+
+- **Bảng màu** (`theme.css`, áp dụng toàn site): thương hiệu #0072BC, điểm nhấn #075985, nền #F6F8FC, thẻ #FFFFFF, chữ #0F172A / #64748B, viền #E2E8F0. Thẻ số liệu và panel Shipper cùng một kiểu màu thương hiệu; tím nhẹ cho biểu đồ; xanh lá/cam/đỏ chỉ ở nhãn trạng thái. Chế độ tối giữ giá trị riêng.
+- **Thanh trên / menu**: nút Đăng xuất có biểu tượng (điện thoại chỉ hiện biểu tượng, có nhãn cho trình đọc màn hình); logo thẳng với menu trái, nút phải thẳng với mép nội dung; mục menu đang mở nền xanh đậm; nút cao ≥ 40–44px trên điện thoại.
+- **Trang chủ Shipper**: khối chào thấp (tiêu đề + một hàng ngày/đến hẹn/Lộ trình/Quét QR, hình nhỏ), ô số liệu gọn, "Chọn công việc" và "Tìm đơn" chung một hàng → ở 1366×768 và 1024×768 thấy ngay đầu danh sách đơn.
+- **Thẻ đơn**: mã đơn + dịch vụ nhanh + trạng thái → lịch hẹn → tiền cần thu → địa chỉ tối đa 2 dòng → thông tin phụ → nút. "Xem chi tiết" là nút chính cả hàng; Gọi/Chỉ đường là nút phụ màu thương hiệu, đúng người theo trạng thái.
+- **Thống kê**: biểu đồ tím, kỳ dài (> 14 ngày) bỏ vòng tròn ở giá trị 0, trục tiền ghi "k đ / tr đ", nhãn đỉnh rõ; khoảng ngày không có hoạt động hiện "Chưa có dữ liệu" kèm khoảng ngày.
+- **Lộ trình trên điện thoại**: `ShipperRoute.mobileLegs` chia chặng tối đa 4 điểm (Google Maps trên trình duyệt điện thoại chỉ nhận 3 điểm dừng giữa đường); máy tính vẫn 10 điểm.
+- **Chống gửi trùng**: form có hộp xác nhận nay cũng khóa nút và hiện vòng quay "đang xử lý" sau khi bấm Đồng ý; quay lại bằng nút Back thì mở khóa.
+- Đã kiểm tra 360/390/768/1024/1366px (không cuộn ngang; thẻ đơn 1 cột trên điện thoại, 2 cột từ 768px), sáng và tối. 215 test, 0 lỗi.

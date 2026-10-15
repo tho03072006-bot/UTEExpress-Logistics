@@ -26,8 +26,8 @@
     <aside><form class="ute-panel sx-tone-violet" method="post" enctype="multipart/form-data" th:action="@{/shipper/quet-ma}" data-sx-once>
         <span class="shipper-eyebrow">TỪ ẢNH CÓ SẴN</span><h3 class="mt-2 mb-3">Chụp hoặc tải ảnh QR</h3>
         <label for="qrImage" class="form-label">Ảnh QR vận đơn</label><input id="qrImage" name="qrImage" type="file" accept="image/jpeg,image/png" capture="environment" class="form-control" required data-sx-max="5242880">
-        <p class="shipper-hint mt-2">JPG/PNG tối đa 5 MB. Chụp đầy đủ QR, tránh ảnh mờ hoặc bị lóa.</p><button class="btn sx-btn-violet w-100" type="submit"><i class="bi bi-upload"></i> Đọc QR từ ảnh</button>
-    </form><article class="ute-panel mt-4 sx-tone-teal"><span class="shipper-eyebrow">TÌM NHANH</span><h3 class="mt-2">Không có QR?</h3><p class="shipper-hint">Bạn vẫn có thể tìm vận đơn bằng mã hoặc thông tin người nhận trong danh sách đơn.</p><a class="btn btn-outline-secondary w-100" th:href="@{/shipper/trang-chu}"><i class="bi bi-search"></i> Tìm trong danh sách</a></article></aside>
+        <p class="shipper-hint mt-2">JPG/PNG, tối đa 5 MB.</p><button class="btn sx-btn-violet w-100" type="submit"><i class="bi bi-upload"></i> Đọc QR từ ảnh</button>
+    </form><article class="ute-panel mt-4 sx-tone-teal"><span class="shipper-eyebrow">TÌM NHANH</span><h3 class="mt-2">Không có QR?</h3><a class="btn btn-outline-secondary w-100" th:href="@{/shipper/trang-chu}"><i class="bi bi-search"></i> Tìm trong danh sách</a></article></aside>
 </div>
 <script th:src="@{/js/vendor/zxing/zxing-browser-0.1.5.min.js}"></script><script th:src="@{/js/shipper-qr-camera.js}"></script><script th:src="@{/js/shipper-workspace.js}"></script>
 </section></body></html>

@@ -2,51 +2,49 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head><title>Đơn được phân công - UTEExpress</title></head><body>
 <section class="shipper-workspace">
-    <header class="shipper-hero">
-        <div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-truck"></i> KHU VỰC SHIPPER</span>
-            <h2>Chuyến giao của bạn</h2><p>Sẵn sàng lấy hàng, theo dõi lịch hẹn và hoàn tất từng vận đơn.</p>
-            <div class="sx-hero-stats"><span class="sx-hero-chip"><i class="bi bi-calendar3"></i> <span th:text="${#temporals.format(now, 'dd/MM/yyyy')}"></span></span>
-                <span class="sx-hero-chip" th:if="${workCounts.retryDue > 0}"><i class="bi bi-alarm"></i> <span th:text="|${workCounts.retryDue} đơn đến hẹn|"></span></span>
-                <span class="sx-hero-chip" th:if="${codHeld.count > 0}"><i class="bi bi-cash-coin"></i> <span th:text="|Đang giữ ${#numbers.formatInteger(codHeld.amount, 1, 'POINT')} đ|"></span></span></div>
-            <div class="shipper-hero-actions"><a class="btn btn-light" th:href="@{/shipper/lo-trinh}"><i class="bi bi-signpost-split"></i> Lộ trình hôm nay</a>
-                <a class="btn sx-btn-glass" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR</a>
-                <a class="btn sx-btn-glass" th:href="@{/shipper/doi-soat}"><i class="bi bi-cash-coin"></i> Nộp tiền COD</a></div></div>
-        <img class="sx-hero-art" th:src="@{/images/shipper/shipper-van.svg}" alt="" aria-hidden="true" width="320" height="213">
+    <header class="shipper-hero sx-hero-compact">
+        <div class="sx-hero-main">
+            <h2>Chuyến giao của bạn</h2>
+            <div class="sx-hero-row"><span class="sx-hero-chip"><i class="bi bi-calendar3"></i> <span th:text="${#temporals.format(now, 'dd/MM/yyyy')}"></span></span>
+                <a class="sx-hero-chip sx-chip-alert" th:if="${workCounts.retryDue > 0}" th:href="@{/shipper/trang-chu(work='RETRY_DUE')}"><i class="bi bi-alarm"></i> <span th:text="|${workCounts.retryDue} đơn đến hẹn|"></span></a>
+                <span class="shipper-hero-actions"><a class="btn btn-light btn-sm" th:href="@{/shipper/lo-trinh}"><i class="bi bi-signpost-split"></i> Lộ trình hôm nay</a><a class="btn sx-btn-glass btn-sm" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR</a></span></div>
+        </div>
+        <img class="sx-hero-art" th:src="@{/images/shipper/shipper-van.svg}" alt="" aria-hidden="true" width="150" height="100">
     </header>
-    <div class="shipper-metrics sx-metrics-5">
-        <a class="shipper-metric sx-tone-amber" th:href="@{/shipper/trang-chu(status='PENDING_PICKUP')}"><i class="bi bi-box-seam"></i><strong th:text="${workCounts.pending}">0</strong><span>Chờ lấy hàng</span></a>
-        <a class="shipper-metric sx-tone-violet" th:href="@{/shipper/trang-chu(status='PICKED_UP')}"><i class="bi bi-bag-check"></i><strong th:text="${workCounts.pickedUp}">0</strong><span>Đã lấy hàng</span></a>
-        <a class="shipper-metric sx-tone-cyan" th:href="@{/shipper/trang-chu(status='IN_TRANSIT')}"><i class="bi bi-truck"></i><strong th:text="${workCounts.inTransit}">0</strong><span>Đang giao</span></a>
-        <a class="shipper-metric sx-tone-rose" th:href="@{/shipper/trang-chu(work='RETRY_DUE')}"><i class="bi bi-alarm"></i><strong th:text="${workCounts.retryDue}">0</strong><span>Đến hẹn lấy / giao lại</span></a>
-        <a class="shipper-metric sx-tone-gold sx-metric-money" th:href="@{/shipper/doi-soat}"><i class="bi bi-cash-coin"></i><strong><th:block th:replace="~{fragments/components :: money(${codHeld.amount})}"></th:block></strong><span th:text="|COD đang giữ · ${codHeld.count} đơn|">COD đang giữ</span>
+    <div class="shipper-metrics sx-metrics-compact">
+        <a class="shipper-metric" th:href="@{/shipper/trang-chu(status='PENDING_PICKUP')}"><i class="bi bi-box-seam"></i><strong th:text="${workCounts.pending}">0</strong><span>Chờ lấy hàng</span></a>
+        <a class="shipper-metric" th:href="@{/shipper/trang-chu(status='PICKED_UP')}"><i class="bi bi-bag-check"></i><strong th:text="${workCounts.pickedUp}">0</strong><span>Đã lấy hàng</span></a>
+        <a class="shipper-metric" th:href="@{/shipper/trang-chu(status='IN_TRANSIT')}"><i class="bi bi-truck"></i><strong th:text="${workCounts.inTransit}">0</strong><span>Đang giao</span></a>
+        <a class="shipper-metric sx-metric-money" th:href="@{/shipper/doi-soat}"><i class="bi bi-cash-coin"></i><strong><th:block th:replace="~{fragments/components :: money(${codHeld.amount})}"></th:block></strong><span th:text="|COD đang giữ · ${codHeld.count} đơn|">COD đang giữ</span>
             <small class="sx-metric-sub" th:if="${codHeld.hasPending()}" th:text="|Chờ xác nhận ${#numbers.formatInteger(codHeld.pendingAmount, 1, 'POINT')} đ|"></small></a>
     </div>
-    <nav class="shipper-work-switch" aria-label="Chọn công việc">
-        <a th:classappend="${work.name() == 'ALL'} ? 'active'" th:href="@{/shipper/trang-chu}"><i class="bi bi-grid"></i> Tất cả đơn</a>
-        <a th:classappend="${work.name() == 'TODAY'} ? 'active'" th:href="@{/shipper/trang-chu(work='TODAY')}"><i class="bi bi-calendar-day"></i> Công việc hôm nay</a>
-        <a th:classappend="${work.name() == 'RETRY_DUE'} ? 'active'" th:href="@{/shipper/trang-chu(work='RETRY_DUE')}"><i class="bi bi-alarm"></i> Đến hẹn <span class="sx-switch-count" th:if="${workCounts.retryDue > 0}" th:text="${workCounts.retryDue}"></span></a>
-    </nav>
-    <p class="shipper-hint" th:if="${work.name() == 'TODAY'}">Đơn đang xử lý, lịch giao lại và lấy hàng lại đến hôm nay. Ưu tiên đơn đến hẹn, đơn đang giao và dịch vụ hỏa tốc.</p>
-    <p class="shipper-hint" th:if="${work.name() == 'RETRY_DUE'}">Đơn đã đến giờ hẹn giao lại hoặc lấy hàng lại, chưa quá 3 lần thất bại.</p>
     <div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
     <div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
     <div class="shipper-notice sx-notice-danger" role="alert" th:if="${filterError}"><i class="bi bi-funnel-fill"></i><span th:text="|Bộ lọc chưa hợp lệ: ${filterError}|"></span></div>
-    <details class="ute-panel shipper-filters" open data-shipper-filters th:attr="data-filter-active=${!#strings.isEmpty(keyword) or selectedStatus != null or from != null or to != null or filterError != null}">
-        <summary><i class="bi bi-sliders"></i> Tìm kiếm và bộ lọc <span class="text-muted">Mã đơn · Người nhận · Ngày tạo</span></summary>
+    <!-- Chọn công việc và ô "Tìm đơn" chung một hàng; ô tìm thu gọn khi không lọc, mở ra thì chiếm hết hàng. -->
+    <div class="sx-toolbar">
+    <nav class="shipper-work-switch" aria-label="Chọn công việc">
+        <a th:classappend="${work.name() == 'ALL'} ? 'active'" th:href="@{/shipper/trang-chu}"><i class="bi bi-grid"></i> Tất cả đơn</a>
+        <a th:classappend="${work.name() == 'TODAY'} ? 'active'" th:href="@{/shipper/trang-chu(work='TODAY')}"><i class="bi bi-calendar-day"></i> Hôm nay</a>
+        <a th:classappend="${work.name() == 'RETRY_DUE'} ? 'active'" th:href="@{/shipper/trang-chu(work='RETRY_DUE')}"><i class="bi bi-alarm"></i> Đến hẹn <span class="sx-switch-count" th:if="${workCounts.retryDue > 0}" th:text="${workCounts.retryDue}"></span></a>
+    </nav>
+    <!-- Thu gọn khi không lọc; trạng thái chọn bằng hàng nút bên dưới nên form chỉ giữ lại giá trị đang chọn. -->
+    <details class="ute-panel shipper-filters" data-shipper-filters th:with="filtering=${!#strings.isEmpty(keyword) or from != null or to != null or filterError != null}" th:open="${filtering}" th:attr="data-filter-active=${filtering}">
+        <summary><i class="bi bi-search"></i> Tìm đơn</summary>
         <form method="get" th:action="@{/shipper/trang-chu}" class="row g-3 mt-1" data-sx-range-form novalidate>
-            <input type="hidden" name="work" th:value="${work}">
-            <div class="col-lg-4"><label for="keyword" class="form-label">Mã vận đơn, tên hoặc số điện thoại người nhận</label><input id="keyword" name="keyword" class="form-control" maxlength="100" th:value="${keyword}" placeholder="Nhập từ khóa cần tìm" autocomplete="off"></div>
-            <div class="col-lg-2"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select"><option value="">Tất cả</option><option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == selectedStatus}"><th:block th:replace="~{fragments/components :: orderStatusText(${s})}"></th:block></option></select></div>
-            <div class="col-lg-2"><label for="from" class="form-label">Từ ngày tạo</label><input id="from" name="from" type="date" min="2000-01-01" max="2100-12-31" class="form-control" th:value="${from}" data-sx-from></div>
-            <div class="col-lg-2"><label for="to" class="form-label">Đến ngày tạo</label><input id="to" name="to" type="date" min="2000-01-01" max="2100-12-31" class="form-control" th:value="${to}" data-sx-to><div class="invalid-feedback">Đến ngày phải từ ngày bắt đầu trở đi.</div></div>
-            <div class="col-lg-2 d-flex gap-2 align-items-end"><button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Tìm</button><a class="btn btn-outline-secondary" th:href="@{/shipper/trang-chu(work=${work})}">Bỏ lọc</a></div>
+            <input type="hidden" name="work" th:value="${work}"><input type="hidden" name="status" th:value="${selectedStatus}">
+            <div class="col-md-12 col-xl-4"><label for="keyword" class="form-label">Từ khóa</label><input id="keyword" name="keyword" class="form-control" maxlength="100" th:value="${keyword}" placeholder="Mã đơn, tên hoặc SĐT người nhận" autocomplete="off"></div>
+            <div class="col-6 col-xl-2"><label for="from" class="form-label">Từ ngày tạo</label><input id="from" name="from" type="date" min="2000-01-01" max="2100-12-31" class="form-control" th:value="${from}" data-sx-from></div>
+            <div class="col-6 col-xl-2"><label for="to" class="form-label">Đến ngày tạo</label><input id="to" name="to" type="date" min="2000-01-01" max="2100-12-31" class="form-control" th:value="${to}" data-sx-to><div class="invalid-feedback">Đến ngày phải từ ngày bắt đầu trở đi.</div></div>
+            <div class="col-12 col-xl-4 d-flex gap-2 align-items-end"><button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search"></i> Tìm</button><a class="btn btn-outline-secondary flex-fill" th:href="@{/shipper/trang-chu(work=${work})}">Bỏ lọc</a></div>
         </form>
     </details>
+    </div>
     <nav class="shipper-status-tabs" aria-label="Lọc nhanh trạng thái">
         <a class="sx-tone-blue" th:classappend="${selectedStatus == null} ? 'active'" th:href="@{/shipper/trang-chu(work=${work},keyword=${keyword},from=${from},to=${to})}">Tất cả</a>
         <a th:each="s : ${statuses}" th:if="${s.name() != 'CANCELLED'}" th:class="${'sx-status-' + #strings.toLowerCase(s.name())}" th:classappend="${s == selectedStatus} ? 'active'" th:href="@{/shipper/trang-chu(work=${work},status=${s},keyword=${keyword},from=${from},to=${to})}"><th:block th:replace="~{fragments/components :: orderStatusText(${s})}"></th:block></a>
     </nav>
-    <div class="shipper-list-heading"><div><h3>Đơn được phân công</h3><span th:text="|${orderPage.totalElements} đơn phù hợp · 10 đơn mỗi trang|"></span></div>
+    <div class="shipper-list-heading"><div><h3>Đơn được phân công</h3><span th:text="|${orderPage.totalElements} đơn phù hợp|"></span></div>
         <label class="sx-selectall" data-bulk-only hidden><input type="checkbox" data-bulk-all> Chọn tất cả đơn có thể cập nhật nhanh</label></div>
     <div class="shipper-empty ute-panel" th:if="${#lists.isEmpty(orders)}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-box.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Chưa có đơn phù hợp</h3><p>Thử đổi bộ lọc hoặc quay lại tất cả đơn được phân công.</p><a class="btn btn-outline-primary" th:href="@{/shipper/trang-chu}">Xem tất cả đơn</a></div>
     <div class="shipper-order-grid">
@@ -54,18 +52,22 @@
                  th:classappend="${'sx-status-' + #strings.toLowerCase(order.status.name())}" th:attr="data-tracking-code=${order.trackingCode}">
             <div class="shipper-card-head"><span class="sx-card-title">
                     <label class="sx-select" th:if="${order.status.name() == 'PENDING_PICKUP' or order.status.name() == 'PICKED_UP'}" data-bulk-only hidden th:title="|Chọn ${order.trackingCode} để cập nhật nhanh|"><input type="checkbox" class="sx-bulk-check" th:attr="data-id=${order.id},data-status=${order.status.name()},aria-label=|Chọn ${order.trackingCode}|"></label>
-                    <strong th:text="${order.trackingCode}"></strong></span>
+                    <strong th:text="${order.trackingCode}"></strong>
+                    <span class="sx-chip" th:if="${order.serviceType.name() != 'STANDARD'}" th:classappend="${'sx-service-' + #strings.toLowerCase(order.serviceType.name())}"><i class="bi" th:classappend="${order.serviceType.name() == 'SUPER_EXPRESS'} ? 'bi-lightning-charge-fill' : 'bi-lightning'"></i><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span></span>
                 <span class="badge" data-order-status th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span></div>
-            <div class="shipper-card-meta"><span class="sx-chip" th:classappend="${'sx-service-' + #strings.toLowerCase(order.serviceType.name())}"><i class="bi" th:classappend="${order.serviceType.name() == 'SUPER_EXPRESS'} ? 'bi-lightning-charge-fill' : (${order.serviceType.name() == 'EXPRESS'} ? 'bi-lightning' : 'bi-box')"></i><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span><span><i class="bi bi-box2"></i> <span th:text="|${order.weightKg} kg|"></span></span><span><i class="bi bi-clock"></i> <span th:text="${#temporals.format(order.createdAt, 'dd/MM HH:mm')}"></span></span></div>
-            <div class="shipper-route"><div><i class="bi bi-box-seam"></i><div><span>ĐIỂM LẤY HÀNG</span><strong th:text="${order.senderName}"></strong><p th:text="${order.senderAddress}"></p></div></div>
-                <div><i class="bi bi-geo-alt-fill"></i><div><span>NGƯỜI NHẬN</span><strong th:text="${order.receiverName}"></strong><p th:text="${order.receiverAddress}"></p></div></div></div>
+            <!-- Thứ tự ưu tiên: lịch hẹn -> tiền cần thu -> địa chỉ (tối đa 2 dòng) -> thông tin phụ -->
             <div class="shipper-retry sx-tone-rose" th:if="${order.status.name() == 'FAILED' and retry != null and retry.nextAttemptAt != null}"><i class="bi bi-arrow-repeat"></i><div><strong th:text="${retry.nextAttemptAt.isAfter(now) ? 'Hẹn giao lại' : 'Đã đến hẹn giao lại'}"></strong><span th:text="${#temporals.format(retry.nextAttemptAt, 'dd/MM/yyyy HH:mm')}"></span></div></div>
             <div class="shipper-retry sx-tone-amber" th:if="${order.status.name() == 'PENDING_PICKUP' and pickup != null}"><i class="bi bi-house-exclamation"></i><div>
                 <strong th:text="${pickup.nextAttemptAt == null ? 'Lấy hàng chưa thành công' : (pickup.nextAttemptAt.isAfter(now) ? 'Hẹn lấy hàng lại' : 'Đã đến hẹn lấy hàng lại')}"></strong>
                 <span th:if="${pickup.nextAttemptAt != null}" th:text="${#temporals.format(pickup.nextAttemptAt, 'dd/MM/yyyy HH:mm')}"></span><span th:text="${pickup.reasonLabel}"></span>
                 <span class="sx-attempts" th:with="used=${pickupCount == null ? 0 : pickupCount}" th:title="|${used}/${maxPickupFailures} lần lấy hàng thất bại|"><span th:each="i : ${#numbers.sequence(1, maxPickupFailures)}" th:classappend="${i <= used} ? 'on'"></span></span></div></div>
             <div class="shipper-card-money" th:classappend="${payment.available and payment.due.signum() == 0} ? 'sx-paid'"><span>Cước cần thu</span><strong th:if="${payment.available}"><th:block th:replace="~{fragments/components :: money(${payment.due})}"></th:block></strong><strong th:unless="${payment.available}">Chưa có thông tin</strong><small th:if="${payment.prepaid}"><i class="bi bi-check2-circle"></i> Đã thanh toán</small><small th:if="${payment.available and !payment.cod and !payment.prepaid}">Chờ thanh toán trực tuyến · Không thu tiền mặt</small></div>
-            <div class="shipper-card-actions"><a class="btn btn-outline-secondary sx-btn-call" th:href="${'tel:' + order.receiverPhone}" th:aria-label="|Gọi ${order.receiverName}|"><i class="bi bi-telephone"></i> Gọi khách</a><a class="btn btn-outline-secondary sx-btn-map" th:href="@{https://www.google.com/maps/dir/(api=1,destination=${order.status.name() == 'PENDING_PICKUP' ? order.senderAddress : order.receiverAddress})}" target="_blank" rel="noopener noreferrer"><i class="bi bi-signpost"></i> <span th:text="${order.status.name() == 'PENDING_PICKUP' ? 'Tới điểm lấy' : 'Chỉ đường'}">Chỉ đường</span></a><a class="btn btn-primary" th:href="@{/shipper/don/{id}(id=${order.id})}">Xem chi tiết <i class="bi bi-arrow-right"></i></a></div>
+            <div class="shipper-route"><div><i class="bi bi-box-seam"></i><div><span>ĐIỂM LẤY HÀNG</span><strong th:text="${order.senderName}"></strong><p th:text="${order.senderAddress}" th:title="${order.senderAddress}"></p></div></div>
+                <div><i class="bi bi-geo-alt-fill"></i><div><span>NGƯỜI NHẬN</span><strong th:text="${order.receiverName}"></strong><p th:text="${order.receiverAddress}" th:title="${order.receiverAddress}"></p></div></div></div>
+            <div class="shipper-card-meta"><span th:if="${order.serviceType.name() == 'STANDARD'}"><i class="bi bi-box"></i> Tiêu chuẩn</span><span><i class="bi bi-box2"></i> <span th:text="|${order.weightKg} kg|"></span></span><span><i class="bi bi-clock"></i> <span th:text="|Tạo ${#temporals.format(order.createdAt, 'dd/MM HH:mm')}|"></span></span></div>
+            <!-- Chờ lấy hàng: gọi và chỉ đường tới người gửi; đang xử lý: tới người nhận; đơn đã xong thì chỉ còn nút xem chi tiết. -->
+            <div class="shipper-card-actions" th:with="st=${order.status.name()},pickupStage=${st == 'PENDING_PICKUP'},active=${st == 'PENDING_PICKUP' or st == 'PICKED_UP' or st == 'IN_TRANSIT' or st == 'FAILED'},phone=${pickupStage ? (order.sender == null ? null : order.sender.phone) : order.receiverPhone}">
+                <a class="btn btn-outline-secondary sx-btn-call" th:if="${active and !#strings.isEmpty(phone)}" th:href="${'tel:' + phone}" th:aria-label="|Gọi ${pickupStage ? order.senderName : order.receiverName}|"><i class="bi bi-telephone"></i> <span th:text="${pickupStage} ? 'Gọi người gửi' : 'Gọi người nhận'">Gọi</span></a><a class="btn btn-outline-secondary sx-btn-map" th:if="${active}" th:href="${@maps.to(pickupStage ? order.senderAddress : order.receiverAddress)}" target="_blank" rel="noopener noreferrer"><i class="bi bi-signpost"></i> <span th:text="${pickupStage} ? 'Tới điểm lấy' : 'Chỉ đường'">Chỉ đường</span></a><a class="btn btn-primary" th:href="@{/shipper/don/{id}(id=${order.id})}">Xem chi tiết <i class="bi bi-arrow-right"></i></a></div>
         </article>
     </div>
     <form id="bulkForm" method="post" th:action="@{/shipper/cap-nhat-nhieu}" data-ute-confirm="Cập nhật các đơn đã chọn?" data-ute-confirm-nut="Cập nhật">
@@ -82,6 +84,5 @@
         </div>
     </form>
     <nav th:if="${orderPage.totalPages > 1}" class="shipper-pagination" aria-label="Phân trang đơn Shipper"><a th:if="${orderPage.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/shipper/trang-chu(page=${orderPage.number - 1},work=${work},keyword=${keyword},status=${selectedStatus},from=${from},to=${to})}"><i class="bi bi-arrow-left"></i> Trang trước</a><span th:text="|Trang ${orderPage.number + 1}/${orderPage.totalPages}|"></span><a th:if="${orderPage.hasNext()}" class="btn btn-outline-secondary" th:href="@{/shipper/trang-chu(page=${orderPage.number + 1},work=${work},keyword=${keyword},status=${selectedStatus},from=${from},to=${to})}">Trang sau <i class="bi bi-arrow-right"></i></a></nav>
-    <p class="shipper-hint mt-3">Cước cần thu là cước vận chuyển sau giảm giá. Đơn thanh toán trước không thu lại tiền mặt.</p>
     <script th:src="@{/js/shipper-workspace.js}"></script>
 </section></body></html>

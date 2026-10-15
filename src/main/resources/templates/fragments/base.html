@@ -104,7 +104,7 @@
                 <span sec:authentication="name">user</span>
             </span>
             <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
-                <button type="submit" class="btn btn-sm ute-btn-ghost">Đăng xuất</button>
+                <button type="submit" class="btn btn-sm ute-btn-ghost ute-logout" aria-label="Đăng xuất" title="Đăng xuất"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span class="d-none d-sm-inline">Đăng xuất</span></button>
             </form>
 
             <a sec:authorize="isAnonymous()" class="ute-topbar-link" th:href="@{/dang-ky}">Đăng ký</a>
