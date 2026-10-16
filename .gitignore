@@ -40,19 +40,42 @@ target/
 # VS Code
 .vscode/
 
-# File cau hinh chua mat khau that tren tung may - KHONG bao gio len Git.
-# application.properties van len Git binh thuong (chi chua placeholder CHANGE_ME).
+# Cau hinh rieng chua mat khau tren tung may va cac ban sao/backup cua chung.
+# .gitignore khong bao ve file da tracked; khong dung git add -f cho file bi mat.
+# application.properties chi chua placeholder; chi sua gia tri that o file private.
 application-local.properties
+application-local.properties.*
 /config/aiven-local.properties
+/config/aiven-local.properties.*
 /config/sqlserver-before-aiven.properties
+/config/sqlserver-before-aiven.properties.*
 /config/certificates/
+# Mat khau tam do cong cu khoi phuc tai khoan tao rieng tren may.
+/config/recovery/
 
-# Cau hinh ket noi database chung tren MonsterASP (co mat khau that).
-# Ban mau khong chua mat khau la application-cloud.properties.example, file do
-# VAN len Git de ca nhom biet can dien nhung gi.
+# Chan file profile cu chua bi mat neu ai copy lai; app khong dung MonsterASP.
 application-cloud.properties
+application-cloud.properties.*
 
-# Ban sao du lieu xuat ra tu script db/backup-du-lieu.ps1.
+# Bien moi truong rieng (app khong tu nap .env) va ban sao cua chung.
+.env
+.env.*
+*.env
+
+# Khoa/chung chi/truststore tren may: khong dua len Git hoac chia se cong khai.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Chi cho phep cac file mau khong chua bi mat; KHONG dien gia tri that vao .example.
+!application-local.properties.example
+!/config/aiven-local.properties.example
+!.env.example
+
+# Ban sao du lieu cu (khong duoc ung dung nap).
 # Khong day len Git vi chua du lieu that cua nguoi dung (ho ten, so dien thoai,
 # dia chi) va file co the rat nang.
 db/backup/

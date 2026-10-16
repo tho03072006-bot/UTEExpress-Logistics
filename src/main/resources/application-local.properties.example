@@ -1,21 +1,23 @@
-# Mau de tao file cau hinh rieng tren may ban.
+# FILE MAU DUOC COMMIT: chi giu placeholder, KHONG dien mat khau that o day.
 #
 # Cach dung:
 #   1. Copy file nay thanh "application-local.properties" (bo duoi .example) trong cung
 #      thu muc src/main/resources.
 #   2. Dien mat khau/thong tin THAT cua may ban vao file moi tao.
+#      Neu file private da ton tai, KHONG copy de len cau hinh da dien.
 #   3. KHONG can dong sua gi trong application.properties nua - Spring se tu doc va
 #      ghi de cac gia tri ben duoi tu application-local.properties (nho dong
 #      application.properties da import file nay tu duong dan local).
 #
-# File application-local.properties da nam trong .gitignore nen se KHONG bao gio bi
-# commit len GitHub - moi nguoi giu mat khau that rieng tren may minh, an toan cho repo
-# public. Chi rieng file .example nay (khong chua mat khau that) moi len Git.
+# File application-local.properties da nam trong .gitignore. Tuy nhien .gitignore
+# KHONG bao ve file da tracked va co the bi vuot qua bang git add -f: khong dung
+# lenh nay voi file private. Chi file .example khong chua bi mat moi len Git.
 
 # Database chi cau hinh bang config/aiven-local.properties.example.
 # Khong dat spring.datasource.* tai day.
 
-spring.mail.username=email_that_cua_ban@gmail.com
-spring.mail.password=app_password_gmail_that_cua_ban
+spring.mail.username=CHANGE_ME@gmail.com
+spring.mail.password=CHANGE_ME
 
-app.jwt.secret=chuoi_bi_mat_that_toi_thieu_32_ky_tu_cua_ban
+# Gia tri that can ngau nhien, toi thieu 32 byte; khong dung lai chuoi mau.
+app.jwt.secret=CHANGE_ME_chuoi_ngau_nhien_toi_thieu_32_byte
