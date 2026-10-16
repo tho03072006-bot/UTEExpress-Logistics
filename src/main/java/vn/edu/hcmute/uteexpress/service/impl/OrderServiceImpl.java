@@ -41,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final java.time.Clock clock;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
     private final jakarta.validation.Validator validator;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -49,7 +50,7 @@ public class OrderServiceImpl implements OrderService {
                             vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
-                            jakarta.validation.Validator validator) {
+                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -59,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
         this.clock = clock;
         this.tariffService = tariffService;
         this.validator = validator;
+        this.events = events;
     }
 
     @Override
@@ -259,6 +261,8 @@ public class OrderServiceImpl implements OrderService {
         history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(order, order.getSender(),
                 Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.CANCELLED, null,
                 "Người gửi hủy vận đơn trước khi lấy hàng.", null, java.time.LocalDateTime.now(clock)));
+        events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
+                order.getId(), order.getTrackingCode(), order.getStatus().name(), order.getUpdatedAt()));
     }
 
     @Override
