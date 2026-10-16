@@ -12,7 +12,7 @@
     <span class="sx-pill sx-dot shipper-hero-status" th:classappend="${'sx-cod-status-' + #strings.toLowerCase(st)}" th:text="${settlement.status.label}"></span></header>
 <div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
 <div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
-<div class="shipper-notice sx-notice-warning" th:if="${settlement.hasDifference()}"><i class="bi bi-exclamation-triangle"></i><span th:text="|Chênh lệch ${#numbers.formatInteger(settlement.difference.abs(), 1, 'POINT')} đ so với tổng cước COD ${#numbers.formatInteger(settlement.totalAmount, 1, 'POINT')} đ (nộp thiếu).|"></span></div>
+<div class="shipper-notice sx-notice-warning" th:if="${settlement.hasDifference()}"><i class="bi bi-exclamation-triangle"></i><span th:text="|Chênh lệch ${#numbers.formatInteger(settlement.difference.abs(), 1, 'POINT')} đ (${settlement.difference.signum() &lt; 0 ? 'nộp thiếu' : 'nộp thừa'}).|"></span></div>
 <div class="sx-cod-grid">
 <article class="ute-panel sx-tone-gold"><div class="shipper-section-head"><div><span class="shipper-eyebrow">CHI TIẾT</span><h3>Các vận đơn trong phiếu</h3></div><i class="bi bi-list-check"></i></div>
     <p class="shipper-hint" th:if="${#lists.isEmpty(items)}" th:text="${st == 'REJECTED'} ? 'Phiếu bị từ chối nên các đơn đã trở lại danh sách chờ nộp.' : 'Phiếu không có vận đơn.'"></p>
@@ -24,6 +24,11 @@
     </table></div>
 </article>
 <aside>
+    <div class="ute-panel mb-3" th:if="${staff and outstanding != null}"><h3 class="h5">Theo dõi khoản thiếu</h3><p th:text="|Cước còn phải nộp bổ sung: ${outstanding} VND|"></p>
+        <a th:if="${outstanding.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_SUPPLEMENT',targetId=${settlement.id})}">Lập phiếu bổ sung kèm chứng từ để Admin duyệt</a>
+        <p th:if="${refundable != null and refundable.signum() > 0}" th:text="|Cước nộp thừa còn có thể đề nghị hoàn: ${refundable} VND|"></p>
+        <a th:if="${refundable != null and refundable.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_REFUND',targetId=${settlement.id})}">Lập đề nghị hoàn cước nộp thừa</a>
+        <p class="small text-muted">Khoản thiếu không mất đi chỉ vì phiếu gốc đã được xác nhận. Đây là tiền cước, không phải tiền hàng thu hộ.</p></div>
     <article class="ute-panel sx-tone-indigo"><span class="shipper-eyebrow"><i class="bi bi-chat-left-text"></i> TRAO ĐỔI</span><h3 class="mt-2">Ghi chú</h3>
         <div class="shipper-payment-row"><span>Tổng cước COD</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.totalAmount})}"></th:block></strong></div>
         <div class="shipper-payment-row"><span>Tiền mặt nộp</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong></div>

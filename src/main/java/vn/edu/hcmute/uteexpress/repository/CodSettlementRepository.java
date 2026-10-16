@@ -10,6 +10,9 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.CodSettlement;
 
 public interface CodSettlementRepository extends JpaRepository<CodSettlement, Long> {
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from CodSettlement s where s.id = :id")
+    Optional<CodSettlement> lockById(@Param("id") Long id);
     boolean existsByShipperAndStatus(AppUser shipper, CodSettlement.Status status);
 
     Optional<CodSettlement> findFirstByShipperAndStatusOrderByIdDesc(AppUser shipper, CodSettlement.Status status);

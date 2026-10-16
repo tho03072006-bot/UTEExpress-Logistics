@@ -17,6 +17,7 @@ public interface CodSettlementItemRepository extends JpaRepository<CodSettlement
             where o.shipper = :shipper and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED
               and p.method = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.COD
               and p.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
+              and p.amount > 0
               and exists (select h.id from OrderStatusHistory h where h.order = o and h.actor = :shipper
                 and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED)
               and not exists (select i.id from CodSettlementItem i where i.order = o)

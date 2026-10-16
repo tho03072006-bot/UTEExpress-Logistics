@@ -94,8 +94,12 @@ public class CodSettlementService {
 
     /** Đọc số tiền người dùng nhập: chỉ chữ số, cho phép dấu chấm/phẩy/khoảng trắng phân tách hàng nghìn. */
     public static BigDecimal parseAmount(String raw) {
-        String value = raw == null ? "" : raw.strip().replaceAll("[.,\\s]", "").replaceAll("(?iu)(đ|vnd)$", "");
+        String value = raw == null ? "" : raw.strip().replace('\u00a0', ' ').replaceAll("(?iu)\\s*(đ|vnd)$", "").strip();
         if (value.isEmpty()) throw new IllegalArgumentException("Hãy nhập số tiền nộp.");
+        if (value.length() > 30 || !(value.matches("\\d{1,12}") || value.matches("\\d{1,3}(?:\\.\\d{3})+")
+                || value.matches("\\d{1,3}(?:,\\d{3})+") || value.matches("\\d{1,3}(?: \\d{3})+")))
+            throw new IllegalArgumentException("Số tiền là VND nguyên; dấu phân cách phải đúng nhóm 3 chữ số, không nhận số thập phân.");
+        value = value.replaceAll("[., ]", "");
         if (!value.matches("\\d{1,12}")) throw new IllegalArgumentException("Số tiền nộp chỉ gồm chữ số, tối đa 12 chữ số.");
         return new BigDecimal(value);
     }
@@ -116,12 +120,12 @@ public class CodSettlementService {
         if (payments.size() != ids.size())
             throw new IllegalArgumentException("Có đơn không còn hợp lệ để nộp (đã nộp, chưa giao thành công hoặc không phải COD đã thu). Hãy tải lại trang.");
         BigDecimal total = payments.stream().map(OrderPayment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (total.signum() <= 0 || total.compareTo(MAX_AMOUNT) > 0)
+            throw new IllegalArgumentException("Tổng cước phải dương và tối đa 12 chữ số. Hãy chia thành các phiếu nhỏ hơn.");
         if (declared == null) throw new IllegalArgumentException("Hãy nhập số tiền nộp.");
         if (declared.signum() <= 0 || declared.stripTrailingZeros().scale() > 0)
             throw new IllegalArgumentException("Số tiền nộp phải là số nguyên lớn hơn 0.");
         if (declared.compareTo(MAX_AMOUNT) > 0) throw new IllegalArgumentException("Số tiền nộp vượt giới hạn cho phép.");
-        if (declared.compareTo(total) > 0)
-            throw new IllegalArgumentException("Số tiền nộp không được lớn hơn tổng cước COD đã thu.");
         if (declared.compareTo(total) != 0 && normalizedNote.length() < 10)
             throw new IllegalArgumentException("Số tiền nộp khác tổng cước COD; hãy ghi rõ lý do (ít nhất 10 ký tự).");
         var settlement = settlements.save(new CodSettlement(shipper, payments.size(), total, declared,
@@ -138,7 +142,7 @@ public class CodSettlementService {
     @Transactional
     public CodSettlement review(String username, Long id, long revision, boolean approve, String note) {
         var manager = access.internal(username);
-        var settlement = settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp tiền."));
+        var settlement = settlements.lockById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp tiền."));
         if (settlement.getRevision() != revision) throw new IllegalArgumentException("Phiếu đã thay đổi. Hãy tải lại trang.");
         if (settlement.getStatus() != CodSettlement.Status.SUBMITTED)
             throw new IllegalArgumentException("Phiếu đã được xử lý trước đó.");
