@@ -22,6 +22,14 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
     Page<vn.edu.hcmute.uteexpress.entity.CodSettlement> lateCash(@Param("deadline") LocalDateTime deadline, Pageable pageable);
     @Query("""
         select o from Order o where
+        (:kind = 'PAYMENT_ISSUE' and o.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED,
+            vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.RETURNED)
+            and (not exists (select missing.id from OrderPayment missing where missing.order = o)
+                or exists (select payment.id from OrderPayment payment where payment.order = o
+                    and (payment.amount < 0 or (payment.method in (vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.MOMO,
+                        vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.VNPAY)
+                        and payment.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.UNPAID)))))
+        or
         (:kind = 'UNASSIGNED' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.shipper is null)
         or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup)
         or (:kind = 'LATE_DELIVERY' and o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,

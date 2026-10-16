@@ -39,7 +39,7 @@ class ManagerOperationsServiceImplTest {
         staff.setPasswordChangeRequired(false);
         when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(staff));
         var access = new StaffAccessPolicy(accounts, factory.getValidator());
-        dispatch = new ManagerDispatchServiceImpl(orders, shippers, access, audit, clock);
+        dispatch = new ManagerDispatchServiceImpl(orders, shippers, access, audit, clock, mock(vn.edu.hcmute.uteexpress.service.OrderPaymentService.class));
         promoService = new ManagerPromotionServiceImpl(promotions, access, audit, clock);
         reports = new ManagerReportServiceImpl(orders, access, clock);
         order = new Order(); order.setId(1L); order.setStatus(Order.OrderStatus.PENDING_PICKUP);
@@ -170,7 +170,7 @@ class ManagerOperationsServiceImplTest {
     @Test void emptyReportIsZeroNotNaN() {
         when(orders.countStatuses(any(), any())).thenReturn(List.of());
         var report = reports.report("manager01", LocalDate.now(clock).minusDays(2), LocalDate.now(clock));
-        assertEquals(0, report.totalOrders()); assertEquals(0, report.completionRate());
+        assertEquals(0, report.totalOrders()); assertEquals(new BigDecimal("0.0"), report.completionRate());
         assertEquals(BigDecimal.ZERO, report.paidShippingFees()); assertEquals(7, report.counts().size());
     }
     @Test void failedDeliveriesStillAwaitingRetryAreNotFinalOutcomes() {
@@ -182,7 +182,7 @@ class ManagerOperationsServiceImplTest {
         when(failed.getStatus()).thenReturn(Order.OrderStatus.FAILED); when(failed.getTotal()).thenReturn(10L);
         when(orders.countStatuses(any(), any())).thenReturn(List.of(delivered, returned, failed));
         var report = reports.report("manager01", LocalDate.now(clock), LocalDate.now(clock));
-        assertEquals(20L, report.totalOrders()); assertEquals(80, report.completionRate());
+        assertEquals(20L, report.totalOrders()); assertEquals(new BigDecimal("80.0"), report.completionRate());
     }
 }
 

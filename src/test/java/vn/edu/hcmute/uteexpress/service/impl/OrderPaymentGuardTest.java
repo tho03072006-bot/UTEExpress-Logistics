@@ -49,7 +49,7 @@ class OrderPaymentGuardTest {
     @BeforeEach
     void setUp() {
         orderPaymentService = new OrderPaymentServiceImpl(
-                orderPaymentRepository, orderRepository, appUserRepository);
+                orderPaymentRepository, orderRepository, appUserRepository, event -> { });
 
         nguoiGui = new AppUser();
         nguoiGui.setId(1L);
@@ -70,7 +70,7 @@ class OrderPaymentGuardTest {
         payment.setStatus(OrderPayment.PaymentStatus.UNPAID);
         payment.setAmount(BigDecimal.valueOf(30000));
 
-        when(orderRepository.findById(10L)).thenReturn(Optional.of(order));
+        when(orderRepository.findLockedById(10L)).thenReturn(Optional.of(order));
         when(orderPaymentRepository.findByOrder(order)).thenReturn(Optional.of(payment));
         return payment;
     }

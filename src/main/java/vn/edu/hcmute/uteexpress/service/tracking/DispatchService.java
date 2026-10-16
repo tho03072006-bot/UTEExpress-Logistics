@@ -20,12 +20,15 @@ public class DispatchService {
     private final Clock clock;
     private final ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
+    private final vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
     public DispatchService(OrderRepository orders, AppUserRepository users, OrderStatusHistoryRepository history,
             ShipperNotificationRepository notifications, LogisticsAccess access, Clock clock, ApplicationEventPublisher events,
-            vn.edu.hcmute.uteexpress.service.admin.AuditService audit) {
+            vn.edu.hcmute.uteexpress.service.admin.AuditService audit,
+            vn.edu.hcmute.uteexpress.service.OrderPaymentService payments) {
         this.orders = orders; this.users = users; this.history = history; this.notifications = notifications;
         this.access = access; this.clock = clock; this.events = events;
         this.audit = audit;
+        this.payments = payments;
     }
     public Page<Order> pending(String actor, int page) {
         access.internal(actor);
@@ -37,7 +40,7 @@ public class DispatchService {
         return users.findByRoleAndEnabledTrue(AppUser.Role.SHIPPER,
                 PageRequest.of(LogisticsInput.page(page), 100, Sort.by("username")));
     }
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void assign(String code, Long shipperId, long expectedShipperId, LocalDateTime expectedUpdatedAt,
             String note, String actor) {
         AppUser manager = access.internal(actor);
@@ -49,6 +52,7 @@ public class DispatchService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
         if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP)
             throw new IllegalArgumentException("Chỉ phân công khi đơn còn chờ lấy hàng.");
+        payments.requireReadyForFulfillment(order);
         long current = order.getShipper() == null ? 0 : order.getShipper().getId();
         if (current != expectedShipperId || expectedUpdatedAt == null || !expectedUpdatedAt.equals(order.getUpdatedAt()))
             throw new IllegalArgumentException("Vận đơn đã thay đổi. Hãy tải lại trang trước khi phân công.");
@@ -65,6 +69,8 @@ public class DispatchService {
         notification.assign(order, shipper, now);
         notifications.saveAndFlush(notification);
         events.publishEvent(new ShipperNotificationEvent(shipper.getUsername(), notification.getId(), order.getTrackingCode()));
+        events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
+                order.getId(), order.getTrackingCode(), order.getStatus().name(), now));
         audit.record(actor, "ORDER_ASSIGN", "order:" + order.getId(), "Shipper " + shipper.getId() + "; " + reason);
     }
 }

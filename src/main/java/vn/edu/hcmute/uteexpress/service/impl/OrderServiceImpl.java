@@ -269,19 +269,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public HomeStatistics getHomeStatistics() {
-        long daGiao = orderRepository.countByStatus(Order.OrderStatus.DELIVERED);
-        long dangGiao = orderRepository.countByStatusIn(
+        long deliveredOrders = orderRepository.countByStatus(Order.OrderStatus.DELIVERED);
+        long ordersInTransit = orderRepository.countByStatusIn(
                 List.of(Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT));
-        long khachHang = appUserRepository.countByRoleAndEnabledTrue(AppUser.Role.USER);
+        long activeCustomers = appUserRepository.countByRoleAndEnabledTrue(AppUser.Role.USER);
 
         // Ti le tinh tren cac don DA KET THUC, khong tinh don dang chay: don moi tao
         // chua giao khong the coi la that bai, gop vao se lam ti le tut xuong vo ly.
-        long thatBai = orderRepository.countByStatusIn(
-                List.of(Order.OrderStatus.FAILED, Order.OrderStatus.RETURNED));
-        long daKetThuc = daGiao + thatBai;
-        int tiLe = daKetThuc == 0 ? 0 : (int) Math.round(daGiao * 100.0 / daKetThuc);
+        long returned = orderRepository.countByStatus(Order.OrderStatus.RETURNED);
+        var successRate = vn.edu.hcmute.uteexpress.util.DeliverySuccessRate.calculate(deliveredOrders, returned);
 
-        return new HomeStatistics(daGiao, khachHang, dangGiao, tiLe);
+        return new HomeStatistics(deliveredOrders, activeCustomers, ordersInTransit, successRate);
     }
 
     @Override

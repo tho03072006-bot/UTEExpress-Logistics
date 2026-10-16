@@ -13,11 +13,16 @@ import vn.edu.hcmute.uteexpress.service.tracking.DispatchService;
 @RequestMapping("/manager/phan-cong")
 public class DispatchController {
     private final DispatchService service;
-    public DispatchController(DispatchService service) { this.service = service; }
+    private final vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace;
+    public DispatchController(DispatchService service, vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace) {
+        this.service = service; this.workspace = workspace;
+    }
     @GetMapping
     public String list(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int shipperPage, Authentication auth, Model model) {
-        model.addAttribute("orders", service.pending(auth.getName(), page));
+        var orders = service.pending(auth.getName(), page);
+        model.addAttribute("orders", orders);
+        model.addAttribute("money", workspace.money(auth.getName(), orders.getContent()));
         model.addAttribute("shippers", service.shippers(auth.getName(), shipperPage));
         return "manager/dispatch";
     }

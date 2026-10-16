@@ -129,6 +129,11 @@ public class TrackingServiceImpl implements TrackingService {
                             + OrderStatusText.of(newStatus) + ".");
         }
 
+        if (newStatus == Order.OrderStatus.PICKED_UP || newStatus == Order.OrderStatus.IN_TRANSIT
+                || newStatus == Order.OrderStatus.DELIVERED) {
+            orderPaymentService.requireReadyForFulfillment(order);
+        }
+
         LocalDateTime now = now();
         String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
         if (newStatus == Order.OrderStatus.FAILED && failureReason == null)

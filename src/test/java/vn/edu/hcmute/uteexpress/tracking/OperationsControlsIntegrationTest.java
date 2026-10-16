@@ -141,6 +141,8 @@ class OperationsControlsIntegrationTest {
         var record=cases.view(admin.getUsername(),id);
         cases.review(admin.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Duyệt ngoại lệ thêm một lần"));
         assertFalse(cases.canRetry(order)); clock.at(NOW.plusHours(2)); assertTrue(cases.canRetry(order));
+        var retryPayment = new OrderPayment(); retryPayment.setOrder(order); retryPayment.setAmount(new BigDecimal("18000"));
+        retryPayment.setMethod(OrderPayment.PaymentMethod.COD); retryPayment.setStatus(OrderPayment.PaymentStatus.UNPAID); payments.saveAndFlush(retryPayment);
         tracking.updateStatus(order.getId(),shipper.getUsername(),Order.OrderStatus.IN_TRANSIT);
         assertEquals(OperationsCase.Status.COMPLETED,record.getStatus());
     }

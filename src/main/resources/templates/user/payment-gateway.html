@@ -67,17 +67,20 @@
     Mã giao dịch mô phỏng: <strong th:text="${payment.transactionRef}">-</strong>
 </div>
 
-<div th:unless="${payment.status.name() == 'PAID'}">
+<div th:if="${payment.status.name() == 'UNPAID' and payment.method.onlineWallet
+              and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED' and order.status.name() != 'DELIVERED'}">
     <form method="post" th:action="@{'/nguoi-dung/thanh-toan/' + ${order.id} + '/xac-nhan'}">
         <button type="submit" class="btn btn-primary w-100 py-2">Xác nhận đã thanh toán</button>
     </form>
     <p class="text-muted small mt-3 mb-0">
         Chưa muốn trả ngay? Đơn vẫn được giữ ở trạng thái "Chưa thanh toán",
-        bạn có thể quay lại thanh toán bất cứ lúc nào từ trang đơn hàng.
+        bạn có thể quay lại thanh toán từ trang đơn hàng trước khi đơn kết thúc. Đơn chọn ví phải trả trước mới được phân công/lấy/giao hàng.
     </p>
 </div>
 
 <div class="d-flex gap-2 mt-4">
+    <p class="alert alert-warning" th:if="${payment.status.name() == 'UNPAID' and (!payment.method.onlineWallet
+            or order.status.name() == 'CANCELLED' or order.status.name() == 'RETURNED' or order.status.name() == 'DELIVERED')}">Không được thanh toán qua ví ở bước này. Đơn COD thu tiền khi giao; đơn đã kết thúc cần liên hệ Manager nếu có vấn đề cước.</p>
     <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">Về đơn hàng của tôi</a>
 </div>
 </section>
