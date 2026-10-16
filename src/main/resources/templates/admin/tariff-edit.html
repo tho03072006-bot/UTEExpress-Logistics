@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Cập nhật cước dịch vụ - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<h1 class="h3">Cập nhật cước dịch vụ</h1>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<h2 class="h5" th:text="${type.displayName}"></h2>
+<form th:action="@{/admin/bang-cuoc/{type}(type=${type})}" th:object="${form}" method="post" class="ute-panel p-4">
+<div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger"><ul class="mb-0"><li th:each="err : ${#fields.allErrors()}" th:text="${err}"></li></ul></div>
+<input type="hidden" th:field="*{revision}">
+<label class="form-label" for="baseFee">Cước cơ bản (VND)</label><input class="form-control mb-3" type="number" min="0" max="100000000" step="1" required th:field="*{baseFee}">
+<label class="form-label" for="feePerKg">Phụ phí mỗi kg (VND)</label><input class="form-control mb-3" type="number" min="0" max="5000000" step="1" required th:field="*{feePerKg}">
+<label class="form-label" for="reason">Lý do thay đổi</label><input class="form-control mb-3" minlength="5" maxlength="200" required th:field="*{reason}">
+<p class="small text-muted">Không được đặt cả hai mức phí bằng 0. Thao tác được ghi nhật ký, không sửa tiền của đơn cũ.</p>
+<button class="btn btn-dark" type="submit">Lưu bảng cước</button><a class="btn btn-outline-secondary ms-2" th:href="@{/admin/bang-cuoc}">Quay lại</a></form>
+</section></body></html>
+

@@ -17,6 +17,13 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Chặn cập nhật đồng thời giữa phân công, hủy đơn và cập nhật của Shipper.
+    @Version
+    @Column(nullable = false)
+    private long revision;
+
+    public long getRevision() { return revision; }
+
     @Column(name = "tracking_code", nullable = false, unique = true, length = 20)
     private String trackingCode;
 
@@ -64,7 +71,10 @@ public class Order {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     public enum ServiceType {
-        STANDARD, EXPRESS, SUPER_EXPRESS
+        STANDARD("Tiêu chuẩn"), EXPRESS("Giao nhanh"), SUPER_EXPRESS("Hỏa tốc");
+        private final String displayName;
+        ServiceType(String displayName) { this.displayName = displayName; }
+        public String getDisplayName() { return displayName; }
     }
 
     public enum OrderStatus {

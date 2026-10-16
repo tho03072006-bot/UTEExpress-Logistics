@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Bảng cước dùng chung - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<h1 class="h3">Bảng cước dùng chung</h1>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<p>Manager chỉ xem. Admin mới được đổi mức phí toàn hệ thống. Cước = cơ bản + phụ phí/kg × khối lượng, làm tròn VND; áp dụng đơn mới, tối đa 100 kg.</p><div class="table-responsive ute-panel p-3"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cước cơ bản (VND)</th><th>Phụ phí / kg (VND)</th><th>Cập nhật</th><th></th></tr></thead>
+<tbody><tr th:each="tariff : ${tariffs}"><td th:text="${tariff.serviceType.displayName}"></td>
+<td th:text="${#numbers.formatDecimal(tariff.baseFee, 1, 'POINT', 0, 'COMMA')}"></td>
+<td th:text="${#numbers.formatDecimal(tariff.feePerKg, 1, 'POINT', 0, 'COMMA')}"></td>
+<td th:text="${#temporals.format(tariff.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+<td>Chỉ xem</td></tr></tbody></table></div>
+</section></body></html>
+
