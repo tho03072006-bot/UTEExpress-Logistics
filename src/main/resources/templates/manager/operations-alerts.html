@@ -1,0 +1,21 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Cảnh báo vận hành - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Đơn cần xử lý</h1>
+<p class="text-muted">Thời hạn tính từ lúc tạo đơn theo giờ Việt Nam, không bị làm mới bởi việc sửa ghi chú. Đây là ngưỡng vận hành của đồ án.</p>
+<div class="d-flex flex-wrap gap-2 mb-3">
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='UNASSIGNED')}">Chưa phân công</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_PICKUP')}">Chậm lấy</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_DELIVERY')}">Quá hạn giao</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='RETRY_DUE')}">Đến hẹn giao lại</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='MANY_FAILURES')}">Thất bại nhiều lần</a></div>
+<div class="table-responsive"><table class="table"><thead><tr><th>Vận đơn</th><th>Người nhận</th><th>Tạo lúc</th><th>Xử lý</th></tr></thead><tbody>
+<tr th:each="o : ${orders}"><td th:text="${o.trackingCode}"></td><td th:text="${o.receiverName}"></td><td th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}"></td><td>
+<a th:if="${o.status.name() == 'PENDING_PICKUP'}" th:href="@{/manager/phan-cong}">Phân công</a>
+<span th:if="${o.status.name() == 'FAILED'}"><a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETRY',targetId=${o.id})}">Giao lại</a> · <a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETURN',targetId=${o.id})}">Đề nghị hoàn</a></span>
+</td></tr><tr th:if="${orders.empty}"><td colspan="4">Không có đơn trong nhóm này.</td></tr></tbody></table></div>
+<div class="d-flex gap-3"><a th:if="${orders.hasPrevious()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number-1})}">Trang trước</a><span th:text="|${orders.totalElements} đơn|"></span><a th:if="${orders.hasNext()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number+1})}">Trang sau</a></div>
+<h2 class="h5 mt-4">Khiếu nại quá hạn phản hồi/giải quyết</h2><p th:if="${lateComplaints.empty}">Không có hồ sơ quá hạn.</p>
+<ul><li th:each="c : ${lateComplaints}"><a th:href="@{/manager/khieu-nai/{id}(id=${c.id})}" th:text="${c.subject}"></a></li></ul><a th:href="@{/manager/khieu-nai}">Xem tất cả khiếu nại</a>
+<h2 class="h5 mt-4">Chênh lệch tiền cước chưa xử lý sau 7 ngày</h2><p class="text-muted">Hạn xử lý của mô hình demo: 7 ngày từ khi xác nhận phiếu gốc; người chịu trách nhiệm là Shipper và người xác nhận phiếu.</p>
+<ul><li th:each="s : ${lateCash}"><a th:href="@{/manager/doi-soat-cod/{id}(id=${s.id})}" th:text="|Phiếu #${s.id} · ${s.shipper.username}|"></a></li></ul>
+</section></body></html>
