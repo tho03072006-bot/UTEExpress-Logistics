@@ -24,6 +24,11 @@
     </table></div>
 </article>
 <aside>
+    <div class="ute-panel mb-3" data-realtime-region="settlement-balance" th:if="${!staff and balance != null}"><h3 class="h5">Số dư sau xử lý</h3>
+        <p>Cước còn phải nộp bổ sung: <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|"></strong></p>
+        <p>Cước nộp thừa chưa được chi hoàn: <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|"></strong></p>
+        <p class="small text-muted">Chênh lệch phía trên thuộc phiếu gốc và không sửa lại. Số dư này tính cả hồ sơ bổ sung/chi hoàn đã xử lý.</p>
+    </div>
     <div class="ute-panel mb-3" th:if="${staff and outstanding != null}"><h3 class="h5">Theo dõi khoản thiếu</h3><p th:text="|Cước còn phải nộp bổ sung: ${outstanding} VND|"></p>
         <a th:if="${outstanding.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_SUPPLEMENT',targetId=${settlement.id})}">Lập phiếu bổ sung kèm chứng từ để Admin duyệt</a>
         <p th:if="${refundable != null and refundable.signum() > 0}" th:text="|Cước nộp thừa còn có thể đề nghị hoàn: ${refundable} VND|"></p>
@@ -45,4 +50,5 @@
     </form>
 </aside>
 </div>
+<div data-realtime-region="settlement-progress" th:if="${progress != null}"><div th:replace="~{fragments/operations-progress :: progress(${progress}, ${progressPath})}"></div></div>
 </section></body></html>

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Tiến độ xử lý vận đơn - UTEExpress</title></head><body>
+<section data-realtime-region="operations-progress" th:attr="data-tracking-code=${order.trackingCode},data-updated-at=${order.updatedAt}">
+    <h1 class="h3" th:text="|Tiến độ xử lý ${order.trackingCode}|"></h1>
+    <p>Trạng thái vận đơn: <strong data-order-status th:attr="data-order-status=${order.status}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong></p>
+    <div th:replace="~{fragments/operations-progress :: progress(${progress}, ${progressPath})}"></div>
+    <a class="btn btn-outline-primary" th:href="@{${orderPath}}">Về chi tiết vận đơn</a>
+</section></body></html>

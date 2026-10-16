@@ -12,9 +12,14 @@
 <div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
 <div class="shipper-notice sx-notice-warning" th:if="${pending != null}"><i class="bi bi-hourglass-split"></i><span>Bạn có phiếu <a th:href="@{/shipper/doi-soat/{id}(id=${pending.id})}" th:text="|#${pending.id}|"></a> đang chờ Manager xác nhận. Khi phiếu được xử lý, bạn có thể lập phiếu mới.</span></div>
 
+<div class="ute-panel mb-3" data-realtime-region="shipper-cash-balance"><h3 class="h5">Chênh lệch các phiếu đã xác nhận</h3>
+    <p>Cước còn phải nộp bổ sung: <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|"></strong></p>
+    <p>Cước nộp thừa chưa được chi hoàn: <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|"></strong></p>
+    <p class="small text-muted">Xem từng phiếu trong lịch sử để theo dõi hồ sơ Manager/Admin. Khoản thiếu/thừa này tách biệt với các đơn chưa lập phiếu bên dưới.</p>
+</div>
 <div class="sx-cod-grid">
 <article class="ute-panel sx-tone-gold"><div class="shipper-section-head"><div><span class="shipper-eyebrow">ĐƠN ĐÃ THU TIỀN</span><h3>Chọn đơn để nộp</h3></div><i class="bi bi-list-check"></i></div>
-    <div class="shipper-empty" th:if="${#lists.isEmpty(unsettled)}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-wallet.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Không còn tiền COD cần nộp</h3><p>Các đơn COD giao thành công sẽ xuất hiện ở đây cho tới khi bạn nộp tiền.</p></div>
+    <div class="shipper-empty" th:if="${#lists.isEmpty(unsettled)}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-wallet.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Không có đơn COD chờ lập phiếu mới</h3><p>Vẫn cần kiểm tra khoản thiếu/thừa của các phiếu đã xác nhận ở phía trên.</p></div>
     <p class="shipper-hint" th:if="${held.count > #lists.size(unsettled)}" th:text="|Hiển thị ${#lists.size(unsettled)} đơn cũ nhất (tối đa ${maxOrders} đơn mỗi phiếu).|"></p>
     <div class="table-responsive" th:unless="${#lists.isEmpty(unsettled)}"><table class="table align-middle sx-cod-table mb-0">
         <thead><tr><th scope="col"><input type="checkbox" data-cod-all checked aria-label="Chọn tất cả đơn" th:disabled="${pending != null}"></th><th scope="col">Vận đơn</th><th scope="col">Người nhận</th><th scope="col">Thu lúc</th><th scope="col" class="text-end">Cước COD</th></tr></thead>
