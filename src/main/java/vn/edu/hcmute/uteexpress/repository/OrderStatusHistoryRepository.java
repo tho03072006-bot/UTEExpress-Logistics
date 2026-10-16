@@ -51,6 +51,7 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
 
     Page<OrderStatusHistory> findByOrder(Order order, Pageable pageable);
     long countByOrderAndStatus(Order order, Order.OrderStatus status);
+    Optional<OrderStatusHistory> findFirstByOrderAndStatusOrderByOccurredAtDescIdDesc(Order order, Order.OrderStatus status);
     Optional<OrderStatusHistory> findFirstByOrderAndPreviousStatusAndStatusOrderByOccurredAtDescIdDesc(
             Order order, Order.OrderStatus previousStatus, Order.OrderStatus status);
 }

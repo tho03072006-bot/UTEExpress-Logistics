@@ -29,16 +29,19 @@ public class ShipperRouteService {
     private final OrderRepository orders;
     private final OrderStatusHistoryRepository history;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.admin.OperationsPolicyService policies;
 
-    public ShipperRouteService(LogisticsAccess access, OrderRepository orders, OrderStatusHistoryRepository history, Clock clock) {
+    public ShipperRouteService(LogisticsAccess access, OrderRepository orders, OrderStatusHistoryRepository history, Clock clock,
+            vn.edu.hcmute.uteexpress.service.admin.OperationsPolicyService policies) {
         this.access = access; this.orders = orders; this.history = history; this.clock = clock;
+        this.policies = policies;
     }
 
     public ShipperRoute today(String username) {
         var shipper = access.shipper(username);
         var now = LocalDateTime.now(clock);
-        var page = orders.searchWorkOrders(shipper, null, null, null, null, 1, now,
-                now.toLocalDate().plusDays(1).atStartOfDay(), PageRequest.of(0, MAX_ORDERS));
+        var page = orders.searchWorkOrders(shipper, null, null, null, null, 1, now.toLocalDate().plusDays(1).atStartOfDay().minusNanos(1000),
+                now.toLocalDate().plusDays(1).atStartOfDay(), policies.current().getMaxDeliveryAttempts(), now, PageRequest.of(0, MAX_ORDERS));
         var ids = page.getContent().stream().map(Order::getId).toList();
         Set<Long> due = new HashSet<>();
         if (!ids.isEmpty()) {

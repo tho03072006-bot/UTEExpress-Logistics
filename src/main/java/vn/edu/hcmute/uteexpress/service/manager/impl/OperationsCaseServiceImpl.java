@@ -1,0 +1,269 @@
+package vn.edu.hcmute.uteexpress.service.manager.impl;
+
+import java.math.BigDecimal;
+import java.time.*;
+import java.util.*;
+import org.springframework.data.domain.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import vn.edu.hcmute.uteexpress.dto.manager.*;
+import vn.edu.hcmute.uteexpress.entity.*;
+import vn.edu.hcmute.uteexpress.entity.admin.OperationsCase;
+import vn.edu.hcmute.uteexpress.exception.StaffConflictException;
+import vn.edu.hcmute.uteexpress.repository.*;
+import vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository;
+import vn.edu.hcmute.uteexpress.service.admin.*;
+import vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService;
+import vn.edu.hcmute.uteexpress.service.tracking.*;
+
+@Service @Transactional(readOnly = true)
+public class OperationsCaseServiceImpl implements OperationsCaseService {
+    private static final List<OperationsCase.Status> ACTIVE = List.of(OperationsCase.Status.REQUESTED,
+            OperationsCase.Status.APPROVED, OperationsCase.Status.IN_PROGRESS);
+    private static final List<OperationsCase.Status> ACCEPTED = List.of(OperationsCase.Status.APPROVED, OperationsCase.Status.COMPLETED);
+    private final OperationsCaseRepository cases;
+    private final OrderRepository orders;
+    private final CodSettlementRepository settlements;
+    private final OrderComplaintRepository complaints;
+    private final OrderPaymentRepository payments;
+    private final OrderStatusHistoryRepository history;
+    private final OperationsPolicyService policies;
+    private final StaffAccessPolicy access;
+    private final LogisticsAccess logistics;
+    private final ShipmentImageService images;
+    private final AuditService audit;
+    private final Clock clock;
+    private final jakarta.persistence.EntityManager entityManager;
+    public OperationsCaseServiceImpl(OperationsCaseRepository cases, OrderRepository orders,
+            CodSettlementRepository settlements, OrderComplaintRepository complaints, OrderPaymentRepository payments,
+            OrderStatusHistoryRepository history, OperationsPolicyService policies, StaffAccessPolicy access,
+            LogisticsAccess logistics, ShipmentImageService images, AuditService audit, Clock clock,
+            jakarta.persistence.EntityManager entityManager) {
+        this.cases = cases; this.orders = orders; this.settlements = settlements; this.complaints = complaints;
+        this.payments = payments; this.history = history; this.policies = policies; this.access = access;
+        this.logistics = logistics; this.images = images; this.audit = audit; this.clock = clock;
+        this.entityManager = entityManager;
+    }
+    public Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page) {
+        access.requireOperator(actor); access.validatePage(page);
+        var request = PageRequest.of(page, 20, Sort.by("createdAt", "id").descending());
+        return cases.search(kind, request);
+    }
+    public OperationsCase view(String actor, Long id) {
+        access.requireOperator(actor); access.validateId(id);
+        return cases.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ."));
+    }
+    public boolean requiresAdminApproval(String actor, Long id) {
+        var record = view(actor, id);
+        return isFinancial(record) || (record.getKind() == OperationsCase.Kind.RETRY
+                && history.countByOrderAndStatus(record.getOrder(), Order.OrderStatus.FAILED) >= policies.current().getMaxDeliveryAttempts());
+    }
+    public OperationsCaseRequest prepare(String actor, OperationsCase.Kind kind, Long id) {
+        access.requireOperator(actor); access.validateId(id);
+        if (kind == null) throw new IllegalArgumentException("Chọn loại hồ sơ.");
+        long revision;
+        switch (kind) {
+            case RETRY, RETURN -> revision = orders.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn.")).getRevision();
+            case CASH_SUPPLEMENT, CASH_REFUND -> revision = settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp.")).getRevision();
+            case COMPENSATION -> revision = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại.")).getRevision();
+            default -> throw new IllegalArgumentException("Loại hồ sơ không hợp lệ.");
+        }
+        return new OperationsCaseRequest(kind, id, revision, null, null, "", "", UUID.randomUUID().toString());
+    }
+    @Transactional public Long request(String actor, OperationsCaseRequest form, MultipartFile evidence) {
+        access.requireOperator(actor); access.validate(form);
+        String note = LogisticsInput.text(form.reason(), 5, 500, "Lý do");
+        var now = LocalDateTime.now(clock);
+        Order order = null; CodSettlement settlement = null; OrderComplaint complaint = null;
+        byte[] image = images.png(evidence);
+        switch (form.kind()) {
+            case RETRY, RETURN -> {
+                if (form.amount() != null) throw new IllegalArgumentException("Giao lại/hoàn hàng không nhập số tiền.");
+                order = lockedOrder(form.targetId()); checkRevision(order.getRevision(), form.revision());
+                requireFailed(order);
+                if (order.getShipper() == null || !order.getShipper().isEnabled() || order.getShipper().isLockedByAdmin())
+                    throw new IllegalArgumentException("Đơn phải có Shipper đang hoạt động để xử lý giao lại/hoàn.");
+                if (cases.existsByOrderAndStatusIn(order, ACTIVE)) throw new StaffConflictException("Đơn đã có hồ sơ đang xử lý.");
+                if (form.kind() == OperationsCase.Kind.RETRY) validateAppointment(form.nextAttemptAt(), now);
+                else if (form.nextAttemptAt() != null) throw new IllegalArgumentException("Yêu cầu hoàn không có lịch giao lại.");
+                // Chạm vận đơn để revision của form không được dùng lại sau khi tạo hồ sơ.
+                entityManager.lock(order, jakarta.persistence.LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+                order.setUpdatedAt(now); orders.saveAndFlush(order);
+            }
+            case CASH_SUPPLEMENT, CASH_REFUND -> {
+                requireMoney(form.amount());
+                settlement = settlements.lockById(form.targetId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp."));
+                checkRevision(settlement.getRevision(), form.revision());
+                if (settlement.getStatus() != CodSettlement.Status.CONFIRMED)
+                    throw new IllegalArgumentException("Chỉ ghi bổ sung cho phiếu đã xác nhận có thiếu tiền.");
+                BigDecimal reserved = cases.sumAmounts(settlement, form.kind(), List.of(OperationsCase.Status.REQUESTED));
+                BigDecimal available = form.kind() == OperationsCase.Kind.CASH_SUPPLEMENT ? outstanding(settlement) : refundable(settlement);
+                if (form.amount().compareTo(available.subtract(reserved)) > 0)
+                    throw new IllegalArgumentException("Số tiền vượt khoản thiếu/thừa chưa được lập hồ sơ.");
+                if (image == null) throw new IllegalArgumentException("Phiếu bổ sung cần ảnh chứng từ nộp tiền.");
+                LogisticsInput.text(form.receiptReference(), 5, 100, "Mã biên nhận");
+                if (form.nextAttemptAt() != null) throw new IllegalArgumentException("Phiếu tiền không có lịch giao lại.");
+            }
+            case COMPENSATION -> {
+                requireMoney(form.amount());
+                complaint = complaints.findById(form.targetId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+                order = lockedOrder(complaint.getOrder().getId());
+                entityManager.refresh(complaint, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+                checkRevision(complaint.getRevision(), form.revision());
+                if (complaint.getStatus() == OrderComplaint.Status.REJECTED)
+                    throw new IllegalArgumentException("Không đề xuất chi trả cho khiếu nại đã từ chối.");
+                if (cases.existsByComplaintAndKindAndStatusIn(complaint, OperationsCase.Kind.COMPENSATION,
+                        List.of(OperationsCase.Status.REQUESTED, OperationsCase.Status.APPROVED, OperationsCase.Status.COMPLETED)))
+                    throw new StaffConflictException("Khiếu nại đã có đề xuất đang chờ hoặc đã được duyệt.");
+                validateCompensation(order, form.amount());
+                if (image == null && !complaint.isHasImage()) throw new IllegalArgumentException("Cần ảnh chứng từ của khiếu nại hoặc đính kèm đề xuất.");
+                if (form.nextAttemptAt() != null) throw new IllegalArgumentException("Đề xuất chi trả không có lịch giao lại.");
+            }
+        }
+        var record = new OperationsCase(form.kind(), order, settlement, complaint, form.amount(), form.nextAttemptAt(), note, actor, now);
+        record.setRequestToken(form.requestToken());
+        record.attach(form.receiptReference() == null ? null : LogisticsInput.text(form.receiptReference(), 0, 100, "Mã biên nhận"), image);
+        cases.saveAndFlush(record);
+        audit.record(actor, "CASE_REQUEST", "operations-case:" + record.getId(), form.kind() + "; " + note);
+        return record.getId();
+    }
+    @Transactional public void review(String actor, Long id, OperationsReviewRequest form) {
+        access.requireOperator(actor); access.validate(form);
+        String note = LogisticsInput.text(form.reason(), 5, 500, "Lý do duyệt/từ chối");
+        var record = lock(actor, id, form.revision());
+        if (record.getStatus() != OperationsCase.Status.REQUESTED) throw new StaffConflictException("Hồ sơ đã được xử lý.");
+        if (isFinancial(record)) {
+            access.requireAdmin(actor);
+            if (actor.equals(record.getCreatedBy())) throw new IllegalArgumentException("Người lập không được tự duyệt hồ sơ tiền của mình.");
+        }
+        if (form.approve()) {
+            switch (record.getKind()) {
+                case RETRY -> {
+                    requireFailed(record.getOrder()); validateAppointment(record.getNextAttemptAt(), LocalDateTime.now(clock));
+                    if (history.countByOrderAndStatus(record.getOrder(), Order.OrderStatus.FAILED) >= policies.current().getMaxDeliveryAttempts())
+                        access.requireAdmin(actor);
+                }
+                case RETURN -> requireFailed(record.getOrder());
+                case CASH_SUPPLEMENT, CASH_REFUND -> {
+                    BigDecimal available = record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT
+                            ? outstanding(record.getSettlement()) : refundable(record.getSettlement());
+                    if (record.getSettlement().getStatus() != CodSettlement.Status.CONFIRMED
+                            || record.getAmount().compareTo(available) > 0)
+                        throw new StaffConflictException("Khoản thiếu đã thay đổi hoặc phiếu chưa được xác nhận.");
+                }
+                case COMPENSATION -> {
+                    if (record.getComplaint().getStatus() == OrderComplaint.Status.REJECTED)
+                        throw new StaffConflictException("Khiếu nại đã bị từ chối.");
+                    validateCompensation(record.getOrder(), record.getAmount());
+                }
+            }
+        }
+        record.review(form.approve(), actor, note, LocalDateTime.now(clock)); cases.saveAndFlush(record);
+        audit.record(actor, form.approve() ? "CASE_APPROVE" : "CASE_REJECT", "operations-case:" + id, note);
+    }
+    @Transactional public void startReturn(String actor, Long id, long revision, String reason) {
+        access.requireOperator(actor); String note = LogisticsInput.text(reason, 5, 500, "Lý do");
+        var record = lock(actor, id, revision);
+        if (record.getKind() != OperationsCase.Kind.RETURN || record.getStatus() != OperationsCase.Status.APPROVED)
+            throw new StaffConflictException("Chỉ bắt đầu hoàn sau khi yêu cầu hoàn được duyệt.");
+        requireFailed(record.getOrder()); record.start(LocalDateTime.now(clock)); cases.saveAndFlush(record);
+        audit.record(actor, "RETURN_START", "operations-case:" + id, note);
+    }
+    @Transactional public void complete(String actor, Long id, long revision, String reference, MultipartFile evidence) {
+        access.requireOperator(actor);
+        String receipt = LogisticsInput.text(reference, 5, 100, "Tên người nhận hoàn / mã chứng từ chi trả");
+        byte[] image = images.png(evidence);
+        if (image == null) throw new IllegalArgumentException("Cần ảnh biên nhận bàn giao/chi trả hợp lệ.");
+        var record = lock(actor, id, revision);
+        var now = LocalDateTime.now(clock);
+        if (record.getKind() == OperationsCase.Kind.RETURN && record.getStatus() == OperationsCase.Status.IN_PROGRESS) {
+            var order = record.getOrder(); requireFailed(order);
+            order.setStatus(Order.OrderStatus.RETURNED); order.setUpdatedAt(now); orders.saveAndFlush(order);
+            history.save(new OrderStatusHistory(order, logistics.internal(actor), Order.OrderStatus.FAILED,
+                    Order.OrderStatus.RETURNED, null, "Bàn giao hoàn theo hồ sơ " + id + ": " + receipt, null, now));
+        } else if ((record.getKind() == OperationsCase.Kind.COMPENSATION || record.getKind() == OperationsCase.Kind.CASH_REFUND)
+                && record.getStatus() == OperationsCase.Status.APPROVED) {
+            access.requireAdmin(actor);
+            if (record.getCreatedBy().equals(actor)) throw new IllegalArgumentException("Người đề xuất không tự ghi nhận chi trả.");
+            if (record.getKind() == OperationsCase.Kind.COMPENSATION) {
+                if (record.getComplaint().getStatus() == OrderComplaint.Status.REJECTED)
+                    throw new StaffConflictException("Khiếu nại đã bị từ chối; không được ghi nhận chi trả.");
+                validateCompensation(record.getOrder(), record.getAmount());
+            }
+        } else throw new StaffConflictException("Hồ sơ chưa đủ điều kiện hoàn tất hoặc đã kết thúc.");
+        record.complete(receipt, image, now); cases.saveAndFlush(record);
+        audit.record(actor, "CASE_COMPLETE", "operations-case:" + id, "Ghi nhận chứng từ ngoài hệ thống: " + receipt);
+    }
+    public BigDecimal outstanding(CodSettlement settlement) {
+        if (settlement.getStatus() != CodSettlement.Status.CONFIRMED) return BigDecimal.ZERO;
+        return settlement.getTotalAmount().subtract(settlement.getDeclaredAmount())
+                .subtract(cases.sumAmounts(settlement, OperationsCase.Kind.CASH_SUPPLEMENT, ACCEPTED)).max(BigDecimal.ZERO);
+    }
+    public boolean canRetry(Order order) {
+        // Quyền giao lại dùng chung cho API, form chi tiết và xử lý hàng loạt.
+        if (order.getStatus() != Order.OrderStatus.FAILED || cases.existsByOrderAndKindAndStatusIn(order, OperationsCase.Kind.RETURN, ACTIVE)) return false;
+        var approved = cases.findByOrderAndKindAndStatus(order, OperationsCase.Kind.RETRY, OperationsCase.Status.APPROVED);
+        if (!approved.isEmpty()) return !approved.get(0).getNextAttemptAt().isAfter(LocalDateTime.now(clock));
+        var latest = history.findFirstByOrderAndStatusOrderByOccurredAtDescIdDesc(order, Order.OrderStatus.FAILED);
+        if (latest.isEmpty() || latest.get().getNextAttemptAt() == null
+                || latest.get().getNextAttemptAt().isAfter(LocalDateTime.now(clock))) return false;
+        return !cases.existsByOrderAndKindAndStatusIn(order, OperationsCase.Kind.RETRY, List.of(OperationsCase.Status.REQUESTED))
+                && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < policies.current().getMaxDeliveryAttempts();
+    }
+    public BigDecimal refundable(CodSettlement settlement) {
+        if (settlement.getStatus() != CodSettlement.Status.CONFIRMED) return BigDecimal.ZERO;
+        return settlement.getDeclaredAmount().subtract(settlement.getTotalAmount())
+                .subtract(cases.sumAmounts(settlement, OperationsCase.Kind.CASH_REFUND, ACCEPTED)).max(BigDecimal.ZERO);
+    }
+    @Transactional public void beforeStatusChange(Order order, String shipper, Order.OrderStatus status) {
+        var actor = logistics.shipper(shipper);
+        if (order.getShipper() == null || !order.getShipper().getId().equals(actor.getId()))
+            throw new org.springframework.security.access.AccessDeniedException("Đơn không thuộc Shipper này.");
+        if (status == Order.OrderStatus.RETURNED)
+            throw new IllegalArgumentException("Hoàn hàng cần hồ sơ duyệt và ảnh bàn giao người gửi tại khu Manager.");
+        if (order.getStatus() == Order.OrderStatus.FAILED && status == Order.OrderStatus.IN_TRANSIT) {
+            if (!canRetry(order)) throw new IllegalArgumentException("Chưa tới lịch, đã hết số lần giao hoặc đang chờ duyệt/hoàn hàng.");
+            for (var record : cases.findByOrderAndKindAndStatus(order, OperationsCase.Kind.RETRY, OperationsCase.Status.APPROVED)) {
+                record.complete("Giao lại bởi " + shipper, null, LocalDateTime.now(clock)); cases.saveAndFlush(record);
+                audit.record(shipper, "RETRY_START", "operations-case:" + record.getId(), "Bắt đầu lượt giao lại đã được duyệt.");
+            }
+        }
+    }
+    private OperationsCase lock(String actor, Long id, long revision) {
+        var existing = view(actor, id);
+        if (existing.getOrder() != null) lockedOrder(existing.getOrder().getId());
+        if (existing.getSettlement() != null) settlements.lockById(existing.getSettlement().getId()).orElseThrow();
+        if (existing.getComplaint() != null)
+            entityManager.refresh(existing.getComplaint(), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        var record = cases.lockCase(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ."));
+        // view() đã nạp hồ sơ trước lúc chờ khóa cha: đọc lại để không duyệt trạng thái cũ trong persistence context.
+        entityManager.refresh(record, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        checkRevision(record.getRevision(), revision); return record;
+    }
+    private Order lockedOrder(Long id) { return orders.findLockedById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn.")); }
+    private void requireFailed(Order order) {
+        if (order.getStatus() != Order.OrderStatus.FAILED) throw new StaffConflictException("Chỉ xử lý giao lại/hoàn cho đơn đang giao thất bại.");
+    }
+    private void checkRevision(long expected, long submitted) {
+        if (submitted < 0 || expected != submitted) throw new StaffConflictException("Dữ liệu đã thay đổi. Hãy tải lại trang.");
+    }
+    private void validateAppointment(LocalDateTime time, LocalDateTime now) {
+        if (time == null || !time.isAfter(now) || time.isAfter(now.plusDays(30)))
+            throw new IllegalArgumentException("Lịch giao lại phải sau hiện tại và trong 30 ngày.");
+    }
+    private void requireMoney(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0 || amount.stripTrailingZeros().scale() > 0
+                || amount.compareTo(new BigDecimal("999999999999")) > 0)
+            throw new IllegalArgumentException("Số tiền phải là VND nguyên dương, tối đa 12 chữ số.");
+    }
+    private void validateCompensation(Order order, BigDecimal amount) {
+        var payment = payments.findByOrder(order).orElseThrow(() -> new IllegalArgumentException("Đơn chưa có thanh toán."));
+        if (payment.getStatus() != OrderPayment.PaymentStatus.PAID || amount.compareTo(payment.getAmount()) > 0)
+            throw new IllegalArgumentException("Mô hình hiện tại chỉ hỗ trợ hoàn/bồi hoàn cước không vượt cước đã thanh toán, không phải giá trị hàng hóa.");
+    }
+    private boolean isFinancial(OperationsCase record) {
+        return record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND
+                || record.getKind() == OperationsCase.Kind.COMPENSATION;
+    }
+}
