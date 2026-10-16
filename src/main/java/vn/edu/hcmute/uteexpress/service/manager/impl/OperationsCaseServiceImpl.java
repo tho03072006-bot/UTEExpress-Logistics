@@ -35,15 +35,17 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private final AuditService audit;
     private final Clock clock;
     private final jakarta.persistence.EntityManager entityManager;
+    private final org.springframework.context.ApplicationEventPublisher events;
     public OperationsCaseServiceImpl(OperationsCaseRepository cases, OrderRepository orders,
             CodSettlementRepository settlements, OrderComplaintRepository complaints, OrderPaymentRepository payments,
             OrderStatusHistoryRepository history, OperationsPolicyService policies, StaffAccessPolicy access,
             LogisticsAccess logistics, ShipmentImageService images, AuditService audit, Clock clock,
-            jakarta.persistence.EntityManager entityManager) {
+            jakarta.persistence.EntityManager entityManager, org.springframework.context.ApplicationEventPublisher events) {
         this.cases = cases; this.orders = orders; this.settlements = settlements; this.complaints = complaints;
         this.payments = payments; this.history = history; this.policies = policies; this.access = access;
         this.logistics = logistics; this.images = images; this.audit = audit; this.clock = clock;
         this.entityManager = entityManager;
+        this.events = events;
     }
     public Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page) {
         access.requireOperator(actor); access.validatePage(page);
@@ -71,7 +73,8 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         }
         return new OperationsCaseRequest(kind, id, revision, null, null, "", "", UUID.randomUUID().toString());
     }
-    @Transactional public Long request(String actor, OperationsCaseRequest form, MultipartFile evidence) {
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public Long request(String actor, OperationsCaseRequest form, MultipartFile evidence) {
         access.requireOperator(actor); access.validate(form);
         String note = LogisticsInput.text(form.reason(), 5, 500, "Lý do");
         var now = LocalDateTime.now(clock);
@@ -126,9 +129,11 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         record.attach(form.receiptReference() == null ? null : LogisticsInput.text(form.receiptReference(), 0, 100, "Mã biên nhận"), image);
         cases.saveAndFlush(record);
         audit.record(actor, "CASE_REQUEST", "operations-case:" + record.getId(), form.kind() + "; " + note);
+        publishProgress(record, null);
         return record.getId();
     }
-    @Transactional public void review(String actor, Long id, OperationsReviewRequest form) {
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void review(String actor, Long id, OperationsReviewRequest form) {
         access.requireOperator(actor); access.validate(form);
         String note = LogisticsInput.text(form.reason(), 5, 500, "Lý do duyệt/từ chối");
         var record = lock(actor, id, form.revision());
@@ -136,6 +141,10 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         if (isFinancial(record)) {
             access.requireAdmin(actor);
             if (actor.equals(record.getCreatedBy())) throw new IllegalArgumentException("Người lập không được tự duyệt hồ sơ tiền của mình.");
+        }
+        if (record.getKind() == OperationsCase.Kind.RETRY
+                && history.countByOrderAndStatus(record.getOrder(), Order.OrderStatus.FAILED) >= policies.current().getMaxDeliveryAttempts()) {
+            access.requireAdmin(actor);
         }
         if (form.approve()) {
             switch (record.getKind()) {
@@ -161,16 +170,21 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         }
         record.review(form.approve(), actor, note, LocalDateTime.now(clock)); cases.saveAndFlush(record);
         audit.record(actor, form.approve() ? "CASE_APPROVE" : "CASE_REJECT", "operations-case:" + id, note);
+        publishProgress(record, form.approve() && record.getKind() == OperationsCase.Kind.RETRY
+                ? vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETRY_APPROVED : null);
     }
-    @Transactional public void startReturn(String actor, Long id, long revision, String reason) {
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void startReturn(String actor, Long id, long revision, String reason) {
         access.requireOperator(actor); String note = LogisticsInput.text(reason, 5, 500, "Lý do");
         var record = lock(actor, id, revision);
         if (record.getKind() != OperationsCase.Kind.RETURN || record.getStatus() != OperationsCase.Status.APPROVED)
             throw new StaffConflictException("Chỉ bắt đầu hoàn sau khi yêu cầu hoàn được duyệt.");
         requireFailed(record.getOrder()); record.start(LocalDateTime.now(clock)); cases.saveAndFlush(record);
         audit.record(actor, "RETURN_START", "operations-case:" + id, note);
+        publishProgress(record, vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETURN_STARTED);
     }
-    @Transactional public void complete(String actor, Long id, long revision, String reference, MultipartFile evidence) {
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void complete(String actor, Long id, long revision, String reference, MultipartFile evidence) {
         access.requireOperator(actor);
         String receipt = LogisticsInput.text(reference, 5, 100, "Tên người nhận hoàn / mã chứng từ chi trả");
         byte[] image = images.png(evidence);
@@ -194,6 +208,21 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         } else throw new StaffConflictException("Hồ sơ chưa đủ điều kiện hoàn tất hoặc đã kết thúc.");
         record.complete(receipt, image, now); cases.saveAndFlush(record);
         audit.record(actor, "CASE_COMPLETE", "operations-case:" + id, "Ghi nhận chứng từ ngoài hệ thống: " + receipt);
+        publishProgress(record, record.getKind() == OperationsCase.Kind.RETURN
+                ? vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETURNED : null);
+    }
+
+    private void publishProgress(OperationsCase record, vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind kind) {
+        Order order = record.getOrder();
+        if (order == null) return;
+        events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
+                order.getId(), order.getTrackingCode(), order.getStatus().name(), LocalDateTime.now(clock)));
+        if (kind != null && order.getSender() != null) {
+            var sender = order.getSender();
+            events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent(
+                    sender.getEmail(), sender.getFullName() == null ? order.getSenderName() : sender.getFullName(),
+                    order.getTrackingCode(), kind, null, record.getNextAttemptAt()));
+        }
     }
     public BigDecimal outstanding(CodSettlement settlement) {
         if (settlement.getStatus() != CodSettlement.Status.CONFIRMED) return BigDecimal.ZERO;

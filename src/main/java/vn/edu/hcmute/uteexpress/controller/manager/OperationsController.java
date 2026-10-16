@@ -60,7 +60,8 @@ public class OperationsController {
         boolean admin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean financial = record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND
                 || record.getKind() == OperationsCase.Kind.COMPENSATION;
-        model.addAttribute("canReview", !financial || (admin && !auth.getName().equals(record.getCreatedBy())));
+        model.addAttribute("canReview", (admin || !cases.requiresAdminApproval(auth.getName(), id))
+                && (!financial || !auth.getName().equals(record.getCreatedBy())));
         model.addAttribute("canApprove", (admin || !cases.requiresAdminApproval(auth.getName(), id))
                 && (!financial || !auth.getName().equals(record.getCreatedBy())));
         model.addAttribute("canComplete", record.getKind() == OperationsCase.Kind.RETURN || (admin && !auth.getName().equals(record.getCreatedBy())));
