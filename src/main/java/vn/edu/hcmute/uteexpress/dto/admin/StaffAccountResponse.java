@@ -7,7 +7,7 @@ public record StaffAccountResponse(Long id, String username, String fullName, St
     public static StaffAccountResponse from(StaffAccount account) {
         var user = account.getUser();
         return new StaffAccountResponse(account.getId(), user.getUsername(), user.getFullName(),
-                user.getEmail(), user.getRole().name(), account.isActive() && user.isEnabled(),
+                user.getEmail(), user.getRole().name(), account.isActive() && user.isEnabled() && !user.isLockedByAdmin(),
                 account.isPasswordChangeRequired(), account.getRevision(), account.getIssuedBy());
     }
 }

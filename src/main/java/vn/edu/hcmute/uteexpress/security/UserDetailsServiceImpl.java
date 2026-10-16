@@ -1,6 +1,5 @@
 package vn.edu.hcmute.uteexpress.security;
 
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,11 +27,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         AppUser appUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Khong tim thay tai khoan: " + username));
 
-        return User.builder()
-                .username(appUser.getUsername())
-                .password(appUser.getPassword())
-                .disabled(!appUser.isEnabled())
-                .authorities("ROLE_" + appUser.getRole().name())
-                .build();
+        if (appUser.getRole() == AppUser.Role.ADMIN || appUser.getRole() == AppUser.Role.MANAGER) {
+            throw new UsernameNotFoundException("Tài khoản nội bộ phải dùng trang đăng nhập nội bộ.");
+        }
+        return new vn.edu.hcmute.uteexpress.security.admin.PublicAccountPrincipal(appUser);
     }
 }

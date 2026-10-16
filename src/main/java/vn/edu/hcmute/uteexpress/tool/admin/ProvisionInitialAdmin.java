@@ -96,8 +96,8 @@ public final class ProvisionInitialAdmin {
             }
             long userId;
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO app_user (username, password, full_name, email, role, enabled, created_at) "
-                            + "VALUES (?, ?, ?, ?, 'ADMIN', 1, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                    "INSERT INTO app_user (username, password, full_name, email, role, enabled, created_at, revision, locked_by_admin, access_version) "
+                            + "VALUES (?, ?, ?, ?, 'ADMIN', 1, ?, 0, 0, 0)", Statement.RETURN_GENERATED_KEYS)) {
                 statement.setString(1, form.getUsername());
                 statement.setString(2, hash);
                 statement.setString(3, form.getFullName());

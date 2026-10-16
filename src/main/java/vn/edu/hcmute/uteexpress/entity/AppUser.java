@@ -38,6 +38,20 @@ public class AppUser {
     @Column(nullable = false)
     private boolean enabled = false; // true sau khi xac thuc OTP dang ky thanh cong
 
+    // Phân biệt khóa bởi Admin với tài khoản chưa xác thực; OTP không được mở khóa này.
+    @Column(name = "locked_by_admin", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private boolean lockedByAdmin;
+
+    @Version
+    @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private long revision;
+
+    @Column(name = "access_version", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private long accessVersion;
+
     @Column(name = "otp_code", length = 10)
     private String otpCode; // ma OTP tam thoi cho dang ky / quen mat khau
 
@@ -125,6 +139,12 @@ public class AppUser {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public boolean isLockedByAdmin() { return lockedByAdmin; }
+    public void setLockedByAdmin(boolean lockedByAdmin) { this.lockedByAdmin = lockedByAdmin; }
+    public long getRevision() { return revision; }
+    public long getAccessVersion() { return accessVersion; }
+    public void revokeSessions() { accessVersion++; }
 
     public String getOtpCode() {
         return otpCode;

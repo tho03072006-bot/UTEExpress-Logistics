@@ -38,6 +38,7 @@ public class TrackingServiceImpl implements TrackingService {
     private final ApplicationEventPublisher eventPublisher;
     private final OrderStatusHistoryRepository history;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations;
 
     public TrackingServiceImpl(
             AppUserRepository appUserRepository,
@@ -45,7 +46,8 @@ public class TrackingServiceImpl implements TrackingService {
             OrderPaymentService orderPaymentService,
             DeliveryProofService deliveryProofService,
             ApplicationEventPublisher eventPublisher,
-            OrderStatusHistoryRepository history, Clock clock) {
+            OrderStatusHistoryRepository history, Clock clock,
+            vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations) {
         this.appUserRepository = appUserRepository;
         this.orderRepository = orderRepository;
         this.orderPaymentService = orderPaymentService;
@@ -53,6 +55,7 @@ public class TrackingServiceImpl implements TrackingService {
         this.eventPublisher = eventPublisher;
         this.history = history;
         this.clock = clock;
+        this.operations = operations;
     }
 
     @Override
@@ -136,7 +139,7 @@ public class TrackingServiceImpl implements TrackingService {
                 || !nextAttemptAt.isAfter(now) || nextAttemptAt.isAfter(now.plusDays(30))))
             throw new IllegalArgumentException("Hẹn giao lại phải sau hiện tại và trong 30 ngày, khi báo giao thất bại.");
         if (order.getStatus() == Order.OrderStatus.FAILED && newStatus == Order.OrderStatus.IN_TRANSIT && !canRetry(order))
-            throw new IllegalStateException("Đơn đã giao thất bại 3 lần; cần hoàn trả hoặc trao đổi với Manager.");
+            throw new IllegalStateException("Chưa đủ điều kiện giao lại: kiểm tra lịch hẹn, giới hạn số lần và hồ sơ duyệt với Manager.");
         if (newStatus == Order.OrderStatus.DELIVERED && !hasCurrentProof(order)) {
             throw new IllegalStateException(
                     "Phải lưu ảnh bằng chứng và chữ ký người nhận "
@@ -144,6 +147,7 @@ public class TrackingServiceImpl implements TrackingService {
         }
 
         Order.OrderStatus previousStatus = order.getStatus();
+        operations.beforeStatusChange(order, shipperUsername, newStatus);
         order.setStatus(newStatus);
         order.setUpdatedAt(now);
         Order savedOrder = orderRepository.save(order);
@@ -209,8 +213,7 @@ public class TrackingServiceImpl implements TrackingService {
 
     @Override
     public boolean canRetry(Order order) {
-        return order.getStatus() == Order.OrderStatus.FAILED
-                && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < MAX_DELIVERY_FAILURES;
+        return operations.canRetry(order);
     }
 
     @Override
@@ -281,7 +284,7 @@ public class TrackingServiceImpl implements TrackingService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 
-        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled()) {
+        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled() || shipper.isLockedByAdmin()) {
             throw new IllegalStateException(
                     "Tài khoản hiện tại không có vai trò SHIPPER.");
         }

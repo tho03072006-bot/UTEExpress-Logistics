@@ -65,7 +65,8 @@ public final class AivenConnectionSettings {
         options.setProperty("fallbackToSystemTrustStore", "false");
         options.setProperty("allowPublicKeyRetrieval", "false");
         options.setProperty("characterEncoding", "UTF-8");
-        options.setProperty("connectionTimeZone", "Asia/Ho_Chi_Minh");
+        options.setProperty("connectionTimeZone", "+07:00");
+        options.setProperty("forceConnectionTimeZoneToSession", "true");
         options.setProperty("preserveInstants", "false");
         options.setProperty("connectTimeout", "10000");
         options.setProperty("socketTimeout", "30000");

@@ -6,6 +6,17 @@
 <a class="btn btn-outline-primary btn-sm sx-tone-violet" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công Shipper</a>
 <a class="btn btn-outline-primary btn-sm sx-tone-rose" th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-square-text"></i> Khiếu nại</a>
 <a class="btn btn-outline-primary btn-sm sx-tone-gold" th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát COD</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/khuyen-mai}">Khuyến mãi</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/bao-cao}">Báo cáo</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/bang-cuoc}">Xem bảng cước</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/canh-bao}">Cảnh báo cần xử lý</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/ho-so-van-hanh}">Hồ sơ giao lại/hoàn/tiền</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/hieu-suat-shipper}">Hiệu suất Shipper</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/lich-cuoc}">Lịch cước</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/chinh-sach-van-hanh}">Chính sách vận hành</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản · 4 vai trò</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/bang-cuoc}">Cấu hình cước</a>
+<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/nhat-ky}">Nhật ký</a>
 <a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Quản trị hệ thống</a>
 <a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/tai-khoan}"><i class="bi bi-people"></i> Tài khoản nội bộ</a>
 <a class="btn btn-outline-secondary btn-sm sx-tone-slate" th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>

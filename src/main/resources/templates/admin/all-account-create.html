@@ -1,0 +1,15 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Thêm tài khoản - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-panel p-4 mx-auto" style="max-width:760px">
+<h1 class="h3">Admin · Thêm tài khoản</h1><p>Cấp trực tiếp bằng mật khẩu, không OTP. Không dùng chung tài khoản giữa các thành viên; kiểm tra email thật của người nhận trước khi cấp.</p>
+<form th:action="@{/admin/quan-ly-tai-khoan/tao}" th:object="${form}" method="post">
+<div th:replace="~{admin/account-form-fragments :: errors}"></div>
+<div class="mb-3"><label for="username" class="form-label">Tên đăng nhập (không đổi sau khi cấp)</label><input th:field="*{username}" class="form-control" required minlength="4" maxlength="50" pattern="[a-z][a-z0-9._-]{3,49}" autocomplete="off"><div class="form-text">4–50 ký tự, bắt đầu bằng chữ thường, dùng chữ/số/. _ -.</div></div>
+<div class="mb-3"><label for="fullName" class="form-label">Họ và tên</label><input th:field="*{fullName}" class="form-control" required minlength="2" maxlength="100"></div>
+<div class="mb-3"><label for="email" class="form-label">Email cá nhân/công việc thực tế</label><input th:field="*{email}" type="email" class="form-control" required maxlength="100"></div>
+<div class="mb-3"><label for="phone" class="form-label">Số điện thoại di động Việt Nam</label><input th:field="*{phone}" type="tel" class="form-control" required maxlength="20" placeholder="0901234567 hoặc +84 901 234 567"></div>
+<div class="mb-3"><label for="role" class="form-label">Vai trò</label><select th:field="*{role}" class="form-select" required>
+<option value="">Chọn vai trò</option><option value="USER">User — gửi và quản lý đơn của mình</option><option value="SHIPPER">Shipper — thực hiện giao hàng</option><option value="MANAGER">Manager — điều phối, khuyến mãi, báo cáo; không CRUD tài khoản</option><option value="ADMIN">Admin — quản trị tài khoản, bảng cước, nhật ký và quyền Manager</option></select></div>
+<div th:replace="~{admin/account-form-fragments :: credentials}"></div>
+<button class="btn btn-primary" type="submit">Thêm tài khoản</button> <a class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan}">Hủy</a>
+</form></div></section></body></html>

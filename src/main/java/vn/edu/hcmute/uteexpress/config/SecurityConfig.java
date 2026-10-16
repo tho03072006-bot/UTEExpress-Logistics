@@ -27,7 +27,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+            vn.edu.hcmute.uteexpress.repository.AppUserRepository users,
+            vn.edu.hcmute.uteexpress.repository.admin.StaffAccountRepository staff) throws Exception {
         var pageRequestCache = new vn.edu.hcmute.uteexpress.security.PageRequestCache();
         http
             .requestCache(cache -> cache.requestCache(pageRequestCache))
@@ -70,7 +72,11 @@ public class SecurityConfig {
                 if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
                 return !java.util.Set.of("GET", "HEAD", "OPTIONS", "TRACE").contains(request.getMethod())
                         && (path.startsWith("/shipper/") || path.matches("/nguoi-dung/don-hang/[0-9]+/khieu-nai"));
-            }));
+            }))
+            .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.PublicAccountSessionFilter(users),
+                org.springframework.security.web.access.intercept.AuthorizationFilter.class)
+            .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.StaffSessionFilter(staff),
+                org.springframework.security.web.access.intercept.AuthorizationFilter.class);
 
         return http.build();
     }

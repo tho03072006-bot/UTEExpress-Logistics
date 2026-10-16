@@ -53,6 +53,7 @@ class TrackingServiceImplTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock private vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
+    @Mock private vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations;
     @Spy private java.time.Clock clock = java.time.Clock.fixed(java.time.Instant.parse("2026-10-11T02:00:00Z"),
             java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
 

@@ -9,7 +9,9 @@ import java.util.Set;
 public final class CheckAivenConnection {
     private static final Set<String> EXPECTED_TABLES = Set.of(
             "app_user", "shipment_order", "saved_address", "draft_order", "promo_code",
-            "order_payment", "service_review", "email_change_request", "delivery_proof", "staff_account");
+            "order_payment", "service_review", "email_change_request", "delivery_proof", "staff_account",
+            "shipping_tariff", "audit_event", "order_status_history", "shipper_notification", "order_complaint",
+            "cod_settlement", "cod_settlement_item", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version");
 
     private CheckAivenConnection() { }
 
@@ -49,6 +51,14 @@ public final class CheckAivenConnection {
             System.out.println("Số bảng hiện có: " + tables.size());
             if (missing.isEmpty()) {
                 System.out.println("Schema UTEExpress: đầy đủ " + EXPECTED_TABLES.size() + " bảng");
+                boolean accountSchemaReady = true;
+                for (String column : new String[]{"revision", "locked_by_admin", "access_version"}) {
+                    try (var result = metadata.getColumns(connection.getCatalog(), null, "app_user", column)) {
+                        if (!result.next()) { accountSchemaReady = false; }
+                    }
+                }
+                System.out.println(accountSchemaReady ? "Schema tài khoản: đủ 3 cột bảo vệ CRUD/phiên đăng nhập"
+                    : "Schema tài khoản: cần chạy UpgradeAivenAccounts --apply trước khi chạy bản CRUD mới");
             } else {
                 System.out.println("Schema UTEExpress: chưa khởi tạo hoặc còn thiếu " + missing.size() + " bảng");
             }

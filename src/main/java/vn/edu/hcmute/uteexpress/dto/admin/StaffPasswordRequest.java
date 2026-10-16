@@ -6,11 +6,12 @@ import java.nio.charset.StandardCharsets;
 public class StaffPasswordRequest {
     @NotBlank(message = "Vui lòng nhập mật khẩu.")
     @Size(min = 12, max = 64, message = "Mật khẩu phải có từ 12 đến 64 ký tự.")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9\\s])\\S+$",
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9\\s])[^\\p{Cntrl}\\s]+$",
             message = "Mật khẩu cần chữ hoa, chữ thường, số, ký tự đặc biệt và không có khoảng trắng.")
     private String password;
 
     @NotBlank(message = "Vui lòng xác nhận mật khẩu.")
+    @Size(max = 64, message = "Xác nhận mật khẩu tối đa 64 ký tự.")
     private String confirmPassword;
 
     @AssertTrue(message = "Hai mật khẩu không khớp.")

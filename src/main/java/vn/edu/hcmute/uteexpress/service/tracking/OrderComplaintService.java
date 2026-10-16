@@ -18,9 +18,14 @@ public class OrderComplaintService {
     private final LogisticsAccess access;
     private final ShipmentImageService images;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities;
+    private final vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
     public OrderComplaintService(OrderRepository orders, OrderComplaintRepository complaints,
-            LogisticsAccess access, ShipmentImageService images, Clock clock) {
+            LogisticsAccess access, ShipmentImageService images, Clock clock,
+            vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities,
+            vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases) {
         this.orders = orders; this.complaints = complaints; this.access = access; this.images = images; this.clock = clock;
+        this.activities = activities; this.cases = cases;
     }
     public Optional<OrderComplaint> forOrder(Order order, String username) {
         access.checkOrder(order, username);
@@ -45,25 +50,56 @@ public class OrderComplaintService {
         if (!customer.getId().equals(order.getSender().getId()))
             throw new org.springframework.security.access.AccessDeniedException("Vận đơn không thuộc tài khoản của bạn.");
         if (complaints.findByOrder(order).isPresent()) throw new IllegalArgumentException("Vận đơn đã có hồ sơ khiếu nại.");
-        complaints.save(new OrderComplaint(order, title, body, attachment, LocalDateTime.now(clock)));
+        var complaint = complaints.save(new OrderComplaint(order, title, body, attachment, LocalDateTime.now(clock)));
+        activity(complaint, username, "CREATE", body);
     }
     @Transactional
     public void respond(Long id, String actor, long revision, OrderComplaint.Status status, String reply) {
         var manager = access.internal(actor);
-        var complaint = view(id, actor);
+        var complaint = lockedComplaint(id, actor);
         checkRevision(complaint, revision);
+        if (complaint.getHandledBy() != null && !complaint.getHandledBy().getId().equals(manager.getId())
+                && manager.getRole() != AppUser.Role.ADMIN)
+            throw new org.springframework.security.access.AccessDeniedException("Hồ sơ đang do Manager khác phụ trách.");
         if (status == null || status == OrderComplaint.Status.OPEN)
             throw new IllegalArgumentException("Chọn trạng thái đang xử lý, đã giải quyết hoặc từ chối.");
+        if (status == OrderComplaint.Status.REJECTED && cases.existsByComplaintAndKindAndStatusIn(complaint,
+                vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.COMPENSATION, java.util.List.of(
+                vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED,
+                vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
+            throw new IllegalArgumentException("Không từ chối khiếu nại đã có khoản bồi hoàn được duyệt/chi trả.");
         complaint.respond(manager, status, LogisticsInput.text(reply, 5, 2000, "Phản hồi"), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint);
+        activity(complaint, actor, "RESPOND", reply);
     }
     @Transactional
     public void supplement(Long id, String username, long revision, String note) {
         access.shipper(username);
-        var complaint = view(id, username);
+        var complaint = lockedComplaint(id, username);
         checkRevision(complaint, revision);
         complaint.supplement(LogisticsInput.text(note, 5, 1000, "Thông tin bổ sung"), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint);
+        activity(complaint, username, "SUPPLEMENT", note);
+    }
+    @Transactional public void claim(Long id, String actor, long revision) {
+        var manager = access.internal(actor); var complaint = lockedComplaint(id, actor); checkRevision(complaint, revision);
+        if (complaint.getHandledBy() != null && !complaint.getHandledBy().getId().equals(manager.getId())
+                && manager.getRole() != AppUser.Role.ADMIN)
+            throw new org.springframework.security.access.AccessDeniedException("Hồ sơ đã có người phụ trách.");
+        complaint.respond(manager, OrderComplaint.Status.IN_PROGRESS, complaint.getManagerReply(), LocalDateTime.now(clock));
+        complaints.saveAndFlush(complaint); activity(complaint, actor, "CLAIM", "Nhận phụ trách hồ sơ.");
+    }
+    public Page<vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity> timeline(Long id, String actor, int page) {
+        view(id, actor); return activities.findByComplaintIdOrderByCreatedAtAscIdAsc(id, PageRequest.of(LogisticsInput.page(page), 20));
+    }
+    private void activity(OrderComplaint complaint, String actor, String action, String message) {
+        activities.save(new vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity(complaint, actor, action,
+                LogisticsInput.text(message, 5, 2000, "Nội dung"), LocalDateTime.now(clock)));
+    }
+    private OrderComplaint lockedComplaint(Long id, String actor) {
+        var complaint = complaints.lockById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+        access.checkOrder(complaint.getOrder(), actor);
+        return complaint;
     }
     private void checkRevision(OrderComplaint complaint, long revision) {
         if (complaint.getRevision() != revision) throw new IllegalArgumentException("Hồ sơ đã thay đổi. Hãy tải lại trang.");

@@ -3,6 +3,7 @@ package vn.edu.hcmute.uteexpress.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 
@@ -24,22 +25,32 @@ public class OrderCreateRequest {
     private Long receiverAddressId;
 
     @NotBlank(message = "Vui lòng nhập tên người gửi")
+    @Size(min = 2, max = 100, message = "Tên người gửi từ 2–100 ký tự.")
+    @Pattern(regexp = "[\\p{L}\\p{M} .'-]+", message = "Tên người gửi chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
     private String senderName;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ lấy hàng")
+    @Size(min = 5, max = 255, message = "Địa chỉ lấy hàng từ 5–255 ký tự.")
+    @Pattern(regexp = "[^\\p{Cntrl}]+", message = "Địa chỉ không được chứa ký tự điều khiển.")
     private String senderAddress;
 
     @NotBlank(message = "Vui lòng nhập tên người nhận")
+    @Size(min = 2, max = 100, message = "Tên người nhận từ 2–100 ký tự.")
+    @Pattern(regexp = "[\\p{L}\\p{M} .'-]+", message = "Tên người nhận chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
     private String receiverName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại người nhận")
+    @Pattern(regexp = "0[35789][0-9]{8}", message = "Nhập số di động Việt Nam 10 số hoặc dạng +84.")
     private String receiverPhone;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
+    @Size(min = 5, max = 255, message = "Địa chỉ giao hàng từ 5–255 ký tự.")
+    @Pattern(regexp = "[^\\p{Cntrl}]+", message = "Địa chỉ không được chứa ký tự điều khiển.")
     private String receiverAddress;
 
     @NotNull(message = "Vui lòng nhập khối lượng")
     @Positive(message = "Khối lượng phải lớn hơn 0")
+    @DecimalMax(value = "100", message = "Khối lượng tối đa 100 kg.")
     private Double weightKg;
 
     @NotNull(message = "Vui lòng chọn dịch vụ")
@@ -53,7 +64,12 @@ public class OrderCreateRequest {
      * Mã sai/hết hạn được báo lỗi ở Service chứ không validate bằng annotation,
      * vì còn phải tra CSDL và so với cước của chính đơn này.
      */
+    @Size(max = 30, message = "Mã khuyến mãi tối đa 30 ký tự.")
+    @Pattern(regexp = "([A-Za-z0-9][A-Za-z0-9_-]{2,29})?", message = "Mã khuyến mãi chỉ gồm chữ/số/gạch ngang/gạch dưới, từ 3–30 ký tự.")
     private String promoCode;
+
+    @AssertTrue(message = "Khối lượng phải là số hữu hạn.")
+    public boolean isWeightFinite() { return weightKg == null || Double.isFinite(weightKg); }
 
     public OrderCreateRequest() {
     }
@@ -81,7 +97,7 @@ public class OrderCreateRequest {
     }
 
     public void setSenderName(String senderName) {
-        this.senderName = senderName;
+        this.senderName = senderName == null ? null : senderName.strip();
     }
 
     public String getSenderAddress() {
@@ -89,7 +105,7 @@ public class OrderCreateRequest {
     }
 
     public void setSenderAddress(String senderAddress) {
-        this.senderAddress = senderAddress;
+        this.senderAddress = senderAddress == null ? null : senderAddress.strip();
     }
 
     public String getReceiverName() {
@@ -97,7 +113,7 @@ public class OrderCreateRequest {
     }
 
     public void setReceiverName(String receiverName) {
-        this.receiverName = receiverName;
+        this.receiverName = receiverName == null ? null : receiverName.strip();
     }
 
     public String getReceiverPhone() {
@@ -105,7 +121,10 @@ public class OrderCreateRequest {
     }
 
     public void setReceiverPhone(String receiverPhone) {
-        this.receiverPhone = receiverPhone;
+        this.receiverPhone = receiverPhone == null ? null : receiverPhone.strip().replace(" ", "").replace("-", "");
+        if (this.receiverPhone != null && this.receiverPhone.startsWith("+84")) {
+            this.receiverPhone = "0" + this.receiverPhone.substring(3);
+        }
     }
 
     public String getReceiverAddress() {
@@ -113,7 +132,7 @@ public class OrderCreateRequest {
     }
 
     public void setReceiverAddress(String receiverAddress) {
-        this.receiverAddress = receiverAddress;
+        this.receiverAddress = receiverAddress == null ? null : receiverAddress.strip();
     }
 
     public Double getWeightKg() {
@@ -137,7 +156,7 @@ public class OrderCreateRequest {
     }
 
     public void setPromoCode(String promoCode) {
-        this.promoCode = promoCode;
+        this.promoCode = promoCode == null ? null : promoCode.strip();
     }
 
     public OrderPayment.PaymentMethod getPaymentMethod() {

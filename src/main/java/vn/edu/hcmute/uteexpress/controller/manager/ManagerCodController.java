@@ -14,7 +14,10 @@ import vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService;
 @RequestMapping("/manager/doi-soat-cod")
 public class ManagerCodController {
     private final CodSettlementService settlements;
-    public ManagerCodController(CodSettlementService settlements) { this.settlements = settlements; }
+    private final vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService cases;
+    public ManagerCodController(CodSettlementService settlements, vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService cases) {
+        this.settlements = settlements; this.cases = cases;
+    }
 
     @GetMapping
     @Transactional(readOnly = true) // một giao dịch cho cả trang: bớt lượt đi về database ở xa
@@ -34,6 +37,8 @@ public class ManagerCodController {
         model.addAttribute("settlement", settlement);
         model.addAttribute("items", settlements.items(settlement));
         model.addAttribute("viewer", "staff");
+        model.addAttribute("outstanding", cases.outstanding(settlement));
+        model.addAttribute("refundable", cases.refundable(settlement));
         return "logistics/cod-settlement";
     }
 

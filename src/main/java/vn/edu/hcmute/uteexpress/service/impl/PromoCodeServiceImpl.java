@@ -24,13 +24,12 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PromoCode requireUsableCode(String code, BigDecimal orderFee) {
         if (code == null || code.isBlank()) {
             throw new IllegalStateException("Vui lòng nhập mã giảm giá.");
         }
 
-        PromoCode promoCode = promoCodeRepository.findByCodeIgnoreCase(code.trim())
+        PromoCode promoCode = promoCodeRepository.lockByCode(code.trim())
                 .orElseThrow(() -> new IllegalStateException(
                         "Mã \"" + code.trim() + "\" không tồn tại. Vui lòng kiểm tra lại."));
 
@@ -86,6 +85,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         if (promoCode == null) {
             return;
         }
+        if (!promoCode.hasRemainingUsage()) { throw new IllegalStateException("Mã này đã hết lượt sử dụng."); }
         promoCode.setUsedCount(promoCode.getUsedCount() + 1);
         promoCode.setUpdatedAt(LocalDateTime.now());
         promoCodeRepository.save(promoCode);

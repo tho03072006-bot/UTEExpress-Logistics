@@ -6,10 +6,10 @@
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="ute-page-head sx-art-server"><div><span class="badge text-bg-dark">ADMIN · Cấp quản trị hệ thống</span>
 <h1 class="h2 mt-3">Quản trị và kiểm soát truy cập</h1>
-<p>Admin cấp tài khoản nội bộ, quản lý quyền, khóa/mở tài khoản và cấp lại mật khẩu. Admin đồng thời được sử dụng các chức năng của Manager.</p></div></div>
+<p>Chỉ Admin được thêm, sửa, xóa, khóa/mở và cấp lại mật khẩu cho cả Admin, Manager, User, Shipper. Admin đồng thời được sử dụng các chức năng của Manager.</p></div></div>
 <div class="row g-3 mb-4"><div class="col-md-6"><div class="ute-panel p-4 h-100">
-<h2 class="h5">Quản trị nhân sự</h2><p>Cấp tài khoản Admin/Manager bằng mật khẩu bàn giao, bắt buộc đổi mật khẩu; thu hồi quyền khi nhân sự ngừng công tác.</p>
-<a class="btn btn-dark" th:href="@{/admin/tai-khoan}">Quản lý tài khoản nội bộ</a></div></div>
+<h2 class="h5">Quản lý cả 4 vai trò</h2><p>CRUD tài khoản toàn hệ thống. Admin/Manager được cấp riêng, bắt buộc đổi mật khẩu; chỉ xóa khi chưa có dữ liệu liên kết.</p>
+<a class="btn btn-dark" th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản</a></div></div>
 <div class="col-md-6"><div class="ute-panel p-4 h-100"><h2 class="h5">Giám sát vận hành</h2>
 <p><strong th:text="${summary.totalOrders}">0</strong> đơn hàng · <strong th:text="${summary.pendingOrders}">0</strong> đơn chờ lấy.</p>
 <a class="btn btn-outline-primary" th:href="@{/manager/trang-chu}">Mở khu Manager</a></div></div></div>
@@ -18,8 +18,12 @@
 <tr><td>Xem tổng quan và tra soát đơn toàn hệ thống</td><td>Có</td><td>Có</td></tr>
 <tr><td>Lọc đơn theo mã, trạng thái, khoảng ngày</td><td>Có</td><td>Có</td></tr>
 <tr><td>Đổi mật khẩu của chính mình</td><td>Có</td><td>Có</td></tr>
+<tr><td>Phân công/đổi shipper trước khi lấy hàng; quản lý khuyến mãi</td><td>Có</td><td>Có</td></tr>
+<tr><td>Báo cáo vận hành và CSV tổng hợp; xem bảng cước</td><td>Có</td><td>Có</td></tr>
+<tr><td>Đổi bảng cước toàn hệ thống; xem nhật ký thao tác</td><td>Không</td><td>Có</td></tr>
 <tr><td>Cấp tài khoản, thay đổi quyền, khóa/mở, cấp lại mật khẩu nội bộ</td><td>Không</td><td>Có, trừ tự thay đổi quyền/trạng thái</td></tr>
-<tr><td>Tự nâng quyền hoặc xóa tài khoản</td><td>Không</td><td>Không</td></tr>
+<tr><td>Thêm/sửa/xóa tài khoản cả 4 vai trò</td><td>Không</td><td>Có; xóa chỉ khi chưa có dữ liệu liên kết</td></tr>
+<tr><td>Tự thay đổi quyền/trạng thái, tự xóa hoặc xóa nhật ký</td><td>Không</td><td>Không</td></tr>
 </tbody></table></div></div>
 </section></body>
 </html>

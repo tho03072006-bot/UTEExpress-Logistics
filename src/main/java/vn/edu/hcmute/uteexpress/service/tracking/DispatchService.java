@@ -19,10 +19,13 @@ public class DispatchService {
     private final LogisticsAccess access;
     private final Clock clock;
     private final ApplicationEventPublisher events;
+    private final vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
     public DispatchService(OrderRepository orders, AppUserRepository users, OrderStatusHistoryRepository history,
-            ShipperNotificationRepository notifications, LogisticsAccess access, Clock clock, ApplicationEventPublisher events) {
+            ShipperNotificationRepository notifications, LogisticsAccess access, Clock clock, ApplicationEventPublisher events,
+            vn.edu.hcmute.uteexpress.service.admin.AuditService audit) {
         this.orders = orders; this.users = users; this.history = history; this.notifications = notifications;
         this.access = access; this.clock = clock; this.events = events;
+        this.audit = audit;
     }
     public Page<Order> pending(String actor, int page) {
         access.internal(actor);
@@ -39,7 +42,8 @@ public class DispatchService {
             String note, String actor) {
         AppUser manager = access.internal(actor);
         String reason = LogisticsInput.text(note, 5, 350, "Lý do phân công");
-        var shipper = users.findById(shipperId).filter(u -> u.isEnabled() && u.getRole() == AppUser.Role.SHIPPER)
+        if (shipperId == null || shipperId <= 0 || expectedShipperId < 0) throw new IllegalArgumentException("Mã Shipper không hợp lệ.");
+        var shipper = users.findById(shipperId).filter(u -> u.isEnabled() && !u.isLockedByAdmin() && u.getRole() == AppUser.Role.SHIPPER)
                 .orElseThrow(() -> new IllegalArgumentException("Hãy chọn Shipper đang hoạt động."));
         var order = orders.findLockedByTrackingCode(code)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
@@ -61,5 +65,6 @@ public class DispatchService {
         notification.assign(order, shipper, now);
         notifications.saveAndFlush(notification);
         events.publishEvent(new ShipperNotificationEvent(shipper.getUsername(), notification.getId(), order.getTrackingCode()));
+        audit.record(actor, "ORDER_ASSIGN", "order:" + order.getId(), "Shipper " + shipper.getId() + "; " + reason);
     }
 }

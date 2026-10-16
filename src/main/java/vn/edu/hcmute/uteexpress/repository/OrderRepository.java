@@ -13,6 +13,30 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    /** Dùng cùng một điều kiện cho cảnh báo Manager, công việc Shipper và bộ đếm đến hẹn. */
+    String READY_RETRY = """
+        o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+        and not exists (select r.id from OperationsCase r where r.order = o
+          and r.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETURN
+          and r.status in (vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.REQUESTED,
+            vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED,
+            vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.IN_PROGRESS))
+        and not exists (select p.id from OperationsCase p where p.order = o
+          and p.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
+          and p.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.REQUESTED)
+        and (exists (select a.id from OperationsCase a where a.order = o
+          and a.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
+          and a.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED and a.nextAttemptAt <= :now)
+        or (not exists (select future.id from OperationsCase future where future.order = o
+          and future.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
+          and future.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED)
+          and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
+            and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < :maxAttempts
+          and exists (select h.id from OrderStatusHistory h where h.order = o and h.nextAttemptAt <= :now
+            and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+            and h.id = (select max(latest.id) from OrderStatusHistory latest where latest.order = o
+              and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED))))
+        """;
 
     long countByShipperAndStatus(AppUser shipper, Order.OrderStatus status);
 
@@ -25,7 +49,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("statuses") java.util.Collection<Order.OrderStatus> statuses);
 
     @Query("""
-            select o from Order o where o.shipper = :shipper
+            select o from Order o where o.shipper = :shipper and :sortNow <= :now
               and (:status is null or o.status = :status)
               and (:keyword is null or lower(o.trackingCode) like lower(concat('%', :keyword, '%')) escape '!'
                    or lower(o.receiverName) like lower(concat('%', :keyword, '%')) escape '!'
@@ -46,22 +70,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                          and p.id = (select max(p2.id) from OrderStatusHistory p2 where p2.order = o and p2.failureReason is not null
                            and p2.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
                            and p2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP)))
-                   or (o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
-                       and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
-                         and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < 3
-                       and exists (
-                       select h.id from OrderStatusHistory h where h.order = o
-                         and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
-                         and h.id = (select max(h2.id) from OrderStatusHistory h2 where h2.order = o
-                           and h2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
-                         and ((:work = 1 and h.nextAttemptAt < :tomorrow) or (:work = 2 and h.nextAttemptAt <= :now)))))
-            order by case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and exists (
-                       select due.id from OrderStatusHistory due where due.order = o and due.nextAttemptAt <= :now
+                   or (
+            """ + READY_RETRY + """
+                   ))
+            order by case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and (
+                       exists (select approved.id from OperationsCase approved where approved.order = o
+                         and approved.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
+                         and approved.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED
+                         and approved.nextAttemptAt <= :sortNow)
+                       or (not exists (select approved.id from OperationsCase approved where approved.order = o
+                         and approved.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
+                         and approved.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED) and exists (
+                       select due.id from OrderStatusHistory due where due.order = o and due.nextAttemptAt <= :sortNow
                          and due.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
                          and due.id = (select max(latest.id) from OrderStatusHistory latest where latest.order = o
-                           and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)) then 0
+                           and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)))) then 0
                      when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and exists (
-                       select q.id from OrderStatusHistory q where q.order = o and q.nextAttemptAt <= :now
+                       select q.id from OrderStatusHistory q where q.order = o and q.nextAttemptAt <= :sortNow
                          and q.id = (select max(q2.id) from OrderStatusHistory q2 where q2.order = o and q2.failureReason is not null
                            and q2.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
                            and q2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP)) then 0
@@ -74,17 +99,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> searchWorkOrders(@Param("shipper") AppUser shipper, @Param("status") Order.OrderStatus status,
             @Param("keyword") String keyword, @Param("from") java.time.LocalDateTime from,
             @Param("to") java.time.LocalDateTime to, @Param("work") int work,
-            @Param("now") java.time.LocalDateTime now, @Param("tomorrow") java.time.LocalDateTime tomorrow, Pageable pageable);
+            @Param("now") java.time.LocalDateTime now, @Param("tomorrow") java.time.LocalDateTime tomorrow,
+            @Param("maxAttempts") int maxAttempts, @Param("sortNow") java.time.LocalDateTime sortNow, Pageable pageable);
 
     @Query("""
             select count(o) from Order o where o.shipper = :shipper
-            and ((o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
-            and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
-              and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < 3 and exists (
-              select h.id from OrderStatusHistory h where h.order = o and h.nextAttemptAt <= :now
-                and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
-                and h.id = (select max(h2.id) from OrderStatusHistory h2 where h2.order = o
-                  and h2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)))
+            and ((
+            """ + READY_RETRY + """
+            )
             or (o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
               and (select count(pc.id) from OrderStatusHistory pc where pc.order = o and pc.failureReason is not null
                 and pc.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
@@ -94,7 +116,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                   and p2.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
                   and p2.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP))))
             """)
-    long countDueRetries(@Param("shipper") AppUser shipper, @Param("now") java.time.LocalDateTime now);
+    long countDueRetries(@Param("shipper") AppUser shipper, @Param("now") java.time.LocalDateTime now, @Param("maxAttempts") int maxAttempts);
 
     @Query("""
             select o from Order o where o.shipper = :shipper

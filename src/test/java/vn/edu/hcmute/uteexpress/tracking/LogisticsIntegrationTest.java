@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** SQL thật trên H2 riêng, không tạo hoặc sửa dữ liệu demo trên Aiven. */
-@SpringBootTest(properties = {
+@SpringBootTest(classes = vn.edu.hcmute.uteexpress.support.IsolatedLogisticsTestConfiguration.class, properties = {
     "spring.datasource.url=jdbc:h2:mem:logistics-test;MODE=MySQL;DB_CLOSE_DELAY=-1;IGNORE_UNKNOWN_SETTINGS=TRUE",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
@@ -47,6 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.upload.dir=target/test-proof-uploads"
 })
 @AutoConfigureMockMvc
+@org.springframework.test.context.ActiveProfiles("isolated-logistics")
 @Import(LogisticsIntegrationTest.TestClock.class)
 @Transactional
 class LogisticsIntegrationTest {
@@ -278,12 +279,15 @@ class LogisticsIntegrationTest {
         var failure = history.findAll().get(0);
         assertEquals(DeliveryFailureReason.CUSTOMER_ABSENT, failure.getFailureReason());
         assertEquals(NOW.plusHours(5), failure.getNextAttemptAt());
+        assertThrows(IllegalStateException.class, () -> tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.IN_TRANSIT));
+        history.saveAndFlush(new OrderStatusHistory(order, shipper, Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.FAILED,
+                DeliveryFailureReason.CUSTOMER_ABSENT, "Cập nhật lịch đã đến hẹn", NOW.minusSeconds(1), NOW.plusSeconds(1)));
         tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.IN_TRANSIT);
         assertFalse(tracking.hasCurrentProof(order));
         assertThrows(IllegalStateException.class, () -> tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.DELIVERED));
         proof.setUpdatedAt(NOW.plusSeconds(1)); proofs.saveAndFlush(proof);
         tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.DELIVERED);
-        assertEquals(Order.OrderStatus.DELIVERED, order.getStatus()); assertEquals(3, history.count());
+        assertEquals(Order.OrderStatus.DELIVERED, order.getStatus()); assertEquals(4, history.count());
     }
 
     @Test void retryLimitAndForeignAssignmentsCannotBeBypassed() {

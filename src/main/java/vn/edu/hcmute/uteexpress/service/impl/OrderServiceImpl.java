@@ -30,13 +30,6 @@ import java.util.Optional;
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    // TODO (TV3 - Manager): thay bang gia cung nay bang bang gia cuoc cau hinh
-    // duoc trong CSDL (theo khu vuc/khoi luong) o muc "Manager - quan ly bang gia cuoc".
-    private static final BigDecimal BASE_FEE_STANDARD = BigDecimal.valueOf(15000);
-    private static final BigDecimal BASE_FEE_EXPRESS = BigDecimal.valueOf(25000);
-    private static final BigDecimal BASE_FEE_SUPER_EXPRESS = BigDecimal.valueOf(40000);
-    private static final BigDecimal FEE_PER_KG = BigDecimal.valueOf(3000);
-
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final OrderRepository orderRepository;
@@ -46,13 +39,17 @@ public class OrderServiceImpl implements OrderService {
     private final PromoCodeService promoCodeService;
     private final vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
     private final java.time.Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
+    private final jakarta.validation.Validator validator;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
                             OrderPaymentService orderPaymentService,
                             PromoCodeService promoCodeService,
                             vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
-                            java.time.Clock clock) {
+                            java.time.Clock clock,
+                            vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
+                            jakarta.validation.Validator validator) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -60,6 +57,8 @@ public class OrderServiceImpl implements OrderService {
         this.promoCodeService = promoCodeService;
         this.history = history;
         this.clock = clock;
+        this.tariffService = tariffService;
+        this.validator = validator;
     }
 
     @Override
@@ -81,6 +80,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order createOrder(OrderCreateRequest request, String senderUsername) {
+        if (request == null) { throw new IllegalArgumentException("Thiếu dữ liệu đơn hàng."); }
+        var errors = validator.validate(request);
+        if (!errors.isEmpty()) { throw new IllegalArgumentException(errors.iterator().next().getMessage()); }
         AppUser sender = appUserRepository.findByUsername(senderUsername)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
 
@@ -291,18 +293,9 @@ public class OrderServiceImpl implements OrderService {
         return bangCuoc;
     }
 
-    /**
-     * Cong thuc tinh cuoc demo don gian: phi co ban theo loai dich vu + phi theo khoi luong.
-     * TODO (TV3): thay bang bang gia that theo khu vuc khi lam xong Manager.
-     */
+    /** Cước chốt từ cấu hình Aiven lúc tạo đơn; không tính lại đơn cũ khi đổi giá. */
     private BigDecimal calculateFee(Order.ServiceType serviceType, double weightKg) {
-        BigDecimal baseFee = switch (serviceType) {
-            case STANDARD -> BASE_FEE_STANDARD;
-            case EXPRESS -> BASE_FEE_EXPRESS;
-            case SUPER_EXPRESS -> BASE_FEE_SUPER_EXPRESS;
-        };
-        BigDecimal weightFee = FEE_PER_KG.multiply(BigDecimal.valueOf(weightKg));
-        return baseFee.add(weightFee);
+        return tariffService.quote(serviceType, weightKg);
     }
 
     /** Sinh ma tracking dang UTE + 4 so cuoi timestamp + 4 so ngau nhien, du dung cho demo. */
