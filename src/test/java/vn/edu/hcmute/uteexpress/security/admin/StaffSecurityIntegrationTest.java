@@ -55,6 +55,7 @@ class StaffSecurityIntegrationTest {
     @MockBean ManagerOrderService orders;
     @MockBean ManagerDispatchService dispatch;
     @MockBean vn.edu.hcmute.uteexpress.service.tracking.DispatchService sharedDispatch;
+    @MockBean vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService sharedWorkspace;
     @MockBean ManagerPromotionService promotions;
     @MockBean ManagerReportService reports;
     @MockBean vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
@@ -97,7 +98,7 @@ class StaffSecurityIntegrationTest {
         var counts = new EnumMap<Order.OrderStatus, Long>(Order.OrderStatus.class);
         for (var status : Order.OrderStatus.values()) { counts.put(status, 0L); }
         when(reports.report(anyString(), any(), any())).thenReturn(
-            new OperationsReportResponse(LocalDate.now().minusDays(29), LocalDate.now(), counts, 0, 0, BigDecimal.ZERO));
+            new OperationsReportResponse(LocalDate.now().minusDays(29), LocalDate.now(), counts, 0, BigDecimal.ZERO.setScale(1), BigDecimal.ZERO));
     }
 
     @Test void newManagerPagesRenderAndAdminPagesAreDenied() throws Exception {

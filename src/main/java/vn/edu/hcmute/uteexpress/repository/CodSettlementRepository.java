@@ -10,6 +10,17 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.CodSettlement;
 
 public interface CodSettlementRepository extends JpaRepository<CodSettlement, Long> {
+    @Query("""
+        select coalesce(sum(case when s.totalAmount > s.declaredAmount then s.totalAmount - s.declaredAmount else 0 end), 0)
+        from CodSettlement s where s.shipper = :shipper and s.status = vn.edu.hcmute.uteexpress.entity.CodSettlement.Status.CONFIRMED
+        """)
+    BigDecimal sumConfirmedShortage(@Param("shipper") AppUser shipper);
+
+    @Query("""
+        select coalesce(sum(case when s.declaredAmount > s.totalAmount then s.declaredAmount - s.totalAmount else 0 end), 0)
+        from CodSettlement s where s.shipper = :shipper and s.status = vn.edu.hcmute.uteexpress.entity.CodSettlement.Status.CONFIRMED
+        """)
+    BigDecimal sumConfirmedExcess(@Param("shipper") AppUser shipper);
     @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from CodSettlement s where s.id = :id")
     Optional<CodSettlement> lockById(@Param("id") Long id);

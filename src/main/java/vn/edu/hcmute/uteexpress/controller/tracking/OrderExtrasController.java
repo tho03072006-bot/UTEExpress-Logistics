@@ -16,8 +16,21 @@ public class OrderExtrasController {
     private final ShipmentQrService qr;
     private final OrderComplaintService complaints;
     private final DeliveryProofFileService proofFiles;
-    public OrderExtrasController(OrderJourneyService journey, ShipmentQrService qr, OrderComplaintService complaints, DeliveryProofFileService proofFiles) {
+    private final OperationsProgressService progress;
+    public OrderExtrasController(OrderJourneyService journey, ShipmentQrService qr, OrderComplaintService complaints,
+            DeliveryProofFileService proofFiles, OperationsProgressService progress) {
         this.journey = journey; this.qr = qr; this.complaints = complaints; this.proofFiles = proofFiles;
+        this.progress = progress;
+    }
+    @GetMapping({"/shipper/don/{orderId}/xu-ly", "/nguoi-dung/don-hang/{orderId}/xu-ly"})
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public String progress(@PathVariable Long orderId, @RequestParam(defaultValue = "0") int page,
+            Authentication auth, Model model) {
+        model.addAttribute("order", journey.accessibleOrder(orderId, auth.getName()));
+        model.addAttribute("progress", progress.findOrderProgress(orderId, auth.getName(), page));
+        model.addAttribute("progressPath", prefix(auth) + orderId + "/xu-ly");
+        model.addAttribute("orderPath", prefix(auth) + orderId);
+        return "logistics/operations-progress";
     }
     @GetMapping({"/shipper/don/{orderId}/bang-chung/{kind}", "/nguoi-dung/don-hang/{orderId}/bang-chung/{kind}",
             "/manager/don-hang/{orderId}/bang-chung/{kind}"})

@@ -12,9 +12,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * Cau hinh Spring Security cho toan he thong.
  *
  * Da bat dang nhap that (UserDetailsServiceImpl doc tu bang app_user) nen tu day
- * "/nguoi-dung/**" bat buoc dang nhap. Cac vai tro Shipper/Manager/Admin van dang
- * permitAll tam thoi (chua co du lieu that de test) - siet lai khi TV2/TV3 lam xong
- * dang nhap phan quyen theo role cho phan cua minh.
+ * User và Shipper dùng khu vực riêng. Admin/Manager được bảo vệ bởi StaffSecurityConfig
+ * có ưu tiên cao hơn, với tài khoản nội bộ được cấp và CSRF mặc định.
  */
 @Configuration
 @EnableWebSecurity
@@ -44,11 +43,9 @@ public class SecurityConfig {
                         "/css/**", "/js/**", "/images/**", "/uploads/**", "/api/tracking/**").permitAll()
                 // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
                 .requestMatchers("/error").permitAll()
-                .requestMatchers("/nguoi-dung/**").authenticated()
-             // TV2: khu vuc shipper chi danh cho vai tro SHIPPER.
-             // TODO (TV3): bao ve khu vuc manager/admin khi chuc nang quan ly hoan thien.
+                .requestMatchers("/nguoi-dung/**").hasRole("USER")
                 .requestMatchers("/shipper/**").hasRole("SHIPPER")
-                .requestMatchers("/manager/**", "/admin/**").permitAll()
+                .requestMatchers("/manager/**", "/admin/**").denyAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -66,12 +63,12 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            // Bảo vệ form Shipper và gửi khiếu nại; các route cũ khác giữ chính sách hiện có.
+            // Cả hai khu vực nghiệp vụ phải có CSRF, kể cả hủy đơn và thanh toán ví mô phỏng.
             .csrf(csrf -> csrf.requireCsrfProtectionMatcher(request -> {
                 String path = request.getServletPath();
                 if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
                 return !java.util.Set.of("GET", "HEAD", "OPTIONS", "TRACE").contains(request.getMethod())
-                        && (path.startsWith("/shipper/") || path.matches("/nguoi-dung/don-hang/[0-9]+/khieu-nai"));
+                        && (path.startsWith("/shipper/") || path.startsWith("/nguoi-dung/") || path.equals("/logout"));
             }))
             .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.PublicAccountSessionFilter(users),
                 org.springframework.security.web.access.intercept.AuthorizationFilter.class)

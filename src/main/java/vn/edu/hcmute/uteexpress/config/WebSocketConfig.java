@@ -26,7 +26,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-tracking")
-                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 
@@ -43,6 +42,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SEND
                         && (destination.startsWith("/topic/") || destination.startsWith("/queue/") || destination.startsWith("/user/")))
                     throw new org.springframework.security.access.AccessDeniedException("Không được tự gửi thông báo hệ thống.");
+                if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SUBSCRIBE
+                        && !destination.matches("/topic/order/[A-Za-z0-9-]{1,40}")
+                        && !destination.equals("/user/queue/shipper-notifications"))
+                    throw new org.springframework.security.access.AccessDeniedException("Kênh theo dõi không hợp lệ; không được đăng ký wildcard.");
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SUBSCRIBE
                         && (destination.startsWith("/queue/") || destination.startsWith("/user/"))) {
                     if (!destination.equals("/user/queue/shipper-notifications")

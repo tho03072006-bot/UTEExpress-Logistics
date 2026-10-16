@@ -91,6 +91,7 @@ class LogisticsIntegrationTest {
         var principal = new StaffPrincipal(account);
         managerAuth = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
         order = order("UTE-TEST-01", shipper);
+        payment(order, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000, null);
     }
 
     @Test void dashboardPaginatesOnlyAssignedOrdersAndPreservesFilters() throws Exception {
@@ -543,7 +544,7 @@ class LogisticsIntegrationTest {
                 DeliveryFailureReason.CUSTOMER_ABSENT, "Hẹn giao lại", next, at));
     }
     private void payment(Order value, OrderPayment.PaymentMethod method, OrderPayment.PaymentStatus status, int amount, LocalDateTime paidAt) {
-        var payment = new OrderPayment(); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
+        var payment = payments.findByOrder(value).orElseGet(OrderPayment::new); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
         payment.setAmount(BigDecimal.valueOf(amount)); payment.setDiscountAmount(new BigDecimal("6000")); payment.setPaidAt(paidAt);
         payments.saveAndFlush(payment);
     }

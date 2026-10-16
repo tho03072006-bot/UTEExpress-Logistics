@@ -10,6 +10,7 @@ import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
+import vn.edu.hcmute.uteexpress.util.PaymentReadiness;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -19,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 public class OrderPaymentServiceImpl implements OrderPaymentService {
 
     /** Tiền tố mã giao dịch giả lập, để nhìn là biết ngay không phải mã của cổng thật. */
@@ -30,20 +31,26 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private final OrderPaymentRepository orderPaymentRepository;
     private final OrderRepository orderRepository;
     private final AppUserRepository appUserRepository;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public OrderPaymentServiceImpl(OrderPaymentRepository orderPaymentRepository,
                                    OrderRepository orderRepository,
-                                   AppUserRepository appUserRepository) {
+                                   AppUserRepository appUserRepository, org.springframework.context.ApplicationEventPublisher events) {
         this.orderPaymentRepository = orderPaymentRepository;
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
+        this.events = events;
     }
 
     @Override
     public OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method,
                                        PromoCode promoCode, BigDecimal discountAmount) {
-        BigDecimal fee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal fee = order.getShippingFee();
         BigDecimal discount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+        if (!PaymentReadiness.isValidAmount(fee) || !PaymentReadiness.isValidAmount(discount)
+                || discount.compareTo(fee) > 0) {
+            throw new IllegalArgumentException("Cước và giảm giá phải là số đồng không âm; giảm giá không vượt cước gốc.");
+        }
 
         OrderPayment payment = new OrderPayment();
         payment.setOrder(order);
@@ -62,6 +69,14 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     @Transactional(readOnly = true)
     public Optional<OrderPayment> findByOrder(Order order) {
         return orderPaymentRepository.findByOrder(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void requireReadyForFulfillment(Order order) {
+        if (!orderPaymentRepository.findByOrder(order).map(PaymentReadiness::isReady).orElse(false)) {
+            throw new IllegalArgumentException("Đơn chưa đủ điều kiện thanh toán: ví phải trả trước, COD phải có thông tin cước hợp lệ.");
+        }
     }
 
     @Override
@@ -96,7 +111,16 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
 
     @Override
     public OrderPayment confirmWalletPayment(Long orderId, String username) {
-        OrderPayment payment = findOwnedPayment(orderId, username);
+        // Cùng khóa vận đơn với hủy đơn/điều phối để không thanh toán và hủy đồng thời.
+        Order order = lockOrder(orderId);
+        if (order.getSender() == null || !order.getSender().getUsername().equals(username)) {
+            throw new IllegalStateException("Bạn không có quyền thanh toán đơn này.");
+        }
+        OrderPayment payment = orderPaymentRepository.findByOrder(order)
+                .orElseThrow(() -> new IllegalStateException("Đơn hàng này chưa có thông tin thanh toán"));
+        if (payment.getMethod() == null || payment.getStatus() == null || !PaymentReadiness.isValidAmount(payment.getAmount())) {
+            throw new IllegalStateException("Thông tin thanh toán không hợp lệ. Hãy liên hệ Manager.");
+        }
 
         if (!payment.getMethod().isOnlineWallet()) {
             throw new IllegalStateException(
@@ -116,18 +140,22 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         payment.setTransactionRef(generateMockTransactionRef());
         payment.setPaidAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
+        events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
+                order.getId(), order.getTrackingCode(), order.getStatus().name(), payment.getUpdatedAt()));
         return orderPaymentRepository.save(payment);
     }
 
     @Override
     public OrderPayment markCodCollected(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này"));
+        Order order = lockOrder(orderId);
         OrderPayment payment = orderPaymentRepository.findByOrder(order)
                 .orElseThrow(() -> new IllegalStateException("Đơn hàng này chưa có thông tin thanh toán"));
 
         if (payment.getMethod() != OrderPayment.PaymentMethod.COD) {
             throw new IllegalStateException("Đơn này không phải đơn COD");
+        }
+        if (order.getStatus() != Order.OrderStatus.DELIVERED || !PaymentReadiness.isValidAmount(payment.getAmount())) {
+            throw new IllegalStateException("Chỉ ghi thu cước COD hợp lệ khi đã giao thành công.");
         }
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) {
             return payment;
@@ -140,6 +168,12 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     }
 
     // ----- Phần dùng chung trong service -----
+
+    private Order lockOrder(Long orderId) {
+        if (orderId == null || orderId <= 0) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        return orderRepository.findLockedById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này"));
+    }
 
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)
@@ -160,6 +194,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     private boolean isOrderClosed(Order order) {
         return order != null
                 && (order.getStatus() == Order.OrderStatus.CANCELLED
+                    || order.getStatus() == Order.OrderStatus.DELIVERED
                     || order.getStatus() == Order.OrderStatus.RETURNED);
     }
 

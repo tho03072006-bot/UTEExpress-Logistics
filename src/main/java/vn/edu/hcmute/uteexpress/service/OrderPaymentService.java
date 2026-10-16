@@ -31,6 +31,9 @@ public interface OrderPaymentService {
 
     Optional<OrderPayment> findByOrder(Order order);
 
+    /** COD được thu lúc giao; ví phải trả trước. Không cho điều phối khi thiếu thông tin cước. */
+    void requireReadyForFulfillment(Order order);
+
     /** Số đơn còn nợ cước, dùng cho thẻ thống kê ở trang tổng quan. */
     long countUnpaidOfUser(String username);
 

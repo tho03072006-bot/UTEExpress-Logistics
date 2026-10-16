@@ -13,7 +13,11 @@ import vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService;
 @RequestMapping("/shipper/doi-soat")
 public class ShipperCodController {
     private final CodSettlementService settlements;
-    public ShipperCodController(CodSettlementService settlements) { this.settlements = settlements; }
+    private final vn.edu.hcmute.uteexpress.service.tracking.OperationsProgressService progress;
+    public ShipperCodController(CodSettlementService settlements,
+            vn.edu.hcmute.uteexpress.service.tracking.OperationsProgressService progress) {
+        this.settlements = settlements; this.progress = progress;
+    }
 
     /** Cả trang chung một giao dịch chỉ đọc (như trang chủ Shipper) để bớt lượt đi về database. */
     @GetMapping
@@ -25,6 +29,7 @@ public class ShipperCodController {
         model.addAttribute("pending", settlements.pending(username).orElse(null));
         model.addAttribute("history", settlements.history(username, page));
         model.addAttribute("maxOrders", CodSettlementService.MAX_ORDERS);
+        model.addAttribute("balance", progress.findShipperBalance(username));
         return "shipper/cod";
     }
 
@@ -47,11 +52,14 @@ public class ShipperCodController {
 
     @GetMapping("/{id}")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public String detail(@PathVariable Long id, Authentication auth, Model model) {
+    public String detail(@PathVariable Long id, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
         var settlement = settlements.viewOwn(id, auth.getName());
         model.addAttribute("settlement", settlement);
         model.addAttribute("items", settlements.items(settlement));
         model.addAttribute("viewer", "shipper");
+        model.addAttribute("balance", progress.findSettlementBalance(id, auth.getName()));
+        model.addAttribute("progress", progress.findSettlementProgress(id, auth.getName(), page));
+        model.addAttribute("progressPath", "/shipper/doi-soat/" + id);
         return "logistics/cod-settlement";
     }
 }

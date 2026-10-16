@@ -52,6 +52,12 @@ class NotificationWebSocketTest {
         assertSame(tracking, interceptor.preSend(tracking, channel));
     }
 
+    @Test void subscriptionsCannotUseWildcardsOrUnknownTopics() {
+        for (String destination : List.of("/topic/order/*", "/topic/order/**", "/topic/**", "/topic/order/../other", "/app/private")) {
+            assertThrows(AccessDeniedException.class, () -> interceptor.preSend(frame(StompCommand.SUBSCRIBE, destination, "USER"), channel));
+        }
+    }
+
     private Message<byte[]> frame(StompCommand command, String destination, String role) {
         var headers = StompHeaderAccessor.create(command);
         headers.setDestination(destination);

@@ -19,8 +19,11 @@ public class ManagerDispatchServiceImpl implements ManagerDispatchService {
     private final StaffAccessPolicy access;
     private final AuditService audit;
     private final Clock clock;
-    public ManagerDispatchServiceImpl(ManagerDispatchRepository orders, ManagerShipperRepository shippers, StaffAccessPolicy access, AuditService audit, Clock clock) {
+    private final vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
+    public ManagerDispatchServiceImpl(ManagerDispatchRepository orders, ManagerShipperRepository shippers, StaffAccessPolicy access, AuditService audit, Clock clock,
+            vn.edu.hcmute.uteexpress.service.OrderPaymentService payments) {
         this.orders = orders; this.shippers = shippers; this.access = access; this.audit = audit; this.clock = clock;
+        this.payments = payments;
     }
     @Override @Transactional(readOnly = true)
     public Page<DispatchOrderResponse> findPendingOrders(String actor, int page) {
@@ -45,6 +48,7 @@ public class ManagerDispatchServiceImpl implements ManagerDispatchService {
         if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP) {
             throw new StaffConflictException("Chỉ phân công lại trước khi lấy hàng. Trạng thái đơn đã thay đổi.");
         }
+        payments.requireReadyForFulfillment(order);
         var shipper = shippers.lockShipper(request.getShipperId())
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy shipper."));
         if (!shipper.isEnabled() || shipper.isLockedByAdmin() || shipper.getRole() != AppUser.Role.SHIPPER) {

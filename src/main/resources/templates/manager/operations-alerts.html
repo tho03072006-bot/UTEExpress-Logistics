@@ -4,15 +4,17 @@
 <p class="text-muted">Thời hạn tính từ lúc tạo đơn theo giờ Việt Nam, không bị làm mới bởi việc sửa ghi chú. Đây là ngưỡng vận hành của đồ án.</p>
 <div class="d-flex flex-wrap gap-2 mb-3">
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='UNASSIGNED')}">Chưa phân công</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='PAYMENT_ISSUE')}">Chờ thanh toán / cần đối chiếu cước</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_PICKUP')}">Chậm lấy</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_DELIVERY')}">Quá hạn giao</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='RETRY_DUE')}">Đến hẹn giao lại</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='MANY_FAILURES')}">Thất bại nhiều lần</a></div>
-<div class="table-responsive"><table class="table"><thead><tr><th>Vận đơn</th><th>Người nhận</th><th>Tạo lúc</th><th>Xử lý</th></tr></thead><tbody>
+<p class="alert alert-warning" th:if="${selected.name() == 'PAYMENT_ISSUE'}">Ví chưa trả trước hoặc thiếu/sai dữ liệu cước phải được đối chiếu. Với đơn ví chưa kết thúc, yêu cầu người gửi đăng nhập và thanh toán trên đơn của họ; Shipper chỉ tiếp tục sau khi hợp lệ. Không tự sửa SQL thành PAID, không thu tiền mặt thay ví. Đơn đã kết thúc cần đối chiếu chứng từ riêng, không thu tiền qua nút thanh toán nữa.</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Vận đơn</th><th>Người nhận</th><th>Tạo lúc</th><th>Xử lý</th><th th:if="${selected.name() == 'PAYMENT_ISSUE'}">Người gửi cần liên hệ</th></tr></thead><tbody>
 <tr th:each="o : ${orders}"><td th:text="${o.trackingCode}"></td><td th:text="${o.receiverName}"></td><td th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}"></td><td>
 <a th:if="${o.status.name() == 'PENDING_PICKUP'}" th:href="@{/manager/phan-cong}">Phân công</a>
 <span th:if="${o.status.name() == 'FAILED'}"><a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETRY',targetId=${o.id})}">Giao lại</a> · <a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETURN',targetId=${o.id})}">Đề nghị hoàn</a></span>
-</td></tr><tr th:if="${orders.empty}"><td colspan="4">Không có đơn trong nhóm này.</td></tr></tbody></table></div>
+</td><td th:if="${selected.name() == 'PAYMENT_ISSUE'}"><span th:text="${o.senderName}"></span><br><span th:text="${o.sender.email}"></span></td></tr><tr th:if="${orders.empty}"><td colspan="5">Không có đơn trong nhóm này.</td></tr></tbody></table></div>
 <div class="d-flex gap-3"><a th:if="${orders.hasPrevious()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number-1})}">Trang trước</a><span th:text="|${orders.totalElements} đơn|"></span><a th:if="${orders.hasNext()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number+1})}">Trang sau</a></div>
 <h2 class="h5 mt-4">Khiếu nại quá hạn phản hồi/giải quyết</h2><p th:if="${lateComplaints.empty}">Không có hồ sơ quá hạn.</p>
 <ul><li th:each="c : ${lateComplaints}"><a th:href="@{/manager/khieu-nai/{id}(id=${c.id})}" th:text="${c.subject}"></a></li></ul><a th:href="@{/manager/khieu-nai}">Xem tất cả khiếu nại</a>

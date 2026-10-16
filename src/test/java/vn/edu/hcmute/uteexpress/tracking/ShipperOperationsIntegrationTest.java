@@ -80,6 +80,7 @@ class ShipperOperationsIntegrationTest {
         var principal = new StaffPrincipal(staffAccount);
         managerAuth = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
         order = order("UTE-OPS-01", shipper, Order.OrderStatus.PENDING_PICKUP);
+        payment(order, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000);
     }
 
     /* ===================== Lấy hàng thất bại ===================== */
@@ -233,6 +234,7 @@ class ShipperOperationsIntegrationTest {
 
     @Test void bulkUpdateChangesOnlyEligibleOwnOrdersAndReportsTheRest() {
         var second = order("UTE-OPS-02", shipper, Order.OrderStatus.PENDING_PICKUP);
+        payment(second, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000);
         var picked = order("UTE-OPS-03", shipper, Order.OrderStatus.PICKED_UP);
         var foreign = order("UTE-OPS-FOREIGN", anotherShipper, Order.OrderStatus.PENDING_PICKUP);
         var result = bulk.update(shipper.getUsername(), Arrays.asList(order.getId(), second.getId(), second.getId(), null,
@@ -473,7 +475,7 @@ class ShipperOperationsIntegrationTest {
                 DeliveryFailureReason.CUSTOMER_ABSENT, "Người gửi vắng", next, at));
     }
     private void payment(Order value, OrderPayment.PaymentMethod method, OrderPayment.PaymentStatus status, int amount) {
-        var payment = new OrderPayment(); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
+        var payment = payments.findByOrder(value).orElseGet(OrderPayment::new); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
         payment.setAmount(BigDecimal.valueOf(amount)); payment.setPaidAt(status == OrderPayment.PaymentStatus.PAID ? NOW.minusHours(1) : null);
         payments.saveAndFlush(payment);
     }
