@@ -9,6 +9,9 @@ import vn.edu.hcmute.uteexpress.dto.tracking.ComplaintSummary;
 
 public interface OrderComplaintRepository extends JpaRepository<OrderComplaint, Long> {
     Optional<OrderComplaint> findByOrder(Order order);
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from OrderComplaint c where c.id = :id")
+    Optional<OrderComplaint> lockById(@Param("id") Long id);
     @Query("""
             select new vn.edu.hcmute.uteexpress.dto.tracking.ComplaintSummary(
                 c.id, c.order.trackingCode, c.subject, c.status, c.createdAt)

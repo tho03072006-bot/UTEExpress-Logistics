@@ -75,6 +75,18 @@ public class OrderExtrasController {
         populateComplaint(complaint.getOrder(), complaint, auth, model);
         return "logistics/complaint";
     }
+    @PostMapping("/manager/khieu-nai/{id}/nhan-xu-ly")
+    public String claim(@PathVariable Long id, @RequestParam long revision, Authentication auth, RedirectAttributes flash) {
+        complaints.claim(id, auth.getName(), revision); flash.addFlashAttribute("message", "Đã nhận phụ trách hồ sơ.");
+        return "redirect:/manager/khieu-nai/" + id;
+    }
+    @GetMapping("/manager/khieu-nai/{id}/lich-su")
+    public String timeline(@PathVariable Long id, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
+        var complaint = complaints.view(id, auth.getName());
+        populateComplaint(complaint.getOrder(), complaint, auth, model);
+        model.addAttribute("activities", complaints.timeline(id, auth.getName(), page));
+        return "logistics/complaint";
+    }
     @PostMapping("/manager/khieu-nai/{id}/phan-hoi")
     public String respond(@PathVariable Long id, @RequestParam long revision, @RequestParam OrderComplaint.Status status,
             @RequestParam String reply, Authentication auth, RedirectAttributes flash) {
@@ -104,6 +116,7 @@ public class OrderExtrasController {
     private void populateComplaint(Order order, OrderComplaint complaint, Authentication auth, Model model) {
         model.addAttribute("order", order);
         model.addAttribute("complaint", complaint);
+        if (complaint != null) model.addAttribute("activities", complaints.timeline(complaint.getId(), auth.getName(), 0));
         model.addAttribute("prefix", prefix(auth));
         String viewer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SHIPPER")) ? "shipper"
                 : auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_USER")) ? "customer" : "staff";

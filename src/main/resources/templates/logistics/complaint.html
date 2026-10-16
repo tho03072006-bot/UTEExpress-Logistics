@@ -28,6 +28,12 @@
         <div class="mb-3"><label for="reply" class="form-label">Phản hồi</label><textarea id="reply" name="reply" class="form-control" rows="4" minlength="5" maxlength="2000" th:text="${complaint.managerReply}" required></textarea></div>
         <button class="btn btn-primary" type="submit">Lưu phản hồi</button>
     </form>
+    <div th:if="${viewer == 'staff'}" class="ute-panel my-3"><p th:text="${complaint.handledBy != null ? 'Phụ trách: ' + complaint.handledBy.username : 'Chưa có người phụ trách'}"></p>
+        <form th:if="${!complaint.status.closed}" method="post" th:action="@{/manager/khieu-nai/{id}/nhan-xu-ly(id=${complaint.id})}"><input type="hidden" name="revision" th:value="${complaint.revision}"><button class="btn btn-outline-primary">Nhận xử lý</button></form>
+        <a class="btn btn-outline-secondary mt-2" th:if="${complaint.status.name() != 'REJECTED'}" th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}">Đề xuất bồi hoàn cước đã thanh toán</a></div>
+    <div th:if="${activities != null}" class="ute-panel mt-3"><h3 class="h5">Lịch sử trao đổi</h3><p class="text-muted">Nhật ký mới được giữ từ bản nâng cấp; nội dung cũ vẫn nằm trong hồ sơ gốc.</p>
+        <article class="border-bottom py-2" th:each="entry : ${activities}"><small th:text="${#temporals.format(entry.createdAt,'dd/MM/yyyy HH:mm')}"></small><strong class="ms-2" th:text="${viewer == 'staff' ? entry.actor : 'Thông tin hồ sơ'}"></strong><p style="white-space: pre-wrap" th:text="${entry.message}"></p></article>
+        <div th:if="${viewer == 'staff'}"><a th:if="${activities.hasPrevious()}" th:href="@{/manager/khieu-nai/{id}/lich-su(id=${complaint.id},page=${activities.number-1})}">Trước</a> <a th:if="${activities.hasNext()}" th:href="@{/manager/khieu-nai/{id}/lich-su(id=${complaint.id},page=${activities.number+1})}">Sau</a></div></div>
     <form th:if="${viewer == 'shipper' and !complaint.status.closed}" class="ute-panel" method="post" th:action="@{/shipper/khieu-nai/{id}/bo-sung(id=${complaint.id})}">
         <h4>Bổ sung thông tin giao hàng</h4><input type="hidden" name="revision" th:value="${complaint.revision}">
         <label for="shipperNote" class="form-label">Thông tin gửi Manager</label><textarea id="shipperNote" name="note" class="form-control mb-3" minlength="5" maxlength="1000" rows="4" th:text="${complaint.shipperNote}" required data-sx-count></textarea>
