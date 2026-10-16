@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Quản lý khuyến mãi - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<h1 class="h3">Quản lý khuyến mãi</h1>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<p>Mã đã dùng chỉ được đổi mô tả, bật/tắt và tổng lượt. Không xóa mã để giữ lịch sử thanh toán.</p>
+<a class="btn btn-primary mb-3" th:href="@{/manager/khuyen-mai/tao}">Tạo khuyến mãi</a>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mã</th><th>Giảm</th><th>Lượt dùng</th><th>Thời hạn</th><th>Trạng thái</th><th></th></tr></thead>
+<tbody><tr th:each="promo : ${promotions}"><td><strong th:text="${promo.code}"></strong><div class="small" th:text="${promo.description}"></div></td>
+<td th:text="|${promo.discountValue} ${promo.discountType.name() == 'PERCENT' ? '%' : 'VND'}|"></td>
+<td th:text="|${promo.usedCount} / ${promo.usageLimit == null ? 'không giới hạn' : promo.usageLimit}|"></td>
+<td><span th:text="${promo.startAt == null ? 'Không giới hạn' : #temporals.format(promo.startAt, 'dd/MM/yyyy HH:mm')}"></span><br>
+<span th:text="${promo.endAt == null ? 'Không giới hạn' : #temporals.format(promo.endAt, 'dd/MM/yyyy HH:mm')}"></span></td>
+<td th:text="${promo.active ? 'Bật' : 'Tắt'}"></td><td><a th:href="@{/manager/khuyen-mai/{id}(id=${promo.id})}" class="btn btn-outline-primary btn-sm">Sửa</a>
+<form th:action="@{/manager/khuyen-mai/{id}/trang-thai(id=${promo.id})}" method="post" class="d-inline">
+<input type="hidden" name="revision" th:value="${promo.revision}"><input type="hidden" name="active" th:value="${!promo.active}">
+<button class="btn btn-outline-secondary btn-sm" type="submit" th:text="${promo.active ? 'Tắt mã' : 'Bật mã'}"></button></form></td></tr>
+<tr th:if="${promotions.empty}"><td colspan="6">Chưa có khuyến mãi.</td></tr></tbody></table></div><div class="d-flex gap-3 align-items-center mt-3">
+<a class="btn btn-outline-secondary btn-sm" th:if="${promotions.hasPrevious()}" th:href="@{/manager/khuyen-mai(page=${promotions.number - 1})}">Trang trước</a>
+<span th:text="|${promotions.number + 1} / ${promotions.totalPages == 0 ? 1 : promotions.totalPages}|"></span>
+<a class="btn btn-outline-secondary btn-sm" th:if="${promotions.hasNext()}" th:href="@{/manager/khuyen-mai(page=${promotions.number + 1})}">Trang sau</a></div>
+</section></body></html>
+

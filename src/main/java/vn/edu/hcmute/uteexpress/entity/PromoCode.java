@@ -20,6 +20,12 @@ public class PromoCode {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(nullable = false)
+    private long revision;
+
+    public long getRevision() { return revision; }
+
     /** Mã người dùng gõ vào, luôn lưu dạng CHỮ HOA để gõ thường hay hoa đều tìm ra. */
     @Column(nullable = false, unique = true, length = 30)
     private String code;
