@@ -24,13 +24,15 @@ public class StaffAccountServiceImpl implements StaffAccountService {
     private final AdminUserRepository users;
     private final PasswordEncoder encoder;
     private final Validator validator;
+    private final vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
 
     public StaffAccountServiceImpl(StaffAccountRepository accounts, AdminUserRepository users,
-            PasswordEncoder encoder, Validator validator) {
+            PasswordEncoder encoder, Validator validator, vn.edu.hcmute.uteexpress.service.admin.AuditService audit) {
         this.accounts = accounts;
         this.users = users;
         this.encoder = encoder;
         this.validator = validator;
+        this.audit = audit;
     }
 
     @Override
@@ -64,6 +66,7 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         account.setUser(users.save(user));
         account.setIssuedBy(actor);
         accounts.saveAndFlush(account);
+        audit.record(actor, "STAFF_CREATE", "staff:" + account.getId(), "Cấp tài khoản role=" + user.getRole());
         log.info("STAFF_CREATE actor={} staffId={} role={}", actor, account.getId(), user.getRole());
     }
 
@@ -89,12 +92,14 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         }
         target.setActive(request.getActive());
         target.getUser().setEnabled(request.getActive());
+        target.getUser().setLockedByAdmin(!request.getActive());
         target.getUser().setRole(request.getRole());
         clearOtp(target.getUser());
         target.revokeSessions();
         accounts.flush();
         log.info("STAFF_UPDATE actor={} staffId={} role={} active={}", actor, id,
                 request.getRole(), request.getActive());
+        audit.record(actor, "STAFF_UPDATE", "staff:" + id, "role=" + request.getRole() + "; active=" + request.getActive());
     }
 
     @Override
@@ -106,13 +111,14 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         if (target.getUser().getUsername().equals(actor)) {
             throw new IllegalArgumentException("Dùng chức năng Đổi mật khẩu để thay mật khẩu của chính mình.");
         }
-        if (!target.isActive() || !target.getUser().isEnabled()) {
+        if (!target.isActive() || !target.getUser().isEnabled() || target.getUser().isLockedByAdmin()) {
             throw new IllegalArgumentException("Tài khoản đang bị khóa. Cần mở khóa trước khi cấp lại mật khẩu.");
         }
         setPassword(target, request.getPassword());
         target.setPasswordChangeRequired(true);
         accounts.flush();
         log.info("STAFF_PASSWORD_RESET actor={} staffId={}", actor, id);
+        audit.record(actor, "STAFF_PASSWORD_RESET", "staff:" + id, "Cấp lại mật khẩu; thu hồi phiên đăng nhập cũ.");
     }
 
     @Override
@@ -127,6 +133,7 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         account.setPasswordChangeRequired(false);
         accounts.flush();
         log.info("STAFF_PASSWORD_CHANGE staffId={}", account.getId());
+        audit.record(actor, "STAFF_PASSWORD_CHANGE", "staff:" + account.getId(), "Đổi mật khẩu; thu hồi phiên đăng nhập cũ.");
     }
 
     private void setPassword(StaffAccount account, String password) {
@@ -168,7 +175,7 @@ public class StaffAccountServiceImpl implements StaffAccountService {
     }
 
     private void requireActive(StaffAccount account) {
-        if (!account.isActive() || !account.getUser().isEnabled()
+        if (!account.isActive() || !account.getUser().isEnabled() || account.getUser().isLockedByAdmin()
                 || (account.getUser().getRole() != AppUser.Role.ADMIN
                 && account.getUser().getRole() != AppUser.Role.MANAGER)) {
             throw denied();
@@ -176,7 +183,7 @@ public class StaffAccountServiceImpl implements StaffAccountService {
     }
 
     private boolean isActiveAdmin(StaffAccount account) {
-        return account.isActive() && account.getUser().isEnabled()
+        return account.isActive() && account.getUser().isEnabled() && !account.getUser().isLockedByAdmin()
                 && account.getUser().getRole() == AppUser.Role.ADMIN;
     }
 

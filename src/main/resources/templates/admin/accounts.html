@@ -9,7 +9,7 @@
 <a class="btn btn-primary align-self-start" th:href="@{/admin/tai-khoan/cap-moi}">Cấp tài khoản mới</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p class="alert alert-info">Không được tự thay đổi quyền/trạng thái. Hệ thống luôn phải còn Admin hoạt động. Không xóa tài khoản để giữ lịch sử.</p>
+<p class="alert alert-info">Đây là trang cấp quyền nội bộ. Để sửa thông tin/xóa hoặc quản lý cả User/Shipper, dùng <a th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản · 4 vai trò</a>. Tài khoản có dữ liệu liên kết không được xóa.</p>
 <p th:if="${accounts.empty}" class="ute-panel p-4">Không có tài khoản trong trang này.</p>
 <div class="ute-panel p-4 mb-3" th:each="account : ${accounts.content}">
 <div class="d-flex flex-wrap gap-3 align-items-center mb-2">

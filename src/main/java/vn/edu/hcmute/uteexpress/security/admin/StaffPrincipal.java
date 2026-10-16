@@ -16,14 +16,14 @@ public class StaffPrincipal extends User {
 
     public StaffPrincipal(StaffAccount account) {
         super(account.getUser().getUsername(), account.getUser().getPassword(),
-                account.isActive() && account.getUser().isEnabled(), true, true, true,
+                account.isActive() && account.getUser().isEnabled() && !account.getUser().isLockedByAdmin(), true, true, true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + account.getUser().getRole().name())));
         accessVersion = account.getAccessVersion();
         passwordFingerprint = fingerprint(account.getUser().getPassword());
     }
 
     public boolean matchesAccount(StaffAccount account) {
-        return account.isActive() && account.getUser().isEnabled()
+        return account.isActive() && account.getUser().isEnabled() && !account.getUser().isLockedByAdmin()
                 && accessVersion == account.getAccessVersion()
                 && passwordFingerprint.equals(fingerprint(account.getUser().getPassword()))
                 && getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + account.getUser().getRole().name()));

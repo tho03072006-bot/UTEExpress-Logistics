@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -33,6 +35,30 @@ import org.springframework.web.servlet.ModelAndView;
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.validation.BindException.class,
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+        jakarta.validation.ConstraintViolationException.class,
+        org.springframework.web.bind.MissingServletRequestParameterException.class})
+    @ResponseBody
+    public ResponseEntity<String> handleInvalid(Exception ex) {
+        return ResponseEntity.badRequest().body("Dữ liệu nhập không hợp lệ hoặc bị thiếu. Vui lòng kiểm tra lại.");
+    }
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ResponseBody
+    public ResponseEntity<String> handleForbidden(Exception ex) {
+        return ResponseEntity.status(403).body("Bạn không có quyền thực hiện thao tác này.");
+    }
+    @ExceptionHandler({org.springframework.dao.OptimisticLockingFailureException.class,
+        org.springframework.dao.PessimisticLockingFailureException.class, org.springframework.dao.DataIntegrityViolationException.class})
+    @ResponseBody
+    public ResponseEntity<String> handleConflict(Exception ex) {
+        return ResponseEntity.status(409).body("Dữ liệu vừa thay đổi hoặc đang được xử lý. Hãy tải lại trang trước khi thử lại.");
+    }
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    @ResponseBody
+    public ResponseEntity<String> handleUnavailable(Exception ex) {
+        return ResponseEntity.status(503).body("Database chung tạm thời không phản hồi. Vui lòng thử lại sau.");
+    }
     @ExceptionHandler(Exception.class)
     public ModelAndView handleException(Exception ex, HttpServletRequest request, HttpServletResponse response)
             throws IOException {

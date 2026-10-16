@@ -61,9 +61,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public boolean verifyOtp(String username, String otpCode) {
         Optional<AppUser> found = appUserRepository.findByUsername(username);
-        if (found.isEmpty() || found.get().isEnabled()) {
+        if (found.isEmpty() || found.get().isEnabled() || !allowsPublicOtp(found.get())) {
             return false;
         }
         AppUser appUser = found.get();
@@ -91,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         AppUser appUser = found.get();
-        if (!appUser.isEnabled()) {
+        if (!appUser.isEnabled() || !allowsPublicOtp(appUser)) {
             // Tai khoan chua kich hoat thi phai di duong dang ky/OTP kich hoat, khong phai duong nay.
             // Neu van gui OTP o day, ma do co the bi dung nguoc lai de kich hoat tai khoan chua xac thuc.
             log.info("Co yeu cau dat lai mat khau cho tai khoan chua kich hoat, bo qua.");
@@ -107,6 +108,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public boolean resetPassword(String email, String otpCode, String newRawPassword) {
         Optional<AppUser> found = appUserRepository.findByEmail(email);
         if (found.isEmpty()) {
@@ -114,7 +116,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         AppUser appUser = found.get();
-        if (!appUser.isEnabled() || !isOtpValid(appUser, otpCode)) {
+        if (!appUser.isEnabled() || !allowsPublicOtp(appUser) || !isOtpValid(appUser, otpCode)) {
             return false;
         }
 
@@ -126,6 +128,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ----- Phần dùng chung trong service -----
+
+    private boolean allowsPublicOtp(AppUser user) {
+        return !user.isLockedByAdmin() && (user.getRole() == AppUser.Role.USER || user.getRole() == AppUser.Role.SHIPPER);
+    }
 
     /** Mã đúng và còn trong hạn 10 phút thì mới hợp lệ. */
     private boolean isOtpValid(AppUser appUser, String otpCode) {

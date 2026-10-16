@@ -23,7 +23,8 @@ public class StaffExceptionHandler {
     }
 
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class})
+            MissingServletRequestParameterException.class, org.springframework.validation.BindException.class,
+            jakarta.validation.ConstraintViolationException.class})
     public String handleInvalid(Exception ex, HttpServletResponse response, Model model) {
         String message = ex instanceof IllegalArgumentException
                 && !(ex instanceof MethodArgumentTypeMismatchException) ? ex.getMessage()
@@ -32,7 +33,7 @@ public class StaffExceptionHandler {
     }
 
     @ExceptionHandler({OptimisticLockingFailureException.class, PessimisticLockingFailureException.class,
-            DataIntegrityViolationException.class})
+            DataIntegrityViolationException.class, vn.edu.hcmute.uteexpress.exception.StaffConflictException.class})
     public String handleConflict(Exception ex, HttpServletResponse response, Model model) {
         return showError(409, "Dữ liệu đã thay đổi hoặc đang được xử lý. Hãy tải lại trang trước khi thử lại.", response, model);
     }
@@ -41,6 +42,11 @@ public class StaffExceptionHandler {
     public String handleFailure(Exception ex, HttpServletResponse response, Model model) {
         log.error("Lỗi xử lý chức năng nội bộ: {}", ex.getClass().getSimpleName());
         return showError(500, "Không thể xử lý lúc này. Vui lòng thử lại sau hoặc liên hệ quản trị hệ thống.", response, model);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public String handleDatabase(Exception ex, HttpServletResponse response, Model model) {
+        return showError(503, "Database chung tạm thời không phản hồi. Không tự chuyển sang database local; hãy thử lại sau.", response, model);
     }
 
     private String showError(int status, String message, HttpServletResponse response, Model model) {
