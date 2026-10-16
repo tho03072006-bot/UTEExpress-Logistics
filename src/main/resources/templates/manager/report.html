@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Báo cáo vận hành - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<h1 class="h3">Báo cáo vận hành</h1>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<form th:action="@{/manager/bao-cao}" method="get" class="d-flex flex-wrap gap-2 mb-4 align-items-end">
+<div><label class="form-label" for="from">Từ ngày tạo đơn</label><input class="form-control" type="date" id="from" name="from" min="2000-01-01" th:max="${today}" th:value="${report.from}" required></div>
+<div><label class="form-label" for="to">Đến ngày</label><input class="form-control" type="date" id="to" name="to" min="2000-01-01" th:max="${today}" th:value="${report.to}" required></div>
+<button class="btn btn-primary">Xem báo cáo</button><a class="btn btn-outline-primary" th:href="@{/manager/bao-cao/csv(from=${report.from},to=${report.to})}">Tải CSV tổng hợp</a></form>
+<div class="row g-3 mb-4"><div class="col-md-4"><div class="ute-panel p-4"><div>Tổng đơn tạo trong khoảng</div><strong class="h3" th:text="${report.totalOrders}"></strong></div></div>
+<div class="col-md-4"><div class="ute-panel p-4"><div>Tỷ lệ giao thành công</div><strong class="h3" th:text="|${report.completionRate}%|"></strong><p class="small text-muted mb-0">Đã giao / (đã giao + hoàn). Không tính đơn hủy, đơn đang chạy và giao thất bại còn chờ xử lý. Hiển thị 0% khi chưa có đơn kết thúc.</p></div></div>
+<div class="col-md-4"><div class="ute-panel p-4"><div>Cước đã thanh toán trong khoảng</div><strong class="h3" th:text="|${#numbers.formatDecimal(report.paidShippingFees, 1, 'POINT', 0, 'COMMA')} đ|"></strong><p class="small text-muted mb-0">Theo ngày thanh toán; đã trừ khuyến mãi. Không phải COD tiền hàng của shop.</p></div></div></div>
+<div class="table-responsive"><table class="table"><thead><tr><th>Trạng thái hiện tại của đơn tạo trong khoảng</th><th>Số đơn</th></tr></thead>
+<tbody><tr th:each="row : ${report.counts}"><td th:text="${statusLabels[row.key]}"></td><td th:text="${row.value}"></td></tr></tbody></table></div>
+<p class="small text-muted">Khoảng tối đa 366 ngày. Đây là ảnh chụp trạng thái hiện tại, không phải lịch sử trạng thái tại ngày kết thúc. CSV chỉ chứa số liệu tổng hợp.</p>
+</section></body></html>
+
