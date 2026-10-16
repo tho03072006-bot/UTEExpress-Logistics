@@ -27,7 +27,7 @@ public final class InitializeAivenDatabase {
             try (Connection connection = AivenConnectionSettings.open()) {
                 initialize(connection, statements);
             }
-            System.out.println("Đã tạo schema chung cho User/Shipper/Manager/Admin. Chưa tạo dữ liệu mẫu/tài khoản.");
+            System.out.println("Đã tạo schema chung và ba mức cước ban đầu. Chưa tạo tài khoản hoặc đơn mẫu.");
         } catch (IllegalArgumentException ex) {
             System.err.println(ex.getMessage());
             System.exit(1);
@@ -67,6 +67,10 @@ public final class InitializeAivenDatabase {
                 statement.execute("SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
                 for (String sql : statements) { statement.executeUpdate(sql); }
             }
+            if (statements.stream().anyMatch(sql -> sql.startsWith("create table shipping_tariff "))) {
+                UpgradeAivenOperations.seedTariffs(connection);
+            }
+            if (statements.stream().anyMatch(sql -> sql.startsWith("create table operations_policy "))) UpgradeAivenControls.seedPolicy(connection);
         } finally {
             try (var release = connection.createStatement()) {
                 release.execute("SELECT RELEASE_LOCK('uteexpress-schema-initialize')");

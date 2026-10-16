@@ -10,6 +10,8 @@ public class TimeConfig {
 
     @Bean
     public Clock applicationClock() {
+        // Cả nhóm lưu DATETIME theo giờ Việt Nam, kể cả máy có múi giờ hệ điều hành khác.
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         return Clock.system(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
     }
 }
