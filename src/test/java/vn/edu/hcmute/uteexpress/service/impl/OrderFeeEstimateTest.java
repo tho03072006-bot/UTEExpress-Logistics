@@ -17,8 +17,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class OrderFeeEstimateTest {
 
-    private final OrderServiceImpl orderService =
-            new OrderServiceImpl(null, null, null, null, null, null, null);
+    private final OrderServiceImpl orderService = createService();
+
+    private static OrderServiceImpl createService() {
+        var repository = org.mockito.Mockito.mock(vn.edu.hcmute.uteexpress.repository.admin.ShippingTariffRepository.class);
+        for (var type : Order.ServiceType.values()) {
+            var tariff = new vn.edu.hcmute.uteexpress.entity.admin.ShippingTariff();
+            tariff.setServiceType(type);
+            tariff.setBaseFee(BigDecimal.valueOf(type == Order.ServiceType.STANDARD ? 15000 : type == Order.ServiceType.EXPRESS ? 25000 : 40000));
+            tariff.setFeePerKg(BigDecimal.valueOf(3000));
+            org.mockito.Mockito.when(repository.findByServiceType(type)).thenReturn(java.util.Optional.of(tariff));
+        }
+        var pricing = new vn.edu.hcmute.uteexpress.service.admin.impl.ShippingTariffServiceImpl(repository, null, null, java.time.Clock.systemUTC(),
+                org.mockito.Mockito.mock(vn.edu.hcmute.uteexpress.repository.admin.ShippingTariffVersionRepository.class));
+        return new OrderServiceImpl(null, null, null, null, null, null, null, pricing, null);
+    }
 
     @Test
     @DisplayName("Trả về đủ ba loại dịch vụ, đúng thứ tự tiêu chuẩn - nhanh - hoả tốc")

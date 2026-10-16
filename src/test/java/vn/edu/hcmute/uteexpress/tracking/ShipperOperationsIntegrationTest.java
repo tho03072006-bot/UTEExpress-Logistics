@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** Lấy hàng thất bại, lộ trình, cập nhật hàng loạt, đối soát COD và validation; chạy trên H2 riêng. */
-@SpringBootTest(properties = {
+@SpringBootTest(classes = vn.edu.hcmute.uteexpress.support.IsolatedLogisticsTestConfiguration.class, properties = {
     "spring.datasource.url=jdbc:h2:mem:shipper-ops-test;MODE=MySQL;DB_CLOSE_DELAY=-1;IGNORE_UNKNOWN_SETTINGS=TRUE",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
@@ -39,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.upload.dir=target/test-proof-uploads", "app.mail.order-updates.enabled=false"
 })
 @AutoConfigureMockMvc
+@org.springframework.test.context.ActiveProfiles("isolated-logistics")
 @Import(ShipperOperationsIntegrationTest.TestClock.class)
 @RecordApplicationEvents
 @Transactional
@@ -311,7 +312,7 @@ class ShipperOperationsIntegrationTest {
     @Test void parseAmountAcceptsVietnameseGroupingOnly() {
         assertEquals(new BigDecimal("35000"), CodSettlementService.parseAmount(" 35.000 "));
         assertEquals(new BigDecimal("35000"), CodSettlementService.parseAmount("35,000đ"));
-        for (String bad : List.of("", "  ", "abc", "-5", "1e5", "35.000,5x", "1234567890123"))
+        for (String bad : List.of("", "  ", "abc", "-5", "1e5", "35.000,5x", "1234567890123", "1.2", "1,5", "1.000,000", "12 34"))
             assertThrows(IllegalArgumentException.class, () -> CodSettlementService.parseAmount(bad), bad);
     }
 
@@ -349,7 +350,7 @@ class ShipperOperationsIntegrationTest {
         mvc.perform(post(path).servletPath(path).with(user(shipper.getUsername()).roles("SHIPPER")).with(csrf())
                 .param("orderIds", String.valueOf(a.getId())).param("declaredAmount", "mười tám nghìn"))
             .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/shipper/doi-soat"))
-            .andExpect(flash().attribute("error", "Số tiền nộp chỉ gồm chữ số, tối đa 12 chữ số."))
+            .andExpect(flash().attribute("error", "Số tiền là VND nguyên; dấu phân cách phải đúng nhóm 3 chữ số, không nhận số thập phân."))
             .andExpect(flash().attribute("formAmount", "mười tám nghìn"));
         mvc.perform(post(path).servletPath(path).with(user(shipper.getUsername()).roles("SHIPPER")).with(csrf())
                 .param("orderIds", String.valueOf(a.getId())).param("declaredAmount", "18.000"))

@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.*;
 class StaffAccountServiceImplTest {
     @Mock StaffAccountRepository accounts;
     @Mock AdminUserRepository users;
+    @Mock vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
     private ValidatorFactory factory;
     private StaffAccountServiceImpl service;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
@@ -27,7 +28,7 @@ class StaffAccountServiceImplTest {
     private StaffAccount manager;
     @BeforeEach void setUp() {
         factory = Validation.buildDefaultValidatorFactory();
-        service = new StaffAccountServiceImpl(accounts, users, encoder, factory.getValidator());
+        service = new StaffAccountServiceImpl(accounts, users, encoder, factory.getValidator(), audit);
         admin = account(1L, "admin01", AppUser.Role.ADMIN);
         manager = account(2L, "manager01", AppUser.Role.MANAGER);
     }

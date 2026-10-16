@@ -48,6 +48,21 @@ class UserDetailsServiceImplTest {
         assertTrue(userDetailsService.loadUserByUsername("nguyentai").isEnabled());
     }
 
+    @Test void adminLockedAccountCannotLogInEvenIfEnabledWasSetManually() {
+        var user = user(true); user.setLockedByAdmin(true);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(user));
+        assertFalse(userDetailsService.loadUserByUsername("nguyentai").isEnabled());
+    }
+
+    @Test void internalRolesCannotUsePublicLogin() {
+        var user = user(true);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(user));
+        user.setRole(AppUser.Role.ADMIN);
+        assertThrows(UsernameNotFoundException.class, () -> userDetailsService.loadUserByUsername("nguyentai"));
+        user.setRole(AppUser.Role.MANAGER);
+        assertThrows(UsernameNotFoundException.class, () -> userDetailsService.loadUserByUsername("nguyentai"));
+    }
+
     @Test
     void unknownAccountIsRejected() {
         when(appUserRepository.findByUsername("unknown"))

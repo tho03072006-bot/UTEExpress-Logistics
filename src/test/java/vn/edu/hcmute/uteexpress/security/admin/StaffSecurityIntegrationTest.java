@@ -38,7 +38,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {AdminController.class, ManagerController.class, StaffAccountController.class,
-        StaffAccessController.class, ManagerOrderController.class, AuthController.class})
+        StaffAccessController.class, AdminAccountController.class, ManagerOrderController.class, AuthController.class,
+        ShippingTariffController.class, AuditController.class, DispatchController.class, ManagerPromotionController.class, ManagerReportController.class, ManagerTariffController.class})
 @Import({SecurityConfig.class, StaffSecurityConfig.class, StaffOtpPolicyConfig.class,
         TimeConfig.class, StaffLoginAttemptService.class, StaffExceptionHandler.class})
 class StaffSecurityIntegrationTest {
@@ -47,9 +48,17 @@ class StaffSecurityIntegrationTest {
     @Autowired StaffLoginAttemptService attempts;
     @MockBean StaffAccountRepository accounts;
     @MockBean AdminUserRepository users;
+    @MockBean vn.edu.hcmute.uteexpress.repository.AppUserRepository publicUsers;
+    @MockBean vn.edu.hcmute.uteexpress.service.admin.AdminAccountService allAccounts;
     @MockBean StaffAccountService staffService;
     @MockBean ManagerDashboardService dashboard;
     @MockBean ManagerOrderService orders;
+    @MockBean ManagerDispatchService dispatch;
+    @MockBean vn.edu.hcmute.uteexpress.service.tracking.DispatchService sharedDispatch;
+    @MockBean ManagerPromotionService promotions;
+    @MockBean ManagerReportService reports;
+    @MockBean vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
+    @MockBean vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
     @MockBean AuthService authService;
     @MockBean OrderDraftService drafts;
     @MockBean UserDetailsService sharedUserDetails;
@@ -64,10 +73,150 @@ class StaffSecurityIntegrationTest {
         when(dashboard.getSummary()).thenReturn(new ManagerDashboardResponse(4, 8, 2, 3));
         when(staffService.findAccounts(anyString(), anyInt())).thenReturn(new PageImpl<>(
                 List.of(StaffAccountResponse.from(admin), StaffAccountResponse.from(manager))));
+        var user = new AppUser("userdemo", "not-rendered-hash", "user@example.com");
+        user.setId(3L); user.setEnabled(true); user.setFullName("Người dùng"); user.setPhone("0901234567");
+        when(allAccounts.findAccounts(anyString(), any(), anyInt())).thenReturn(new PageImpl<>(
+            List.of(AdminAccountResponse.from(user), AdminAccountResponse.from(admin.getUser()))));
+        when(allAccounts.findAccount(anyString(), eq(3L))).thenReturn(AdminAccountResponse.from(user));
         when(orders.findOrders(anyString(), any(), any(), any(), anyInt())).thenReturn(new PageImpl<>(List.of(
                 new ManagerOrderResponse("UTE123", "Người gửi", "Người nhận", "Chưa phân công",
                         Order.OrderStatus.PENDING_PICKUP, new BigDecimal("30000"), LocalDateTime.of(2026, 9, 18, 9, 0)))));
         attempts.clearFailures("admin01"); attempts.clearFailures("manager01");
+        when(dispatch.findPendingOrders(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of(
+            new DispatchOrderResponse(1L, "UTEDEMO", "Người nhận", "Chưa phân công", 0))));
+        when(dispatch.findShippers(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of(
+            new ShipperWorkloadResponse(3L, "shipper01", "Shipper", 2))));
+        when(sharedDispatch.pending(anyString(), anyInt())).thenReturn(Page.empty());
+        when(sharedDispatch.shippers(anyString(), anyInt())).thenReturn(Page.empty());
+        when(promotions.findPromotions(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of()));
+        when(audit.findEvents(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of()));
+        var tariff = new vn.edu.hcmute.uteexpress.entity.admin.ShippingTariff();
+        tariff.setServiceType(Order.ServiceType.STANDARD); tariff.setBaseFee(BigDecimal.valueOf(15000));
+        tariff.setFeePerKg(BigDecimal.valueOf(3000));
+        when(tariffs.findTariffs(anyString())).thenReturn(List.of(ShippingTariffResponse.from(tariff)));
+        var counts = new EnumMap<Order.OrderStatus, Long>(Order.OrderStatus.class);
+        for (var status : Order.OrderStatus.values()) { counts.put(status, 0L); }
+        when(reports.report(anyString(), any(), any())).thenReturn(
+            new OperationsReportResponse(LocalDate.now().minusDays(29), LocalDate.now(), counts, 0, 0, BigDecimal.ZERO));
+    }
+
+    @Test void newManagerPagesRenderAndAdminPagesAreDenied() throws Exception {
+        for (var path : List.of("/manager/phan-cong", "/manager/khuyen-mai", "/manager/khuyen-mai/tao", "/manager/bang-cuoc", "/manager/bao-cao")) {
+            mvc.perform(get(path).with(authentication(auth(manager)))).andExpect(status().isOk());
+        }
+        for (var path : List.of("/admin/bang-cuoc", "/admin/bang-cuoc/STANDARD", "/admin/nhat-ky")) {
+            mvc.perform(get(path).with(authentication(auth(manager)))).andExpect(status().isForbidden());
+            mvc.perform(get(path).with(authentication(auth(admin)))).andExpect(status().isOk());
+        }
+        verify(tariffs, never()).updateTariff(anyString(), any(), any());
+    }
+
+    @Test void adminAccountCrudPagesRenderButManagerCannotReadOrWrite() throws Exception {
+        for (var suffix : List.of("", "/tao", "/3/sua", "/3/xoa", "/3/mat-khau")) {
+            mvc.perform(get("/admin/quan-ly-tai-khoan" + suffix).with(authentication(auth(admin))))
+                .andExpect(status().isOk()).andExpect(content().string(not(containsString("not-rendered-hash"))));
+            mvc.perform(get("/admin/quan-ly-tai-khoan" + suffix).with(authentication(auth(manager))))
+                .andExpect(status().isForbidden());
+        }
+        for (var suffix : List.of("/tao", "/3/sua", "/3/xoa", "/3/mat-khau")) {
+            mvc.perform(post("/admin/quan-ly-tai-khoan" + suffix).with(authentication(auth(manager))).with(csrf()))
+                .andExpect(status().isForbidden());
+            mvc.perform(post("/admin/quan-ly-tai-khoan" + suffix).with(authentication(auth(admin))))
+                .andExpect(status().isForbidden());
+        }
+        verify(allAccounts, never()).createAccount(anyString(), any());
+        verify(allAccounts, never()).updateAccount(anyString(), anyLong(), any());
+        verify(allAccounts, never()).deleteAccount(anyString(), anyLong(), any());
+        verify(allAccounts, never()).resetPassword(anyString(), anyLong(), any());
+    }
+
+    @Test void invalidAccountFormClearsPasswordAndDoesNotWrite() throws Exception {
+        mvc.perform(post("/admin/quan-ly-tai-khoan/tao").with(authentication(auth(admin))).with(csrf())
+            .param("username", "bad").param("fullName", "<script>alert(1)</script>")
+            .param("email", "not-mail").param("phone", "0123456789").param("role", "ROOT")
+            .param("credentials.password", "DoNotEcho@2026").param("credentials.confirmPassword", "DoNotEcho@2026"))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "username", "fullName", "email", "phone", "role"))
+            .andExpect(content().string(not(containsString("DoNotEcho@2026"))))
+            .andExpect(content().string(not(containsString("<script>alert(1)</script>"))));
+        verify(allAccounts, never()).createAccount(anyString(), any());
+    }
+
+    @Test void editAndResetRejectInvalidNestedFieldsWithoutEchoingSecrets() throws Exception {
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/sua").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "-1").param("profile.fullName", "1234").param("profile.email", "bad")
+            .param("profile.phone", "123").param("profile.role", "ROOT").param("active", "not-boolean")
+            .param("reason", "x").param("currentPassword", "PrivateSecret@2026"))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "revision", "profile.fullName", "profile.email", "profile.phone", "profile.role", "active", "reason"))
+            .andExpect(content().string(not(containsString("PrivateSecret@2026"))));
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/mat-khau").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "0").param("credentials.password", "weak").param("credentials.confirmPassword", "different")
+            .param("currentPassword", "PrivateSecret@2026").param("reason", "Kiểm thử mật khẩu"))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "credentials.password"))
+            .andExpect(content().string(not(containsString("PrivateSecret@2026"))));
+        verify(allAccounts, never()).updateAccount(anyString(), anyLong(), any());
+        verify(allAccounts, never()).resetPassword(anyString(), anyLong(), any());
+    }
+
+    @Test void validEditAndResetUseAdminPrincipalNotInjectedActor() throws Exception {
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/sua").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "0").param("profile.fullName", "Người dùng mới").param("profile.email", "user@example.com")
+            .param("profile.phone", "0901234567").param("profile.role", "USER").param("active", "true")
+            .param("reason", "Cập nhật kiểm thử").param("currentPassword", "PrivateSecret@2026").param("actor", "manager01"))
+            .andExpect(redirectedUrl("/admin/quan-ly-tai-khoan"));
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/mat-khau").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "0").param("credentials.password", "NewPassword@2026").param("credentials.confirmPassword", "NewPassword@2026")
+            .param("currentPassword", "PrivateSecret@2026").param("reason", "Cấp lại kiểm thử").param("actor", "manager01"))
+            .andExpect(redirectedUrl("/admin/quan-ly-tai-khoan"));
+        verify(allAccounts).updateAccount(eq("admin01"), eq(3L), org.mockito.ArgumentMatchers.any(AdminAccountUpdateRequest.class));
+        verify(allAccounts).resetPassword(eq("admin01"), eq(3L), org.mockito.ArgumentMatchers.any(AdminAccountPasswordRequest.class));
+    }
+
+    @Test void deletionNeedsValidFormUsesAuthenticatedActorAndNeverRunsOnGet() throws Exception {
+        mvc.perform(get("/admin/quan-ly-tai-khoan/3/xoa").with(authentication(auth(admin)))).andExpect(status().isOk());
+        verify(allAccounts, never()).deleteAccount(anyString(), anyLong(), any());
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/xoa").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "bad").param("reason", "").param("currentPassword", "Secret@2026"))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "revision", "reason", "confirmedUsername"))
+            .andExpect(content().string(not(containsString("Secret@2026"))));
+        verify(allAccounts, never()).deleteAccount(anyString(), anyLong(), any());
+        mvc.perform(post("/admin/quan-ly-tai-khoan/3/xoa").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "0").param("reason", "Xóa tài khoản kiểm thử").param("currentPassword", "Secret@2026")
+            .param("confirmedUsername", "userdemo").param("actor", "manager01"))
+            .andExpect(redirectedUrl("/admin/quan-ly-tai-khoan"));
+        verify(allAccounts).deleteAccount(eq("admin01"), eq(3L), org.mockito.ArgumentMatchers.any(AdminAccountDeleteRequest.class));
+    }
+
+    @Test void newWritesRequireCsrfAndRejectBadBinding() throws Exception {
+        mvc.perform(post("/manager/phan-cong/1").with(authentication(auth(manager))))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/admin/bang-cuoc/STANDARD").with(authentication(auth(manager))).with(csrf()))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/admin/bang-cuoc/STANDARD").with(authentication(auth(admin))).with(csrf())
+            .param("baseFee", "not-a-number").param("feePerKg", "-1").param("revision", "0").param("reason", ""))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "baseFee", "feePerKg", "reason"));
+        mvc.perform(post("/manager/khuyen-mai/tao").with(authentication(auth(manager))).with(csrf())
+            .param("discountType", "ADMIN").param("startAt", "wrong-date"))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "discountType", "startAt"));
+        verify(promotions, never()).savePromotion(anyString(), any(), any());
+        verify(tariffs, never()).updateTariff(anyString(), any(), any());
+    }
+
+    @Test void assignmentUsesAuthenticatedActorAndServerPath() throws Exception {
+        mvc.perform(post("/manager/phan-cong").with(authentication(auth(manager))).with(csrf())
+            .param("shipperId", "3").param("expectedShipperId", "0").param("trackingCode", "UTEDEMO")
+            .param("expectedUpdatedAt", "2026-10-15T09:00:00").param("note", "Điều phối theo tải đơn")
+            .param("actor", "admin01").param("status", "DELIVERED"))
+            .andExpect(redirectedUrl("/manager/phan-cong"));
+        verify(sharedDispatch).assign(eq("UTEDEMO"), eq(3L), eq(0L), org.mockito.ArgumentMatchers.any(LocalDateTime.class), eq("Điều phối theo tải đơn"), eq("manager01"));
+    }
+
+    @Test void csvContainsOnlyAggregatesAndInvalidDatesAre400() throws Exception {
+        mvc.perform(get("/manager/bao-cao/csv").with(authentication(auth(manager)))
+            .param("from", "2026-10-01").param("to", "2026-10-10"))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(content().string(containsString("Cuoc_da_thanh_toan_VND,0")));
+        mvc.perform(get("/manager/bao-cao").with(authentication(auth(manager))).param("from", "not-a-date"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test void anonymousMustUseInternalLogin() throws Exception {

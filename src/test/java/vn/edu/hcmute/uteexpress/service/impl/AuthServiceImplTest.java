@@ -73,6 +73,30 @@ class AuthServiceImplTest {
         assertTrue(mailCaptor.getValue().getText().contains(user.getOtpCode()));
     }
 
+    @Test void adminLockCannotBeBypassedWithActivationOrPasswordResetOtp() {
+        var user = unverifiedUser(); user.setLockedByAdmin(true);
+        when(appUserRepository.findByUsername("khachhang")).thenReturn(Optional.of(user));
+        when(appUserRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        assertFalse(authService.verifyOtp("khachhang", "123456"));
+        user.setEnabled(true);
+        authService.sendPasswordResetOtp(user.getEmail());
+        assertFalse(authService.resetPassword(user.getEmail(), "123456", "NewPassword@2026"));
+        verify(appUserRepository, never()).save(any()); verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test void adminAndManagerCannotActivateOrRecoverWithPublicOtp() {
+        var user = unverifiedUser();
+        when(appUserRepository.findByUsername("khachhang")).thenReturn(Optional.of(user));
+        when(appUserRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        for (var role : java.util.List.of(AppUser.Role.ADMIN, AppUser.Role.MANAGER)) {
+            user.setRole(role); user.setEnabled(false);
+            assertFalse(authService.verifyOtp("khachhang", "123456")); user.setEnabled(true);
+            authService.sendPasswordResetOtp(user.getEmail());
+            assertFalse(authService.resetPassword(user.getEmail(), "123456", "NewPassword@2026"));
+        }
+        verify(appUserRepository, never()).save(any()); verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
     @Test
     void verifyOtpActivatesOnlyMatchingUnexpiredCodeAndConsumesIt() {
         AppUser user = unverifiedUser();
