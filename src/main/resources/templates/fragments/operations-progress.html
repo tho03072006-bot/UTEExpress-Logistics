@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"><body>
 <div th:fragment="progress(items, path)" class="ute-panel my-3">
     <h3 class="h5">Tiến độ xử lý từ Manager/Admin</h3>
-    <p class="small text-muted">Chỉ đọc hồ sơ liên quan đến bạn. Số tiền đề xuất/đã duyệt không phải đã chi trả; chỉ hồ sơ hoàn tiền/bồi hoàn “Đã hoàn tất” mới có biên nhận chi trả ngoài hệ thống.</p>
+    
     <p th:if="${items.empty}">Chưa có hồ sơ xử lý.</p>
     <div class="table-responsive" th:unless="${items.empty}">
         <table class="table align-middle"><thead><tr><th>Nghiệp vụ</th><th>Trạng thái</th><th>Số tiền đề xuất</th><th>Lịch giao lại được đề xuất/duyệt</th><th>Cập nhật</th></tr></thead>

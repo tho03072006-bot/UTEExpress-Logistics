@@ -1,7 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Chính sách vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
-<h1 class="h3">Admin · Chính sách vận hành</h1><p>Manager chỉ áp dụng chính sách; không được sửa ngưỡng hoặc tự duyệt ngoại lệ vượt số lần giao.</p>
-<p class="text-muted">Thời gian tính liên tục theo giờ Việt Nam, không phải cam kết SLA thương mại có lịch nghỉ. Thay đổi ngưỡng tác động cảnh báo hiện tại, không sửa mốc thời gian lịch sử.</p>
+<h1 class="h3">Admin · Chính sách vận hành</h1><p>Ngưỡng cảnh báo và số lần giao lại.</p>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
 <form method="post" th:action="@{/admin/chinh-sach-van-hanh}" th:object="${form}" class="ute-panel p-3">
 <div class="alert alert-danger" th:if="${#fields.hasAnyErrors()}">Kiểm tra giá trị bắt buộc, giới hạn mỗi ô; Hỏa tốc ≤ Nhanh ≤ Tiêu chuẩn, hạn phản hồi ≤ hạn giải quyết.</div>

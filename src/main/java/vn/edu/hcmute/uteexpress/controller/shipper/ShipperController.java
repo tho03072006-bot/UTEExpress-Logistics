@@ -96,6 +96,7 @@ public class ShipperController {
         var failures = workspace.failures(username, visible);
         model.addAttribute("work", work);
         model.addAttribute("workCounts", workspace.counts(username));
+        model.addAttribute("nextStop", workspace.nextStop(username).orElse(null));
         model.addAttribute("money", workspace.money(username, visible));
         model.addAttribute("retries", failures.retries());
         model.addAttribute("pickupFailures", failures.pickups());

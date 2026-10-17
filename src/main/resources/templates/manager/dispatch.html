@@ -2,7 +2,7 @@
 <head><title>Phân công giao hàng - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div data-realtime-region="manager-dispatch">
-<div class="ute-page-head sx-art-dispatch"><div><h2>Phân công giao hàng</h2><p>Chỉ phân công đơn chờ lấy hàng cho Shipper đang hoạt động.</p></div></div>
+<div class="ute-page-head sx-art-dispatch"><div><h2>Phân công giao hàng</h2><p>Giao đơn chờ lấy cho Shipper đang hoạt động.</p></div></div>
 <div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
 <div class="alert alert-light border" th:if="${error}" th:text="${error}"></div>
 <div class="ute-panel text-muted" th:if="${orders.empty}">Không có đơn đang chờ lấy hàng.</div>
@@ -10,7 +10,7 @@
     <div class="d-flex justify-content-between flex-wrap gap-2"><strong th:text="${order.trackingCode}"></strong>
         <span class="text-muted" th:text="${order.shipper == null ? 'Chưa phân công' : 'Hiện tại: ' + order.shipper.username}"></span></div>
     <p class="text-muted mt-2" th:text="|${order.senderName} → ${order.receiverName}|"></p>
-    <p class="alert alert-warning" th:unless="${payment.fulfillmentReady}">Chưa được phân công: yêu cầu người gửi thanh toán ví trước hoặc kiểm tra thông tin cước bị thiếu. Không thu tiền mặt thay cho ví.</p>
+    <p class="alert alert-warning" th:unless="${payment.fulfillmentReady}">Chưa phân công được: đơn chưa thanh toán ví hoặc thiếu thông tin cước.</p>
     <p th:if="${payment.available}" th:text="|${payment.method.displayName} · ${payment.status.displayName}|"></p>
     <form class="row g-3 align-items-end" method="post" th:action="@{/manager/phan-cong}">
         <input type="hidden" name="trackingCode" th:value="${order.trackingCode}">

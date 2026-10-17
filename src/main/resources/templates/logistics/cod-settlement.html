@@ -27,13 +27,13 @@
     <div class="ute-panel mb-3" data-realtime-region="settlement-balance" th:if="${!staff and balance != null}"><h3 class="h5">Số dư sau xử lý</h3>
         <p>Cước còn phải nộp bổ sung: <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|"></strong></p>
         <p>Cước nộp thừa chưa được chi hoàn: <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|"></strong></p>
-        <p class="small text-muted">Chênh lệch phía trên thuộc phiếu gốc và không sửa lại. Số dư này tính cả hồ sơ bổ sung/chi hoàn đã xử lý.</p>
+        
     </div>
     <div class="ute-panel mb-3" th:if="${staff and outstanding != null}"><h3 class="h5">Theo dõi khoản thiếu</h3><p th:text="|Cước còn phải nộp bổ sung: ${outstanding} VND|"></p>
         <a th:if="${outstanding.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_SUPPLEMENT',targetId=${settlement.id})}">Lập phiếu bổ sung kèm chứng từ để Admin duyệt</a>
         <p th:if="${refundable != null and refundable.signum() > 0}" th:text="|Cước nộp thừa còn có thể đề nghị hoàn: ${refundable} VND|"></p>
         <a th:if="${refundable != null and refundable.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_REFUND',targetId=${settlement.id})}">Lập đề nghị hoàn cước nộp thừa</a>
-        <p class="small text-muted">Khoản thiếu không mất đi chỉ vì phiếu gốc đã được xác nhận. Đây là tiền cước, không phải tiền hàng thu hộ.</p></div>
+        </div>
     <article class="ute-panel sx-tone-indigo"><span class="shipper-eyebrow"><i class="bi bi-chat-left-text"></i> TRAO ĐỔI</span><h3 class="mt-2">Ghi chú</h3>
         <div class="shipper-payment-row"><span>Tổng cước COD</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.totalAmount})}"></th:block></strong></div>
         <div class="shipper-payment-row"><span>Tiền mặt nộp</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong></div>
@@ -46,7 +46,7 @@
         <div class="mb-3"><label for="managerNote" class="form-label">Ghi chú</label><textarea id="managerNote" name="note" class="form-control" rows="3" maxlength="500" data-sx-count th:text="${formNote}" placeholder="Bắt buộc khi từ chối hoặc khi phiếu có chênh lệch."></textarea></div>
         <div class="d-flex flex-wrap gap-2"><button class="btn sx-btn-success flex-fill" type="submit" name="decision" value="CONFIRM"><i class="bi bi-check2-circle"></i> Xác nhận</button>
             <button class="btn sx-btn-soft sx-tone-rose flex-fill" type="submit" name="decision" value="REJECT"><i class="bi bi-x-circle"></i> Từ chối</button></div>
-        <p class="shipper-hint mt-2 mb-0">Từ chối sẽ trả các đơn về danh sách chờ nộp của Shipper.</p>
+        <p class="shipper-hint mt-2 mb-0">Đơn sẽ trở lại danh sách chờ nộp.</p>
     </form>
 </aside>
 </div>

@@ -8,7 +8,7 @@
 
 <section class="ute-narrow">
 <div class="ute-page-head sx-art-house"><div><h2 th:text="${editingId} == null ? 'Thêm địa chỉ mới' : 'Sửa địa chỉ'">Thêm địa chỉ mới</h2>
-<p>Lưu địa chỉ để chọn nhanh khi tạo đơn gửi hàng.</p></div></div>
+</div></div>
 
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
@@ -25,9 +25,6 @@
                     th:value="${type}"
                     th:text="${type.displayName}"></option>
         </select>
-        <div class="form-text">
-            Chọn "Địa chỉ gửi hàng" cho nơi shipper đến lấy hàng, "Địa chỉ người nhận" cho nơi giao hàng đến.
-        </div>
         <div class="text-danger small" th:if="${#fields.hasErrors('addressType')}" th:errors="*{addressType}"></div>
     </div>
 

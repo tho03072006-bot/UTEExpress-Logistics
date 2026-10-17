@@ -4,7 +4,7 @@
 <head><title>Tra soát đơn toàn hệ thống - UTEExpress</title></head>
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head sx-art-warehouse"><div><h1 class="h3">Tra soát đơn hàng toàn hệ thống</h1><p>Xem tình trạng vận hành. Bộ lọc mặc định lấy 30 ngày gần nhất; tối đa 366 ngày mỗi lần.</p></div></div>
+<div class="ute-page-head sx-art-warehouse"><div><h1 class="h3">Tra soát đơn hàng toàn hệ thống</h1><p>Mặc định 30 ngày gần nhất, tối đa 366 ngày.</p></div></div>
 <form method="get" th:action="@{/manager/don-hang}" class="ute-panel p-3 row g-3 mb-4">
 <div class="col-md-3"><label for="tracking" class="form-label">Mã vận đơn chính xác</label><input id="tracking" name="tracking" th:value="${tracking}" maxlength="20" pattern="[A-Za-z0-9-]{1,20}" class="form-control"></div>
 <div class="col-md-3"><label for="status" class="form-label">Trạng thái</label><select name="status" id="status" class="form-select"><option value="">Tất cả</option>

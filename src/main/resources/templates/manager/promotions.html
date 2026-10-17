@@ -5,7 +5,7 @@
 <h1 class="h3">Quản lý khuyến mãi</h1>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p>Mã đã dùng chỉ được đổi mô tả, bật/tắt và tổng lượt. Không xóa mã để giữ lịch sử thanh toán.</p>
+<p>Mã đã dùng chỉ đổi được mô tả, trạng thái và tổng lượt.</p>
 <a class="btn btn-primary mb-3" th:href="@{/manager/khuyen-mai/tao}">Tạo khuyến mãi</a>
 <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mã</th><th>Giảm</th><th>Lượt dùng</th><th>Thời hạn</th><th>Trạng thái</th><th></th></tr></thead>
 <tbody><tr th:each="promo : ${promotions}"><td><strong th:text="${promo.code}"></strong><div class="small" th:text="${promo.description}"></div></td>

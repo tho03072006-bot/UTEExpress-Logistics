@@ -11,7 +11,7 @@
     <div class="sx-hero-main">
         <span class="shipper-eyebrow"><i class="bi bi-search"></i> TRA CỨU HÀNH TRÌNH</span>
         <h2>Tra cứu vận đơn</h2>
-        <p>Nhập mã vận đơn để biết hàng của bạn đang ở đâu. Không cần đăng nhập.</p>
+        <p>Không cần đăng nhập.</p>
         <form method="get" th:action="@{/tra-cuu}" class="sx-hero-search" data-lookup-form>
             <label class="visually-hidden" for="trackingCode">Mã vận đơn</label>
             <i class="bi bi-upc-scan" aria-hidden="true"></i>
@@ -36,7 +36,7 @@
             <label class="sx-check-item sx-consent" for="lookupConsent">
                 <input type="checkbox" id="lookupConsent" class="sx-consent-input">
                 <span class="sx-check-mark sx-check-box" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
-                <div><strong>Tôi đồng ý cho phép dùng camera để quét QR</strong><span>Hình ảnh chỉ xử lý trên máy của bạn để đọc mã, không gửi hay lưu lại.</span></div>
+                <div><strong>Tôi đồng ý cho phép dùng camera để quét QR</strong><span>Ảnh chỉ xử lý trên máy, không lưu lại.</span></div>
             </label>
             <div class="d-flex flex-wrap gap-2 mt-3"><button id="lookupStart" type="button" class="btn sx-btn-cyan" disabled><i class="bi bi-camera-video"></i> Bắt đầu quét</button>
                 <button id="lookupStop" type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-stop-circle"></i> Dừng camera</button></div>
@@ -45,7 +45,7 @@
             <img th:src="@{/images/shipper/qr-phone.svg}" alt="" aria-hidden="true" width="240" height="160">
             <label for="lookupImage" class="form-label">Hoặc chọn ảnh có mã QR</label>
             <input type="file" id="lookupImage" accept="image/jpeg,image/png,image/webp" class="form-control">
-            <p class="shipper-hint mt-2 mb-0">Ảnh JPG/PNG tối đa 5 MB, chụp đủ và rõ mã QR. Camera cần HTTPS hoặc localhost; nếu không bật được camera, hãy chọn ảnh.</p>
+            <p class="shipper-hint mt-2 mb-0">JPG/PNG, tối đa 5 MB.</p>
         </div>
     </div>
     <p id="lookupStatus" class="shipper-hint mt-3 mb-0" role="status" aria-live="polite">Tick ô đồng ý để bật camera, hoặc chọn ảnh có mã QR.</p>
@@ -89,7 +89,7 @@
             <div><span>Dịch vụ</span><strong><span class="sx-chip" th:classappend="${'sx-service-' + #strings.toLowerCase(order.serviceType.name())}"><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span></strong></div>
             <div><span>Trạng thái</span><strong><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong></div>
         </div>
-        <p class="shipper-hint mb-0 mt-3"><i class="bi bi-person-lock"></i> Người gửi đăng nhập để xem toàn bộ lịch sử hành trình, ảnh và chữ ký giao hàng.</p>
+        <p class="shipper-hint mb-0 mt-3"><i class="bi bi-person-lock"></i> Đăng nhập để xem đầy đủ hành trình.</p>
     </article>
 </div>
 

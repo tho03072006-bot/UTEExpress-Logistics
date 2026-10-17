@@ -15,10 +15,10 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         if (/\/shipper\/(don|khieu-nai)\//.test(window.location.pathname)) {
-            document.querySelectorAll('.ute-nav-link[href$="/shipper/trang-chu"]').forEach(link => link.classList.add('active'));
+            document.querySelectorAll(':is(.ute-nav-link, .sx-tabbar-link)[href$="/shipper/trang-chu"]').forEach(link => link.classList.add('active'));
         }
         if (/\/shipper\/doi-soat\//.test(window.location.pathname)) {
-            document.querySelectorAll('.ute-nav-link[href$="/shipper/doi-soat"]').forEach(link => link.classList.add('active'));
+            document.querySelectorAll(':is(.ute-nav-link, .sx-tabbar-link)[href$="/shipper/doi-soat"]').forEach(link => link.classList.add('active'));
         }
     });
 
@@ -186,7 +186,7 @@
                 span.textContent = n;
                 span.closest('button').disabled = n === 0;
             });
-            checks.forEach(c => c.closest('.shipper-order-card').classList.toggle('sx-selected', c.checked));
+            checks.forEach(c => c.closest('.sx-order-row, .shipper-order-card').classList.toggle('sx-selected', c.checked));
             if (all) {
                 all.checked = selected.length > 0 && selected.length === checks.length;
                 all.indeterminate = selected.length > 0 && selected.length < checks.length;

@@ -3,11 +3,10 @@
 <head><title>Quản lý tài khoản toàn hệ thống - UTEExpress</title></head>
 <body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><div><h1 class="h3">Quản lý tài khoản · Chỉ Admin</h1>
-<p class="text-muted">Thêm, sửa, khóa/mở, cấp lại mật khẩu và xóa tài khoản Admin, Manager, User, Shipper.</p></div>
+<p class="text-muted">Admin, Manager, User và Shipper.</p></div>
 <a class="btn btn-primary align-self-start" th:href="@{/admin/quan-ly-tai-khoan/tao}">Thêm tài khoản</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p class="alert alert-info">Manager không có quyền quản lý tài khoản. Không tự sửa/xóa tài khoản đang đăng nhập; phải còn Admin hoạt động. Chỉ xóa tài khoản chưa có dữ liệu liên kết, không xóa lịch sử nghiệp vụ.</p>
 <form th:action="@{/admin/quan-ly-tai-khoan}" method="get" class="d-flex gap-2 mb-3 align-items-end">
 <div><label for="filterRole" class="form-label">Lọc vai trò</label><select name="role" id="filterRole" class="form-select">
 <option value="">Tất cả vai trò</option><option th:each="role : ${roles}" th:value="${role}" th:text="${role}" th:selected="${role == selectedRole}"></option></select></div>
@@ -18,12 +17,12 @@
 <span class="badge text-bg-primary" th:text="${account.role}"></span>
 <span class="badge" th:classappend="${account.active} ? 'text-bg-success' : 'text-bg-warning'" th:text="${account.active} ? 'Hoạt động' : (${account.lockedByAdmin} ? 'Admin đã khóa' : 'Chưa kích hoạt / Ngừng hoạt động')"></span></div>
 <p class="mt-2 mb-1"><span th:text="${account.fullName}"></span> · <span th:text="${account.email}"></span> · <span th:text="${account.phone}"></span></p>
-<p class="small text-muted" th:text="${account.internal} ? 'Đăng nhập nội bộ; tài khoản được cấp, không đăng ký bằng OTP.' : 'Đăng nhập tại trang User/Shipper; không được truy cập quản trị nội bộ.'"></p>
+
 <div th:if="${account.username != #authentication.name}" class="d-flex flex-wrap gap-2">
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/sua(id=${account.id})}">Sửa thông tin / quyền / trạng thái</a>
 <a th:if="${account.active}" class="btn btn-outline-secondary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/mat-khau(id=${account.id})}">Cấp lại mật khẩu</a>
 <a class="btn btn-outline-danger btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/xoa(id=${account.id})}">Xóa có xác nhận</a></div>
-<p th:if="${account.username == #authentication.name}" class="small text-muted mb-0">Tài khoản đang đăng nhập. Dùng mục Đổi mật khẩu nội bộ.</p></div>
+<p th:if="${account.username == #authentication.name}" class="small text-muted mb-0">Tài khoản đang đăng nhập.</p></div>
 <nav class="d-flex align-items-center gap-3" aria-label="Phân trang tài khoản">
 <a th:if="${accounts.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan(page=${accounts.number - 1},role=${selectedRole})}">Trang trước</a>
 <span th:text="|Trang ${accounts.number + 1} · ${accounts.totalElements} tài khoản|"></span>

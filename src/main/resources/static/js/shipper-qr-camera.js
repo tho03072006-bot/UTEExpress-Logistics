@@ -34,7 +34,7 @@
         if (running) return;
         start.disabled = !(agreed && secureOk && deviceOk);
         if (!secureOk || !deviceOk) status.textContent = 'Thiết bị hoặc kết nối chưa đủ điều kiện dùng camera. Hãy chọn ảnh QR bên cạnh.';
-        else if (!agreed) status.textContent = 'Tick ô đồng ý ở trên để mở nút bắt đầu quét.';
+        else if (!agreed) status.textContent = 'Tick ô đồng ý để bắt đầu quét.';
         else status.textContent = 'Đã sẵn sàng. Nhấn "Bắt đầu quét" và cho phép camera khi trình duyệt hỏi.';
     }
     if (consent) consent.addEventListener('change', () => {

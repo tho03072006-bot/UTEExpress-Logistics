@@ -8,9 +8,16 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderStatusHistory;
 
 public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusHistory, Long> {
+    /**
+     * Lượt chuyển trạng thái tính cho thống kê của Shipper: do chính Shipper thực hiện, cộng với thao tác của
+     * Manager/Admin trên đơn đang giao cho Shipper đó (ví dụ Manager hoàn tất chuyển hoàn). Nhật ký vẫn giữ
+     * đúng người thao tác; đơn đã chuyển cho Shipper khác thì lượt của Shipper cũ không tính sang người mới.
+     */
     @org.springframework.data.jpa.repository.Query("""
             select new vn.edu.hcmute.uteexpress.dto.tracking.ShipperActivity(h.order.id, h.status, h.occurredAt)
-            from OrderStatusHistory h where h.actor = :actor and h.previousStatus <> h.status
+            from OrderStatusHistory h where h.previousStatus <> h.status
+              and (h.actor = :actor or (h.order.shipper = :actor
+                and h.actor.role in (vn.edu.hcmute.uteexpress.entity.AppUser.Role.MANAGER, vn.edu.hcmute.uteexpress.entity.AppUser.Role.ADMIN)))
               and h.occurredAt >= :from and h.occurredAt < :to order by h.occurredAt, h.id
             """)
     java.util.List<vn.edu.hcmute.uteexpress.dto.tracking.ShipperActivity> activities(
@@ -48,6 +55,16 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
               and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
             """)
     long countPickupFailures(@org.springframework.data.repository.query.Param("order") Order order);
+
+    /** Số việc Shipper đã hoàn thành từ một thời điểm: lấy hàng xong, giao thành công, hoàn trả. */
+    @org.springframework.data.jpa.repository.Query("""
+            select count(h.id) from OrderStatusHistory h where h.actor = :actor and h.previousStatus <> h.status
+              and h.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
+                vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.RETURNED)
+              and h.occurredAt >= :from
+            """)
+    long countDoneSince(@org.springframework.data.repository.query.Param("actor") vn.edu.hcmute.uteexpress.entity.AppUser actor,
+            @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from);
 
     Page<OrderStatusHistory> findByOrder(Order order, Pageable pageable);
     long countByOrderAndStatus(Order order, Order.OrderStatus status);

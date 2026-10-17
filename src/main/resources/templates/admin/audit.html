@@ -5,7 +5,7 @@
 <h1 class="h3">Nhật ký thao tác nội bộ</h1>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p>Chỉ Admin xem. Nhật ký gồm các thao tác mới sau nâng cấp; không lưu mật khẩu hay thông tin địa chỉ khách hàng. Không có chức năng sửa/xóa nhật ký.</p>
+<p>Lịch sử thao tác quản trị, chỉ xem.</p>
 <div class="table-responsive"><table class="table"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Đối tượng</th><th>Chi tiết</th></tr></thead>
 <tbody><tr th:each="event : ${events}"><td th:text="${#temporals.format(event.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></td>
 <td th:text="${event.actor}"></td><td th:text="${event.action}"></td><td th:text="${event.target}"></td><td th:text="${event.detail}"></td></tr>

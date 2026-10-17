@@ -2,11 +2,11 @@
 <head><title>Sửa tài khoản - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-panel p-4 mx-auto" style="max-width:760px">
 <h1 class="h3">Sửa tài khoản: <span th:text="${account.username}"></span></h1>
-<p class="alert alert-info">Tên đăng nhập là định danh lịch sử, không đổi. Admin/Manager và User/Shipper là hai nhóm tài khoản riêng; muốn chuyển nhóm phải cấp tài khoản mới. Shipper còn đơn chưa hoàn tất không được khóa.</p>
+<p class="alert alert-info">Không đổi được tên đăng nhập. Shipper còn đơn chưa xong thì không khóa được.</p>
 <form th:action="@{/admin/quan-ly-tai-khoan/{id}/sua(id=${account.id})}" th:object="${form}" method="post">
 <div th:replace="~{admin/account-form-fragments :: errors}"></div>
 <div class="mb-3"><label for="profile.fullName" class="form-label">Họ và tên</label><input th:field="*{profile.fullName}" class="form-control" required minlength="2" maxlength="100"></div>
-<div class="mb-3"><label for="profile.email" class="form-label">Email</label><input th:field="*{profile.email}" type="email" class="form-control" required maxlength="100"><div class="form-text">Admin chịu trách nhiệm xác minh người sở hữu email. Lưu sẽ hủy yêu cầu đổi email/OTP đang chờ.</div></div>
+<div class="mb-3"><label for="profile.email" class="form-label">Email</label><input th:field="*{profile.email}" type="email" class="form-control" required maxlength="100"></div>
 <div class="mb-3"><label for="profile.phone" class="form-label">Số di động Việt Nam</label><input th:field="*{profile.phone}" type="tel" class="form-control" required maxlength="20"></div>
 <div class="mb-3"><label for="profile.role" class="form-label">Vai trò</label><select th:field="*{profile.role}" class="form-select" required><option th:each="role : ${allowedRoles}" th:value="${role}" th:text="${role}"></option></select></div>
 <div class="mb-3"><label for="active" class="form-label">Trạng thái</label><select th:field="*{active}" class="form-select" required><option value="true">Hoạt động — Admin xác nhận cấp/mở tài khoản</option><option value="false">Khóa bởi Admin — OTP không mở lại được</option></select></div>

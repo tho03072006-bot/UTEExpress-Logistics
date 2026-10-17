@@ -18,9 +18,8 @@
     <div class="sx-auth-form">
         <span class="sx-pill sx-dot sx-tone-indigo mb-3">Dành cho Admin và Manager</span>
         <h1>Đăng nhập nội bộ</h1>
-        <p class="shipper-hint">Tài khoản do quản trị viên cấp. Không đăng ký hoặc kích hoạt bằng OTP.</p>
-        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error}"><i class="bi bi-exclamation-octagon-fill"></i><span>Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu hoặc liên hệ quản trị viên. Nếu sai 5 lần, hãy đợi 15 phút.</span></p>
-        <p class="shipper-notice sx-notice-warning" role="status" th:if="${param.expired}"><i class="bi bi-hourglass-bottom"></i><span>Phiên đã hết hiệu lực do tài khoản, quyền hoặc mật khẩu thay đổi. Vui lòng đăng nhập lại.</span></p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error}"><i class="bi bi-exclamation-octagon-fill"></i><span>Sai tài khoản hoặc mật khẩu. Sai 5 lần sẽ bị khóa 15 phút.</span></p>
+        <p class="shipper-notice sx-notice-warning" role="status" th:if="${param.expired}"><i class="bi bi-hourglass-bottom"></i><span>Phiên đã hết hạn, vui lòng đăng nhập lại.</span></p>
         <p class="shipper-notice sx-notice-success" role="status" th:if="${param.changed}"><i class="bi bi-check-circle-fill"></i><span>Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</span></p>
         <p class="shipper-notice sx-notice-info" role="status" th:if="${param.logout}"><i class="bi bi-box-arrow-right"></i><span>Đã đăng xuất.</span></p>
         <form th:action="@{/noi-bo/dang-nhap}" method="post">
@@ -34,7 +33,7 @@
                 <div class="sx-caps" data-caps-warning hidden><i class="bi bi-capslock-fill"></i> Caps Lock đang bật</div></div>
             <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập nội bộ</button>
         </form>
-        <p class="sx-auth-staff"><i class="bi bi-info-circle"></i> Quên mật khẩu: liên hệ Admin để được cấp lại. Admin cuối cùng cần người quản trị cơ sở dữ liệu hỗ trợ theo quy trình phục hồi nội bộ.</p>
+        <p class="sx-auth-staff"><i class="bi bi-info-circle"></i> Quên mật khẩu? Liên hệ Admin để được cấp lại.</p>
         <p class="small mb-0"><a th:href="@{/dang-nhap}"><i class="bi bi-arrow-left"></i> Đăng nhập khách hàng / Shipper</a></p>
     </div>
 </div>
