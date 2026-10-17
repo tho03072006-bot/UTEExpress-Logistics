@@ -33,7 +33,14 @@ public class ShipperWorkspaceService {
         return Map.of("pending", byStatus.getOrDefault(Order.OrderStatus.PENDING_PICKUP, 0L),
                 "pickedUp", byStatus.getOrDefault(Order.OrderStatus.PICKED_UP, 0L),
                 "inTransit", byStatus.getOrDefault(Order.OrderStatus.IN_TRANSIT, 0L),
-                "retryDue", orders.countDueRetries(shipper, LocalDateTime.now(clock), policies.current().getMaxDeliveryAttempts()));
+                "retryDue", orders.countDueRetries(shipper, LocalDateTime.now(clock), policies.current().getMaxDeliveryAttempts()),
+                // Việc đã xong hôm nay (lấy hàng, giao thành công, hoàn trả) cho thanh tiến độ "ca làm việc".
+                "doneToday", history.countDoneSince(shipper, LocalDate.now(clock).atStartOfDay()));
+    }
+
+    /** Điểm tiếp theo: việc ưu tiên nhất trong danh sách "Hôm nay" (đến hẹn, đang giao, hỏa tốc trước). */
+    public Optional<Order> nextStop(String username) {
+        return work(username, ShipperWorkView.TODAY, "", null, null, null, 0).stream().findFirst();
     }
     public Page<Order> work(String username, ShipperWorkView work, String keyword, Order.OrderStatus status,
             LocalDate from, LocalDate to, int page) {

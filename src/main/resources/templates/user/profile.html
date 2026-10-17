@@ -10,7 +10,7 @@
 <div class="ute-page-head sx-art-profile">
     <div>
         <h2>Tài khoản của tôi</h2>
-        <p>Xem và cập nhật thông tin liên hệ dùng cho các đơn gửi hàng của bạn.</p>
+        <p>Thông tin liên hệ cho đơn gửi hàng.</p>
     </div>
     <a th:href="@{/nguoi-dung/tai-khoan/doi-mat-khau}" class="btn btn-outline-secondary">
         <i class="bi bi-key"></i> Đổi mật khẩu
@@ -53,7 +53,7 @@
         </div>
     </div>
     <p class="ute-profile-note mb-0">
-        Tên đăng nhập và vai trò không tự đổi được. Cần thay đổi, vui lòng liên hệ quản trị viên.
+        Muốn đổi tên đăng nhập hoặc vai trò, liên hệ quản trị viên.
     </p>
 </div>
 
@@ -74,8 +74,7 @@
             <input type="email" id="email" th:field="*{email}" class="form-control"
                    placeholder="ten@example.com">
             <div class="form-text">
-                Email này cũng là địa chỉ nhận mã OTP khi bạn quên mật khẩu. Đổi sang địa chỉ khác thì
-                phải nhập mã xác thực gửi tới địa chỉ mới, email cũ vẫn giữ nguyên cho tới khi xác thực xong.
+                Dùng để nhận mã OTP. Đổi email cần xác thực địa chỉ mới.
             </div>
             <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
         </div>

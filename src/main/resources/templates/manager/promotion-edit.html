@@ -5,7 +5,7 @@
 <h1 class="h3">Thông tin khuyến mãi</h1>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p>Thời gian theo giờ Việt Nam. Thời hạn tối đa 366 ngày; tiền VND nguyên. Mã đã sử dụng không được đổi điều kiện giảm.</p>
+<p>Tối đa 366 ngày. Mã đã dùng không đổi được điều kiện giảm.</p>
 <form th:action="${id == null} ? @{/manager/khuyen-mai/tao} : @{/manager/khuyen-mai/{id}(id=${id})}" th:object="${form}" method="post" class="ute-panel p-4">
 <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger"><ul class="mb-0"><li th:each="err : ${#fields.allErrors()}" th:text="${err}"></li></ul></div>
 <input type="hidden" th:field="*{revision}">

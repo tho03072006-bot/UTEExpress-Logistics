@@ -10,10 +10,7 @@
 <div class="ute-page-head sx-art-cart">
     <div>
         <h2>Giỏ đơn chờ xác nhận</h2>
-        <p>
-            Gom nhiều đơn vào đây rồi xác nhận gửi một lần. Đơn trong giỏ chưa có mã vận đơn
-            và chưa được chuyển cho bên giao hàng.
-        </p>
+        <p>Gom nhiều đơn rồi xác nhận gửi một lần.</p>
     </div>
     <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Thêm đơn vào giỏ
@@ -24,9 +21,7 @@
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
 <div th:if="${#lists.isEmpty(drafts)}" class="alert alert-light border">
-    Giỏ đơn đang trống.
-    <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn</a>
-    rồi bấm "Thêm vào giỏ đơn" để gom nhiều đơn gửi cùng lúc.
+    Giỏ đơn đang trống. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn</a>
 </div>
 
 <div th:unless="${#lists.isEmpty(drafts)}">
@@ -97,9 +92,7 @@
     </div>
 
     <p class="text-muted small mt-3">
-        Cước ở trên là tạm tính theo bảng giá hiện tại. Khi bấm xác nhận, hệ thống tính lại cước
-        và sinh mã vận đơn cho từng đơn. Nếu có một đơn lỗi thì không đơn nào được gửi đi,
-        giỏ giữ nguyên để bạn sửa rồi xác nhận lại.
+        Cước tạm tính; hệ thống tính lại khi xác nhận.
     </p>
 </div>
 </section>

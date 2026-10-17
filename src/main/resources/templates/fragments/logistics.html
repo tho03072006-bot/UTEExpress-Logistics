@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><body>
 <div th:fragment="history(history)">
-    <p class="text-muted" th:if="${history.empty}">Chưa có lịch sử được ghi nhận. Lịch sử bắt đầu từ khi chức năng này được bổ sung.</p>
+    <p class="text-muted" th:if="${history.empty}">Chưa có lịch sử.</p>
     <ol class="list-unstyled mb-0 logistics-timeline" th:unless="${history.empty}">
         <li class="border-start border-3 ps-3 py-3" th:each="entry : ${history.content}"
             th:classappend="${entry.pickupFailure} ? 'sx-tone-amber' : ${'sx-status-' + #strings.toLowerCase(entry.status.name())}">

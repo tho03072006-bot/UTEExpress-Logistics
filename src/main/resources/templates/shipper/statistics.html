@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head><title>Thống kê giao hàng - UTEExpress</title></head><body><section class="shipper-workspace" th:with="multiDay=${#lists.size(summary.days) > 1},hasData=${summary.totalOrders > 0}">
-<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-bar-chart"></i> HIỆU QUẢ GIAO HÀNG</span><h2>Mỗi chuyến giao, một kết quả</h2><p>Theo dõi hoạt động giao nhận và cước COD của riêng bạn.</p><span class="shipper-hero-date"><i class="bi bi-calendar-range me-1"></i><span th:text="|${#temporals.format(summary.fromDate, 'dd/MM/yyyy')} — ${#temporals.format(summary.toDate, 'dd/MM/yyyy')}|"></span></span>
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-bar-chart"></i> HIỆU QUẢ GIAO HÀNG</span><h2>Thống kê giao hàng</h2><span class="shipper-hero-date"><i class="bi bi-calendar-range me-1"></i><span th:text="|${#temporals.format(summary.fromDate, 'dd/MM/yyyy')} — ${#temporals.format(summary.toDate, 'dd/MM/yyyy')}|"></span></span>
     <div class="shipper-hero-actions"><a class="btn btn-light" th:href="@{/shipper/thong-ke/xuat.csv(period=${summary.period},from=${summary.fromDate},to=${summary.toDate})}"><i class="bi bi-download"></i> Xuất CSV</a></div></div>
     <img class="sx-hero-art" th:src="@{/images/shipper/stats-chart.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
 <div class="shipper-notice sx-notice-danger" role="alert" th:if="${statsError}"><i class="bi bi-calendar-x"></i><span th:text="|${statsError} Đang hiển thị thống kê mặc định.|"></span></div>

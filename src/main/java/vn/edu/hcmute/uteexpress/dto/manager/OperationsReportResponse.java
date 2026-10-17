@@ -4,5 +4,5 @@ import java.time.LocalDate;
 import java.util.Map;
 import vn.edu.hcmute.uteexpress.entity.Order;
 public record OperationsReportResponse(LocalDate from, LocalDate to, Map<Order.OrderStatus, Long> counts,
-        long totalOrders, int completionRate, BigDecimal paidShippingFees) { }
+        long totalOrders, BigDecimal completionRate, BigDecimal paidShippingFees) { }
 

@@ -1,12 +1,11 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Giao lại · Hoàn hàng · Tiền thiếu · Bồi hoàn cước</h1>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
-<p class="text-muted">Tạo hồ sơ từ cảnh báo đơn, chi tiết phiếu nộp hoặc khiếu nại. Không thu hộ tiền hàng; chứng từ chi/nộp tiền được xác nhận thủ công, không kết nối ngân hàng.</p>
 <form th:if="${submitted != null}" class="ute-panel p-3 mb-4" method="post" enctype="multipart/form-data" th:action="@{/manager/ho-so-van-hanh}">
 <h2 class="h5" th:text="${submitted.kind.label}"></h2><p th:text="|Mã đối tượng: ${submitted.targetId}|"></p>
 <input type="hidden" name="kind" th:value="${submitted.kind}"><input type="hidden" name="targetId" th:value="${submitted.targetId}"><input type="hidden" name="revision" th:value="${submitted.revision}">
 <input type="hidden" name="requestToken" th:value="${submitted.requestToken}">
-<div class="mb-3" th:if="${submitted.kind.name() == 'RETRY'}"><label for="nextAttemptAt">Hẹn giao lại (giờ Việt Nam)</label><input id="nextAttemptAt" type="datetime-local" class="form-control" name="nextAttemptAt" th:value="${submitted.nextAttemptAt}" required></div>
+<div class="mb-3" th:if="${submitted.kind.name() == 'RETRY'}"><label for="nextAttemptAt">Hẹn giao lại</label><input id="nextAttemptAt" type="datetime-local" class="form-control" name="nextAttemptAt" th:value="${submitted.nextAttemptAt}" required></div>
 <div th:if="${submitted.kind.name() == 'CASH_SUPPLEMENT' or submitted.kind.name() == 'CASH_REFUND' or submitted.kind.name() == 'COMPENSATION'}" class="mb-3"><label for="amount">Số tiền VND nguyên</label><input id="amount" class="form-control" type="number" name="amount" min="1" max="999999999999" step="1" th:value="${submitted.amount}" required></div>
 <div class="mb-3"><label for="reason">Lý do (5–500 ký tự)</label><textarea id="reason" class="form-control" name="reason" minlength="5" maxlength="500" th:text="${submitted.reason}" required></textarea></div>
 <div class="mb-3" th:if="${submitted.kind.name() == 'CASH_SUPPLEMENT' or submitted.kind.name() == 'CASH_REFUND'}"><label for="receiptReference">Mã biên nhận nộp/hoàn cước</label><input id="receiptReference" class="form-control" name="receiptReference" minlength="5" maxlength="100" th:value="${submitted.receiptReference}" required></div>

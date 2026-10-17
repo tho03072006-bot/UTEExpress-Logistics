@@ -12,8 +12,7 @@
     <div>
         <span class="badge text-bg-primary mb-2">MANAGER · Cấp quản lý vận hành</span>
         <h2>Tổng quan vận hành</h2>
-        <p>Điều phối shipper, quản lý khuyến mãi và báo cáo. Manager không được CRUD bất kỳ tài khoản nào, sửa bảng cước hoặc xem nhật ký quản trị. Chỉ Admin được thêm/sửa/xóa tài khoản cả 4 vai trò.</p>
-        <p>Manager xác nhận cước thực nhận, xử lý khiếu nại, giao lại/hoàn hàng trong chính sách và lập hồ sơ đề xuất. Hồ sơ tiền hoặc giao lại vượt giới hạn phải chuyển Admin; không được tự duyệt tiền, bỏ qua thanh toán ví hay sửa phiếu gốc.</p>
+        <p>Điều phối Shipper, khiếu nại, đối soát và báo cáo.</p>
     </div>
 </div>
 
@@ -48,10 +47,13 @@
     </div>
 </div>
 
-<div class="ute-panel p-4">
-    <h3 class="h5">Tra soát đơn hàng</h3>
-    <p class="text-muted">Tra cứu đơn toàn hệ thống theo mã vận đơn, trạng thái và khoảng ngày để theo dõi tiến độ giao nhận.</p>
-    <a class="btn btn-primary" th:href="@{/manager/don-hang}">Xem danh sách và lọc đơn</a>
+<div class="ute-panel p-4 sx-panel-art">
+    <div>
+        <h3 class="h5">Tra soát đơn hàng</h3>
+        <p class="text-muted">Lọc đơn theo mã, trạng thái và ngày.</p>
+        <a class="btn btn-primary" th:href="@{/manager/don-hang}">Xem danh sách và lọc đơn</a>
+    </div>
+    <img th:src="@{/images/shipper/order-list.svg}" alt="" aria-hidden="true" width="168" height="112">
 </div>
 </section>
 

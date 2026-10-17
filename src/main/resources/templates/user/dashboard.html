@@ -10,7 +10,7 @@
 <div class="ute-page-head sx-art-mascot">
     <div>
         <h2>Xin chào, <span th:text="${username}">user</span></h2>
-        <p>Tổng quan hoạt động gửi hàng của bạn trên UTEExpress.</p>
+        <p>Tổng quan đơn gửi của bạn.</p>
     </div>
     <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng
@@ -54,21 +54,21 @@
         <a class="ute-quick" th:href="@{/nguoi-dung/don-hang}">
             <i class="bi bi-list-check"></i>
             <span class="ute-quick-title">Đơn hàng của tôi</span>
-            <span class="ute-quick-desc">Xem trạng thái giao hàng, lọc theo trạng thái, huỷ đơn chưa lấy.</span>
+            <span class="ute-quick-desc">Theo dõi và quản lý đơn.</span>
         </a>
     </div>
     <div class="col-md-4">
         <a class="ute-quick" th:href="@{/nguoi-dung/gio-don}">
             <i class="bi bi-basket"></i>
             <span class="ute-quick-title">Giỏ đơn chờ xác nhận</span>
-            <span class="ute-quick-desc">Gom nhiều đơn rồi xác nhận gửi cùng lúc.</span>
+            <span class="ute-quick-desc">Xác nhận nhiều đơn một lần.</span>
         </a>
     </div>
     <div class="col-md-4">
         <a class="ute-quick" th:href="@{/nguoi-dung/dia-chi}">
             <i class="bi bi-geo-alt"></i>
             <span class="ute-quick-title">Sổ địa chỉ</span>
-            <span class="ute-quick-desc">Lưu sẵn địa chỉ gửi và nhận để tạo đơn nhanh hơn.</span>
+            <span class="ute-quick-desc">Địa chỉ gửi và nhận.</span>
         </a>
     </div>
 </div>

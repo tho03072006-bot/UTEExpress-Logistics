@@ -8,7 +8,7 @@
 
 <section class="ute-narrow">
 <div class="ute-page-head sx-art-create"><div><h2>Tạo đơn gửi hàng</h2>
-<p>Điền thông tin người gửi, người nhận, kiện hàng và chọn dịch vụ.</p></div></div>
+</div></div>
 
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
@@ -31,14 +31,9 @@
                              data-address-line=${address.addressLine}"
                     th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
         </select>
-        <div class="form-text">
-            Địa chỉ mặc định đã được điền sẵn. Chọn địa chỉ khác hoặc sửa trực tiếp bên dưới đều được.
-        </div>
     </div>
     <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(senderAddresses)}">
-        Chưa có địa chỉ gửi hàng nào trong sổ.
-        <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
-        để những lần sau khỏi phải gõ lại.
+        Chưa có địa chỉ gửi. <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu địa chỉ</a>
     </div>
 
     <div class="mb-3">
@@ -72,9 +67,7 @@
         </select>
     </div>
     <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(receiverAddresses)}">
-        Chưa có địa chỉ người nhận nào trong sổ.
-        <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu một địa chỉ</a>
-        để những lần sau khỏi phải gõ lại.
+        Chưa có địa chỉ người nhận. <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu địa chỉ</a>
     </div>
 
     <div class="mb-3">
@@ -115,10 +108,6 @@
         <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
         <input type="text" th:field="*{promoCode}" class="form-control ute-promo-input"
                placeholder="Ví dụ: UTE10" autocomplete="off">
-        <div class="form-text">
-            Để trống nếu không có mã. Mã sai hoặc hết hạn sẽ được báo ngay khi bấm tạo đơn,
-            đơn chưa bị tạo nên bạn sửa lại thoải mái.
-        </div>
     </div>
 
     <h5 class="mt-4">Thanh toán cước</h5>
@@ -128,16 +117,13 @@
             <input type="radio" th:field="*{paymentMethod}" th:value="${method}" class="form-check-input">
             <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
                 <span th:text="${method.displayName}">-</span>
-                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước, màn hình mô phỏng</span>
-                <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt cho shipper lúc nhận hàng</span>
+                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước (mô phỏng)</span>
+                <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt khi nhận hàng</span>
             </label>
         </div>
         <div class="text-danger small" th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}"></div>
     </div>
-    <div class="form-text mb-4">
-        VNPay và MoMo là bản mô phỏng phục vụ đồ án: hệ thống không kết nối cổng thanh toán thật
-        và không phát sinh giao dịch tiền thật.
-    </div>
+    <div class="mb-4"></div>
 
     <div class="d-flex flex-wrap gap-2">
         <button type="submit" class="btn btn-primary">Gửi đơn ngay</button>
@@ -145,10 +131,6 @@
         <button type="submit" class="btn btn-outline-primary"
                 th:formaction="@{/nguoi-dung/tao-don/them-vao-gio}">Thêm vào giỏ đơn</button>
         <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
-    </div>
-    <div class="form-text mt-2">
-        Gửi nhiều đơn cùng lúc: bấm "Thêm vào giỏ đơn" cho từng đơn, nhập xong hết thì mở
-        <a th:href="@{/nguoi-dung/gio-don}">giỏ đơn</a> và xác nhận một lần.
     </div>
 </form>
 </section>

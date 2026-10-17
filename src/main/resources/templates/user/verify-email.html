@@ -9,9 +9,7 @@
 <section class="ute-narrow-sm">
 <div class="ute-page-head sx-art-mail"><div><h2>Xác thực email mới</h2>
 <p>
-    Chúng tôi vừa gửi mã gồm 6 chữ số tới
-    <strong th:text="${pendingEmail}">email@example.com</strong>.
-    Mở hộp thư đó và nhập mã vào ô bên dưới. Mã có hiệu lực trong 10 phút.
+    Mã 6 số đã gửi tới <strong th:text="${pendingEmail}">email@example.com</strong>, hiệu lực 10 phút.
 </p></div></div>
 
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
@@ -43,9 +41,7 @@
 </div>
 
 <p class="ute-profile-note">
-    Không thấy thư? Kiểm tra thêm mục Spam / Thư rác. Nếu địa chỉ vừa nhập bị gõ sai,
-    hãy bấm "Huỷ đổi email" rồi nhập lại từ trang tài khoản - email hiện tại của bạn
-    vẫn đang được giữ nguyên.
+    Không thấy thư? Kiểm tra mục Spam, hoặc bấm "Huỷ đổi email" để nhập lại.
 </p>
 </section>
 

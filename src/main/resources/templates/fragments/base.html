@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:fragment="doc(pageTitle, content, withSidebar)"
-      th:with="isShipper=${#authorization.expression('hasRole(''SHIPPER'')')}, useSidebar=${withSidebar or isShipper}"
+      th:with="isShipper=${#authorization.expression('hasRole(''SHIPPER'')')}, isStaff=${#authorization.expression('hasAnyRole(''MANAGER'',''ADMIN'')')}, isAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, isUser=${#authorization.expression('hasRole(''USER'')')}, useSidebar=${withSidebar or isShipper or isStaff}, homeUrl=${isShipper ? '/shipper/trang-chu' : (isAdmin ? '/admin/trang-chu' : (isStaff ? '/manager/trang-chu' : (isUser ? '/nguoi-dung/trang-chu' : '/')))}, roleName=${isShipper ? 'Shipper' : (isAdmin ? 'Admin' : (isStaff ? 'Manager' : 'Khách hàng'))}"
       lang="vi">
 <!--/*
   TEMPLATE DÙNG CHUNG CHO TOÀN BỘ WEBSITE UTEExpress.
@@ -43,6 +43,8 @@
     <link rel="stylesheet" th:href="@{/css/pages.css}">
     <!-- Lớp giao diện đồng bộ cho mọi trang còn lại (tiêu đề, thẻ, bảng, thông báo, nút) -->
     <link rel="stylesheet" th:href="@{/css/theme.css}">
+    <!-- Lớp giao diện cuối cùng theo template quản trị Tabler: menu trái tối, thanh trên trắng, thẻ phẳng -->
+    <link rel="stylesheet" th:href="@{/css/ute-app.css}">
 
     <!--/*
       Gan che do sang/toi NGAY o <head>, truoc khi trinh duyet ve than trang.
@@ -66,7 +68,7 @@
     </script>
 </head>
 
-<body class="ute-body">
+<body class="ute-body sx-app" th:classappend="${useSidebar} ? 'sx-side'">
 
 <!-- ===================== Thanh trên cùng ===================== -->
 <header class="ute-topbar" th:classappend="${useSidebar} ? 'ute-topbar-with-sidebar' : ''">
@@ -82,6 +84,16 @@
             <span class="ute-brand-dot"></span>
             UTEExpress
         </a>
+
+        <!-- Ô tìm nhanh: Shipper tìm trong đơn được phân công, các vai trò khác tra cứu mã vận đơn -->
+        <form th:if="${isShipper}" class="sx-top-search d-none d-lg-flex" th:action="@{/shipper/trang-chu}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="keyword" maxlength="100" placeholder="Tìm mã đơn, tên, SĐT…" aria-label="Tìm đơn được phân công" autocomplete="off">
+        </form>
+        <form th:unless="${isShipper}" class="sx-top-search d-none d-lg-flex" th:action="@{/tra-cuu}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="trackingCode" maxlength="40" placeholder="Tra cứu mã vận đơn…" aria-label="Tra cứu mã vận đơn" autocomplete="off">
+        </form>
 
         <nav class="ute-topbar-nav">
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{${isShipper ? '/shipper/trang-chu' : '/'}}">Trang chủ</a>
@@ -122,6 +134,7 @@
 
     <!-- Sidebar cố định cho màn hình lớn -->
     <aside th:if="${useSidebar}" class="ute-sidebar d-none d-lg-block">
+        <a class="sx-side-brand" th:href="@{${homeUrl}}"><span class="sx-side-logo" aria-hidden="true"><i class="bi bi-truck"></i></span> UTEExpress <small th:text="${roleName}">Shipper</small></a>
         <nav th:replace="~{fragments/components :: sidebarNav}"></nav>
     </aside>
 
@@ -143,6 +156,15 @@
         </div>
     </main>
 </div>
+
+<!-- Thanh điều hướng dưới cùng cho Shipper trên điện thoại (kiểu ứng dụng tài xế giao hàng) -->
+<nav sec:authorize="hasRole('SHIPPER')" class="sx-tabbar d-lg-none" aria-label="Điều hướng nhanh Shipper">
+    <a class="sx-tabbar-link" th:href="@{/shipper/trang-chu}"><i class="bi bi-list-check"></i><span>Đơn</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/lo-trinh}"><i class="bi bi-signpost-split"></i><span>Lộ trình</span></a>
+    <a class="sx-tabbar-link sx-tabbar-scan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i><span>Quét mã</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/doi-soat}"><i class="bi bi-wallet2"></i><span>COD</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/thong-ke}"><i class="bi bi-graph-up"></i><span>Thống kê</span></a>
+</nav>
 
 <footer class="ute-footer">
     <div class="ute-footer-inner">

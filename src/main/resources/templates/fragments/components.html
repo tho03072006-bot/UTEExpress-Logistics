@@ -53,49 +53,61 @@
     <div sec:authorize="hasRole('SHIPPER')">
         <div class="sx-profile">
             <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">S</span>
-            <div><strong sec:authentication="name">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang hoạt động</span></div>
+            <div><strong sec:authentication="name">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang nhận đơn</span></div>
         </div>
-        <p class="ute-nav-heading">Shipper</p>
+        <!-- Nhóm theo việc của tài xế giao hàng: làm việc trong ngày, rồi tiền và hiệu suất -->
+        <p class="ute-nav-heading">Công việc</p>
         <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/shipper/trang-chu}">
             <i class="bi bi-truck"></i> Đơn được phân công
         </a>
         <a class="ute-nav-link sx-nav sx-tone-teal" th:href="@{/shipper/lo-trinh}">
             <i class="bi bi-signpost-split"></i> Lộ trình hôm nay
         </a>
+        <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
+        <a class="ute-nav-link sx-nav sx-tone-rose" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
+            <span class="badge sx-count-red ms-auto" data-notification-count hidden>0</span></a>
+        <p class="ute-nav-heading">Tiền &amp; hiệu suất</p>
         <a class="ute-nav-link sx-nav sx-tone-gold" th:href="@{/shipper/doi-soat}">
             <i class="bi bi-cash-coin"></i> Nộp tiền COD
         </a>
         <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/shipper/thong-ke}">
             <i class="bi bi-graph-up-arrow"></i> Thống kê giao hàng
         </a>
-        <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
-        <a class="ute-nav-link sx-nav sx-tone-rose" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
-            <span class="badge sx-count-red ms-auto" data-notification-count hidden>0</span></a>
     </div>
 
-    <div sec:authorize="hasRole('MANAGER')">
+    <!-- Manager và Admin dùng chung nhóm vận hành (Admin được vào mọi trang /manager);
+         nhóm "Quản trị hệ thống" chỉ hiện với Admin. Cùng các mục với thanh nội bộ admin/navigation.html. -->
+    <div sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
         <div class="sx-profile sx-profile-staff">
             <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">M</span>
-            <div><strong sec:authentication="name">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Quản lý vận hành</span></div>
+            <div><strong sec:authentication="name">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span><th:block sec:authorize="hasRole('ADMIN')">Quản trị hệ thống</th:block><th:block sec:authorize="!hasRole('ADMIN')">Quản lý vận hành</th:block></span></div>
         </div>
-        <p class="ute-nav-heading">Quản lý</p>
-        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/manager/trang-chu}">
-            <i class="bi bi-bar-chart"></i> Trang quản lý
-        </a>
-        <a class="ute-nav-link sx-nav sx-tone-gold" th:href="@{/manager/doi-soat-cod}">
-            <i class="bi bi-cash-coin"></i> Đối soát COD
-        </a>
-    </div>
-
-    <div sec:authorize="hasRole('ADMIN')">
-        <div class="sx-profile sx-profile-staff">
-            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">A</span>
-            <div><strong sec:authentication="name">admin</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Quản trị hệ thống</span></div>
-        </div>
-        <p class="ute-nav-heading">Quản trị</p>
-        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/admin/trang-chu}">
-            <i class="bi bi-shield-lock"></i> Trang quản trị
-        </a>
+        <p class="ute-nav-heading">Vận hành</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2"></i> Tổng quan vận hành</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công Shipper</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-triangle"></i> Cảnh báo cần xử lý</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ vận hành</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-square-text"></i> Khiếu nại</a>
+        <p class="ute-nav-heading">Tài chính &amp; báo cáo</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát COD</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/khuyen-mai}"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/bang-cuoc}"><i class="bi bi-table"></i> Bảng cước</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/lich-cuoc}"><i class="bi bi-calendar-week"></i> Lịch cước</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart-line"></i> Báo cáo</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/hieu-suat-shipper}"><i class="bi bi-graph-up-arrow"></i> Hiệu suất Shipper</a>
+        <th:block sec:authorize="hasRole('ADMIN')">
+            <p class="ute-nav-heading">Quản trị hệ thống</p>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Trang quản trị</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people"></i> Quản lý tài khoản</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/tai-khoan}"><i class="bi bi-person-badge"></i> Tài khoản nội bộ</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/chinh-sach-van-hanh}"><i class="bi bi-sliders"></i> Chính sách vận hành</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/bang-cuoc}"><i class="bi bi-gear"></i> Cấu hình cước</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/nhat-ky}"><i class="bi bi-journal-text"></i> Nhật ký</a>
+        </th:block>
+        <p class="ute-nav-heading">Tài khoản nội bộ</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+        <form th:action="@{/noi-bo/dang-xuat}" method="post"><button type="submit" class="ute-nav-link sx-nav sx-nav-button"><i class="bi bi-box-arrow-right"></i> Đăng xuất nội bộ</button></form>
     </div>
 
     <div class="ute-nav-divider"></div>
@@ -105,6 +117,23 @@
     <a class="ute-nav-link sx-nav sx-tone-amber" th:href="@{/uoc-tinh-cuoc}">
         <i class="bi bi-calculator"></i> Ước tính cước phí
     </a>
+
+    <!-- Thẻ gợi ý có hình ở cuối menu (kiểu template Sneat/Materio): việc hay làm nhất của từng vai trò -->
+    <div class="sx-side-promo" sec:authorize="hasRole('USER')">
+        <img th:src="@{/images/shipper/create-order.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Gửi hàng nhanh</strong><span>Tạo đơn trong 1 phút, theo dõi hành trình từng mốc.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/nguoi-dung/tao-don}"><i class="bi bi-plus-lg"></i> Tạo đơn mới</a>
+    </div>
+    <div class="sx-side-promo" sec:authorize="hasRole('SHIPPER')">
+        <img th:src="@{/images/shipper/scan-qr.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Quét mã nhận đơn</strong><span>Đưa QR vận đơn vào camera để mở đơn ngay.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Mở máy quét</a>
+    </div>
+    <div class="sx-side-promo" sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
+        <img th:src="@{/images/shipper/dispatch-hub.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Đơn chờ phân công</strong><span>Giao việc cho Shipper đang hoạt động.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công ngay</a>
+    </div>
 </nav>
 
 <!--

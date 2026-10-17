@@ -17,7 +17,7 @@
      */
     function highlightCurrentNavItem() {
         var currentPath = window.location.pathname;
-        var links = document.querySelectorAll('.ute-nav-link');
+        var links = document.querySelectorAll('.ute-nav-link, .sx-tabbar-link');
         var best = null;
         var bestLength = 0;
 

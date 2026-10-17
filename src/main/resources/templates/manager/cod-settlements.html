@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
 <head><title>Đối soát COD - UTEExpress</title></head><body><section class="shipper-workspace">
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Phiếu nộp tiền của Shipper</h2><p>Kiểm tra tiền mặt Shipper nộp lại và xác nhận hoặc từ chối từng phiếu.</p></div>
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Phiếu nộp tiền của Shipper</h2><p>Xác nhận hoặc từ chối phiếu nộp tiền.</p></div>
 <img class="sx-hero-art" th:src="@{/images/shipper/manager-safe.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
 <div class="shipper-metrics">
     <a class="shipper-metric sx-tone-amber" th:href="@{/manager/doi-soat-cod(status='SUBMITTED')}"><i class="bi bi-hourglass-split"></i><strong th:text="${summary.pendingCount}">0</strong><span>Phiếu chờ xác nhận</span></a>

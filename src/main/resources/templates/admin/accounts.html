@@ -5,11 +5,11 @@
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="ute-page-head sx-art-team"><div><h1 class="h3">Tài khoản nội bộ</h1>
-<p>Admin kiểm soát cấp quyền và trạng thái. Mọi thay đổi quyền hoặc mật khẩu đều thu hồi phiên cũ.</p></div>
+<p>Cấp quyền, khóa/mở tài khoản nội bộ.</p></div>
 <a class="btn btn-primary align-self-start" th:href="@{/admin/tai-khoan/cap-moi}">Cấp tài khoản mới</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p class="alert alert-info">Đây là trang cấp quyền nội bộ. Để sửa thông tin/xóa hoặc quản lý cả User/Shipper, dùng <a th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản · 4 vai trò</a>. Tài khoản có dữ liệu liên kết không được xóa.</p>
+<p class="alert alert-info">Sửa, xóa hoặc quản lý User/Shipper: <a th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản · 4 vai trò</a>.</p>
 <p th:if="${accounts.empty}" class="ute-panel p-4">Không có tài khoản trong trang này.</p>
 <div class="ute-panel p-4 mb-3" th:each="account : ${accounts.content}">
 <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
@@ -37,9 +37,9 @@
 <div class="col-md-5"><label class="form-label" th:for="|confirm-${account.id}|">Xác nhận mật khẩu</label>
 <input name="confirmPassword" th:id="|confirm-${account.id}|" type="password" required minlength="12" maxlength="64" autocomplete="new-password" class="form-control"></div>
 <div class="col-md-2 align-self-end"><button class="btn btn-outline-danger" type="submit">Cấp lại</button></div></div>
-<p class="small text-muted mt-2">12–64 ký tự, có chữ hoa/thường, số, ký tự đặc biệt; không có khoảng trắng; tối đa 72 byte UTF-8. Người nhận phải đổi sau khi đăng nhập.</p>
+<p class="small text-muted mt-2">12–64 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
 </form></details></div>
-<p th:if="${account.username == #authentication.name}" class="text-muted mb-0">Đây là tài khoản của bạn. Dùng mục Đổi mật khẩu để thay mật khẩu.</p>
+<p th:if="${account.username == #authentication.name}" class="text-muted mb-0">Đây là tài khoản của bạn.</p>
 </div>
 <nav aria-label="Phân trang tài khoản" class="d-flex align-items-center gap-3">
 <a th:if="${accounts.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/admin/tai-khoan(page=${accounts.number - 1})}">Trang trước</a>

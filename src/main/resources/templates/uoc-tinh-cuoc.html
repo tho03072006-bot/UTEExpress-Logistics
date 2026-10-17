@@ -11,7 +11,7 @@
     <div class="sx-hero-main">
         <span class="shipper-eyebrow"><i class="bi bi-calculator"></i> BẢNG GIÁ THAM KHẢO</span>
         <h2>Ước tính cước phí</h2>
-        <p>Nhập khối lượng, khoảng cách và chọn loại dịch vụ để xem cước dự kiến. Không cần đăng nhập.</p>
+        <p>Xem cước dự kiến, không cần đăng nhập.</p>
         <!-- Dùng GET để kết quả nằm trên đường dẫn: lưu lại hay gửi cho người khác đều xem được -->
         <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="sx-hero-form">
             <label class="sx-hero-field" for="weightKg"><span>Khối lượng (kg)</span>
@@ -79,8 +79,8 @@
 
 <div class="shipper-notice sx-notice-info mt-4">
     <i class="bi bi-info-circle"></i>
-    <span>Đây là mức tham khảo. Cước khi tạo đơn hiện tính theo loại dịch vụ và cân nặng, có thể thay đổi nếu bạn áp mã giảm giá.
-    Kiện trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng.</span>
+    <span>Mức tham khảo; cước thực tế tính khi tạo đơn.
+    Kiện trên 100 kg: liên hệ tổng đài.</span>
 </div>
 </section>
 
