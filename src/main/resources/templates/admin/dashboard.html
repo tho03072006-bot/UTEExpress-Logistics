@@ -7,6 +7,7 @@
 <div class="ute-page-head sx-art-server"><div><span class="badge text-bg-dark">ADMIN · Cấp quản trị hệ thống</span>
 <h1 class="h2 mt-3">Quản trị và kiểm soát truy cập</h1>
 <p>Quản lý tài khoản 4 vai trò và dùng mọi chức năng của Manager.</p></div></div>
+<div th:replace="~{fragments/staff-dashboard-charts :: charts(${charts})}"></div>
 <div class="row g-3 mb-4"><div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div>
 <h2 class="h5">Quản lý cả 4 vai trò</h2><p>Thêm, sửa, khóa và cấp lại mật khẩu.</p>
 <a class="btn btn-dark" th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản</a></div>

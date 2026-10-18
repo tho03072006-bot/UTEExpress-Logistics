@@ -10,6 +10,7 @@
 <div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tài khoản Shipper</span><span class="ute-stat-value" th:text="${summary.totalShippers}">0</span></div></div>
 <div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tổng tài khoản</span><span class="ute-stat-value" th:text="${summary.totalUsers}">0</span></div></div>
 </div>
+<div th:replace="~{fragments/staff-dashboard-charts :: charts(${charts})}"></div>
 <div class="staff-section-head"><h2>Cần chú ý</h2><a class="small" th:href="@{/manager/canh-bao}">Mở tất cả cảnh báo →</a></div>
 <div class="staff-task-grid" data-tracking-refresh-region="staff-work-queues">
 <a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index < 3}" th:href="@{${queue.path}}">

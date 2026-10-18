@@ -41,6 +41,7 @@ class StaffWorkspaceIntegrationTest {
     @Autowired OrderRepository orders;
     @Autowired PasswordEncoder encoder;
     @Autowired StaffWorkbenchService workbench;
+    @Autowired vn.edu.hcmute.uteexpress.service.manager.StaffDashboardChartService dashboardCharts;
     @Autowired StaffApiAccessService api;
     @Autowired JwtTokenProvider tokens;
     @Autowired vn.edu.hcmute.uteexpress.service.admin.AuditService auditService;
@@ -105,6 +106,31 @@ class StaffWorkspaceIntegrationTest {
         assertEquals("staffmanager",profile.username()); assertEquals(AppUser.Role.MANAGER,profile.role());
         assertFalse(profile.toString().contains(manager.getUser().getPassword()));
         assertThrows(AccessDeniedException.class,() -> staffService.findOwnProfile("staffcustomer"));
+    }
+
+    @Test void dashboardAggregatesRealMappingsAndIncludesZerosWithoutChangingOrders() {
+        var today = java.time.LocalDate.now(); var from = today.minusDays(13);
+        shipment.setCreatedAt(from.atStartOfDay()); orders.saveAndFlush(shipment);
+        chartOrder("UTECHART02",from.atStartOfDay().minusSeconds(1),Order.OrderStatus.DELIVERED);
+        chartOrder("UTECHART03",today.atTime(23,59),Order.OrderStatus.IN_TRANSIT);
+        chartOrder("UTECHART04",today.plusDays(1).atStartOfDay(),Order.OrderStatus.RETURNED);
+        chartOrder("UTECHART05",null,Order.OrderStatus.CANCELLED);
+        chartOrder("UTECHART06",from.plusDays(3).atTime(12,0),Order.OrderStatus.FAILED);
+        var chart = dashboardCharts.getOperationsCharts("staffmanager");
+        assertEquals(6,chart.totalOrders()); assertEquals(3,chart.totalNewOrders()); assertEquals(14,chart.days().size());
+        assertEquals(1,chart.days().get(0).count()); assertEquals(0,chart.days().get(1).count());
+        assertEquals(1,chart.days().get(13).count()); assertEquals(7,chart.orderStatuses().size());
+        assertEquals(6,chart.orderStatuses().stream().mapToLong(DashboardChartsResponse.CategoryResponse::count).sum());
+        var adminChart = dashboardCharts.getAdminCharts("staffadmin");
+        assertEquals(chart.orderStatuses(),adminChart.orderStatuses()); assertEquals(chart.days(),adminChart.days());
+        assertThrows(AccessDeniedException.class,() -> dashboardCharts.getAdminCharts("staffmanager"));
+        assertThrows(AccessDeniedException.class,() -> dashboardCharts.getOperationsCharts("staffcustomer"));
+        assertEquals(6,orders.count());
+    }
+
+    private void chartOrder(String code,java.time.LocalDateTime createdAt,Order.OrderStatus status) {
+        var order = new Order(); order.setSender(shipment.getSender()); order.setTrackingCode(code);
+        order.setStatus(status); order.setCreatedAt(createdAt); orders.saveAndFlush(order);
     }
     private void saveEvent(String actor,String action,java.time.LocalDateTime time) {
         var event = new vn.edu.hcmute.uteexpress.entity.admin.AuditEvent(); event.setActor(actor); event.setAction(action);

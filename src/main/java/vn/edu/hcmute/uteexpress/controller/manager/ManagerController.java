@@ -17,16 +17,20 @@ public class ManagerController {
 
     private final ManagerDashboardService managerDashboardService;
     private final vn.edu.hcmute.uteexpress.service.manager.StaffWorkbenchService workbench;
+    private final vn.edu.hcmute.uteexpress.service.manager.StaffDashboardChartService charts;
 
     public ManagerController(ManagerDashboardService managerDashboardService,
-            vn.edu.hcmute.uteexpress.service.manager.StaffWorkbenchService workbench) {
+            vn.edu.hcmute.uteexpress.service.manager.StaffWorkbenchService workbench,
+            vn.edu.hcmute.uteexpress.service.manager.StaffDashboardChartService charts) {
         this.managerDashboardService = managerDashboardService;
         this.workbench = workbench;
+        this.charts = charts;
     }
 
     @GetMapping("/trang-chu")
     public String dashboard(java.security.Principal actor, Model model) {
         model.addAttribute("summary", managerDashboardService.getSummary());
+        model.addAttribute("charts", charts.getOperationsCharts(actor.getName()));
         model.addAttribute("queues", workbench.getWorkQueues(actor.getName()));
         return "manager/dashboard";
     }
