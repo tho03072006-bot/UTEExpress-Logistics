@@ -17,6 +17,11 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 public class StaffExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(StaffExceptionHandler.class);
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public String handleMethodNotAllowed(Exception ex, HttpServletResponse response, Model model) {
+        return showError(405, "Chức năng này không hỗ trợ thao tác vừa gửi. Hãy mở lại trang và thử đúng chức năng.", response, model);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public String handleForbidden(AccessDeniedException ex, HttpServletResponse response, Model model) {
         return showError(403, "Bạn không có quyền thực hiện thao tác này.", response, model);

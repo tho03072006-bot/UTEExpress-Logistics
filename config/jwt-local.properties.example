@@ -1,0 +1,9 @@
+# Copy to config/jwt-local.properties. Never commit the private file.
+# Generate a cryptographically random 32-byte key, then Base64 encode it.
+# Do NOT use app.jwt.secret (legacy demo setting, no longer used).
+app.jwt.api.enabled=false
+app.jwt.api.signing-key=
+app.jwt.api.ttl-minutes=30
+# Allowed JWT TTL: 15..60 minutes; optional APP_JWT_TTL_MINUTES overrides it.
+# Web idle timeout: 60 minutes, allowed 15..120 (APP_WEB_SESSION_IDLE_MINUTES).
+# Or set APP_JWT_ENABLED=true and APP_JWT_SIGNING_KEY in the environment.

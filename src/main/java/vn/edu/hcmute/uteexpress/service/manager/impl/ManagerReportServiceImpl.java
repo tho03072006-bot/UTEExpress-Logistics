@@ -35,10 +35,7 @@ public class ManagerReportServiceImpl implements ManagerReportService {
         long total = counts.values().stream().mapToLong(Long::longValue).sum();
         long delivered = counts.get(Order.OrderStatus.DELIVERED);
         // FAILED còn có thể giao lại/hoàn, chưa phải kết quả cuối cùng.
-        long completed = delivered + counts.get(Order.OrderStatus.RETURNED);
-        // Một chữ số thập phân (80.0 %); chưa có đơn kết thúc thì 0.0 chứ không chia cho 0.
-        BigDecimal rate = completed == 0 ? new BigDecimal("0.0")
-            : BigDecimal.valueOf(delivered * 100).divide(BigDecimal.valueOf(completed), 1, java.math.RoundingMode.HALF_UP);
+        var rate = vn.edu.hcmute.uteexpress.util.DeliverySuccessRate.calculate(delivered, counts.get(Order.OrderStatus.RETURNED));
         var fees = orders.sumPaidFees(from.atStartOfDay(), to.plusDays(1).atStartOfDay());
         return new OperationsReportResponse(from, to, Collections.unmodifiableMap(counts), total, rate,
             fees == null ? BigDecimal.ZERO : fees);

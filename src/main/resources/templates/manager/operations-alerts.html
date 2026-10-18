@@ -15,7 +15,7 @@
 <span th:if="${o.status.name() == 'FAILED'}"><a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETRY',targetId=${o.id})}">Giao lại</a> · <a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETURN',targetId=${o.id})}">Đề nghị hoàn</a></span>
 </td><td th:if="${selected.name() == 'PAYMENT_ISSUE'}"><span th:text="${o.senderName}"></span><br><span th:text="${o.sender.email}"></span></td></tr><tr th:if="${orders.empty}"><td colspan="5">Không có đơn trong nhóm này.</td></tr></tbody></table></div>
 <div class="d-flex gap-3"><a th:if="${orders.hasPrevious()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number-1})}">Trang trước</a><span th:text="|${orders.totalElements} đơn|"></span><a th:if="${orders.hasNext()}" th:href="@{/manager/canh-bao(alert=${selected},page=${orders.number+1})}">Trang sau</a></div>
-<h2 class="h5 mt-4">Khiếu nại quá hạn phản hồi/giải quyết</h2><p th:if="${lateComplaints.empty}">Không có hồ sơ quá hạn.</p>
+<h2 id="khieu-nai-qua-han" class="h5 mt-4">Khiếu nại quá hạn phản hồi/giải quyết</h2><p th:if="${lateComplaints.empty}">Không có hồ sơ quá hạn.</p>
 <ul><li th:each="c : ${lateComplaints}"><a th:href="@{/manager/khieu-nai/{id}(id=${c.id})}" th:text="${c.subject}"></a></li></ul><a th:href="@{/manager/khieu-nai}">Xem tất cả khiếu nại</a>
 <h2 class="h5 mt-4">Chênh lệch tiền cước chưa xử lý sau 7 ngày</h2>
 <ul><li th:each="s : ${lateCash}"><a th:href="@{/manager/doi-soat-cod/{id}(id=${s.id})}" th:text="|Phiếu #${s.id} · ${s.shipper.username}|"></a></li></ul>

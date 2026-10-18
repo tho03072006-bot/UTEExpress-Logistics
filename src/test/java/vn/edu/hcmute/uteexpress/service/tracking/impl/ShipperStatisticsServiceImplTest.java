@@ -95,7 +95,7 @@ class ShipperStatisticsServiceImplTest {
         assertEquals(2, result.deliveredOrders());
         assertEquals(2, result.failedOrReturnedOrders());
         assertEquals(1, result.inProgressOrders());
-        assertEquals(new BigDecimal("40.0"), result.successRate());
+        assertEquals(new BigDecimal("66.7"), result.successRate());
         assertEquals(new BigDecimal("62000"), result.collectedCod());
     }
 

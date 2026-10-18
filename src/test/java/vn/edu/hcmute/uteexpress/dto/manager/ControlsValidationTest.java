@@ -59,7 +59,17 @@ class ControlsValidationTest {
     @Test void validMoneyAndTariffBoundariesPassBeanValidation() {
         assertTrue(validator.validate(new OperationsCaseRequest(OperationsCase.Kind.CASH_REFUND,1L,0L,new BigDecimal("999999999999"),null,
                 "Lý do hợp lệ","RECEIPT-01",UUID.randomUUID().toString())).isEmpty());
-        assertTrue(validator.validate(new TariffScheduleRequest(Order.ServiceType.STANDARD,new BigDecimal("999999999"),BigDecimal.ZERO,
+        assertTrue(validator.validate(new TariffScheduleRequest(Order.ServiceType.STANDARD,new BigDecimal("100000000"),new BigDecimal("5000000"),
                 LocalDateTime.now().plusDays(1),LocalDateTime.now().plusDays(2),"Lý do hợp lệ")).isEmpty());
+    }
+    @ParameterizedTest @ValueSource(strings = {"-1", "1.5", "100000001", "999999999"})
+    void scheduledBaseFeeUsesSameLimitsAsImmediateTariff(String value) {
+        assertFalse(validator.validate(new TariffScheduleRequest(Order.ServiceType.STANDARD, new BigDecimal(value), BigDecimal.ZERO,
+            LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), "Lý do hợp lệ")).isEmpty());
+    }
+    @ParameterizedTest @ValueSource(strings = {"-1", "1.5", "5000001", "999999999"})
+    void scheduledPerKgFeeUsesSameLimitsAsImmediateTariff(String value) {
+        assertFalse(validator.validate(new TariffScheduleRequest(Order.ServiceType.STANDARD, BigDecimal.ZERO, new BigDecimal(value),
+            LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), "Lý do hợp lệ")).isEmpty());
     }
 }

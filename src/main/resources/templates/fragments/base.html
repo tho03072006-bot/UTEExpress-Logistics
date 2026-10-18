@@ -45,6 +45,7 @@
     <link rel="stylesheet" th:href="@{/css/theme.css}">
     <!-- Lớp giao diện cuối cùng theo template quản trị Tabler: menu trái tối, thanh trên trắng, thẻ phẳng -->
     <link rel="stylesheet" th:href="@{/css/ute-app.css}">
+    <link th:if="${isStaff}" rel="stylesheet" th:href="@{/css/staff.css}">
 
     <!--/*
       Gan che do sang/toi NGAY o <head>, truoc khi trinh duyet ve than trang.
@@ -68,7 +69,7 @@
     </script>
 </head>
 
-<body class="ute-body sx-app" th:classappend="${useSidebar} ? 'sx-side'">
+<body class="ute-body sx-app" th:classappend="${(useSidebar ? 'sx-side ' : '') + (isStaff ? 'staff-workspace' : '')}">
 
 <!-- ===================== Thanh trên cùng ===================== -->
 <header class="ute-topbar" th:classappend="${useSidebar} ? 'ute-topbar-with-sidebar' : ''">
@@ -80,7 +81,7 @@
             <i class="bi bi-list"></i>
         </button>
 
-        <a class="ute-brand" th:href="@{${isShipper ? '/shipper/trang-chu' : '/'}}">
+        <a class="ute-brand" th:href="@{${homeUrl}}">
             <span class="ute-brand-dot"></span>
             UTEExpress
         </a>
@@ -96,7 +97,7 @@
         </form>
 
         <nav class="ute-topbar-nav">
-            <a class="ute-topbar-link d-none d-md-inline" th:href="@{${isShipper ? '/shipper/trang-chu' : '/'}}">Trang chủ</a>
+            <a class="ute-topbar-link d-none d-md-inline" th:href="@{${homeUrl}}">Trang chủ</a>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
             <a class="ute-topbar-link d-none d-lg-inline" th:href="@{/uoc-tinh-cuoc}">Ước tính cước</a>
 
@@ -111,11 +112,14 @@
             <a sec:authorize="hasRole('SHIPPER')" class="ute-topbar-link sx-bell" th:href="@{/shipper/thong-bao}" aria-label="Thông báo nhận đơn" data-notification-bell>
                 <i class="bi bi-bell-fill"></i><span class="sx-bell-dot" data-notification-count hidden>0</span>
             </a>
-            <span sec:authorize="isAuthenticated()" class="ute-user-chip d-none d-sm-inline-flex">
+            <a th:if="${isStaff}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{/noi-bo/tai-khoan}" aria-label="Xem thông tin tài khoản của tôi">
+                <i class="bi bi-person-circle"></i><span sec:authentication="name">staff</span>
+            </a>
+            <span sec:authorize="isAuthenticated()" th:unless="${isStaff}" class="ute-user-chip d-none d-sm-inline-flex">
                 <i class="bi bi-person-circle"></i>
                 <span sec:authentication="name">user</span>
             </span>
-            <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
+            <form sec:authorize="isAuthenticated()" th:action="@{${isStaff ? '/noi-bo/dang-xuat' : '/logout'}}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-sm ute-btn-ghost ute-logout" aria-label="Đăng xuất" title="Đăng xuất"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span class="d-none d-sm-inline">Đăng xuất</span></button>
             </form>
 
@@ -135,7 +139,8 @@
     <!-- Sidebar cố định cho màn hình lớn -->
     <aside th:if="${useSidebar}" class="ute-sidebar d-none d-lg-block">
         <a class="sx-side-brand" th:href="@{${homeUrl}}"><span class="sx-side-logo" aria-hidden="true"><i class="bi bi-truck"></i></span> UTEExpress <small th:text="${roleName}">Shipper</small></a>
-        <nav th:replace="~{fragments/components :: sidebarNav}"></nav>
+        <th:block th:if="${isStaff}"><nav th:replace="~{admin/navigation :: sidebar}"></nav></th:block>
+        <th:block th:unless="${isStaff}"><nav th:replace="~{fragments/components :: sidebarNav}"></nav></th:block>
     </aside>
 
     <!-- Cùng menu đó nhưng dạng trượt ra, dùng cho điện thoại / máy tính bảng -->
@@ -146,7 +151,8 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Đóng"></button>
         </div>
         <div class="offcanvas-body p-0">
-            <nav th:replace="~{fragments/components :: sidebarNav}"></nav>
+            <th:block th:if="${isStaff}"><nav th:replace="~{admin/navigation :: sidebar}"></nav></th:block>
+            <th:block th:unless="${isStaff}"><nav th:replace="~{fragments/components :: sidebarNav}"></nav></th:block>
         </div>
     </div>
 
@@ -178,6 +184,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/address-picker.js}"></script>
+<script th:if="${isStaff}" th:src="@{/js/staff-navigation.js}"></script>
 
 <th:block sec:authorize="hasAnyRole('USER', 'SHIPPER', 'MANAGER', 'ADMIN')">
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>

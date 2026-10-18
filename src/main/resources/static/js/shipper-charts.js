@@ -97,7 +97,7 @@
         const rate = document.querySelector('[data-line-chart="rate"]');
         if (rate) draw(rate, days.map(d => {
             if (d.future) return null;
-            const total = d.delivered + d.failed + d.returned;
+            const total = d.delivered + d.returned;
             return total ? Math.round(d.delivered * 1000 / total) / 10 : null;
         }), { area: true, max: 100, axis: v => Math.round(v) + '%', format: v => v + '%', empty: 'Chưa có lượt giao nào trong kỳ này.' });
     }

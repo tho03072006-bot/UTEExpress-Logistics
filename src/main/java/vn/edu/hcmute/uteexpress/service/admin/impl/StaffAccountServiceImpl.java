@@ -35,6 +35,15 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         this.audit = audit;
     }
 
+    @Override @Transactional(readOnly = true)
+    public StaffProfileResponse findOwnProfile(String actor) {
+        if (actor == null || actor.isBlank() || actor.length() > 50) throw denied();
+        var account = accounts.findByUserUsername(actor).orElseThrow(this::denied);
+        requireActive(account);
+        if (account.isPasswordChangeRequired()) throw denied();
+        return StaffProfileResponse.from(account);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<StaffAccountResponse> findAccounts(String actor, int page) {

@@ -39,7 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = {AdminController.class, ManagerController.class, StaffAccountController.class,
         StaffAccessController.class, AdminAccountController.class, ManagerOrderController.class, AuthController.class,
-        ShippingTariffController.class, AuditController.class, DispatchController.class, ManagerPromotionController.class, ManagerReportController.class, ManagerTariffController.class})
+        ShippingTariffController.class, AuditController.class, DispatchController.class, ManagerPromotionController.class, ManagerReportController.class, ManagerTariffController.class,
+        StaffApiAccessController.class, StaffProfileController.class, BatchTrackingController.class})
 @Import({SecurityConfig.class, StaffSecurityConfig.class, StaffOtpPolicyConfig.class,
         TimeConfig.class, StaffLoginAttemptService.class, StaffExceptionHandler.class})
 class StaffSecurityIntegrationTest {
@@ -52,6 +53,9 @@ class StaffSecurityIntegrationTest {
     @MockBean vn.edu.hcmute.uteexpress.service.admin.AdminAccountService allAccounts;
     @MockBean StaffAccountService staffService;
     @MockBean ManagerDashboardService dashboard;
+    @MockBean StaffWorkbenchService workbench;
+    @MockBean vn.edu.hcmute.uteexpress.service.admin.StaffApiAccessService apiAccess;
+    @MockBean vn.edu.hcmute.uteexpress.security.JwtTokenProvider jwtTokens;
     @MockBean ManagerOrderService orders;
     @MockBean ManagerDispatchService dispatch;
     @MockBean vn.edu.hcmute.uteexpress.service.tracking.DispatchService sharedDispatch;
@@ -72,6 +76,17 @@ class StaffSecurityIntegrationTest {
         when(accounts.findByUserUsername("admin01")).thenReturn(Optional.of(admin));
         when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(manager));
         when(dashboard.getSummary()).thenReturn(new ManagerDashboardResponse(4, 8, 2, 3));
+        when(workbench.getWorkQueues(anyString())).thenReturn(List.of(
+            new WorkQueueResponse("Chưa có Shipper", 3, "/manager/canh-bao?alert=UNASSIGNED", "Kiểm tra và phân công."),
+            new WorkQueueResponse("Chậm lấy hàng", 2, "/manager/canh-bao?alert=LATE_PICKUP", "Đối chiếu thời hạn lấy."),
+            new WorkQueueResponse("Cần kiểm tra thanh toán", 1, "/manager/canh-bao?alert=PAYMENT_ISSUE", "Yêu cầu người gửi thanh toán."),
+            new WorkQueueResponse("Chậm giao hàng", 4, "/manager/canh-bao?alert=LATE_DELIVERY", "Kiểm tra tiến độ.")));
+        when(apiAccess.findAccess(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of(StaffAccessResponse.from(admin), StaffAccessResponse.from(manager))));
+        when(jwtTokens.isEnabled()).thenReturn(true);
+        when(jwtTokens.getLifetimeSeconds()).thenReturn(1800L);
+        when(staffService.findOwnProfile("admin01")).thenReturn(StaffProfileResponse.from(admin));
+        when(staffService.findOwnProfile("manager01")).thenReturn(StaffProfileResponse.from(manager));
+        when(audit.findEvents(anyString(), org.mockito.ArgumentMatchers.any(AuditFilterRequest.class), anyInt())).thenReturn(Page.empty());
         when(staffService.findAccounts(anyString(), anyInt())).thenReturn(new PageImpl<>(
                 List.of(StaffAccountResponse.from(admin), StaffAccountResponse.from(manager))));
         var user = new AppUser("userdemo", "not-rendered-hash", "user@example.com");
@@ -465,6 +480,129 @@ class StaffSecurityIntegrationTest {
         mvc.perform(post("/xac-thuc-otp").param("username", "customer").param("otp", "123456"))
                 .andExpect(status().isOk()).andExpect(view().name("auth/login"));
         verify(authService).verifyOtp("customer", "123456");
+    }
+
+    @Test void newWorkspacePagesRespectRolesAndRenderScopedSidebar() throws Exception {
+        for (var account : List.of(admin, manager)) {
+            for (String path : List.of("/manager/tra-cuu-hang-loat", "/noi-bo/tai-khoan")) {
+                mvc.perform(get(path).with(authentication(auth(account)))).andExpect(status().isOk())
+                    .andExpect(content().string(containsString("staff-workspace")))
+                    .andExpect(content().string(containsString("Tìm chức năng")))
+                    .andExpect(content().string(not(containsString("not-exposed-hash"))));
+            }
+        }
+        mvc.perform(get("/admin/an-toan-truy-cap").with(authentication(auth(admin))))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Đăng xuất trên mọi thiết bị")));
+        mvc.perform(get("/noi-bo/truy-cap-api").with(authentication(auth(admin)))).andExpect(status().isOk());
+        mvc.perform(get("/noi-bo/truy-cap-api").with(authentication(auth(manager)))).andExpect(status().isForbidden());
+        mvc.perform(post("/noi-bo/truy-cap-api").with(authentication(auth(manager))).with(csrf()).param("password", "test"))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/admin/an-toan-truy-cap").with(authentication(auth(manager)))).andExpect(status().isForbidden());
+        mvc.perform(post("/admin/an-toan-truy-cap/2/thu-hoi").with(authentication(auth(manager))).with(csrf())).andExpect(status().isForbidden());
+        mvc.perform(get("/manager/tra-cuu-hang-loat").with(user("user01").roles("USER"))).andExpect(status().isForbidden());
+    }
+    @Test void newPostsRequireCsrfAndDoNotTrustSubmittedActor() throws Exception {
+        mvc.perform(post("/noi-bo/truy-cap-api").with(authentication(auth(admin))).param("password", "test"))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/manager/tra-cuu-hang-loat").with(authentication(auth(manager))).param("codes", "UTE1"))
+            .andExpect(status().isForbidden());
+        when(workbench.findShipments(anyString(), any())).thenReturn(List.of());
+        mvc.perform(post("/manager/tra-cuu-hang-loat").with(authentication(auth(manager))).with(csrf())
+            .param("actor", "admin01").param("codes", "UTE1")).andExpect(status().isOk());
+        verify(workbench).findShipments(eq("manager01"), any());
+        when(apiAccess.issueToken(anyString(), any())).thenReturn("test-token-not-a-real-secret");
+        mvc.perform(post("/noi-bo/truy-cap-api").with(authentication(auth(admin))).with(csrf())
+            .param("actor", "manager01").param("password", "password-never-rendered"))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(content().string(not(containsString("password-never-rendered"))));
+        verify(apiAccess).issueToken(eq("admin01"), any());
+    }
+    @Test void invalidNewFormsDoNotReachServicesAndCanRenderSafeErrors() throws Exception {
+        mvc.perform(post("/noi-bo/truy-cap-api").with(authentication(auth(admin))).with(csrf()).param("password", ""))
+            .andExpect(status().isOk());
+        mvc.perform(post("/manager/tra-cuu-hang-loat").with(authentication(auth(manager))).with(csrf()).param("codes", ""))
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "codes"));
+        mvc.perform(post("/admin/an-toan-truy-cap/2/thu-hoi").with(authentication(auth(admin))).with(csrf())
+            .param("revision", "-1").param("password", "").param("reason", " "))
+            .andExpect(status().is3xxRedirection());
+        verify(apiAccess, never()).issueToken(anyString(), any()); verify(apiAccess, never()).revokeAccess(anyString(), any(), any());
+        verify(workbench, never()).findShipments(anyString(), any());
+    }
+    @Test void renderOptionalStaffPreviewUsingOnlySyntheticAccounts() throws Exception {
+        if (!Boolean.getBoolean("staff.preview")) return;
+        var root = java.nio.file.Path.of("target/staff-preview"); java.nio.file.Files.createDirectories(root);
+        try (var assets = java.nio.file.Files.walk(java.nio.file.Path.of("target/classes/static"))) {
+            for (var source : assets.toList()) {
+                var destination = root.resolve(java.nio.file.Path.of("target/classes/static").relativize(source));
+                if (java.nio.file.Files.isDirectory(source)) java.nio.file.Files.createDirectories(destination);
+                else java.nio.file.Files.copy(source, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        for (var entry : Map.of("manager.html", "/manager/trang-chu", "admin.html", "/admin/trang-chu", "batch.html", "/manager/tra-cuu-hang-loat",
+                "access.html", "/admin/an-toan-truy-cap", "api.html", "/noi-bo/truy-cap-api").entrySet()) {
+            var account = entry.getKey().equals("manager.html") ? manager : admin;
+            String html = mvc.perform(get(entry.getValue()).with(authentication(auth(account)))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            java.nio.file.Files.writeString(root.resolve(entry.getKey()), html, java.nio.charset.StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test void normalMenuHidesTokenToolButKeepsUsefulRoleSpecificFunctions() throws Exception {
+        for (var account : List.of(admin,manager)) {
+            String html = mvc.perform(get("/noi-bo/tai-khoan").with(authentication(auth(account))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            var nav = java.util.regex.Pattern.compile("<nav[^>]*class=\"staff-nav\"[^>]*>.*?</nav>",java.util.regex.Pattern.DOTALL).matcher(html);
+            Assertions.assertTrue(nav.find());
+            Assertions.assertFalse(nav.group().contains("/noi-bo/truy-cap-api"));
+            Assertions.assertTrue(nav.group().contains("/noi-bo/tai-khoan")); Assertions.assertTrue(nav.group().contains("/noi-bo/doi-mat-khau"));
+            if (account == manager) {
+                Assertions.assertFalse(nav.group().contains("/admin/an-toan-truy-cap")); Assertions.assertFalse(nav.group().contains("/admin/nhat-ky"));
+            } else {
+                Assertions.assertTrue(nav.group().contains("/admin/an-toan-truy-cap")); Assertions.assertTrue(nav.group().contains("/admin/nhat-ky"));
+            }
+        }
+        mvc.perform(get("/admin/an-toan-truy-cap").with(authentication(auth(admin))))
+            .andExpect(content().string(containsString("Tích hợp kỹ thuật")))
+            .andExpect(content().string(containsString("name=\"confirmSelf\"")))
+            .andExpect(content().string(not(containsString("<th>Phiên bản truy cập</th>"))));
+    }
+    @Test void ownProfileIgnoresSubmittedIdentityAndDoesNotAllowUpdates() throws Exception {
+        mvc.perform(get("/noi-bo/tai-khoan").param("username","admin01").with(authentication(auth(manager))))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("manager01@example.com")))
+            .andExpect(content().string(not(containsString("admin01@example.com"))))
+            .andExpect(content().string(not(containsString(manager.getUser().getPassword()))));
+        verify(staffService).findOwnProfile("manager01"); verify(staffService,never()).findOwnProfile("admin01");
+        mvc.perform(post("/noi-bo/tai-khoan").with(authentication(auth(manager))).with(csrf()).param("role","ADMIN"))
+            .andExpect(status().isMethodNotAllowed());
+        verify(staffService,never()).updateAccount(anyString(),any(),any());
+        mvc.perform(get("/noi-bo/tai-khoan").with(user("customer").roles("USER"))).andExpect(status().isForbidden());
+    }
+    @Test void auditFiltersRenderFriendlyLabelsAndEscapeStoredText() throws Exception {
+        when(audit.findEvents(eq("admin01"),org.mockito.ArgumentMatchers.any(AuditFilterRequest.class),eq(0))).thenReturn(new PageImpl<>(List.of(
+            new AuditEventResponse("admin01","ACCESS_REVOKE","staff:2","<script>private-text</script>",LocalDateTime.now()))));
+        mvc.perform(get("/admin/nhat-ky").with(authentication(auth(admin))).param("category","SECURITY").param("operator","admin01"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Thu hồi truy cập")))
+            .andExpect(content().string(containsString("&lt;script&gt;private-text&lt;/script&gt;")))
+            .andExpect(content().string(not(containsString("<script>private-text</script>"))));
+        verify(audit).findEvents(eq("admin01"),org.mockito.ArgumentMatchers.argThat(filter -> filter.getCategory() == AuditFilterRequest.Category.SECURITY && filter.getOperator().equals("admin01")),eq(0));
+    }
+    @Test void malformedAuditFiltersReturn400WithoutRunningService() throws Exception {
+        for (var params : List.of(Map.of("category","INVALID"),Map.of("from","2026-02-30"),Map.of("operator","bad<script>"),Map.of("operator","a".repeat(51)))) {
+            var request = get("/admin/nhat-ky").with(authentication(auth(admin)));
+            params.forEach(request::param); mvc.perform(request).andExpect(status().isBadRequest());
+        }
+        verify(audit,never()).findEvents(anyString(),anyInt());
+        verify(audit,never()).findEvents(anyString(),org.mockito.ArgumentMatchers.any(AuditFilterRequest.class),anyInt());
+    }
+    @Test void auditDateValidationAndDatabaseErrorsAreNotSilentlyHidden() throws Exception {
+        when(audit.findEvents(eq("admin01"),org.mockito.ArgumentMatchers.any(AuditFilterRequest.class),eq(0)))
+            .thenThrow(new IllegalArgumentException("Khoảng ngày không hợp lệ."));
+        mvc.perform(get("/admin/nhat-ky").with(authentication(auth(admin))).param("from","2026-10-18").param("to","2026-10-01"))
+            .andExpect(status().isBadRequest()).andExpect(content().string(containsString("Khoảng ngày không hợp lệ.")));
+        when(audit.findEvents(eq("admin01"),org.mockito.ArgumentMatchers.any(AuditFilterRequest.class),eq(0)))
+            .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("private-database-detail"));
+        mvc.perform(get("/admin/nhat-ky").with(authentication(auth(admin))).param("category","ACCOUNT"))
+            .andExpect(status().isServiceUnavailable()).andExpect(content().string(not(containsString("private-database-detail"))));
     }
 
     private StaffAccount account(Long id, String name, AppUser.Role role) {

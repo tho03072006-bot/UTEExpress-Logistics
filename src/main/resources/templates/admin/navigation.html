@@ -1,39 +1,45 @@
-<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
-<body><nav th:fragment="navigation" class="sx-staff-nav d-flex flex-wrap align-items-center gap-2 mb-4" aria-label="Chức năng nội bộ">
-<span class="badge text-bg-dark me-2"><i class="bi bi-building-lock"></i> Khu nội bộ</span>
-<a class="btn btn-outline-primary btn-sm sx-tone-blue" th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2"></i> Tổng quan vận hành</a>
-<a class="btn btn-outline-primary btn-sm sx-tone-cyan" th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
-<a class="btn btn-outline-primary btn-sm sx-tone-violet" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công Shipper</a>
-<a class="btn btn-outline-primary btn-sm sx-tone-rose" th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-square-text"></i> Khiếu nại</a>
-<a class="btn btn-outline-primary btn-sm sx-tone-gold" th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát COD</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/khuyen-mai}">Khuyến mãi</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/bao-cao}">Báo cáo</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/bang-cuoc}">Xem bảng cước</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/canh-bao}">Cảnh báo cần xử lý</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/ho-so-van-hanh}">Hồ sơ giao lại/hoàn/tiền</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/hieu-suat-shipper}">Hiệu suất Shipper</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/manager/lich-cuoc}">Lịch cước</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/chinh-sach-van-hanh}">Chính sách vận hành</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản · 4 vai trò</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/bang-cuoc}">Cấu hình cước</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm" th:href="@{/admin/nhat-ky}">Nhật ký</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Quản trị hệ thống</a>
-<a sec:authorize="hasRole('ADMIN')" class="btn btn-outline-dark btn-sm sx-tone-slate" th:href="@{/admin/tai-khoan}"><i class="bi bi-people"></i> Tài khoản nội bộ</a>
-<a class="btn btn-outline-secondary btn-sm sx-tone-slate" th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
-<form th:action="@{/noi-bo/dang-xuat}" method="post" class="ms-auto">
-<button class="btn btn-outline-danger btn-sm" type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất nội bộ</button></form>
-<script th:inline="none">
-    // Đánh dấu mục đang mở theo đường dẫn hiện tại (vd. /manager/khieu-nai/5 -> Khiếu nại).
-    (function (nav) {
-        if (!nav) return;
-        var path = window.location.pathname, best = null;
-        nav.querySelectorAll('a[href]').forEach(function (link) {
-            var href = link.getAttribute('href');
-            if (path === href || path.indexOf(href + '/') === 0) {
-                if (!best || href.length > best.getAttribute('href').length) best = link;
-            }
-        });
-        if (best) { best.classList.add('active'); best.setAttribute('aria-current', 'page'); }
-    }(document.currentScript && document.currentScript.closest('nav')));
-</script>
-</nav></body></html>
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi"><body>
+<!-- Các trang cũ vẫn gọi fragment này; menu chính chỉ xuất hiện trong sidebar của base. -->
+<nav th:fragment="navigation" class="staff-context" aria-label="Khu vực đang sử dụng">
+<span><i class="bi bi-building-lock" aria-hidden="true"></i> Không gian làm việc</span>
+<span sec:authorize="hasRole('ADMIN')" class="badge text-bg-dark">ADMIN · Quản trị hệ thống</span>
+<span sec:authorize="hasRole('MANAGER')" class="badge text-bg-primary">MANAGER · Quản lý vận hành</span>
+</nav>
+<nav th:fragment="sidebar" class="staff-nav" aria-label="Chức năng nội bộ">
+<div class="staff-nav-heading">ĐIỀU HÀNH UTEEXPRESS</div>
+<a th:href="@{/manager/trang-chu}"><i class="bi bi-grid-1x2"></i> Tổng quan vận hành</a>
+<label class="staff-menu-search">Tìm chức năng<input type="search" class="form-control form-control-sm" placeholder="Ví dụ: đối soát…" maxlength="60" data-staff-menu-search></label>
+<p class="small text-muted px-2" data-staff-menu-empty hidden>Không tìm thấy chức năng.</p>
+<details open><summary>Đơn hàng &amp; điều phối</summary><div>
+<a th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
+<a th:href="@{/manager/tra-cuu-hang-loat}"><i class="bi bi-list-check"></i> Tra cứu nhiều vận đơn</a>
+<a th:href="@{/manager/phan-cong}"><i class="bi bi-truck"></i> Phân công Shipper</a>
+<a th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-circle"></i> Cảnh báo cần xử lý</a>
+<a th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ giao lại / hoàn / tiền</a>
+</div></details>
+<details open><summary>Chăm sóc &amp; tài chính</summary><div>
+<a th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-left-text"></i> Khiếu nại</a>
+<a th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát cước thu hộ</a>
+<a th:href="@{/manager/khuyen-mai}"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
+</div></details>
+<details><summary>Báo cáo &amp; giá cước</summary><div>
+<a th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart"></i> Báo cáo vận hành</a>
+<a th:href="@{/manager/hieu-suat-shipper}"><i class="bi bi-graph-up"></i> Hiệu suất Shipper</a>
+<a th:href="@{/manager/bang-cuoc}"><i class="bi bi-receipt"></i> Xem bảng cước</a>
+<a th:href="@{/manager/lich-cuoc}"><i class="bi bi-calendar3"></i> Lịch cước</a>
+</div></details>
+<details sec:authorize="hasRole('ADMIN')"><summary>Quản trị · Chỉ Admin</summary><div>
+<a th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Tổng quan quản trị</a>
+<a th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people"></i> Tài khoản · 4 vai trò</a>
+<a th:href="@{/admin/chinh-sach-van-hanh}"><i class="bi bi-sliders"></i> Chính sách vận hành</a>
+<a th:href="@{/admin/bang-cuoc}"><i class="bi bi-gear"></i> Cấu hình cước</a>
+<a th:href="@{/admin/an-toan-truy-cap}"><i class="bi bi-shield-check"></i> An toàn truy cập</a>
+<a th:href="@{/admin/nhat-ky}"><i class="bi bi-journal-text"></i> Nhật ký quản trị</a>
+</div></details>
+<details><summary>Tài khoản của tôi</summary><div>
+<a th:href="@{/noi-bo/tai-khoan}"><i class="bi bi-person-badge"></i> Thông tin tài khoản</a>
+<a th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+</div></details>
+<div class="staff-nav-foot">Manager điều hành nghiệp vụ.<br>Admin quản trị quyền và phê duyệt cấp cao.</div>
+</nav>
+</body></html>
