@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import vn.edu.hcmute.uteexpress.dto.admin.*;
 
 public interface StaffAccountService {
+    StaffProfileResponse findOwnProfile(String actor);
     Page<StaffAccountResponse> findAccounts(String actor, int page);
     void createAccount(String actor, StaffAccountCreateRequest request);
     void updateAccount(String actor, Long id, StaffAccountUpdateRequest request);

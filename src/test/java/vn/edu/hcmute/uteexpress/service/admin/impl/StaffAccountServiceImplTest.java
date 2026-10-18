@@ -34,6 +34,31 @@ class StaffAccountServiceImplTest {
     }
     @AfterEach void closeValidator() { factory.close(); }
 
+    @Test void ownProfileIsReadOnlyAndNeverContainsSecrets() {
+        when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(manager));
+        var profile = service.findOwnProfile("manager01");
+        assertEquals("manager01",profile.username()); assertEquals(AppUser.Role.MANAGER,profile.role());
+        assertFalse(profile.toString().contains(manager.getUser().getPassword()));
+        verify(accounts,never()).save(any()); verifyNoInteractions(users,audit);
+    }
+    @Test void disabledLockedUnissuedAndOtpAccountsCannotReadStaffProfile() {
+        when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(manager));
+        manager.setActive(false); assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("manager01"));
+        manager.setActive(true); manager.getUser().setEnabled(false); assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("manager01"));
+        manager.getUser().setEnabled(true); manager.getUser().setLockedByAdmin(true); assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("manager01"));
+        manager.getUser().setLockedByAdmin(false); manager.setPasswordChangeRequired(true); assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("manager01"));
+        manager.setPasswordChangeRequired(false);
+        for (var role : List.of(AppUser.Role.USER,AppUser.Role.SHIPPER)) {
+            manager.getUser().setRole(role); assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("manager01"));
+        }
+        assertThrows(AccessDeniedException.class,() -> service.findOwnProfile("not-issued"));
+    }
+    @Test void missingOrOversizedProfileActorDoesNotQueryDatabase() {
+        for (var actor : Arrays.asList(null,"","  ","a".repeat(51)))
+            assertThrows(AccessDeniedException.class,() -> service.findOwnProfile(actor));
+        verifyNoInteractions(accounts,users,audit);
+    }
+
     @Test void createAccountEncodesPasswordAndNeverCreatesOtp() {
         when(accounts.lockAccounts()).thenReturn(List.of(admin));
         when(users.save(any())).thenAnswer(inv -> inv.getArgument(0));
