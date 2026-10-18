@@ -38,7 +38,7 @@ public class StaffSecurityConfig {
             .authenticationManager(new ProviderManager(provider))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/noi-bo/dang-nhap", "/noi-bo/tu-choi").permitAll()
-                .requestMatchers("/admin/**").access((authentication, context) ->
+                .requestMatchers("/admin/**", "/noi-bo/truy-cap-api", "/noi-bo/truy-cap-api/**").access((authentication, context) ->
                     new org.springframework.security.authorization.AuthorizationDecision(
                         authentication.get().getPrincipal() instanceof StaffPrincipal
                         && authentication.get().getAuthorities().stream()
@@ -50,6 +50,9 @@ public class StaffSecurityConfig {
                 .loginProcessingUrl("/noi-bo/dang-nhap")
                 .successHandler((request, response, authentication) -> {
                     attempts.clearFailures(authentication.getName());
+                    var now = java.time.Instant.now();
+                    request.getSession().setAttribute(StaffSessionFilter.AUTHENTICATED_AT, now);
+                    request.getSession().setAttribute(StaffSessionFilter.LAST_ACTIVITY_AT, now);
                     boolean admin = authentication.getAuthorities().stream()
                             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
                     response.sendRedirect(request.getContextPath()
