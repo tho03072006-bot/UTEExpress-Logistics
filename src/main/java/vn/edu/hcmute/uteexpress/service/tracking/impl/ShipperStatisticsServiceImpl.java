@@ -28,7 +28,7 @@ public class ShipperStatisticsServiceImpl implements ShipperStatisticsService {
         return getStatistics(username, period, null, null);
     }
     @Override public ShipperStatisticsResponse getStatistics(String username, ShipperStatisticsPeriod period, LocalDate from, LocalDate to) {
-        var shipper = users.findByUsername(username).filter(u -> u.isEnabled() && u.getRole() == AppUser.Role.SHIPPER)
+        var shipper = users.findByUsername(username).filter(u -> u.isEnabled() && !u.isLockedByAdmin() && u.getRole() == AppUser.Role.SHIPPER)
                 .orElseThrow(() -> new IllegalStateException("Tài khoản hiện tại không có vai trò Shipper đang hoạt động."));
         var selected = period == null ? ShipperStatisticsPeriod.DAY : period;
         var today = LocalDate.now(clock);
@@ -62,8 +62,8 @@ public class ShipperStatisticsServiceImpl implements ShipperStatisticsService {
         long unsuccessful = last.values().stream().filter(s -> s == Order.OrderStatus.FAILED || s == Order.OrderStatus.RETURNED).count();
         long active = last.values().stream().filter(s -> s == Order.OrderStatus.PENDING_PICKUP || s == Order.OrderStatus.PICKED_UP || s == Order.OrderStatus.IN_TRANSIT).count();
         var cod = repository.sumCollectedCod(shipper, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.PAID, start, end);
-        var rate = last.isEmpty() ? BigDecimal.ZERO.setScale(1) : BigDecimal.valueOf(delivered).multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(last.size()), 1, RoundingMode.HALF_UP);
+        long returned = last.values().stream().filter(s -> s == Order.OrderStatus.RETURNED).count();
+        var rate = vn.edu.hcmute.uteexpress.util.DeliverySuccessRate.calculate(delivered, returned);
         return new ShipperStatisticsResponse(selected, from, to, last.size(), delivered, unsuccessful, active,
                 rate, cod == null ? BigDecimal.ZERO : cod, days, legacy.size());
     }

@@ -17,10 +17,10 @@ public class HomeStatistics {
     private final long ordersInTransit;
 
     /** Tỉ lệ giao thành công, tính trên các đơn đã kết thúc. Đơn vị phần trăm. */
-    private final int successRate;
+    private final java.math.BigDecimal successRate;
 
     public HomeStatistics(long deliveredOrders, long activeCustomers,
-                          long ordersInTransit, int successRate) {
+                          long ordersInTransit, java.math.BigDecimal successRate) {
         this.deliveredOrders = deliveredOrders;
         this.activeCustomers = activeCustomers;
         this.ordersInTransit = ordersInTransit;
@@ -41,7 +41,7 @@ public class HomeStatistics {
         return ordersInTransit;
     }
 
-    public int getSuccessRate() {
+    public java.math.BigDecimal getSuccessRate() {
         return successRate;
     }
 }
