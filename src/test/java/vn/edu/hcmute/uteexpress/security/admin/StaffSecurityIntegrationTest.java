@@ -53,6 +53,7 @@ class StaffSecurityIntegrationTest {
     @MockBean vn.edu.hcmute.uteexpress.service.admin.AdminAccountService allAccounts;
     @MockBean StaffAccountService staffService;
     @MockBean ManagerDashboardService dashboard;
+    @MockBean StaffDashboardChartService dashboardCharts;
     @MockBean StaffWorkbenchService workbench;
     @MockBean vn.edu.hcmute.uteexpress.service.admin.StaffApiAccessService apiAccess;
     @MockBean vn.edu.hcmute.uteexpress.security.JwtTokenProvider jwtTokens;
@@ -76,6 +77,8 @@ class StaffSecurityIntegrationTest {
         when(accounts.findByUserUsername("admin01")).thenReturn(Optional.of(admin));
         when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(manager));
         when(dashboard.getSummary()).thenReturn(new ManagerDashboardResponse(4, 8, 2, 3));
+        when(dashboardCharts.getAdminCharts(anyString())).thenReturn(chartFixture());
+        when(dashboardCharts.getOperationsCharts(anyString())).thenReturn(chartFixture());
         when(workbench.getWorkQueues(anyString())).thenReturn(List.of(
             new WorkQueueResponse("Chưa có Shipper", 3, "/manager/canh-bao?alert=UNASSIGNED", "Kiểm tra và phân công."),
             new WorkQueueResponse("Chậm lấy hàng", 2, "/manager/canh-bao?alert=LATE_PICKUP", "Đối chiếu thời hạn lấy."),
@@ -273,6 +276,52 @@ class StaffSecurityIntegrationTest {
         mvc.perform(get("/manager/trang-chu").with(authentication(auth(manager))))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("href=\"/admin/tai-khoan\""))));
+    }
+
+    @Test void bothDashboardsRenderOnlyTwoNecessaryChartsUsingAuthenticatedActor() throws Exception {
+        for (var path : List.of("/admin/trang-chu", "/manager/trang-chu")) {
+            var html = mvc.perform(get(path).param("actor","someone-else").with(authentication(auth(admin))))
+                    .andExpect(status().isOk()).andExpect(content().string(containsString("Trạng thái đơn hàng")))
+                    .andExpect(content().string(containsString("Đơn mới trong 14 ngày")))
+                    .andExpect(content().string(containsString("không phải tỷ lệ giao thành công")))
+                    .andExpect(content().string(not(containsString("NaN"))))
+                    .andExpect(content().string(not(containsString("Infinity"))))
+                    .andReturn().getResponse().getContentAsString();
+            org.junit.jupiter.api.Assertions.assertEquals(2, html.split("staff-chart-card",-1).length - 1);
+        }
+        verify(dashboardCharts).getAdminCharts("admin01"); verify(dashboardCharts).getOperationsCharts("admin01");
+    }
+
+    @Test void chartsHaveExplicitEmptyStatesInsteadOfBlankOrBrokenCharts() throws Exception {
+        var today = LocalDate.now();
+        var empty = new DashboardChartsResponse(today.minusDays(13),today,LocalDateTime.now(),List.of(),List.of(),0,0,0);
+        when(dashboardCharts.getOperationsCharts("manager01")).thenReturn(empty);
+        mvc.perform(get("/manager/trang-chu").with(authentication(auth(manager))))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Chưa có đơn hàng để thống kê trạng thái.")))
+                .andExpect(content().string(containsString("Không có đơn mới trong 14 ngày gần đây.")));
+    }
+
+    @Test void chartDatabaseFailureReturns503WithoutLeakingConnectionDetails() throws Exception {
+        when(dashboardCharts.getOperationsCharts("manager01")).thenThrow(
+                new org.springframework.dao.DataAccessResourceFailureException("private-database-address"));
+        mvc.perform(get("/manager/trang-chu").with(authentication(auth(manager))))
+                .andExpect(status().isServiceUnavailable()).andExpect(content().string(not(containsString("private-database-address"))));
+    }
+
+    private static DashboardChartsResponse chartFixture() {
+        var today = LocalDate.now();
+        long[] created = {1,0,0,0,2,0,0,0,0,3,0,0,0,2};
+        return new DashboardChartsResponse(today.minusDays(13),today,LocalDateTime.now(),List.of(
+                new DashboardChartsResponse.CategoryResponse("PENDING_PICKUP","Chờ lấy hàng","amber",3,new BigDecimal("37.50")),
+                new DashboardChartsResponse.CategoryResponse("PICKED_UP","Đã lấy hàng","cyan",1,new BigDecimal("12.50")),
+                new DashboardChartsResponse.CategoryResponse("IN_TRANSIT","Đang vận chuyển","blue",1,new BigDecimal("12.50")),
+                new DashboardChartsResponse.CategoryResponse("DELIVERED","Giao thành công","green",2,new BigDecimal("25.00")),
+                new DashboardChartsResponse.CategoryResponse("FAILED","Giao thất bại","rose",1,new BigDecimal("12.50")),
+                new DashboardChartsResponse.CategoryResponse("CANCELLED","Đã hủy","slate",0,BigDecimal.ZERO),
+                new DashboardChartsResponse.CategoryResponse("RETURNED","Đã hoàn hàng","violet",0,BigDecimal.ZERO)),
+                java.util.stream.IntStream.range(0,14).mapToObj(i -> new DashboardChartsResponse.DayResponse(
+                        today.minusDays(13-i),created[i],BigDecimal.valueOf(created[i]).multiply(BigDecimal.valueOf(100))
+                                .divide(BigDecimal.valueOf(3),2,java.math.RoundingMode.HALF_UP))).toList(),8,8,3);
     }
 
     @Test void accountListRendersVersionsAndCsrfWithoutPasswordHashes() throws Exception {

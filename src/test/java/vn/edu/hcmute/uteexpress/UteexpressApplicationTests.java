@@ -13,8 +13,20 @@ class UteexpressApplicationTests {
     @org.springframework.beans.factory.annotation.Autowired
     vn.edu.hcmute.uteexpress.repository.admin.AuditEventRepository auditEvents;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.manager.ManagerOrderStatisticsRepository orderStatistics;
+
     @Test
     void contextLoads() {
+    }
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void dashboardAggregatesExecuteOnAivenWithoutWritingData() {
+        var today = java.time.LocalDate.now();
+        var statuses = orderStatistics.countGroupedStatuses();
+        var days = orderStatistics.countCreatedByDay(today.minusDays(13).atStartOfDay(),today.plusDays(1).atStartOfDay());
+        org.junit.jupiter.api.Assertions.assertTrue(statuses.stream().allMatch(row -> row.getTotal() >= 0));
+        org.junit.jupiter.api.Assertions.assertTrue(days.stream().allMatch(row -> row.getTotal() >= 0));
     }
 
     @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
