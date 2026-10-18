@@ -16,14 +16,18 @@ import vn.edu.hcmute.uteexpress.service.manager.ManagerDashboardService;
 public class ManagerController {
 
     private final ManagerDashboardService managerDashboardService;
+    private final vn.edu.hcmute.uteexpress.service.manager.StaffWorkbenchService workbench;
 
-    public ManagerController(ManagerDashboardService managerDashboardService) {
+    public ManagerController(ManagerDashboardService managerDashboardService,
+            vn.edu.hcmute.uteexpress.service.manager.StaffWorkbenchService workbench) {
         this.managerDashboardService = managerDashboardService;
+        this.workbench = workbench;
     }
 
     @GetMapping("/trang-chu")
-    public String dashboard(Model model) {
+    public String dashboard(java.security.Principal actor, Model model) {
         model.addAttribute("summary", managerDashboardService.getSummary());
+        model.addAttribute("queues", workbench.getWorkQueues(actor.getName()));
         return "manager/dashboard";
     }
 

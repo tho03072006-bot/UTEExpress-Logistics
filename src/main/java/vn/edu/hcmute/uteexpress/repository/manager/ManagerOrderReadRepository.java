@@ -9,6 +9,9 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 
 public interface ManagerOrderReadRepository extends Repository<Order, Long> {
     @EntityGraph(attributePaths = "shipper")
+    java.util.List<Order> findByTrackingCodeIn(java.util.Collection<String> codes);
+
+    @EntityGraph(attributePaths = "shipper")
     @Query("select o from Order o where (:tracking = '' or o.trackingCode = :tracking) "
             + "and (:status is null or o.status = :status) "
             + "and o.createdAt >= :start and o.createdAt < :end")

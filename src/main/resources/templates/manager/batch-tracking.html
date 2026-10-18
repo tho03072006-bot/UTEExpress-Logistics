@@ -1,0 +1,21 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Tra cứu nhiều vận đơn - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head"><div><h1>Tra cứu nhiều vận đơn</h1><p>Kiểm tra tối đa 10 mã cùng lúc, không giới hạn theo ngày tạo. Chỉ đọc dữ liệu; không thay đổi trạng thái đơn.</p></div></div>
+<div class="ute-panel p-4 mb-3">
+<form method="post" th:action="@{/manager/tra-cuu-hang-loat}" th:object="${form}">
+<label for="batchCodes" class="form-label">Mã vận đơn</label>
+<textarea id="batchCodes" th:field="*{codes}" rows="3" class="form-control" maxlength="500" required aria-describedby="batchHint batchError" placeholder="Mỗi dòng một mã, hoặc cách nhau bằng dấu phẩy / chấm phẩy"></textarea>
+<p id="batchHint" class="form-text">Mã 1–20 ký tự chữ, số hoặc gạch ngang. Mã trùng chỉ hiển thị một lần.</p>
+<p id="batchError" th:if="${#fields.hasErrors('codes')}" th:errors="*{codes}" class="text-danger" role="alert"></p>
+<button class="btn btn-primary" type="submit">Tra cứu danh sách</button>
+<button class="btn btn-outline-primary ms-2" type="submit" th:formaction="@{/manager/tra-cuu-hang-loat/xuat-csv}">Xuất CSV</button>
+</form></div>
+<div th:if="${results != null}" class="ute-panel p-3"><h2 class="h6">Kết quả tra cứu</h2>
+<p class="small text-muted">CSV không chứa tên, điện thoại hoặc địa chỉ khách hàng. Kết quả phản ánh thời điểm tra cứu; không phải chứng từ thanh toán.</p>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mã vận đơn</th><th>Trạng thái</th><th>Dịch vụ</th><th>Cước (VND)</th><th>Shipper</th></tr></thead><tbody>
+<tr th:each="row : ${results}"><td th:text="${row.trackingCode}"></td><td th:text="${row.status}"></td><td th:text="${row.serviceType}"></td>
+<td th:text="${row.shippingFee == null ? '—' : #numbers.formatDecimal(row.shippingFee, 0, 'COMMA', 0, 'POINT')}"></td>
+<td th:text="${!row.found ? '—' : row.assigned ? 'Đã phân công' : 'Chưa phân công'}"></td></tr>
+</tbody></table></div></div>
+</section></body></html>
