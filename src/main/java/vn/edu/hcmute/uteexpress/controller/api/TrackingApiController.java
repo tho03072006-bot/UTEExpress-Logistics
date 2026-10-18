@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * API tra cuu van don cong khai (khong can dang nhap) - se dung JWT khi mo rong
- * cho ung dung/dich vu ben ngoai goi vao (tinh nang sang tao, TV3 phu trach).
- * Hien tai da noi voi OrderService that (khong con du lieu mau).
+ * API công khai chỉ trả tiến độ, không trả thông tin người nhận.
+ * API nhân viên dùng JWT được tách riêng tại /api/internal/**.
  */
 @RestController
 @RequestMapping("/api/tracking")
@@ -28,17 +27,19 @@ public class TrackingApiController {
 
     @GetMapping("/{trackingCode}")
     public ResponseEntity<?> lookup(@PathVariable String trackingCode) {
+        if (trackingCode == null || !trackingCode.matches("[A-Za-z0-9-]{1,20}")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Mã vận đơn không hợp lệ."));
+        }
         Optional<Order> order = orderService.findByTrackingCode(trackingCode);
         if (order.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         Order o = order.get();
-        return ResponseEntity.ok(Map.of(
-                "trackingCode", o.getTrackingCode(),
-                "status", o.getStatus().name(),
-                "receiverName", o.getReceiverName(),
-                "serviceType", o.getServiceType().name(),
-                "createdAt", o.getCreatedAt().toString()
-        ));
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("trackingCode", o.getTrackingCode());
+        result.put("status", o.getStatus() == null ? "UNKNOWN" : o.getStatus().name());
+        result.put("serviceType", o.getServiceType() == null ? null : o.getServiceType().name());
+        result.put("createdAt", o.getCreatedAt() == null ? null : o.getCreatedAt().toString());
+        return ResponseEntity.ok(result);
     }
 }

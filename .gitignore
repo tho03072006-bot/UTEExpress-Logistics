@@ -52,6 +52,9 @@ application-local.properties.*
 /config/certificates/
 # Mat khau tam do cong cu khoi phuc tai khoan tao rieng tren may.
 /config/recovery/
+/config/jwt-local.properties
+/config/jwt-local.properties.*
+!/config/jwt-local.properties.example
 
 # Chan file profile cu chua bi mat neu ai copy lai; app khong dung MonsterASP.
 application-cloud.properties
