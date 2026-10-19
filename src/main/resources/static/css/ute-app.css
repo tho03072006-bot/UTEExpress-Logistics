@@ -545,3 +545,91 @@ a.sx-kpi-card:hover, .sx-app .ute-stat:hover, .sx-app .shipper-workspace a.shipp
 .sx-fold > summary::after { content: '\F282'; margin-left: auto; font-family: 'bootstrap-icons'; font-size: .9rem; transition: transform .2s ease; }
 .sx-fold[open] > summary { margin-bottom: 1rem !important; }
 .sx-fold[open] > summary::after { transform: rotate(180deg); }
+
+/* ==========================================================================
+   Trang "Tài khoản của tôi" (người gửi / Shipper): ảnh bìa, ảnh đại diện, thông tin cá nhân
+   ========================================================================== */
+/* Ảnh đại diện: ảnh phủ lên chữ cái đầu; ảnh lỗi/chưa có thì JS bỏ <img> và lộ chữ cái */
+.sx-avatar { position: relative; overflow: hidden; }
+.sx-avatar > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.sx-app .sx-avatar.sx-avatar-xs { display: inline-grid; place-items: center; flex: 0 0 1.65rem; width: 1.65rem; height: 1.65rem; border: 0; border-radius: 50%;
+    background: var(--app-primary); color: #FFFFFF; font-size: .72rem; font-weight: 700; }
+.sx-app .ute-user-chip:has(.sx-avatar-xs) { gap: .45rem; padding: .2rem .75rem .2rem .25rem; }
+.sx-app a.ute-user-chip:hover { background: color-mix(in srgb, var(--app-primary) 10%, var(--app-soft)); color: var(--app-ink); }
+.sx-app a.sx-profile, .sx-app a.sx-profile:hover { color: #FFFFFF; text-decoration: none; }
+.sx-app a.sx-profile:hover { background: rgba(255, 255, 255, .1); }
+
+.sx-account-hero { overflow: hidden; margin-bottom: 1.25rem; border: 1px solid var(--app-border); border-radius: .75rem; background: var(--app-card); box-shadow: var(--app-shadow); }
+.sx-account-cover { height: 8.5rem;
+    background: url("../images/ui/map-lines-light.svg") right -2rem center / 30rem auto no-repeat, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
+.sx-account-main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem 1.5rem; padding: .9rem 1.5rem 1.25rem; }
+.sx-account-avatar { position: relative; flex: 0 0 auto; margin-top: -4.6rem; }
+.sx-app .sx-avatar.sx-avatar-xl { display: grid; place-items: center; width: 7.5rem; height: 7.5rem; border: 4px solid var(--app-card); border-radius: 50%;
+    background: linear-gradient(135deg, #0072BC, #4F46E5); color: #FFFFFF; font-size: 2.6rem; font-weight: 700; box-shadow: 0 8px 20px rgba(15, 23, 42, .18); }
+.sx-account-avatar form { margin: 0; }
+.sx-avatar-btn { position: absolute; right: .25rem; bottom: .25rem; display: grid; place-items: center; width: 2.3rem; height: 2.3rem; margin: 0; border: 1px solid var(--app-border);
+    border-radius: 50%; background: var(--app-card); color: var(--app-primary); box-shadow: 0 4px 10px rgba(15, 23, 42, .15); cursor: pointer; transition: background .15s ease, color .15s ease; }
+.sx-avatar-btn:hover, .sx-avatar-btn:focus-within { background: var(--app-primary); color: #FFFFFF; }
+.sx-avatar-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.is-uploading .sx-avatar-btn { opacity: .6; pointer-events: none; }
+.sx-account-id { flex: 1 1 18rem; min-width: 0; padding-top: .15rem; }
+.sx-account-id h2 { margin: 0 0 .4rem; color: var(--app-ink); font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; }
+.sx-account-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1rem; color: var(--app-muted); font-size: .85rem; }
+.sx-account-meta i { margin-right: .2rem; }
+.sx-role-chip { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .65rem; border-radius: 2rem; background: var(--sx-blue-soft); color: var(--sx-blue-ink); font-size: .78rem; font-weight: 600; }
+.sx-role-chip.is-shipper { background: var(--sx-amber-soft); color: var(--sx-amber-ink); }
+.sx-account-bio { max-width: 46rem; margin: .55rem 0 0; color: var(--app-ink); font-size: .92rem; }
+.sx-account-actions { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .2rem; }
+.sx-account-actions form { margin: 0; }
+.sx-account-actions .btn { display: inline-flex; align-items: center; gap: .35rem; }
+
+/* Giới tính: nhóm nút chọn một */
+.sx-segment { display: flex; flex-wrap: wrap; gap: .4rem; }
+.sx-segment label { position: relative; margin: 0; cursor: pointer; }
+.sx-segment input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.sx-segment span { display: inline-block; padding: .42rem .9rem; border: 1px solid var(--app-border); border-radius: .375rem; background: var(--app-card); font-size: .875rem; }
+.sx-segment input:checked + span { background: var(--app-primary); border-color: var(--app-primary); color: #FFFFFF; }
+.sx-segment input:focus-visible + span { box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-primary) 25%, transparent); }
+
+/* Công tắc có mô tả, danh sách thông tin, lối tắt */
+.sx-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; padding: .75rem .9rem; border: 1px solid var(--app-border); border-radius: var(--app-radius); cursor: pointer; }
+.sx-switch-row strong { display: block; font-size: .9rem; }
+.sx-switch-row small { display: block; margin-top: .15rem; color: var(--app-muted); font-size: .78rem; }
+.sx-switch-row .form-check-input { width: 2.6em; height: 1.4em; cursor: pointer; }
+.sx-info-list { margin: 0 0 1rem; }
+.sx-info-list > div { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px dashed var(--app-border); }
+.sx-info-list dt { color: var(--app-muted); font-weight: 500; }
+.sx-info-list dd { margin: 0; font-weight: 600; text-align: right; }
+.sx-link-list { display: grid; gap: .4rem; }
+.sx-link-list a { display: flex; align-items: center; gap: .6rem; padding: .65rem .8rem; border-radius: var(--app-radius); background: var(--app-soft); color: var(--app-ink); font-weight: 500; text-decoration: none; }
+.sx-link-list a > i:first-child { color: var(--app-primary); }
+.sx-link-list a > i:last-child { margin-left: auto; color: var(--app-muted); font-size: .8rem; }
+.sx-link-list a:hover { background: color-mix(in srgb, var(--app-primary) 10%, var(--app-card)); color: var(--app-ink); }
+@media (max-width: 575.98px) {
+    .sx-account-cover { height: 6.5rem; }
+    .sx-account-main { padding: .75rem 1rem 1rem; }
+    .sx-account-avatar { margin-top: -3.6rem; }
+    .sx-app .sx-avatar.sx-avatar-xl { width: 6rem; height: 6rem; font-size: 2rem; }
+    .sx-account-actions { width: 100%; }
+}
+
+/* Trang tài khoản - phần sinh động: hình trên ảnh bìa, tiêu đề có biểu tượng màu, vòng hoàn thiện hồ sơ */
+.sx-account-cover { position: relative; }
+.sx-account-cover-art { position: absolute; right: 2rem; bottom: -.6rem; width: 11rem; height: auto; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .25)); }
+.sx-app .ute-panel > h5.sx-head::before { display: none; }
+.sx-head { display: flex; align-items: center; gap: .6rem; }
+.sx-head-icon { display: grid; place-items: center; flex: 0 0 2rem; height: 2rem; border-radius: .55rem; background: var(--tone-soft); color: var(--tone); font-size: 1rem; }
+.sx-segment span i { margin-right: .2rem; }
+.sx-complete { background: linear-gradient(150deg, color-mix(in srgb, var(--sx-green) 9%, var(--app-card)), var(--app-card) 60%); }
+.sx-complete-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.sx-complete-head p { color: var(--app-muted); font-size: .85rem; }
+.sx-ring { --pct: 0; display: grid; place-items: center; flex: 0 0 4.5rem; width: 4.5rem; height: 4.5rem; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--app-card) 76%, transparent 78% 100%), conic-gradient(var(--sx-green) calc(var(--pct) * 1%), var(--app-soft) 0); }
+.sx-ring strong { font-size: 1rem; color: var(--app-ink); }
+.sx-checklist-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem .75rem; margin: 0; padding: 0; list-style: none; font-size: .85rem; }
+.sx-checklist-mini li { display: flex; align-items: center; gap: .45rem; color: var(--app-muted); }
+.sx-checklist-mini li i { color: var(--app-muted); }
+.sx-checklist-mini li.is-done { color: var(--app-ink); }
+.sx-checklist-mini li.is-done i { color: var(--sx-green); }
+@media (max-width: 767.98px) { .sx-account-cover-art { width: 8rem; right: 1rem; } }
+@media (max-width: 575.98px) { .sx-account-cover-art { display: none; } }

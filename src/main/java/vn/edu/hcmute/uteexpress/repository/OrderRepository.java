@@ -48,6 +48,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<vn.edu.hcmute.uteexpress.dto.tracking.StatusCount> countStatuses(@Param("shipper") AppUser shipper,
             @Param("statuses") java.util.Collection<Order.OrderStatus> statuses);
 
+    /** Thống kê trang tài khoản: số đơn của người gửi theo từng trạng thái, một câu truy vấn. */
+    @Query("""
+            select new vn.edu.hcmute.uteexpress.dto.tracking.StatusCount(o.status, count(o)) from Order o
+            where o.sender = :sender group by o.status
+            """)
+    List<vn.edu.hcmute.uteexpress.dto.tracking.StatusCount> countSenderStatuses(@Param("sender") AppUser sender);
+
+    /** Thống kê trang tài khoản Shipper: mọi đơn đang/đã được phân công, theo từng trạng thái. */
+    @Query("""
+            select new vn.edu.hcmute.uteexpress.dto.tracking.StatusCount(o.status, count(o)) from Order o
+            where o.shipper = :shipper group by o.status
+            """)
+    List<vn.edu.hcmute.uteexpress.dto.tracking.StatusCount> countShipperStatuses(@Param("shipper") AppUser shipper);
+
     @Query("""
             select o from Order o where o.shipper = :shipper and :sortNow <= :now
               and (:status is null or o.status = :status)

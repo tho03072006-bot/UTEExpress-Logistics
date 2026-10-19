@@ -31,7 +31,7 @@ public final class AivenSchema {
                     DraftOrder.class, PromoCode.class, OrderPayment.class, ServiceReview.class,
                     EmailChangeRequest.class, DeliveryProof.class, StaffAccount.class,
                     OrderStatusHistory.class, ShipperNotification.class, OrderComplaint.class,
-                    CodSettlement.class, CodSettlementItem.class,
+                    CodSettlement.class, CodSettlementItem.class, UserProfileDetail.class,
                     vn.edu.hcmute.uteexpress.entity.admin.ShippingTariff.class,
                     vn.edu.hcmute.uteexpress.entity.admin.AuditEvent.class,
                     vn.edu.hcmute.uteexpress.entity.admin.OperationsPolicy.class,

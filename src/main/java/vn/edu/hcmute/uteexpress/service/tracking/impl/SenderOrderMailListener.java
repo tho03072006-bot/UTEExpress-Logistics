@@ -4,6 +4,7 @@ import jakarta.annotation.PreDestroy;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent;
+import vn.edu.hcmute.uteexpress.service.profile.AccountProfileService;
 import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
 
 /**
@@ -31,17 +33,30 @@ public class SenderOrderMailListener {
     private final MailFromNameSetter from;
     private final boolean enabled;
     private final Executor executor;
+    /** Người gửi đã tắt "email cập nhật vận đơn" ở trang tài khoản thì không gửi. Kiểm tra trên luồng gửi mail. */
+    private final Predicate<String> wantsEmail;
 
     @Autowired
     public SenderOrderMailListener(ObjectProvider<JavaMailSender> mailSender, MailFromNameSetter from,
             @Value("${app.mail.order-updates.enabled:true}") boolean enabled,
-            @Value("${spring.mail.username:}") String username) {
-        this(mailSender, from, enabled && configured(username), defaultExecutor());
+            @Value("${spring.mail.username:}") String username,
+            ObjectProvider<AccountProfileService> profiles) {
+        this(mailSender, from, enabled && configured(username), defaultExecutor(), email -> {
+            AccountProfileService service = profiles.getIfAvailable();
+            try { return service == null || service.wantsOrderEmail(email); }
+            catch (RuntimeException ex) { return true; } // không đọc được tùy chọn thì giữ hành vi mặc định
+        });
     }
 
     SenderOrderMailListener(ObjectProvider<JavaMailSender> mailSender, MailFromNameSetter from, boolean enabled,
             Executor executor) {
+        this(mailSender, from, enabled, executor, email -> true);
+    }
+
+    SenderOrderMailListener(ObjectProvider<JavaMailSender> mailSender, MailFromNameSetter from, boolean enabled,
+            Executor executor, Predicate<String> wantsEmail) {
         this.mailSender = mailSender; this.from = from; this.enabled = enabled; this.executor = executor;
+        this.wantsEmail = wantsEmail;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -50,7 +65,7 @@ public class SenderOrderMailListener {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) return;
         try {
-            executor.execute(() -> send(sender, event));
+            executor.execute(() -> { if (wantsEmail.test(event.email())) send(sender, event); });
         } catch (RejectedExecutionException ex) {
             log.warn("Hang doi email day, bo qua email cap nhat van don {}", event.trackingCode());
         }

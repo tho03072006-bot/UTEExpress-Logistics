@@ -334,3 +334,50 @@ window.addEventListener('pageshow', function (event) {
         });
     });
 });
+
+/*
+ * Trang tài khoản (người gửi / Shipper):
+ * - Ảnh đại diện chưa có hoặc tải lỗi thì bỏ thẻ <img>, để lộ chữ cái đầu phía sau.
+ * - Chọn ảnh xong là gửi lên ngay, khỏi phải bấm thêm nút.
+ * - Form có data-auto-submit (công tắc email) tự lưu khi đổi.
+ * - Shipper: công tắc "thông báo nổi khi có đơn mới" lưu trên chính thiết bị (localStorage).
+ */
+(function () {
+    'use strict';
+
+    function dropBrokenAvatar(img) {
+        if (img.complete && img.naturalWidth === 0) { img.remove(); return; }
+        img.addEventListener('error', function () { img.remove(); }, { once: true });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('img[data-avatar-img]').forEach(dropBrokenAvatar);
+
+        document.querySelectorAll('[data-avatar-input]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                if (!input.files || !input.files.length) return;
+                var file = input.files[0];
+                if (file.size > 2 * 1024 * 1024) {
+                    window.alert('Ảnh tối đa 2 MB. Hãy chọn ảnh nhỏ hơn.');
+                    input.value = '';
+                    return;
+                }
+                var form = input.closest('form');
+                form.classList.add('is-uploading');
+                form.submit();
+            });
+        });
+
+        document.querySelectorAll('form[data-auto-submit]').forEach(function (form) {
+            form.addEventListener('change', function () { form.submit(); });
+        });
+
+        var popupToggle = document.querySelector('[data-shipper-popup-toggle]');
+        if (popupToggle) {
+            try { popupToggle.checked = localStorage.getItem('ute-shipper-popup') !== 'off'; } catch (e) { /* giữ mặc định */ }
+            popupToggle.addEventListener('change', function () {
+                try { localStorage.setItem('ute-shipper-popup', popupToggle.checked ? 'on' : 'off'); } catch (e) { /* trình duyệt chặn */ }
+            });
+        }
+    });
+})();

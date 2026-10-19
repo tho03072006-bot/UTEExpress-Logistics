@@ -1,5 +1,6 @@
 package vn.edu.hcmute.uteexpress.controller.user;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -9,7 +10,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.edu.hcmute.uteexpress.controller.profile.AvatarResponses;
+import vn.edu.hcmute.uteexpress.dto.profile.ProfileDetailForm;
+import vn.edu.hcmute.uteexpress.exception.CloudStorageUnavailableException;
+import vn.edu.hcmute.uteexpress.service.profile.AccountProfileService;
 import vn.edu.hcmute.uteexpress.dto.EmailOtpRequest;
 import vn.edu.hcmute.uteexpress.dto.PasswordChangeRequest;
 import vn.edu.hcmute.uteexpress.dto.ProfileUpdateRequest;
@@ -31,16 +40,78 @@ public class UserProfileController {
 
     private final UserProfileService userProfileService;
     private final EmailChangeService emailChangeService;
+    private final AccountProfileService accountProfiles;
 
     public UserProfileController(UserProfileService userProfileService,
-                                 EmailChangeService emailChangeService) {
+                                 EmailChangeService emailChangeService,
+                                 AccountProfileService accountProfiles) {
         this.userProfileService = userProfileService;
         this.emailChangeService = emailChangeService;
+        this.accountProfiles = accountProfiles;
+    }
+
+    // ----- Ảnh đại diện, thông tin cá nhân, tùy chọn email -----
+
+    @GetMapping("/anh-dai-dien")
+    public ResponseEntity<byte[]> avatar(Authentication authentication,
+                                         @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+        return AvatarResponses.own(accountProfiles, authentication.getName(), ifNoneMatch);
+    }
+
+    @PostMapping("/anh-dai-dien")
+    public String uploadAvatar(@RequestParam("avatar") MultipartFile avatar, Authentication authentication,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            accountProfiles.updateAvatar(authentication.getName(), avatar);
+            redirectAttributes.addFlashAttribute("message", "Đã cập nhật ảnh đại diện.");
+        } catch (IllegalArgumentException | CloudStorageUnavailableException ex) {
+            redirectAttributes.addFlashAttribute("error", ex instanceof IllegalArgumentException
+                    ? ex.getMessage() : "Chưa lưu được ảnh lúc này, vui lòng thử lại sau.");
+        }
+        return "redirect:/nguoi-dung/tai-khoan";
+    }
+
+    @PostMapping("/anh-dai-dien/xoa")
+    public String removeAvatar(Authentication authentication, RedirectAttributes redirectAttributes) {
+        accountProfiles.removeAvatar(authentication.getName());
+        redirectAttributes.addFlashAttribute("message", "Đã xóa ảnh đại diện.");
+        return "redirect:/nguoi-dung/tai-khoan";
+    }
+
+    @PostMapping("/ca-nhan")
+    public String updateDetails(@Valid @ModelAttribute("detailForm") ProfileDetailForm detailForm,
+                                BindingResult bindingResult, Authentication authentication,
+                                Model model, RedirectAttributes redirectAttributes) {
+        if (!bindingResult.hasErrors()) {
+            try {
+                accountProfiles.updateDetails(authentication.getName(), detailForm);
+                redirectAttributes.addFlashAttribute("message", "Đã lưu thông tin cá nhân.");
+                return "redirect:/nguoi-dung/tai-khoan";
+            } catch (IllegalArgumentException ex) {
+                model.addAttribute("error", ex.getMessage());
+            }
+        }
+        fillProfileModel(authentication, model);
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form",
+                    ProfileUpdateRequest.from(userProfileService.findByUsername(authentication.getName())));
+        }
+        return "user/profile";
+    }
+
+    @PostMapping("/thong-bao")
+    public String updateNotifications(@RequestParam(defaultValue = "false") boolean notifyOrderEmail,
+                                      Authentication authentication, RedirectAttributes redirectAttributes) {
+        accountProfiles.updateNotifications(authentication.getName(), notifyOrderEmail);
+        redirectAttributes.addFlashAttribute("message", notifyOrderEmail
+                ? "Đã bật email cập nhật vận đơn." : "Đã tắt email cập nhật vận đơn.");
+        return "redirect:/nguoi-dung/tai-khoan";
     }
 
     @GetMapping
-    public String viewProfile(Authentication authentication, Model model) {
+    public String viewProfile(Authentication authentication, Model model, HttpSession session) {
         fillProfileModel(authentication, model);
+        AvatarResponses.remember(session, (AccountProfileService.View) model.getAttribute("profile"));
         // Chỉ nạp form khi chưa có sẵn: nếu vừa submit lỗi và quay lại đây thì phải giữ
         // nguyên những gì người dùng đã gõ, không ghi đè bằng dữ liệu cũ trong DB.
         if (!model.containsAttribute("form")) {
@@ -189,5 +260,12 @@ public class UserProfileController {
         model.addAttribute("pendingEmail", emailChangeService.findPending(authentication.getName())
                 .map(EmailChangeRequest::getNewEmail)
                 .orElse(null));
+        AccountProfileService.View profile = accountProfiles.view(authentication.getName());
+        model.addAttribute("profile", profile);
+        model.addAttribute("provinces", ProfileDetailForm.PROVINCES);
+        model.addAttribute("genders", vn.edu.hcmute.uteexpress.entity.UserProfileDetail.Gender.values());
+        if (!model.containsAttribute("detailForm")) {
+            model.addAttribute("detailForm", ProfileDetailForm.from(profile.detail()));
+        }
     }
 }

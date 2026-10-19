@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<!--/* Mảnh giao diện dùng chung cho trang "Tài khoản của tôi" của người gửi (/nguoi-dung/tai-khoan)
+       và Shipper (/shipper/tai-khoan). Tham số base là đường dẫn gốc của trang. */-->
+<body>
+
+<!-- Thẻ đầu trang: ảnh bìa, ảnh đại diện (bấm biểu tượng máy ảnh để đổi), tên, vai trò, giới thiệu -->
+<div th:fragment="hero(profile, base)" class="sx-account-hero"
+     th:with="acc=${profile.account}, d=${profile.detail}, name=${#strings.isEmpty(acc.fullName) ? acc.username : acc.fullName}">
+    <div class="sx-account-cover" aria-hidden="true">
+        <img class="sx-account-cover-art" th:src="@{${profile.shipper() ? '/images/shipper/hero-delivery.svg' : '/images/shipper/parcel-mascot.svg'}}" alt="">
+    </div>
+    <div class="sx-account-main">
+        <div class="sx-account-avatar">
+            <span class="sx-avatar sx-avatar-xl" aria-hidden="true">
+                <th:block th:text="${#strings.toUpperCase(#strings.substring(name, 0, 1))}">K</th:block>
+                <img th:if="${profile.hasAvatar()}" th:src="@{${base} + '/anh-dai-dien'(v=${profile.avatarVersion()})}" alt="" data-avatar-img>
+            </span>
+            <form method="post" enctype="multipart/form-data" th:action="@{${base} + '/anh-dai-dien'}" data-avatar-form>
+                <label class="sx-avatar-btn" title="Đổi ảnh đại diện (JPG/PNG, tối đa 2 MB)">
+                    <i class="bi bi-camera-fill" aria-hidden="true"></i><span class="visually-hidden">Đổi ảnh đại diện</span>
+                    <input type="file" name="avatar" accept="image/jpeg,image/png" data-avatar-input>
+                </label>
+            </form>
+        </div>
+        <div class="sx-account-id">
+            <h2 th:text="${name}">Nguyễn Văn A</h2>
+            <div class="sx-account-meta">
+                <span class="sx-role-chip" th:classappend="${profile.shipper()} ? 'is-shipper'">
+                    <i class="bi" th:classappend="${profile.shipper()} ? 'bi-truck' : 'bi-box-seam'"></i>
+                    <th:block th:text="${profile.shipper()} ? 'Shipper' : 'Người gửi hàng'">Người gửi hàng</th:block></span>
+                <span><i class="bi bi-at"></i><th:block th:text="${acc.username}">user</th:block></span>
+                <span th:if="${acc.createdAt != null}"><i class="bi bi-calendar-check"></i> Tham gia
+                    <th:block th:text="${#temporals.format(acc.createdAt, 'MM/yyyy')}">01/2026</th:block></span>
+                <span th:if="${d != null and d.province != null}"><i class="bi bi-geo-alt"></i> <th:block th:text="${d.province}"></th:block></span>
+            </div>
+            <p class="sx-account-bio" th:if="${d != null and d.bio != null}" th:text="${d.bio}">Giới thiệu</p>
+        </div>
+        <div class="sx-account-actions">
+            <a class="btn sx-btn-white btn-sm" th:href="@{${base} + '/doi-mat-khau'}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+            <form th:if="${profile.hasAvatar()}" method="post" th:action="@{${base} + '/anh-dai-dien/xoa'}"
+                  data-ute-confirm="Xóa ảnh đại diện?" data-ute-confirm-nut="Xóa ảnh">
+                <button type="submit" class="btn sx-btn-white btn-sm"><i class="bi bi-trash3"></i> Xóa ảnh</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Số liệu tài khoản: người gửi tính đơn đã gửi, Shipper tính đơn được phân công -->
+<div th:fragment="stats(profile)" class="row g-3 mb-4" th:with="s=${profile.stats}">
+    <div class="col-6 col-lg-3"><div class="ute-stat">
+        <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
+        <span class="ute-stat-value" th:text="${s.total}">0</span>
+        <span class="ute-stat-label" th:text="${profile.shipper()} ? 'Đơn được phân công' : 'Đơn đã gửi'">Đơn đã gửi</span>
+    </div></div>
+    <div class="col-6 col-lg-3"><div class="ute-stat">
+        <span class="ute-stat-icon"><i class="bi bi-hourglass-split"></i></span>
+        <span class="ute-stat-value" th:text="${s.active}">0</span>
+        <span class="ute-stat-label">Đang xử lý</span>
+    </div></div>
+    <div class="col-6 col-lg-3"><div class="ute-stat">
+        <span class="ute-stat-icon"><i class="bi bi-check2-circle"></i></span>
+        <span class="ute-stat-value" th:text="${s.delivered}">0</span>
+        <span class="ute-stat-label">Giao thành công</span>
+    </div></div>
+    <div class="col-6 col-lg-3"><div class="ute-stat">
+        <th:block th:if="${profile.shipper()}">
+            <span class="ute-stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
+            <span class="ute-stat-value" th:text="|${s.successRate}%|">0%</span>
+            <span class="ute-stat-label">Tỷ lệ giao thành công</span>
+        </th:block>
+        <th:block th:unless="${profile.shipper()}">
+            <span class="ute-stat-icon"><i class="bi bi-geo-alt"></i></span>
+            <span class="ute-stat-value" th:text="${s.savedAddresses}">0</span>
+            <span class="ute-stat-label">Địa chỉ đã lưu</span>
+        </th:block>
+    </div></div>
+</div>
+
+<!-- Mức độ hoàn thiện hồ sơ: vòng phần trăm + danh sách mục còn thiếu (bấm để nhảy tới ô cần điền) -->
+<div th:fragment="completeness(profile)" class="ute-panel mb-4 sx-complete" th:with="pct=${profile.completeness()}">
+    <div class="sx-complete-head">
+        <div class="sx-ring" th:style="|--pct:${pct}|" role="img" th:attr="aria-label=|Hồ sơ hoàn thiện ${pct}%|">
+            <strong th:text="|${pct}%|">0%</strong>
+        </div>
+        <div>
+            <h5 class="mb-1" th:text="${pct == 100} ? 'Hồ sơ đã đầy đủ 🎉' : 'Hoàn thiện hồ sơ'">Hoàn thiện hồ sơ</h5>
+            <p class="mb-0" th:text="${pct == 100} ? 'Người gửi và Shipper dễ nhận ra bạn hơn.' : 'Điền thêm để mọi người dễ liên hệ với bạn.'">Điền thêm</p>
+        </div>
+    </div>
+    <ul class="sx-checklist-mini">
+        <li th:each="c : ${profile.checklist()}" th:classappend="${c.done} ? 'is-done'">
+            <i class="bi" th:classappend="${c.done} ? 'bi-check-circle-fill' : ${c.icon}"></i>
+            <span th:text="${c.label}">Mục</span>
+        </li>
+    </ul>
+</div>
+
+<!-- Thông tin cá nhân (không bắt buộc): ngày sinh, giới tính, tỉnh/thành, địa chỉ, giới thiệu -->
+<div th:fragment="details(base)" class="ute-panel mb-4">
+    <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-violet"><i class="bi bi-person-vcard"></i></span> Thông tin cá nhân</h5>
+    <form method="post" th:object="${detailForm}" th:action="@{${base} + '/ca-nhan'}" class="row g-3">
+        <div class="col-sm-6">
+            <label class="form-label" for="birthDate">Ngày sinh</label>
+            <input type="date" id="birthDate" th:field="*{birthDate}" class="form-control" min="1900-01-01"
+                   th:attr="max=${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+            <div class="ute-field-error" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></div>
+        </div>
+        <div class="col-sm-6">
+            <span class="form-label d-block">Giới tính</span>
+            <div class="sx-segment" role="radiogroup" aria-label="Giới tính">
+                <label><input type="radio" th:field="*{gender}" value=""><span><i class="bi bi-dash-circle"></i> Không nêu</span></label>
+                <label th:each="g : ${genders}">
+                    <input type="radio" th:field="*{gender}" th:value="${g}"><span><i class="bi" th:classappend="${g.name() == 'MALE'} ? 'bi-gender-male' : (${g.name() == 'FEMALE'} ? 'bi-gender-female' : 'bi-gender-ambiguous')"></i> <th:block th:text="${g.label}">Nam</th:block></span></label>
+            </div>
+        </div>
+        <div class="col-sm-5">
+            <label class="form-label" for="province">Tỉnh / thành phố</label>
+            <input type="text" id="province" th:field="*{province}" class="form-control" list="sxProvinceList"
+                   maxlength="60" placeholder="Chọn hoặc gõ tên" autocomplete="off">
+            <datalist id="sxProvinceList"><option th:each="p : ${provinces}" th:value="${p}"></option></datalist>
+            <div class="ute-field-error" th:if="${#fields.hasErrors('province')}" th:errors="*{province}"></div>
+        </div>
+        <div class="col-sm-7">
+            <label class="form-label" for="addressLine">Địa chỉ liên hệ</label>
+            <input type="text" id="addressLine" th:field="*{addressLine}" class="form-control" maxlength="200"
+                   placeholder="Số nhà, đường, phường/xã">
+            <div class="ute-field-error" th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}"></div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="bio">Giới thiệu ngắn</label>
+            <textarea id="bio" th:field="*{bio}" class="form-control" rows="2" maxlength="160" data-sx-count
+                      placeholder="Ví dụ: Bán đồ handmade, giao trong ngày ở Thủ Đức"></textarea>
+            <div class="ute-field-error" th:if="${#fields.hasErrors('bio')}" th:errors="*{bio}"></div>
+        </div>
+        <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin cá nhân</button></div>
+    </form>
+</div>
+
+</body>
+</html>

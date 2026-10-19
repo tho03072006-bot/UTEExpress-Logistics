@@ -52,6 +52,15 @@ class SenderOrderMailListenerTest {
         assertTrue(SenderOrderMailListener.configured("uteexpress8@gmail.com"));
     }
 
+    @Test void skipsSenderWhoTurnedOffOrderEmails() {
+        when(provider.getIfAvailable()).thenReturn(sender);
+        new SenderOrderMailListener(provider, from, true, Runnable::run, email -> !email.equals("khach@gmail.com"))
+                .onOrderUpdate(event("khach@gmail.com"));
+        verifyNoInteractions(sender);
+        new SenderOrderMailListener(provider, from, true, Runnable::run, email -> true).onOrderUpdate(event("khach@gmail.com"));
+        verify(sender).send(any(SimpleMailMessage.class));
+    }
+
     @Test void smtpErrorsAndFullQueueNeverPropagate() {
         when(provider.getIfAvailable()).thenReturn(sender);
         doThrow(new MailSendException("down")).when(sender).send(any(SimpleMailMessage.class));

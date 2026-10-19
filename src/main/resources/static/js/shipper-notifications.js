@@ -7,6 +7,8 @@
     function showAssignment() {
         const banner = document.getElementById("shipperNotificationBanner");
         if (!banner) return;
+        // Shipper đã tắt "thông báo nổi" ở trang tài khoản (lưu trên thiết bị): chỉ chuông đổi số.
+        try { if (localStorage.getItem("ute-shipper-popup") === "off") return; } catch (e) { /* mặc định vẫn hiện */ }
         banner.querySelector("[data-notification-message]").textContent = "Bạn vừa nhận thông báo phân công vận đơn mới.";
         banner.hidden = false;
     }
