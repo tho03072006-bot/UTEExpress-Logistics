@@ -13,7 +13,6 @@ import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.util.PaymentReadiness;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,11 +21,6 @@ import java.util.Optional;
 @Service
 @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 public class OrderPaymentServiceImpl implements OrderPaymentService {
-
-    /** Tiền tố mã giao dịch giả lập, để nhìn là biết ngay không phải mã của cổng thật. */
-    private static final String MOCK_TRANSACTION_PREFIX = "SIM";
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final OrderPaymentRepository orderPaymentRepository;
     private final OrderRepository orderRepository;
@@ -45,6 +39,9 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     @Override
     public OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method,
                                        PromoCode promoCode, BigDecimal discountAmount) {
+        if (method == OrderPayment.PaymentMethod.VNPAY) {
+            throw new IllegalArgumentException("VNPay không còn được hỗ trợ. Vui lòng chọn COD hoặc MoMo mô phỏng.");
+        }
         BigDecimal fee = order.getShippingFee();
         BigDecimal discount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
         if (!PaymentReadiness.isValidAmount(fee) || !PaymentReadiness.isValidAmount(discount)
@@ -136,10 +133,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
                     "Đơn này đã kết thúc nên không thanh toán được nữa.");
         }
 
-        payment.setStatus(OrderPayment.PaymentStatus.PAID);
-        payment.setTransactionRef(generateMockTransactionRef());
-        payment.setPaidAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
+        vn.edu.hcmute.uteexpress.service.payment.WalletPaymentRules.markPaid(payment, java.time.Instant.now());
         events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
                 order.getId(), order.getTrackingCode(), order.getStatus().name(), payment.getUpdatedAt()));
         return orderPaymentRepository.save(payment);
@@ -198,9 +192,4 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
                     || order.getStatus() == Order.OrderStatus.RETURNED);
     }
 
-    private String generateMockTransactionRef() {
-        long timestampPart = System.currentTimeMillis() % 1_000_000;
-        int randomPart = RANDOM.nextInt(1_000);
-        return String.format("%s%06d%03d", MOCK_TRANSACTION_PREFIX, timestampPart, randomPart);
-    }
 }

@@ -119,7 +119,7 @@ class CrossRoleSynchronizationIntegrationTest {
                 () -> tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.PICKED_UP));
     }
 
-    @ParameterizedTest @EnumSource(value = OrderPayment.PaymentMethod.class, names = {"MOMO", "VNPAY"})
+    @ParameterizedTest @EnumSource(value = OrderPayment.PaymentMethod.class, names = {"MOMO"})
     void customerPaymentUnlocksManagerDispatchAndShipperPickup(OrderPayment.PaymentMethod method) {
         payment.setMethod(method); payments.flush();
         paymentService.confirmWalletPayment(order.getId(), customer.getUsername());
@@ -261,8 +261,8 @@ class CrossRoleSynchronizationIntegrationTest {
         mvc.perform(post(path + "/xac-nhan").with(user(customer.getUsername()).roles("USER"))).andExpect(status().isForbidden());
         assertEquals(OrderPayment.PaymentStatus.UNPAID, payment.getStatus());
         mvc.perform(post(path + "/xac-nhan").with(user(customer.getUsername()).roles("USER")).with(csrf()))
-                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("message"));
-        assertEquals(OrderPayment.PaymentStatus.PAID, payment.getStatus());
+                .andExpect(status().isNotFound());
+        assertEquals(OrderPayment.PaymentStatus.UNPAID, payment.getStatus());
         order.setStatus(Order.OrderStatus.DELIVERED); payment.setStatus(OrderPayment.PaymentStatus.UNPAID); orders.flush(); payments.flush();
         mvc.perform(get(path).with(user(customer.getUsername()).roles("USER"))).andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("Xác nhận đã thanh toán"))));

@@ -78,8 +78,9 @@ public class OrderPayment {
      */
     public enum PaymentMethod {
         COD("Thanh toán khi nhận hàng (COD)", false),
-        VNPAY("Ví VNPay", true),
-        MOMO("Ví MoMo", true);
+        // Giữ enum để đọc dữ liệu cũ; service/DTO từ chối tạo hoặc xác nhận VNPay mới.
+        VNPAY("VNPay (lịch sử cũ)", true),
+        MOMO("MoMo mô phỏng", true);
 
         private final String displayName;
         private final boolean onlineWallet;

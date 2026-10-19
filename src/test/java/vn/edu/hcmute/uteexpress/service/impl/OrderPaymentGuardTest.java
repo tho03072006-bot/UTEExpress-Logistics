@@ -88,6 +88,13 @@ class OrderPaymentGuardTest {
         verify(orderPaymentRepository, never()).save(any());
     }
 
+    @Test void cannotCreateNewVnpayPayment() {
+        var order = new Order(); order.setShippingFee(new BigDecimal("18000"));
+        assertThatThrownBy(() -> orderPaymentService.createForOrder(order, OrderPayment.PaymentMethod.VNPAY, null, BigDecimal.ZERO))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("VNPay không còn được hỗ trợ");
+        verify(orderPaymentRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("Không thu tiền đơn đã hoàn trả")
     void khongThuTienDonDaHoanTra() {
@@ -115,7 +122,7 @@ class OrderPaymentGuardTest {
     @Test
     @DisplayName("Đơn đang giao bình thường thì thanh toán được")
     void donDangGiaoThiThanhToanDuoc() {
-        chuanBiDon(Order.OrderStatus.IN_TRANSIT, OrderPayment.PaymentMethod.VNPAY);
+        chuanBiDon(Order.OrderStatus.IN_TRANSIT, OrderPayment.PaymentMethod.MOMO);
         when(orderPaymentRepository.save(any())).thenAnswer(goi -> goi.getArgument(0));
 
         OrderPayment ketQua = orderPaymentService.confirmWalletPayment(10L, "thotest");
