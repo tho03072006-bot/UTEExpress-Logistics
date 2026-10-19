@@ -18,14 +18,17 @@ public class OrderComplaintService {
     private final LogisticsAccess access;
     private final ShipmentImageService images;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     private final vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities;
     private final vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
     public OrderComplaintService(OrderRepository orders, OrderComplaintRepository complaints,
             LogisticsAccess access, ShipmentImageService images, Clock clock,
             vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities,
-            vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases) {
+            vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases,
+            vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud) {
         this.orders = orders; this.complaints = complaints; this.access = access; this.images = images; this.clock = clock;
         this.activities = activities; this.cases = cases;
+        this.cloud = cloud;
     }
     public Optional<OrderComplaint> forOrder(Order order, String username) {
         access.checkOrder(order, username);
@@ -50,8 +53,17 @@ public class OrderComplaintService {
         if (!customer.getId().equals(order.getSender().getId()))
             throw new org.springframework.security.access.AccessDeniedException("Vận đơn không thuộc tài khoản của bạn.");
         if (complaints.findByOrder(order).isPresent()) throw new IllegalArgumentException("Vận đơn đã có hồ sơ khiếu nại.");
-        var complaint = complaints.save(new OrderComplaint(order, title, body, attachment, LocalDateTime.now(clock)));
+        var complaint = new OrderComplaint(order, title, body, null, LocalDateTime.now(clock));
+        if (attachment != null) complaint.setImageAsset(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.COMPLAINT,attachment,"complaint.png"));
+        complaints.save(complaint);
         activity(complaint, username, "CREATE", body);
+    }
+    public byte[] readImage(Long id,String actor) {
+        var complaint = view(id,actor);
+        if (!complaint.isHasImage()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        if (complaint.getImageAsset() == null) throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.NOT_FOUND,"Ảnh cũ chưa được chuyển lên cloud chung.");
+        return cloud.read(complaint.getImageAsset(),vn.edu.hcmute.uteexpress.service.media.MediaPurpose.COMPLAINT).bytes();
     }
     @Transactional
     public void respond(Long id, String actor, long revision, OrderComplaint.Status status, String reply) {

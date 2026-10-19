@@ -28,6 +28,7 @@ public class OrderComplaint {
     private String description;
     @Lob @Column(name = "image_bytes", columnDefinition = "mediumblob")
     private byte[] imageBytes;
+    @Column(name = "image_asset", length = 255) private String imageAsset;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
     private Status status = Status.OPEN;
     @Nationalized @Column(name = "manager_reply", length = 2000)
@@ -57,7 +58,9 @@ public class OrderComplaint {
     public String getSubject() { return subject; }
     public String getDescription() { return description; }
     public byte[] getImageBytes() { return imageBytes; }
-    public boolean isHasImage() { return imageBytes != null && imageBytes.length > 0; }
+    public String getImageAsset() { return imageAsset; }
+    public void setImageAsset(String asset) { imageAsset = asset; imageBytes = null; }
+    public boolean isHasImage() { return imageAsset != null || (imageBytes != null && imageBytes.length > 0); }
     public Status getStatus() { return status; }
     public String getManagerReply() { return managerReply; }
     public String getShipperNote() { return shipperNote; }

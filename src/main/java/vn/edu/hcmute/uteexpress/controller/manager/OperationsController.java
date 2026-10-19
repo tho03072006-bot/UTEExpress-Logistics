@@ -95,6 +95,6 @@ public class OperationsController {
         var record = cases.view(auth.getName(), id);
         if (!record.isHasEvidence()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).cacheControl(CacheControl.noStore())
-                .header("X-Content-Type-Options", "nosniff").body(record.getEvidence());
+                .header("X-Content-Type-Options", "nosniff").body(cases.readEvidence(auth.getName(), id));
     }
 }
