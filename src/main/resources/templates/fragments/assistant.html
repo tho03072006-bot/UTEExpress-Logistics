@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="widget" id="uteAssistant" class="ute-assistant" th:attr="data-endpoint=@{/api/assistant},data-context=@{/},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token}">
+    <button type="button" id="uteAssistantLauncher" class="ute-ai-launcher" aria-expanded="false" aria-controls="uteAssistantPanel"><i class="bi bi-chat-dots" aria-hidden="true"></i> Trợ lý AI</button>
+    <section id="uteAssistantPanel" class="ute-ai-panel" aria-label="Trợ lý AI UTEExpress" hidden>
+        <header class="ute-ai-header">
+            <div><strong>Trợ lý UTEExpress</strong><small>Hỗ trợ &amp; tra cứu · Chỉ đọc</small></div>
+            <div class="ute-ai-actions"><button type="button" data-ai-minimize aria-label="Thu gọn">−</button><button type="button" data-ai-close aria-label="Đóng khung chat">×</button></div>
+        </header>
+        <p class="ute-ai-privacy">Câu hỏi được gửi tới Groq. Không gửi mật khẩu, OTP hoặc thông tin riêng tư. AI có thể nhầm; hãy đối chiếu nguồn tra cứu.</p>
+        <div id="uteAssistantNotice" class="ute-ai-notice" role="status" aria-live="polite"></div>
+        <div id="uteAssistantMessages" class="ute-ai-messages" role="log" aria-label="Hội thoại" aria-live="polite"></div>
+        <div id="uteAssistantSuggestions" class="ute-ai-suggestions" aria-label="Câu hỏi gợi ý"></div>
+        <form id="uteAssistantForm" class="ute-ai-form">
+            <label for="uteAssistantQuestion">Bạn cần hỗ trợ gì?</label>
+            <textarea id="uteAssistantQuestion" maxlength="1200" rows="2" placeholder="Nhập câu hỏi hoặc mã vận đơn…" required></textarea>
+            <div class="ute-ai-compose-actions"><button type="button" id="uteAssistantClear" class="ute-ai-clear">Xóa hội thoại</button><span id="uteAssistantCount">0/1200</span><button type="submit" id="uteAssistantSend" class="ute-ai-send">Gửi</button></div>
+        </form>
+        <p class="ute-ai-footer">Hội thoại tạm theo phiên · Không thay đổi dữ liệu đơn hàng</p>
+    </section>
+</div>
+</body></html>

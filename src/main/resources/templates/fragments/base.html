@@ -46,6 +46,7 @@
     <!-- Lớp giao diện cuối cùng theo template quản trị Tabler: menu trái tối, thanh trên trắng, thẻ phẳng -->
     <link rel="stylesheet" th:href="@{/css/ute-app.css}">
     <link th:if="${isStaff}" rel="stylesheet" th:href="@{/css/staff.css}">
+    <link th:if="${isUser or isShipper}" rel="stylesheet" th:href="@{/css/assistant-chat.css}">
 
     <!--/*
       Gan che do sang/toi NGAY o <head>, truoc khi trinh duyet ve than trang.
@@ -180,11 +181,13 @@
 
 <!-- Hộp hỏi lại dùng chung cho mọi trang, xem fragments/components.html -->
 <div th:replace="~{fragments/components :: confirmDialog}"></div>
+<th:block th:if="${isUser or isShipper}"><div th:replace="~{fragments/assistant :: widget}"></div></th:block>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/address-picker.js}"></script>
 <script th:if="${isStaff}" th:src="@{/js/staff-navigation.js}"></script>
+<script th:if="${isUser or isShipper}" th:src="@{/js/assistant-chat.js}"></script>
 
 <th:block sec:authorize="hasAnyRole('USER', 'SHIPPER', 'MANAGER', 'ADMIN')">
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
