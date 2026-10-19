@@ -76,3 +76,40 @@ test('Nguồn chỉ nhận đường dẫn nội bộ; nội dung HTML được 
     assert.doesNotMatch(source,/\.innerHTML\s*=|insertAdjacentHTML|localStorage|sessionStorage/);
     assert.match(source,/node\.textContent=/);
 });
+test('Chọn đơn dùng danh sách account và tiếp tục đúng một lượt NEEDS_ORDER',async()=>{
+    const original={requestId:'r1',question:'Đơn của tôi đang ở đâu?',status:'NEEDS_ORDER',error:{code:'ORDER_SELECTION_REQUIRED'}};
+    let posted;
+    const client=new AssistantClient(async(method,url,body)=>{
+        if(url.startsWith('/orders')) return {status:200,body:{conversationId:'conversation-A',role:'USER',page:0,total:1,hasNext:false,orders:[{trackingCode:'UTEOWN01',status:'Chờ lấy'}]}};
+        if(method==='GET') return {status:200,body:state([original])};
+        posted=body; return {status:200,body:{...state([{...original,status:'COMPLETE',answer:'OK',selectedOrderCode:body.selectedOrderCode}]),selectedOrderCode:body.selectedOrderCode}};
+    });
+    await client.load(); await client.loadOrders(0);
+    assert.equal(await client.selectOrder('UTEFOREIGN01'),false); assert.equal(posted,undefined);
+    await client.selectOrder('UTEOWN01');
+    assert.equal(posted.requestId,'r1'); assert.equal(posted.question,original.question); assert.equal(posted.selectedOrderCode,'UTEOWN01'); assert.equal(client.turns().length,1);
+});
+test('Account đổi trong lúc danh sách đang tải không nhận danh sách cũ đến muộn',async()=>{
+    let finish;
+    const client=new AssistantClient(async(method,url)=>url.startsWith('/orders') ? new Promise(resolve=>finish=()=>resolve({status:200,body:{conversationId:'conversation-A',role:'USER',orders:[{trackingCode:'PRIVATE-A'}]}})) : {status:200,body:state()});
+    await client.load(); const waiting=client.loadOrders(0); client.discard(); finish(); await waiting;
+    assert.equal(client.orderPage,null); assert.equal(client.selectedOrderCode,null); assert.equal(client.ordersPending,false);
+});
+test('Không nhận danh sách từ sai conversation/role; lỗi tải không khóa câu hỏi chung',async()=>{
+    let role='SHIPPER';
+    const client=new AssistantClient(async(method,url)=>url.startsWith('/orders')?{status:200,body:{conversationId:'conversation-A',role,orders:[]}}:{status:200,body:state()});
+    await client.load(); assert.equal(await client.loadOrders(0),false); assert.equal(client.orderPage,null); assert.equal(client.pending,false);
+    role='USER'; assert.equal(await client.loadOrders(0),true);
+    assert.equal(await client.loadOrders(-1),false); assert.equal(await client.loadOrders(1001),false);
+});
+test('Kiểm tra lại phiên hủy kết quả danh sách cũ và không kẹt trạng thái tải',async()=>{
+    let finish;
+    const client=new AssistantClient(async(method,url)=>url.startsWith('/orders')?new Promise(resolve=>finish=()=>resolve({status:200,body:{conversationId:'conversation-A',role:'USER',orders:[]}})):{status:200,body:state()});
+    await client.load(); const waiting=client.loadOrders(0); await client.load(); finish(); await waiting;
+    assert.equal(client.ordersPending,false); assert.equal(client.orderPage,null);
+});
+test('Có thể hỏi câu khác sau lỗi mà không xóa lịch sử',async()=>{
+    const failed={requestId:'r1',question:'Câu trước',status:'FAILED',error:{retryAfterSeconds:0}};
+    const client=new AssistantClient(async(method,url,body)=>method==='GET'?{status:200,body:state([failed])}:{status:200,body:state([failed,{requestId:body.requestId,question:body.question,status:'COMPLETE',answer:'OK'}])},null,Date.now,()=> 'r2');
+    await client.load(); await client.send('Một câu hỏi khác'); assert.equal(client.turns().length,2); assert.equal(client.turns()[0].status,'FAILED');
+});

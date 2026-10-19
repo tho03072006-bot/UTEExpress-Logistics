@@ -20,9 +20,25 @@
 .ute-ai-source { display:block; margin:5px 0; color:var(--app-primary,#0072bc); overflow-wrap:anywhere; font-size:12px; }
 .ute-ai-time { display:block; color:var(--app-muted,#52647a); font-size:10px; margin-top:6px; }
 .ute-ai-retry { margin-top:7px; padding:5px 10px; border:1px solid var(--app-border,#d8e2ed); border-radius:6px; background:var(--app-card,#fff); color:var(--app-ink,#172b4d); }
-.ute-ai-suggestions { display:flex; flex-wrap:wrap; gap:5px; padding:0 12px 8px; }
-.ute-ai-suggestions button { background:var(--app-card,#fff); color:var(--app-primary,#0072bc); border:1px solid var(--app-border,#d8e2ed); border-radius:10px; padding:5px 8px; text-align:left; font-size:11px; }
+.ute-ai-quick-heading { display:flex; justify-content:space-between; gap:6px; margin:8px 0 5px; font-size:11px; font-weight:600; }
+.ute-ai-quick-heading span { font-size:9px; font-weight:400; color:var(--app-muted,#52647a); }
+.ute-ai-suggestions { display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; overscroll-behavior-x:contain; padding:2px 1px 7px; scrollbar-width:thin; }
+.ute-ai-suggestions button { flex:0 0 auto; max-width:300px; white-space:nowrap; background:var(--app-card,#fff); color:var(--app-primary,#0072bc); border:1px solid var(--app-border,#d8e2ed); border-radius:14px; padding:6px 9px; text-align:left; font-size:11px; }
+.ute-ai-suggestions button:hover:not(:disabled) { background:var(--app-soft,#f1f6fa); border-color:var(--app-primary,#0072bc); }
+.ute-ai-order-context { display:flex; gap:6px; align-items:center; font-size:10px; }
+.ute-ai-order-context span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--app-muted,#52647a); }
+.ute-ai-order-context button,.ute-ai-order-picker button { background:var(--app-card,#fff); color:var(--app-primary,#0072bc); border:1px solid var(--app-border,#d8e2ed); border-radius:6px; padding:4px 7px; font-size:10px; }
+.ute-ai-order-picker { position:absolute; left:12px; right:12px; bottom:calc(100% - 4px); z-index:2; border:1px solid var(--app-border,#d8e2ed); border-radius:8px; padding:7px; background:var(--app-card,#fff); box-shadow:0 4px 20px #00234230; }
+.ute-ai-order-picker[hidden],#uteAssistantUnselectOrder[hidden] { display:none; }
+.ute-ai-order-heading { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:11px; }
+.ute-ai-orders { display:grid; gap:5px; max-height:108px; overflow-y:auto; margin-top:5px; }
+.ute-ai-orders button { width:100%; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.ute-ai-orders button[aria-pressed="true"] { border-color:var(--app-primary,#0072bc); background:var(--app-card,#fff); }
+.ute-ai-orders button small { color:var(--app-muted,#52647a); font-size:9px; }
+.ute-ai-orders-notice { font-size:10px; margin-top:4px; color:var(--app-muted,#52647a); }
+.ute-ai-order-pager { display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:10px; }
 .ute-ai-form { padding:10px 12px 5px; border-top:1px solid var(--app-border,#d8e2ed); }
+.ute-ai-form { position:relative; flex-shrink:0; }
 .ute-ai-form label { font-weight:600; display:block; margin-bottom:6px; font-size:12px; }
 .ute-ai-form textarea { resize:none; width:100%; border:1px solid var(--app-border,#d8e2ed); border-radius:8px; padding:8px 10px; background:var(--app-card,#fff); color:var(--app-ink,#172b4d); line-height:1.5; }
 .ute-ai-compose-actions { display:flex; align-items:center; gap:10px; margin-top:7px; }
