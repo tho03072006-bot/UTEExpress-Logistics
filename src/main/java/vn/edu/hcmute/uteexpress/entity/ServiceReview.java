@@ -46,7 +46,7 @@ public class ServiceReview {
     private String content;
 
     /**
-     * Đường dẫn công khai tới ảnh/video đính kèm, dạng "/uploads/danh-gia/<tên file>".
+     * Mã CloudMediaReference; trình duyệt truy cập qua getMediaUrl(), không dùng mã này làm URL.
      * Chỉ lưu đường dẫn trong CSDL, file thật nằm ngoài thư mục mã nguồn (xem FileStorageService).
      * null nghĩa là đánh giá không đính kèm gì.
      */
@@ -75,6 +75,7 @@ public class ServiceReview {
     public boolean hasMedia() {
         return mediaPath != null && mediaType != null;
     }
+    public String getMediaUrl() { return hasMedia() && id != null ? "/tep-danh-gia/" + id : null; }
 
     // ----- Getter / Setter -----
 

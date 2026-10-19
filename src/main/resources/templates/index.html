@@ -90,9 +90,9 @@
             <p th:text="${review.content}">Nội dung đánh giá</p>
             <div th:if="${review.hasMedia()}" class="mb-2">
                 <img th:if="${review.mediaType.name() == 'IMAGE'}" class="ute-review-media"
-                     th:src="@{${review.mediaPath}}" alt="Ảnh đính kèm đánh giá" loading="lazy">
+                     th:src="@{${review.mediaUrl}}" alt="Ảnh đính kèm đánh giá" loading="lazy">
                 <video th:if="${review.mediaType.name() == 'VIDEO'}" class="ute-review-media"
-                       th:src="@{${review.mediaPath}}" controls muted></video>
+                       th:src="@{${review.mediaUrl}}" controls muted preload="metadata"></video>
             </div>
             <div class="sx-review-author">
                 <!-- Chỉ hiện tên, không hiện email hay mã vận đơn của người khác -->

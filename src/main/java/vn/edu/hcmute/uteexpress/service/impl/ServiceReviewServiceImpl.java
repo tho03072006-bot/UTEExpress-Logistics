@@ -41,9 +41,14 @@ public class ServiceReviewServiceImpl implements ServiceReviewService {
     @Override
     @Transactional(readOnly = true)
     public Order requireReviewableOrder(Long orderId, String username) {
+        requireReviewer(username);
+        if (orderId == null || orderId<=0) throw new IllegalArgumentException("ID đơn không hợp lệ.");
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này"));
-
+        checkOrder(order,username);
+        return order;
+    }
+    private void checkOrder(Order order,String username) {
         if (!order.getSender().getUsername().equals(username)) {
             throw new IllegalStateException("Bạn không có quyền đánh giá đơn hàng này");
         }
@@ -55,20 +60,27 @@ public class ServiceReviewServiceImpl implements ServiceReviewService {
         if (serviceReviewRepository.existsByOrder(order)) {
             throw new IllegalStateException("Đơn này bạn đã đánh giá rồi.");
         }
-        return order;
     }
 
     @Override
     public ServiceReview createReview(Long orderId, ServiceReviewRequest request, String username) {
-        Order order = requireReviewableOrder(orderId, username);
-        AppUser reviewer = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng: " + username));
+        AppUser reviewer = requireReviewer(username);
+        if (orderId == null || orderId<=0 || request == null) throw new IllegalArgumentException("Dữ liệu đánh giá không hợp lệ.");
+        String content = request.getContent() == null ? "" : request.getContent().strip();
+        if (request.getRating() == null || request.getRating()<1 || request.getRating()>5
+                || content.length()<50 || content.length()>1000
+                || content.chars().anyMatch(c -> Character.isISOControl(c) && c!='\n' && c!='\r' && c!='\t'))
+            throw new IllegalArgumentException("Số sao từ 1–5; nhận xét từ 50–1000 ký tự, không chứa ký tự điều khiển.");
+        // Khóa đơn trước khi upload để hai tab không đồng thời tạo hai tệp cho một đánh giá.
+        Order order = orderRepository.findLockedById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này"));
+        checkOrder(order,username);
 
         ServiceReview review = new ServiceReview();
         review.setOrder(order);
         review.setUser(reviewer);
         review.setRating(request.getRating());
-        review.setContent(request.getContent().trim());
+        review.setContent(content);
 
         // Anh/video la tuy chon - khong dinh kem gi thi bo qua han buoc luu tep.
         if (request.getMediaFile() != null && !request.getMediaFile().isEmpty()) {
@@ -102,6 +114,15 @@ public class ServiceReviewServiceImpl implements ServiceReviewService {
     @Override
     @Transactional(readOnly = true)
     public List<ServiceReview> findLatestReviews(int limit) {
+        if (limit<1 || limit>100) throw new IllegalArgumentException("Giới hạn đánh giá từ 1–100.");
         return serviceReviewRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit));
+    }
+    private AppUser requireReviewer(String username) {
+        if (username == null || username.isBlank()) throw new IllegalArgumentException("Thiếu tài khoản đánh giá.");
+        var reviewer = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Tài khoản không hợp lệ."));
+        if (reviewer.getRole()!=AppUser.Role.USER || !reviewer.isEnabled() || reviewer.isLockedByAdmin())
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ khách hàng đang hoạt động được đánh giá.");
+        return reviewer;
     }
 }
