@@ -21,9 +21,10 @@ public class AssistantExceptionHandler {
         return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(new ErrorResponse("SESSION_EXPIRED","Phiên hoặc quyền truy cập đã thay đổi. Vui lòng đăng nhập lại.",0));
     }
     @ExceptionHandler({org.springframework.web.bind.MethodArgumentNotValidException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
             org.springframework.http.converter.HttpMessageNotReadableException.class})
     public ResponseEntity<ErrorResponse> invalid(Exception error) {
-        return ResponseEntity.badRequest().cacheControl(CacheControl.noStore()).body(new ErrorResponse("INVALID_INPUT","Câu hỏi hoặc mã yêu cầu không hợp lệ; tối đa 1200 ký tự.",0));
+        return ResponseEntity.badRequest().cacheControl(CacheControl.noStore()).body(new ErrorResponse("INVALID_INPUT","Dữ liệu không hợp lệ. Kiểm tra câu hỏi (tối đa 1200 ký tự), mã yêu cầu hoặc tham số chọn đơn.",0));
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> unavailable(Exception error) {

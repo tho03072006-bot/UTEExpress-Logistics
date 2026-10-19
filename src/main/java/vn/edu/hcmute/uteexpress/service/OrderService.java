@@ -70,6 +70,8 @@ public interface OrderService {
                                    String keyword, Pageable pageable);
 
     Optional<Order> findByTrackingCode(String trackingCode);
+    Optional<Order> findOwnedOrderByCode(String trackingCode,String username);
+    boolean canCancelOrder(Order order,String username);
 
     /**
      * Lay mot don cu the de hien trang chi tiet, kem kiem tra quyen so huu.

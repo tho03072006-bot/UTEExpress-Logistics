@@ -10,10 +10,18 @@
         <p class="ute-ai-privacy">Câu hỏi được gửi tới Groq. Không gửi mật khẩu, OTP hoặc thông tin riêng tư. AI có thể nhầm; hãy đối chiếu nguồn tra cứu.</p>
         <div id="uteAssistantNotice" class="ute-ai-notice" role="status" aria-live="polite"></div>
         <div id="uteAssistantMessages" class="ute-ai-messages" role="log" aria-label="Hội thoại" aria-live="polite"></div>
-        <div id="uteAssistantSuggestions" class="ute-ai-suggestions" aria-label="Câu hỏi gợi ý"></div>
         <form id="uteAssistantForm" class="ute-ai-form">
+            <div class="ute-ai-order-context"><span id="uteAssistantSelectedOrder">Chưa chọn đơn</span><button type="button" id="uteAssistantChooseOrder" aria-expanded="false" aria-controls="uteAssistantOrderPicker">Chọn đơn của tôi</button><button type="button" id="uteAssistantUnselectOrder" aria-label="Bỏ chọn đơn" hidden>×</button></div>
+            <section id="uteAssistantOrderPicker" class="ute-ai-order-picker" aria-label="Chọn đơn trên tài khoản" hidden>
+                <div class="ute-ai-order-heading"><strong id="uteAssistantOrderHeading">Đơn của tài khoản</strong><button type="button" id="uteAssistantRefreshOrders">Tải lại</button></div>
+                <div id="uteAssistantOrdersNotice" role="status" class="ute-ai-orders-notice"></div>
+                <div id="uteAssistantOrders" class="ute-ai-orders"></div>
+                <div class="ute-ai-order-pager"><button type="button" id="uteAssistantPreviousOrders">← Trước</button><span id="uteAssistantOrderPage"></span><button type="button" id="uteAssistantNextOrders">Sau →</button></div>
+            </section>
+            <div class="ute-ai-quick-heading">Gợi ý nhanh <span>Cuộn ngang để xem thêm · Bấm để hỏi</span></div>
+            <div id="uteAssistantSuggestions" class="ute-ai-suggestions" aria-label="Câu hỏi gợi ý"></div>
             <label for="uteAssistantQuestion">Bạn cần hỗ trợ gì?</label>
-            <textarea id="uteAssistantQuestion" maxlength="1200" rows="2" placeholder="Nhập câu hỏi hoặc mã vận đơn…" required></textarea>
+            <textarea id="uteAssistantQuestion" maxlength="1200" rows="2" placeholder="Nhập câu hỏi… Có thể chọn sẵn đơn ở trên." required></textarea>
             <div class="ute-ai-compose-actions"><button type="button" id="uteAssistantClear" class="ute-ai-clear">Xóa hội thoại</button><span id="uteAssistantCount">0/1200</span><button type="submit" id="uteAssistantSend" class="ute-ai-send">Gửi</button></div>
         </form>
         <p class="ute-ai-footer">Hội thoại tạm theo phiên · Không thay đổi dữ liệu đơn hàng</p>

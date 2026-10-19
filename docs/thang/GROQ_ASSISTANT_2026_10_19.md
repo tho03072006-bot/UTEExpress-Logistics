@@ -6,7 +6,7 @@
 - Chatbot chỉ đọc. User chỉ hỏi đơn của mình; Shipper chỉ hỏi đơn được phân công. Admin/Manager không có widget hoặc quyền gọi API này.
 - Đã kiểm thử backend bằng H2 in-memory và Groq mock; test khởi động/SELECT Aiven của dự án vẫn giữ nguyên. H2 và fixture chỉ nằm ở `src/test`, không phải database/fallback của ứng dụng thật.
 - **Đã xác thực API Groq thật:** sau khi người dùng lưu key, `CheckGroqConnection` gọi function `get_demo_health` và nhận trả lời thành công, cả Java mặc định và thử IPv4. Lần đầu có timeout kết nối, hai lần kiểm tra sau thành công; không thay cấu hình mạng hệ thống. Chỉ gửi dữ liệu sức khỏe demo, không gửi thông tin đơn hàng. Không có trả lời AI giả trong ứng dụng thật.
-- **Chưa kiểm chứng trực quan trình duyệt:** computer-use dừng vì không xác định được URL đủ chắc chắn. Template đã render qua MockMvc cho cả hai vai trò; kích thước 1280×720, sáng/tối, mở/thu gọn cần kiểm tra thủ công theo mục demo.
+- **Đã kiểm tra UI fixture desktop:** dùng computer-use/browser riêng ở breakpoint 1280×720 cho User và Shipper, sáng/tối, gợi ý không mất sau câu trả lời, picker đúng vai trò và nút Gửi nằm trong viewport. Chỉ dùng dữ liệu giả, không phải test hội thoại với đơn Aiven thật. Xem bổ sung trong `ASSISTANT_ORDER_PICKER_2026_10_19.md`.
 
 ## Cấu hình và chạy
 
@@ -93,18 +93,18 @@ COD trong dự án là **cước vận chuyển**, không phải hệ thống ti
 - Lỗi thật được giữ dưới trạng thái FAILED và có nút thử lại; không giả làm câu trả lời AI. Cùng conversationId/requestId + cùng câu hỏi chỉ là một lượt; retry đọc lại dữ liệu và kiểm tra quyền. Bấm liên tục bị chặn cả frontend và backend.
 - Không tự gửi lại AI. Polling khi tải lại trang chỉ GET trạng thái, tối đa 30 lần; sau đó người dùng chủ động kiểm tra kết quả. Nếu mất mạng trước khi server nhận, UUID cũ vẫn tạo tối đa một lượt khi retry.
 - Thiếu/sai key → thông báo chưa cấu hình; lỗi/timeout → thông báo chung an toàn; quota/rate-limit → đếm ngược. Không xuất key, stack trace, reasoning hoặc raw lỗi provider. Không log câu hỏi/toàn bộ đơn.
-- Nếu hội thoại hết hạn/thay UUID: đóng/mở lại chat để tải trạng thái mới. Nếu còn lượt FAILED phải thử lại hoặc xóa hội thoại trước khi gửi câu khác.
+- Nếu hội thoại hết hạn/thay UUID: đóng/mở lại chat để tải trạng thái mới. Có thể thử lại lượt FAILED cuối hoặc hỏi câu mới mà không xóa lịch sử; giới hạn account/provider vẫn áp dụng. Lượt NEEDS_ORDER tiếp tục bằng chọn đơn trên tài khoản, cùng UUID yêu cầu, không nhập mã thủ công.
 
 ## Kiểm thử
 
 ```powershell
 mvn '-Dtest=*,!Aiven*IntegrationTest' test
-node --test src/test/js/staff-navigation.test.cjs src/test/js/tracking-realtime.test.cjs src/test/js/assistant-chat.test.cjs
+node --test src/test/js/staff-navigation.test.cjs src/test/js/tracking-realtime.test.cjs src/test/js/assistant-chat.test.cjs src/test/js/assistant-widget.test.cjs
 ```
 
 Không chạy `Aiven*IntegrationTest`: một số test đó tạo dữ liệu QA trên cloud kể cả có rollback. Bộ chính có test khởi động/SELECT Aiven nhưng không migration/seed/ghi nghiệp vụ.
 
-Kết quả: **712 test Java, 30 test JavaScript đều qua**, không lỗi/skip. Trong đó 45 test Java và 9 test JS mới dành cho chatbot. Các ca chatbot gồm User own/foreign/missing, Shipper assigned/reassignment/foreign, danh sách mơ hồ, trạng thái và chính sách thay đổi, cước dùng service thật, role-specific tools, chống giả danh/tool SQL, CSRF, field lạ, input dài/control/oversize/media type, account khóa/đổi phiên, provider timeout/auth/5xx/quota/Retry-After/bad JSON/response quá lớn, bounded loop, giữ câu hỏi/retry cùng ID/concurrent send, link và text XSS-safe. Test kết nối Groq thật là kiểm tra riêng ngoài tổng này.
+Kết quả sau đồng bộ develop và nâng cấp bộ chọn đơn: **731 test Java, 37 test JavaScript đều qua**, không lỗi/skip. Trong đó 56 test Java và 16 test JS dành cho chatbot. Các ca chatbot gồm User own/foreign/missing, Shipper assigned/reassignment/foreign, danh sách mơ hồ, trạng thái và chính sách thay đổi, cước dùng service thật, role-specific tools, chống giả danh/tool SQL, CSRF, field lạ, input dài/control/oversize/media type, account khóa/đổi phiên, provider timeout/auth/5xx/quota/Retry-After/bad JSON/response quá lớn, bounded loop, giữ câu hỏi/retry cùng ID/concurrent send, link và text XSS-safe. Test kết nối Groq thật là kiểm tra riêng ngoài tổng này. Bộ chọn thêm test User B dùng hội thoại/đơn A, JSON trùng key/sai kiểu, tiếp tục một lượt chọn đơn và thay đổi dữ liệu trong lúc chờ AI.
 
 ### Kịch bản demo thật sau khi điền key
 
@@ -133,7 +133,7 @@ mvn '-Dtest=AssistantIntegrationTest' '-Dassistant.export-preview=true' test
 node src/test/js/assistant-preview-server.cjs
 ```
 
-Tự mở `http://127.0.0.1:18081/preview-user` hoặc `/preview-shipper`. Chỉ phục vụ HTML render từ H2 và fixture có nhãn UI TEST, không đăng nhập, không Aiven/Cloudinary/Groq. Lượt đầu giả lập lỗi, retry giả lập câu trả lời có chuỗi HTML để kiểm tra text-only. Ctrl+C dừng server; không dùng helper này khi demo kết nối AI thật.
+Tự mở `http://127.0.0.1:18081/preview-user` hoặc `/preview-shipper`. Chỉ phục vụ HTML render từ H2 và fixture có nhãn UI TEST, không đăng nhập, không Aiven/Cloudinary/Groq. Câu hỏi về đơn mở bộ chọn giả; chọn đơn tiếp tục cùng lượt. Câu hỏi chứa “timeout” giả lập lỗi, retry giả lập câu trả lời có chuỗi HTML để kiểm tra text-only. Ctrl+C dừng server; không dùng helper này khi demo kết nối AI thật.
 
 ## File chính và gợi ý commit riêng
 
@@ -150,4 +150,4 @@ Không tự commit/push. Không `git add .` trong workspace hiện tại vì `.p
 - Hội thoại/rate-limit ở RAM một server: mất khi restart, chưa dùng Redis hoặc phân tán. Không phải kho lưu chat lâu dài; deployment nhiều instance cần sticky session hoặc kho phiên/rate-limit chung.
 - Lịch sử đã trả khi còn quyền là ảnh chụp cũ có timestamp; không dùng làm bằng chứng quyền/trạng thái hiện tại. Lượt mới/retry luôn kiểm tra lại.
 - Công cụ không bao quát mọi trang/tham số hay tiền hàng COD chưa được triển khai. Trạng thái không có ETA cụ thể sẽ nói chưa có, không suy ra từ SLA.
-- Kích thước desktop/sáng tối chưa được kiểm chứng bằng screenshot do công cụ UI dừng. Mobile chủ động không hỗ trợ theo yêu cầu.
+- Đã kiểm tra desktop/sáng tối trên UI fixture có nhãn dữ liệu giả, chưa chạy lại toàn bộ hội thoại trên dữ liệu thật trong browser. Mobile chủ động không hỗ trợ theo yêu cầu.

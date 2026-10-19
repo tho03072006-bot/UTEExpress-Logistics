@@ -21,6 +21,14 @@ public class AssistantChatController {
     public ResponseEntity<ChatConversationResponse> clear(Authentication authentication,HttpSession session) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(chat.clearConversation(authentication,session));
     }
+    @GetMapping("/orders")
+    public ResponseEntity<ChatOrderPageResponse> orders(Authentication authentication,HttpSession session,
+            @RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="") String query,
+            @RequestParam org.springframework.util.MultiValueMap<String,String> parameters) {
+        if(!java.util.Set.of("page","query").containsAll(parameters.keySet()) || parameters.values().stream().anyMatch(values->values.size()!=1))
+            throw new vn.edu.hcmute.uteexpress.service.assistant.AssistantFailure("INVALID_ORDER_FILTER",400,0);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(chat.readOrderOptions(authentication,session,page,query));
+    }
     @PostMapping("/messages")
     public ResponseEntity<ChatConversationResponse> send(@Valid @RequestBody ChatMessageRequest request,Authentication authentication,HttpSession session) {
         var result=chat.sendMessage(authentication,session,request);
