@@ -11,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.DeliveryProof;
 import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.service.media.CloudMediaReference;
+import vn.edu.hcmute.uteexpress.service.media.MediaPurpose;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.DeliveryProofRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
@@ -50,8 +52,8 @@ public class DeliveryProofServiceImpl
     public boolean hasCompleteProof(Order order) {
         return deliveryProofRepository.findByOrder(order)
                 .filter(proof ->
-                        hasText(proof.getProofImagePath())
-                        && hasText(proof.getSignaturePath()))
+                        validReference(proof.getProofImagePath(),MediaPurpose.PROOF)
+                        && validReference(proof.getSignaturePath(),MediaPurpose.SIGNATURE))
                 .isPresent();
     }
 
@@ -107,7 +109,7 @@ public class DeliveryProofServiceImpl
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 
-        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled()) {
+        if (shipper.getRole() != AppUser.Role.SHIPPER || !shipper.isEnabled() || shipper.isLockedByAdmin()) {
             throw new IllegalStateException(
                     "Tài khoản hiện tại không có vai trò SHIPPER.");
         }
@@ -115,7 +117,8 @@ public class DeliveryProofServiceImpl
         return shipper;
     }
 
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
+    private boolean validReference(String value,MediaPurpose purpose) {
+        try { return CloudMediaReference.parse(value).purpose()==purpose; }
+        catch (IllegalArgumentException ex) { return false; }
     }
 }

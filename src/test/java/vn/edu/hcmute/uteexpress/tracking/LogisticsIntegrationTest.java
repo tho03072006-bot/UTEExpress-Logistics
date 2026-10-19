@@ -75,6 +75,9 @@ class LogisticsIntegrationTest {
     @Autowired ShipperStatisticsService statistics;
     @Autowired OrderPaymentRepository payments;
     @Autowired DeliveryProofService proofService;
+    @Autowired vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
+    @Autowired vn.edu.hcmute.uteexpress.service.ServiceReviewService reviewService;
+    @Autowired ServiceReviewRepository reviews;
     @Autowired PasswordEncoder passwordEncoder;
     AppUser customer, anotherCustomer, shipper, anotherShipper;
     Order order;
@@ -273,7 +276,8 @@ class LogisticsIntegrationTest {
     @Test void retryNeedsNewProofAndRecordsFailureSchedule() {
         order.setStatus(Order.OrderStatus.IN_TRANSIT); orders.flush();
         var proof = new DeliveryProof(); proof.setOrder(order); proof.setShipper(shipper);
-        proof.setProofImagePath("/test/proof.png"); proof.setSignaturePath("/test/signature.png"); proof.setUpdatedAt(NOW.minusHours(1));
+        proof.setProofImagePath("cld1:test-cloud:PROOF:0123456789abcdef0123456789abcdef:png");
+        proof.setSignaturePath("cld1:test-cloud:SIGNATURE:0123456789abcdef0123456789abcdef:png"); proof.setUpdatedAt(NOW.minusHours(1));
         proofs.saveAndFlush(proof);
         tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.FAILED,
                 DeliveryFailureReason.CUSTOMER_ABSENT, "Khách hẹn buổi chiều", NOW.plusHours(5));
@@ -509,17 +513,12 @@ class LogisticsIntegrationTest {
                 .with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isForbidden());
     }
 
-    @Test void proofIsPrivateForNewAndLegacyFilesAndAuthorizedRolesOnly() throws Exception {
-        String filename = java.util.UUID.randomUUID().toString().replace("-", "") + ".png";
+    @Test void cloudProofIsPrivateAndLocalPathsNeverReadFromDisk() throws Exception {
+        String filename = "legacy.png";
         byte[] image = qr.generate(order.getTrackingCode());
-        var root = java.nio.file.Path.of("target/test-proof-uploads").toAbsolutePath();
-        var legacy = root.resolve("giao-hang/" + filename);
-        var privateFile = root.resolveSibling("test-proof-uploads-private").resolve("giao-hang/" + filename);
-        java.nio.file.Files.createDirectories(legacy.getParent()); java.nio.file.Files.createDirectories(privateFile.getParent());
-        java.nio.file.Files.write(legacy, image); java.nio.file.Files.write(privateFile, image);
-        try {
             var proof = new DeliveryProof(); proof.setOrder(order); proof.setShipper(shipper); proof.setUpdatedAt(NOW);
-            proof.setProofImagePath("/uploads/giao-hang/" + filename); proof.setSignaturePath("/private-proof/" + filename);
+            proof.setProofImagePath(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.PROOF,image,"proof.png"));
+            proof.setSignaturePath(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.SIGNATURE,image,"signature.png"));
             proofs.saveAndFlush(proof);
             String shipperPath = "/shipper/don/" + order.getId() + "/bang-chung/anh";
             mvc.perform(get(shipperPath).with(user(shipper.getUsername()).roles("SHIPPER")))
@@ -534,9 +533,32 @@ class LogisticsIntegrationTest {
                 mvc.perform(get(path).with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isForbidden());
             proof.setProofImagePath("/uploads/giao-hang/../../config/aiven-local.properties"); proofs.flush();
             mvc.perform(get(shipperPath).with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isNotFound());
-            proof.setProofImagePath("/private-proof/" + filename); proofs.flush(); java.nio.file.Files.delete(privateFile);
+            mvc.perform(get("/shipper/don/"+order.getId()).with(user(shipper.getUsername()).roles("SHIPPER")))
+                    .andExpect(status().isOk()).andExpect(content().string(containsString("chưa có trên kho cloud chung")))
+                    .andExpect(content().string(not(containsString("/bang-chung/anh"))));
+            proof.setProofImagePath("cld1:test-cloud:PROOF:0123456789abcdef0123456789abcdef:png"); proofs.flush();
             mvc.perform(get(shipperPath).with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isNotFound());
-        } finally { java.nio.file.Files.deleteIfExists(legacy); java.nio.file.Files.deleteIfExists(privateFile); }
+    }
+
+    @Test void publicReviewMediaCannotExposePrivatePurposeOrArbitraryPaths() throws Exception {
+        order.setStatus(Order.OrderStatus.DELIVERED); orders.saveAndFlush(order);
+        var form=new vn.edu.hcmute.uteexpress.dto.ServiceReviewRequest(); form.setRating(5);
+        form.setContent("Giao hàng đúng hẹn, nhân viên hỗ trợ nhiệt tình và đóng gói cẩn thận.");
+        byte[] image=qr.generate(order.getTrackingCode());
+        form.setMediaFile(new MockMultipartFile("mediaFile","review.png","image/png",image));
+        var review=reviewService.createReview(order.getId(),form,customer.getUsername()); reviews.flush();
+        String path="/tep-danh-gia/"+review.getId();
+        assertTrue(review.getMediaPath().startsWith("cld1:test-cloud:REVIEW:"));
+        mvc.perform(get(path)).andExpect(status().isOk()).andExpect(content().bytes(image))
+                .andExpect(header().string("Cache-Control","no-store")).andExpect(header().string("X-Content-Type-Options","nosniff"));
+        mvc.perform(get(path).header("Range","bytes=0-7")).andExpect(status().isPartialContent())
+                .andExpect(content().bytes(java.util.Arrays.copyOf(image,8)));
+        review.setMediaPath(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.PROOF,image,"private.png")); reviews.flush();
+        mvc.perform(get(path)).andExpect(status().isServiceUnavailable());
+        review.setMediaPath("https://evil.invalid/private.png"); reviews.flush();
+        mvc.perform(get(path)).andExpect(status().isServiceUnavailable());
+        mvc.perform(get("/tep-danh-gia/0")).andExpect(status().isBadRequest());
+        mvc.perform(get("/tep-danh-gia/9223372036854775807")).andExpect(status().isNotFound());
     }
 
     private void failure(Order value, LocalDateTime at, LocalDateTime next) {

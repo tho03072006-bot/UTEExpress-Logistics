@@ -36,11 +36,12 @@ public class SecurityConfig {
                     new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED),
                     vn.edu.hcmute.uteexpress.security.PageRequestCache::isBackgroundRequest))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/uploads/giao-hang/**", "/private-proof/**").denyAll()
+                .requestMatchers("/uploads/**", "/private-proof/**").denyAll()
+                .requestMatchers("/tep-danh-gia/**").permitAll()
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
                         "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
-                        "/css/**", "/js/**", "/images/**", "/uploads/**", "/api/tracking/**").permitAll()
+                        "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
                 // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/nguoi-dung/**").hasRole("USER")

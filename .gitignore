@@ -55,6 +55,9 @@ application-local.properties.*
 /config/jwt-local.properties
 /config/jwt-local.properties.*
 !/config/jwt-local.properties.example
+/config/cloudinary-local.properties
+/config/cloudinary-local.properties.*
+!/config/cloudinary-local.properties.example
 
 # Chan file profile cu chua bi mat neu ai copy lai; app khong dung MonsterASP.
 application-cloud.properties

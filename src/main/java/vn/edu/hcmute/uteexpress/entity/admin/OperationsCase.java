@@ -33,6 +33,7 @@ public class OperationsCase {
     @Column(length = 500) private String reviewNote;
     @Column(length = 100) private String receiptReference;
     @Lob @Column(columnDefinition = "mediumblob") private byte[] evidence;
+    @Column(name = "evidence_asset", length = 255) private String evidenceAsset;
     @Column(nullable = false) private LocalDateTime createdAt;
     @Column(nullable = false) private LocalDateTime updatedAt;
     protected OperationsCase() { }
@@ -66,7 +67,9 @@ public class OperationsCase {
     public String getReviewNote() { return reviewNote; }
     public String getReceiptReference() { return receiptReference; }
     public byte[] getEvidence() { return evidence; }
-    public boolean isHasEvidence() { return evidence != null && evidence.length > 0; }
+    public String getEvidenceAsset() { return evidenceAsset; }
+    public void setEvidenceAsset(String asset) { evidenceAsset = asset; evidence = null; }
+    public boolean isHasEvidence() { return evidenceAsset != null || (evidence != null && evidence.length > 0); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public LocalDateTime getDueAt() {

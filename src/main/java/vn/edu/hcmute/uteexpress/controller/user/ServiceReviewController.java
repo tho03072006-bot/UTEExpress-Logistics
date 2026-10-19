@@ -38,7 +38,7 @@ public class ServiceReviewController {
             model.addAttribute("order", order);
             model.addAttribute("form", new ServiceReviewRequest());
             return "user/review-form";
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
             return "redirect:/nguoi-dung/don-hang";
         }
@@ -57,7 +57,7 @@ public class ServiceReviewController {
         }
         try {
             serviceReviewService.createReview(orderId, form, username);
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             return addOrderThenBack(orderId, username, model, redirectAttributes, ex.getMessage());
         }
 
@@ -78,7 +78,7 @@ public class ServiceReviewController {
                 model.addAttribute("error", error);
             }
             return "user/review-form";
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
             return "redirect:/nguoi-dung/don-hang";
         }

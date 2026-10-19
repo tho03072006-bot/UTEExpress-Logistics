@@ -13,6 +13,10 @@ import vn.edu.hcmute.uteexpress.controller.shipper.*;
         ShipperOperationsController.class, ShipperCodController.class, ManagerCodController.class})
 @org.springframework.core.annotation.Order(0) // luôn chạy trước GlobalExceptionHandler (thấp nhất)
 public class LogisticsExceptionHandler {
+    @ExceptionHandler(vn.edu.hcmute.uteexpress.exception.CloudStorageUnavailableException.class)
+    public String cloudUnavailable(RuntimeException ex,HttpServletRequest request,HttpServletResponse response,Model model) {
+        return error(503,ex.getMessage(),request,response,model);
+    }
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public String missing(org.springframework.web.server.ResponseStatusException ex, HttpServletRequest request,
             HttpServletResponse response, Model model) {
@@ -35,7 +39,7 @@ public class LogisticsExceptionHandler {
         String message = ex instanceof org.springframework.web.multipart.MaxUploadSizeExceededException
                 ? "Tệp tải lên quá lớn. Ảnh tối đa 5 MB."
                 : "Dữ liệu gửi lên không hợp lệ. Hãy kiểm tra bộ lọc, ngày tháng hoặc tải lại trang rồi thử lại.";
-        return error(400, message, request, response, model);
+        return error(ex instanceof org.springframework.web.multipart.MaxUploadSizeExceededException ? 413 : 400, message, request, response, model);
     }
     @ExceptionHandler({org.springframework.dao.OptimisticLockingFailureException.class,
             org.springframework.dao.PessimisticLockingFailureException.class,

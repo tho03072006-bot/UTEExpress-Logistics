@@ -36,16 +36,19 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private final Clock clock;
     private final jakarta.persistence.EntityManager entityManager;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     public OperationsCaseServiceImpl(OperationsCaseRepository cases, OrderRepository orders,
             CodSettlementRepository settlements, OrderComplaintRepository complaints, OrderPaymentRepository payments,
             OrderStatusHistoryRepository history, OperationsPolicyService policies, StaffAccessPolicy access,
             LogisticsAccess logistics, ShipmentImageService images, AuditService audit, Clock clock,
-            jakarta.persistence.EntityManager entityManager, org.springframework.context.ApplicationEventPublisher events) {
+            jakarta.persistence.EntityManager entityManager, org.springframework.context.ApplicationEventPublisher events,
+            vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud) {
         this.cases = cases; this.orders = orders; this.settlements = settlements; this.complaints = complaints;
         this.payments = payments; this.history = history; this.policies = policies; this.access = access;
         this.logistics = logistics; this.images = images; this.audit = audit; this.clock = clock;
         this.entityManager = entityManager;
         this.events = events;
+        this.cloud = cloud;
     }
     public Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page) {
         access.requireOperator(actor); access.validatePage(page);
@@ -55,6 +58,13 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     public OperationsCase view(String actor, Long id) {
         access.requireOperator(actor); access.validateId(id);
         return cases.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ."));
+    }
+    public byte[] readEvidence(String actor,Long id) {
+        var record = view(actor,id);
+        if (!record.isHasEvidence()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        if (record.getEvidenceAsset() == null) throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.NOT_FOUND,"Chứng từ cũ chưa được chuyển lên cloud chung.");
+        return cloud.read(record.getEvidenceAsset(),vn.edu.hcmute.uteexpress.service.media.MediaPurpose.RECEIPT).bytes();
     }
     public boolean requiresAdminApproval(String actor, Long id) {
         var record = view(actor, id);
@@ -120,13 +130,15 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                         List.of(OperationsCase.Status.REQUESTED, OperationsCase.Status.APPROVED, OperationsCase.Status.COMPLETED)))
                     throw new StaffConflictException("Khiếu nại đã có đề xuất đang chờ hoặc đã được duyệt.");
                 validateCompensation(order, form.amount());
-                if (image == null && !complaint.isHasImage()) throw new IllegalArgumentException("Cần ảnh chứng từ của khiếu nại hoặc đính kèm đề xuất.");
+                if (image == null && !cloud.isReference(complaint.getImageAsset(),vn.edu.hcmute.uteexpress.service.media.MediaPurpose.COMPLAINT))
+                    throw new IllegalArgumentException("Cần ảnh khiếu nại đã chuyển lên cloud hoặc ảnh đính kèm đề xuất.");
                 if (form.nextAttemptAt() != null) throw new IllegalArgumentException("Đề xuất chi trả không có lịch giao lại.");
             }
         }
         var record = new OperationsCase(form.kind(), order, settlement, complaint, form.amount(), form.nextAttemptAt(), note, actor, now);
         record.setRequestToken(form.requestToken());
-        record.attach(form.receiptReference() == null ? null : LogisticsInput.text(form.receiptReference(), 0, 100, "Mã biên nhận"), image);
+        record.attach(form.receiptReference() == null ? null : LogisticsInput.text(form.receiptReference(), 0, 100, "Mã biên nhận"), null);
+        if (image != null) record.setEvidenceAsset(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.RECEIPT,image,"receipt.png"));
         cases.saveAndFlush(record);
         audit.record(actor, "CASE_REQUEST", "operations-case:" + record.getId(), form.kind() + "; " + note);
         publishProgress(record, null);
@@ -206,7 +218,9 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 validateCompensation(record.getOrder(), record.getAmount());
             }
         } else throw new StaffConflictException("Hồ sơ chưa đủ điều kiện hoàn tất hoặc đã kết thúc.");
-        record.complete(receipt, image, now); cases.saveAndFlush(record);
+        record.complete(receipt, null, now);
+        record.setEvidenceAsset(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.RECEIPT,image,"receipt.png"));
+        cases.saveAndFlush(record);
         audit.record(actor, "CASE_COMPLETE", "operations-case:" + id, "Ghi nhận chứng từ ngoài hệ thống: " + receipt);
         publishProgress(record, record.getKind() == OperationsCase.Kind.RETURN
                 ? vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETURNED : null);

@@ -124,7 +124,7 @@ public class OrderExtrasController {
         var complaint = complaints.view(id, auth.getName());
         if (!complaint.isHasImage()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).header("X-Content-Type-Options", "nosniff")
-                .contentType(MediaType.IMAGE_PNG).body(complaint.getImageBytes());
+                .contentType(MediaType.IMAGE_PNG).body(complaints.readImage(id, auth.getName()));
     }
     private void populateComplaint(Order order, OrderComplaint complaint, Authentication auth, Model model) {
         model.addAttribute("order", order);

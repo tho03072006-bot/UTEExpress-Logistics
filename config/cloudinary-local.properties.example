@@ -1,0 +1,9 @@
+# Copy to config/cloudinary-local.properties. Never put real credentials in this example.
+# All team backends must use the SAME Cloud Name (one shared product environment).
+app.cloudinary.enabled=true
+app.cloudinary.cloud-name=CHANGE_ME
+app.cloudinary.api-key=CHANGE_ME
+app.cloudinary.api-secret=CHANGE_ME
+# Optional environment overrides: APP_CLOUDINARY_ENABLED, APP_CLOUDINARY_CLOUD_NAME,
+# APP_CLOUDINARY_API_KEY, APP_CLOUDINARY_API_SECRET. Restart Spring Boot after editing.
+# No unsigned upload preset is needed. No local-file fallback is used.

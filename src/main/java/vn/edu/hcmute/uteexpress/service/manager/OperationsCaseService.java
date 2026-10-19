@@ -6,6 +6,7 @@ import vn.edu.hcmute.uteexpress.dto.manager.*;
 import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.entity.admin.OperationsCase;
 public interface OperationsCaseService {
+    byte[] readEvidence(String actor, Long id);
     Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page);
     OperationsCase view(String actor, Long id);
     boolean requiresAdminApproval(String actor, Long id);

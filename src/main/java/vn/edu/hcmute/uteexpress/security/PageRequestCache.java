@@ -52,7 +52,7 @@ public final class PageRequestCache extends HttpSessionRequestCache {
         return path.equals("/shipper/thong-bao/chua-doc") || path.startsWith("/api/")
                 || path.equals("/ws-tracking") || path.startsWith("/ws-tracking/")
                 || path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
-                || path.startsWith("/uploads/") || path.startsWith("/private-proof/")
+                || path.startsWith("/uploads/") || path.startsWith("/private-proof/") || path.startsWith("/tep-danh-gia/")
                 || path.endsWith(".csv") || path.endsWith(".png") || path.contains("/bang-chung/");
     }
 

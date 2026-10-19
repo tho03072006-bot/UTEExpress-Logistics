@@ -196,6 +196,7 @@ public class ShipperController {
         model.addAttribute("canReportPickupFailure", failures.canReportPickupFailure(assignedOrder));
         model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
         model.addAttribute("currentProof", trackingService.hasCurrentProof(assignedOrder));
+        model.addAttribute("cloudProofAvailable",deliveryProofService.hasCompleteProof(assignedOrder));
         model.addAttribute("failureReasons", DeliveryFailureReason.values());
         model.addAttribute("complaint", complaints.forOrder(assignedOrder, authentication.getName()).orElse(null));
         model.addAttribute(
