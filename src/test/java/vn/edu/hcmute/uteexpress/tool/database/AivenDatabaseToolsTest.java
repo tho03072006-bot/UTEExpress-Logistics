@@ -18,10 +18,10 @@ class AivenDatabaseToolsTest {
                 .map(sql -> sql.split(" ")[2]).collect(java.util.stream.Collectors.toSet());
         assertEquals(Set.of("app_user", "shipment_order", "saved_address", "draft_order", "promo_code",
                 "order_payment", "service_review", "email_change_request", "delivery_proof", "staff_account",
-                "order_status_history", "shipper_notification", "order_complaint", "cod_settlement", "cod_settlement_item",
+                "order_status_history", "shipper_notification", "order_complaint", "cod_settlement", "cod_settlement_item", "user_profile_detail",
                 "shipping_tariff", "audit_event", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version"), tables);
-        assertEquals(26, schema.stream().filter(sql -> sql.contains("foreign key")).count());
-        assertEquals(14, schema.stream().filter(sql -> sql.contains(" unique ")).count());
+        assertEquals(27, schema.stream().filter(sql -> sql.contains("foreign key")).count());
+        assertEquals(15, schema.stream().filter(sql -> sql.contains(" unique ")).count());
         assertTrue(schema.stream().filter(sql -> sql.startsWith("create table "))
                 .allMatch(sql -> sql.contains("auto_increment") && sql.contains("charset=utf8mb4")));
         assertFalse(String.join("\n", schema).contains("character set utf8 "));

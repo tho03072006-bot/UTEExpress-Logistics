@@ -6,17 +6,7 @@
 </head>
 <body>
 
-<section class="ute-narrow">
-<div class="ute-page-head sx-art-profile">
-    <div>
-        <h2>Tài khoản của tôi</h2>
-        <p>Thông tin liên hệ cho đơn gửi hàng.</p>
-    </div>
-    <a th:href="@{/nguoi-dung/tai-khoan/doi-mat-khau}" class="btn btn-outline-secondary">
-        <i class="bi bi-key"></i> Đổi mật khẩu
-    </a>
-</div>
-
+<section class="sx-account">
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
@@ -33,64 +23,76 @@
     </a>
 </div>
 
-<!-- Thông tin không tự sửa được: đặt riêng ra ngoài form cho khỏi nhầm là ô nhập liệu -->
-<div class="ute-panel mb-4">
-    <div class="row g-3">
-        <div class="col-sm-4">
-            <div class="ute-profile-label">Tên đăng nhập</div>
-            <div class="ute-profile-value" th:text="${account.username}">thotest</div>
+<div th:replace="~{fragments/account :: hero(${profile}, '/nguoi-dung/tai-khoan')}"></div>
+<div th:replace="~{fragments/account :: stats(${profile})}"></div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-blue"><i class="bi bi-person-lines-fill"></i></span> Thông tin liên hệ</h5>
+            <form method="post" th:object="${form}" th:action="@{/nguoi-dung/tai-khoan/cap-nhat}" class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="fullName">Họ và tên</label>
+                    <input type="text" id="fullName" th:field="*{fullName}" class="form-control"
+                           placeholder="Ví dụ: Nguyễn Văn Thọ">
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                </div>
+                <div class="col-sm-7">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" th:field="*{email}" class="form-control"
+                           placeholder="ten@example.com">
+                    <div class="form-text">Dùng để nhận mã OTP. Đổi email cần xác thực địa chỉ mới.</div>
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+                <div class="col-sm-5">
+                    <label class="form-label" for="phone">Số điện thoại</label>
+                    <input type="text" id="phone" th:field="*{phone}" class="form-control" placeholder="0901234567">
+                    <div class="form-text">Shipper sẽ gọi vào số này khi đến lấy hàng.</div>
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                </div>
+                <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin liên hệ</button></div>
+            </form>
         </div>
-        <div class="col-sm-4">
-            <div class="ute-profile-label">Vai trò</div>
-            <div class="ute-profile-value" th:text="${account.role}">USER</div>
+
+        <div th:replace="~{fragments/account :: details('/nguoi-dung/tai-khoan')}"></div>
+    </div>
+
+    <div class="col-xl-5">
+        <div th:replace="~{fragments/account :: completeness(${profile})}"></div>
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-amber"><i class="bi bi-bell"></i></span> Thông báo</h5>
+            <form method="post" th:action="@{/nguoi-dung/tai-khoan/thong-bao}" data-auto-submit>
+                <label class="sx-switch-row">
+                    <span><strong>Email cập nhật vận đơn</strong>
+                        <small>Khi lấy hàng thất bại, giao thành công, giao thất bại hoặc hoàn trả.</small></span>
+                    <span class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" name="notifyOrderEmail" value="true"
+                               th:checked="${profile.notifyOrderEmail()}">
+                    </span>
+                </label>
+                <noscript><button type="submit" class="btn btn-sm btn-primary mt-2">Lưu</button></noscript>
+            </form>
         </div>
-        <div class="col-sm-4">
-            <div class="ute-profile-label">Ngày tạo tài khoản</div>
-            <div class="ute-profile-value"
-                 th:text="${account.createdAt != null
-                           ? #temporals.format(account.createdAt, 'dd/MM/yyyy')
-                           : '—'}">01/01/2026</div>
+
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-rose"><i class="bi bi-shield-lock"></i></span> Bảo mật &amp; tài khoản</h5>
+            <dl class="sx-info-list">
+                <div><dt>Tên đăng nhập</dt><dd th:text="${account.username}">user</dd></div>
+                <div><dt>Vai trò</dt><dd>Người gửi hàng</dd></div>
+                <div><dt>Ngày tạo</dt><dd th:text="${account.createdAt != null ? #temporals.format(account.createdAt, 'dd/MM/yyyy') : '—'}">01/01/2026</dd></div>
+            </dl>
+            <a th:href="@{/nguoi-dung/tai-khoan/doi-mat-khau}" class="btn sx-btn-white w-100"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+        </div>
+
+        <div class="ute-panel">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-teal"><i class="bi bi-lightning-charge"></i></span> Lối tắt</h5>
+            <div class="sx-link-list">
+                <a th:href="@{/nguoi-dung/don-hang}"><i class="bi bi-list-check"></i> Đơn hàng của tôi <i class="bi bi-chevron-right"></i></a>
+                <a th:href="@{/nguoi-dung/dia-chi}"><i class="bi bi-geo-alt"></i> Sổ địa chỉ <i class="bi bi-chevron-right"></i></a>
+                <a th:href="@{/nguoi-dung/tao-don}"><i class="bi bi-plus-square"></i> Tạo đơn gửi hàng <i class="bi bi-chevron-right"></i></a>
+            </div>
         </div>
     </div>
-    <p class="ute-profile-note mb-0">
-        Muốn đổi tên đăng nhập hoặc vai trò, liên hệ quản trị viên.
-    </p>
-</div>
-
-<div class="ute-panel">
-    <h5 class="mb-3">Thông tin liên hệ</h5>
-
-    <form method="post" th:object="${form}" th:action="@{/nguoi-dung/tai-khoan/cap-nhat}">
-
-        <div class="mb-3">
-            <label class="form-label" for="fullName">Họ và tên</label>
-            <input type="text" id="fullName" th:field="*{fullName}" class="form-control"
-                   placeholder="Ví dụ: Nguyễn Văn Thọ">
-            <div class="ute-field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label" for="email">Email</label>
-            <input type="email" id="email" th:field="*{email}" class="form-control"
-                   placeholder="ten@example.com">
-            <div class="form-text">
-                Dùng để nhận mã OTP. Đổi email cần xác thực địa chỉ mới.
-            </div>
-            <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-        </div>
-
-        <div class="mb-4">
-            <label class="form-label" for="phone">Số điện thoại</label>
-            <input type="text" id="phone" th:field="*{phone}" class="form-control" placeholder="0901234567">
-            <div class="form-text">Shipper sẽ gọi vào số này khi đến lấy hàng.</div>
-            <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
-        </div>
-
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-            <a th:href="@{/nguoi-dung/trang-chu}" class="btn btn-outline-secondary">Quay lại trang tổng quan</a>
-        </div>
-    </form>
 </div>
 </section>
 

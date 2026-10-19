@@ -23,10 +23,10 @@
 -->
 <nav th:fragment="sidebarNav" class="ute-nav">
     <div sec:authorize="hasRole('USER')">
-        <div class="sx-profile">
-            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">K</span>
+        <a class="sx-profile" th:href="@{/nguoi-dung/tai-khoan}" title="Tài khoản của tôi">
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">K</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/nguoi-dung/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
             <div><strong sec:authentication="name">user</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Khách hàng</span></div>
-        </div>
+        </a>
         <p class="ute-nav-heading">Người gửi hàng</p>
         <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/nguoi-dung/trang-chu}">
             <i class="bi bi-speedometer2"></i> Trang tổng quan
@@ -51,10 +51,10 @@
     </div>
 
     <div sec:authorize="hasRole('SHIPPER')">
-        <div class="sx-profile">
-            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">S</span>
+        <a class="sx-profile" th:href="@{/shipper/tai-khoan}" title="Tài khoản của tôi">
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">S</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/shipper/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
             <div><strong sec:authentication="name">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang nhận đơn</span></div>
-        </div>
+        </a>
         <!-- Nhóm theo việc của tài xế giao hàng: làm việc trong ngày, rồi tiền và hiệu suất -->
         <p class="ute-nav-heading">Công việc</p>
         <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/shipper/trang-chu}">
@@ -72,6 +72,10 @@
         </a>
         <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/shipper/thong-ke}">
             <i class="bi bi-graph-up-arrow"></i> Thống kê giao hàng
+        </a>
+        <p class="ute-nav-heading">Cá nhân</p>
+        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/shipper/tai-khoan}">
+            <i class="bi bi-person-gear"></i> Tài khoản của tôi
         </a>
     </div>
 
