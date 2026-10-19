@@ -31,6 +31,8 @@ import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofStorageService;
 
 @ExtendWith(MockitoExtension.class)
 class DeliveryProofServiceImplTest {
+    private static final String IMAGE = "cld1:test-cloud:PROOF:0123456789abcdef0123456789abcdef:png";
+    private static final String SIGNATURE = "cld1:test-cloud:SIGNATURE:0123456789abcdef0123456789abcdef:png";
 
     @Mock
     private DeliveryProofRepository deliveryProofRepository;
@@ -65,9 +67,9 @@ class DeliveryProofServiceImplTest {
         when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(storageService.storeProofImage(image))
-                .thenReturn("/uploads/giao-hang/proof.png");
+                .thenReturn(IMAGE);
         when(storageService.storeSignature("signature-data"))
-                .thenReturn("/uploads/giao-hang/signature.png");
+                .thenReturn(SIGNATURE);
         when(deliveryProofRepository.findByOrder(order))
                 .thenReturn(Optional.empty());
         when(deliveryProofRepository.save(any(DeliveryProof.class)))
@@ -82,8 +84,8 @@ class DeliveryProofServiceImplTest {
         assertSame(order, result.getOrder());
         assertSame(shipper, result.getShipper());
         assertEquals(LocalDateTime.of(2026, 10, 11, 9, 0), result.getUpdatedAt());
-        assertTrue(result.getProofImagePath().endsWith("proof.png"));
-        assertTrue(result.getSignaturePath().endsWith("signature.png"));
+        assertEquals(IMAGE,result.getProofImagePath());
+        assertEquals(SIGNATURE,result.getSignaturePath());
         verify(deliveryProofRepository).save(result);
     }
 
@@ -137,13 +139,21 @@ class DeliveryProofServiceImplTest {
     void hasCompleteProof_returnsTrueWhenBothPathsExist() {
         Order order = new Order();
         DeliveryProof proof = new DeliveryProof();
-        proof.setProofImagePath("/uploads/giao-hang/proof.png");
-        proof.setSignaturePath("/uploads/giao-hang/signature.png");
+        proof.setProofImagePath(IMAGE);
+        proof.setSignaturePath(SIGNATURE);
 
         when(deliveryProofRepository.findByOrder(order))
                 .thenReturn(Optional.of(proof));
 
         assertTrue(deliveryProofService.hasCompleteProof(order));
+    }
+
+    @Test void legacyLocalPathsDoNotCountAsSharedProof() {
+        var order = new Order(); var proof = new DeliveryProof();
+        proof.setProofImagePath("/uploads/giao-hang/proof.png");
+        proof.setSignaturePath("/private-proof/signature.png");
+        when(deliveryProofRepository.findByOrder(order)).thenReturn(Optional.of(proof));
+        assertFalse(deliveryProofService.hasCompleteProof(order));
     }
 
     @Test
