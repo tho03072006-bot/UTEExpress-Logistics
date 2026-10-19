@@ -61,7 +61,7 @@ public class UserOrderController {
     /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
     @ModelAttribute("paymentMethods")
     public OrderPayment.PaymentMethod[] paymentMethods() {
-        return OrderPayment.PaymentMethod.values();
+        return new OrderPayment.PaymentMethod[] { OrderPayment.PaymentMethod.COD, OrderPayment.PaymentMethod.MOMO };
     }
 
     @GetMapping("/trang-chu")

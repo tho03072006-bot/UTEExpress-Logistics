@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>17</java.version>
+        <start-class>vn.edu.hcmute.uteexpress.UteexpressApplication</start-class>
+        <app-resource-pattern>**/*</app-resource-pattern>
         <!-- Mockito can instrument JDK classes when tests run on Java 26. -->
         <byte-buddy.version>1.17.8</byte-buddy.version>
     </properties>
@@ -124,6 +126,12 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <includes>
+                    <include>${app-resource-pattern}</include>
+                    <include>templates/momo/**</include>
+                    <include>static/css/momo-simulator.css</include>
+                    <include>static/js/momo-simulator.js</include>
+                </includes>
                 <excludes>
                     <!-- Khong dong goi bi mat SMTP/JWT local vao JAR. -->
                     <exclude>application-local.properties*</exclude>
@@ -142,8 +150,21 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration><mainClass>${start-class}</mainClass></configuration>
             </plugin>
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>momo-simulator</id>
+            <properties>
+                <start-class>vn.edu.hcmute.momosimulator.MomoSimulatorApplication</start-class>
+                <app-resource-pattern>momo-simulator.properties</app-resource-pattern>
+            </properties>
+            <build>
+                <directory>target/momo-simulator</directory>
+            </build>
+        </profile>
+    </profiles>
 </project>

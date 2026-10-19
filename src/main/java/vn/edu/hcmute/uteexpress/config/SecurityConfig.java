@@ -45,6 +45,7 @@ public class SecurityConfig {
                 // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/assistant/**").hasAnyRole("USER","SHIPPER")
+                .requestMatchers("/api/payments/**").hasRole("USER")
                 .requestMatchers("/nguoi-dung/**").hasRole("USER")
                 .requestMatchers("/shipper/**").hasRole("SHIPPER")
                 .requestMatchers("/manager/**", "/admin/**").denyAll()
@@ -71,7 +72,7 @@ public class SecurityConfig {
                 if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
                 return !java.util.Set.of("GET", "HEAD", "OPTIONS", "TRACE").contains(request.getMethod())
                         && (path.startsWith("/shipper/") || path.startsWith("/nguoi-dung/")
-                            || path.startsWith("/api/assistant/") || path.equals("/logout"));
+                            || path.startsWith("/api/assistant/") || path.startsWith("/api/payments/") || path.equals("/logout"));
             }))
             .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.PublicAccountSessionFilter(users),
                 org.springframework.security.web.access.intercept.AuthorizationFilter.class)

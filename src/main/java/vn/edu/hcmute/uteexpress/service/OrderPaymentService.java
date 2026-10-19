@@ -13,9 +13,8 @@ import java.util.Optional;
  * Nghiệp vụ thanh toán cước vận chuyển - TV1 phụ trách (việc 3).
  *
  * COD chạy thật theo đúng nghĩa: lưu và hiển thị trạng thái chưa/đã thanh toán trong CSDL.
- * VNPay / MoMo là bản MÔ PHỎNG - đồ án môn học không có API key thật của cổng thanh toán,
- * nên không có lời gọi nào ra ngoài Internet; người dùng đi qua một trang giả lập
- * rồi bấm xác nhận để diễn lại đúng luồng nghiệp vụ.
+ * MoMo là bản MÔ PHỎNG chạy riêng trên Render, đồng bộ database Aiven.
+ * Không thực hiện chuyển tiền thật. VNPay chỉ còn được đọc trong lịch sử cũ.
  */
 public interface OrderPaymentService {
 
@@ -47,7 +46,7 @@ public interface OrderPaymentService {
     OrderPayment findOwnedPayment(Long orderId, String username);
 
     /**
-     * Xác nhận đã thanh toán ở trang ví điện tử giả lập.
+     * Chuyển trạng thái MoMo trong luồng nội bộ tin cậy; không công khai thành endpoint xác nhận local.
      * Ném IllegalStateException nếu đơn là COD (COD thu tiền lúc giao, không trả trước)
      * hoặc đơn đã thanh toán rồi.
      */

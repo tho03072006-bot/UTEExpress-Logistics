@@ -71,6 +71,11 @@ public class OrderCreateRequest {
     @AssertTrue(message = "Khối lượng phải là số hữu hạn.")
     public boolean isWeightFinite() { return weightKg == null || Double.isFinite(weightKg); }
 
+    @AssertTrue(message = "Chỉ hỗ trợ COD hoặc MoMo mô phỏng. Vui lòng chọn lại phương thức thanh toán.")
+    public boolean isPaymentMethodSupported() {
+        return paymentMethod == null || paymentMethod == OrderPayment.PaymentMethod.COD || paymentMethod == OrderPayment.PaymentMethod.MOMO;
+    }
+
     public OrderCreateRequest() {
     }
 

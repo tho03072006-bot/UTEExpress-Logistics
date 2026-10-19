@@ -61,6 +61,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public DraftOrder addDraft(OrderCreateRequest request, String username) {
+        if (request == null || request.getPaymentMethod() == null || !request.isPaymentMethodSupported()) {
+            throw new IllegalStateException("Chỉ hỗ trợ COD hoặc MoMo mô phỏng. Vui lòng chọn lại phương thức thanh toán.");
+        }
         AppUser owner = requireUser(username);
 
         if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER) {
@@ -145,6 +148,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
      * (sinh mã vận đơn, tính cước, đặt trạng thái PENDING_PICKUP).
      */
     private OrderCreateRequest toCreateRequest(DraftOrder draft) {
+        if (draft.getPaymentMethod() == vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.VNPAY) {
+            throw new IllegalStateException("Đơn nháp VNPay cũ không còn được hỗ trợ. Hãy tạo lại đơn nháp và chọn COD hoặc MoMo.");
+        }
         OrderCreateRequest request = new OrderCreateRequest();
         request.setSenderName(draft.getSenderName());
         request.setSenderAddress(draft.getSenderAddress());

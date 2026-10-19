@@ -61,6 +61,9 @@ application-local.properties.*
 /config/groq-local.properties
 /config/groq-local.properties.*
 !/config/groq-local.properties.example
+/config/momo-local.properties
+/config/momo-local.properties.*
+!/config/momo-local.properties.example
 
 # Chan file profile cu chua bi mat neu ai copy lai; app khong dung MonsterASP.
 application-cloud.properties

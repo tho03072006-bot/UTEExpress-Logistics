@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoMo mô phỏng · UTEExpress</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"></head>
+<body><header class="topbar"><a th:href="@{/}" class="brand">UTE<span>Express</span></a><span class="badge">ĐỒ ÁN · KHÔNG THU TIỀN THẬT</span></header>
+<main class="landing"><div class="wallet-icon" aria-hidden="true">m</div><p class="eyebrow">CỔNG THANH TOÁN DEMO</p>
+<h1>MoMo mô phỏng</h1><p class="lead">Một bước xác nhận. Đồng bộ với UTEExpress.</p>
+<p class="notice" th:if="${notice}" th:text="${notice}" role="status"></p>
+<div class="card intro"><h2>Bắt đầu từ đơn hàng của bạn</h2><p>Đăng nhập UTEExpress trên máy tính, chọn thanh toán bằng MoMo và quét mã QR. Trang này chỉ mở thanh toán khi có liên kết hợp lệ.</p>
+<ol><li>Chọn đơn và tạo QR tại UTEExpress.</li><li>Kiểm tra mã đơn, số tiền trên trang mô phỏng.</li><li>Xác nhận mô phỏng và xem kết quả tại UTEExpress.</li></ol>
+<p class="muted">Không nhập mật khẩu ví, OTP, số thẻ hoặc thông tin ngân hàng. Đây không phải sản phẩm của MoMo và không kết nối cổng thanh toán thật.</p></div></main>
+<footer>Bản quyền thuộc Nhóm 8 · Lập trình Web · HCMUTE</footer></body></html>
