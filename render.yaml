@@ -4,11 +4,11 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    branch: feature_Thang
+    branch: develop
     dockerfilePath: ./deploy/momo/Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
-    autoDeployTrigger: "off"
+    autoDeployTrigger: commit
     envVars:
       - key: MOMO_SIMULATOR_URL
         sync: false
