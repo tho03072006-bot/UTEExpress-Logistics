@@ -25,6 +25,11 @@ public class PublicAccountSessionFilter extends OncePerRequestFilter {
             if (!valid) {
                 SecurityContextHolder.clearContext(); var session = request.getSession(false);
                 if (session != null) { session.invalidate(); }
+                String path=request.getRequestURI().substring(request.getContextPath().length());
+                if (path.startsWith("/api/assistant/")) {
+                    response.setStatus(401); response.setHeader("Cache-Control","no-store"); response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"code\":\"SESSION_EXPIRED\",\"message\":\"Phiên hoặc quyền truy cập đã thay đổi. Vui lòng đăng nhập lại.\"}"); return;
+                }
                 response.sendRedirect(request.getContextPath() + "/dang-nhap?expired"); return;
             }
         }

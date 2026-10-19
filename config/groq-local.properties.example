@@ -1,0 +1,9 @@
+# Copy to config/groq-local.properties. Never commit a real API key.
+app.assistant.enabled=true
+app.assistant.api-key=CHANGE_ME
+app.assistant.model=openai/gpt-oss-20b
+app.assistant.timeout-seconds=18
+app.assistant.max-completion-tokens=1600
+app.assistant.requests-per-minute=3
+# Environment overrides: GROQ_API_KEY, GROQ_MODEL, ASSISTANT_ENABLED.
+# Missing credentials do not stop Spring Boot; chat reports NOT_CONFIGURED.
