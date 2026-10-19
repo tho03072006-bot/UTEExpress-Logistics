@@ -48,23 +48,24 @@ class AssistantChatServiceImplTest {
         verify(ai,times(1)).complete(any(),any(),any(),anyInt()); verify(tools,never()).execute(any(),any(),any());
     }
     @Test void retryKeepsOneTurnAndQueriesCurrentDataAgain() {
-        when(tools.execute(eq("lookup_order"),any(),eq(auth))).thenReturn(new AssistantToolService.ToolOutput(mapper.createObjectNode().put("status","Đang giao"),List.of(),"UTECHAT01"));
+        when(tools.execute(eq("lookup_order"),any(),eq(auth))).thenReturn(new AssistantToolService.ToolOutput(mapper.createObjectNode().put("ok",true).put("status","Đang giao"),List.of(),"UTECHAT01"));
         when(ai.complete(any(),any(),any(),anyInt())).thenThrow(new AssistantFailure("NOT_CONFIGURED",503,0)).thenReturn(answer("Đang giao theo lần kiểm tra mới."));
         var request=request("Đơn UTECHAT01 thế nào?");
         var failed=chat.sendMessage(auth,session,request); assertEquals("FAILED",failed.conversation().turns().get(0).status());
         request.setRetry(true); var success=chat.sendMessage(auth,session,request);
         assertEquals(1,success.conversation().turns().size()); assertEquals("COMPLETE",success.conversation().turns().get(0).status());
-        verify(tools,times(2)).execute(eq("lookup_order"),any(),eq(auth));
+        verify(tools,times(3)).execute(eq("lookup_order"),any(),eq(auth));
     }
     @Test void followupDoesNotSendOldAnswerAsCurrentEvidence() {
         when(tools.execute(eq("lookup_order"),any(),eq(auth))).thenReturn(
-                new AssistantToolService.ToolOutput(mapper.createObjectNode().put("status","Cũ"),List.of(),"UTECHAT01"),
-                new AssistantToolService.ToolOutput(mapper.createObjectNode().put("status","Mới"),List.of(),"UTECHAT01"));
+                new AssistantToolService.ToolOutput(mapper.createObjectNode().put("ok",true).put("status","Cũ"),List.of(),"UTECHAT01"),
+                new AssistantToolService.ToolOutput(mapper.createObjectNode().put("ok",true).put("status","Cũ"),List.of(),"UTECHAT01"),
+                new AssistantToolService.ToolOutput(mapper.createObjectNode().put("ok",true).put("status","Mới"),List.of(),"UTECHAT01"));
         when(ai.complete(any(),any(),any(),anyInt())).thenReturn(answer("OLD_PRIVATE_ANSWER"),answer("Đã đối chiếu lại."));
         chat.sendMessage(auth,session,request("Tra đơn UTECHAT01"));
         var captured=new ArrayList<String>();
         doAnswer(call -> { captured.add(call.getArgument(0).toString()); return answer("Đã đối chiếu lại."); }).when(ai).complete(any(),any(),any(),anyInt());
-        chat.sendMessage(auth,session,request("Còn đơn đó bây giờ?"));
+        var followup=request("Còn đơn đó bây giờ?"); followup.setSelectedOrderCode("UTECHAT01"); chat.sendMessage(auth,session,followup);
         assertFalse(captured.get(0).contains("OLD_PRIVATE_ANSWER")); assertTrue(captured.get(0).contains("Mới"));
     }
     @Test void invalidInputAndIdentityInjectionCannotReachProvider() {

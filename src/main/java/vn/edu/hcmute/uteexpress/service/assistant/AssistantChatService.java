@@ -8,5 +8,6 @@ public interface AssistantChatService {
     record Submission(ChatConversationResponse conversation,int status,long retryAfterSeconds) { }
     ChatConversationResponse readConversation(Authentication authentication,HttpSession session);
     ChatConversationResponse clearConversation(Authentication authentication,HttpSession session);
+    ChatOrderPageResponse readOrderOptions(Authentication authentication,HttpSession session,int page,String query);
     Submission sendMessage(Authentication authentication,HttpSession session,ChatMessageRequest request);
 }

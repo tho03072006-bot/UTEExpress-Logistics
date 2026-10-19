@@ -164,6 +164,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByTrackingCodeAndShipper(String trackingCode, AppUser shipper);
 
     Optional<Order> findByTrackingCode(String trackingCode);
+    Optional<Order> findByTrackingCodeAndSenderUsername(String trackingCode,String username);
 
     /**
      * Tim don cua mot nguoi gui, co phan trang, ket hop loc trang thai va tim theo tu khoa.

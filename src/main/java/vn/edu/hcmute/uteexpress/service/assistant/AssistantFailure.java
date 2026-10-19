@@ -13,6 +13,11 @@ public final class AssistantFailure extends RuntimeException {
             case "BUSY" -> "Một câu hỏi của tài khoản đang được xử lý. Vui lòng chờ.";
             case "CONVERSATION_CHANGED" -> "Hội thoại đã thay đổi hoặc hết hạn. Hãy tải lại hội thoại trước khi gửi.";
             case "INVALID_INPUT" -> "Câu hỏi hoặc mã yêu cầu không hợp lệ. Câu hỏi tối đa 1200 ký tự.";
+            case "ORDER_SELECTION_REQUIRED" -> "Chọn một đơn trong danh sách trên tài khoản để tiếp tục câu hỏi này; không cần nhập mã đơn.";
+            case "ORDER_NOT_AVAILABLE" -> "Đơn vừa chọn không còn trong phạm vi tài khoản. Vui lòng tải lại danh sách và chọn đơn khác.";
+            case "ORDER_SELECTION_CONFLICT" -> "Mã trong câu hỏi khác đơn đang chọn. Hãy chọn đúng đơn hoặc bỏ mã cũ trong câu hỏi.";
+            case "ORDER_CHANGED" -> "Dữ liệu đơn vừa thay đổi trong lúc AI trả lời. Hãy thử lại để tra cứu thông tin mới nhất.";
+            case "INVALID_ORDER_FILTER" -> "Tham số chọn đơn không hợp lệ: trang 0–1000, từ khóa tối đa 20 ký tự chữ, số hoặc gạch ngang; không nhận danh tính tài khoản.";
             default -> "Trợ lý AI tạm thời chưa phản hồi. Vui lòng thử lại.";
         });
         this.code=code; this.status=status; this.retryAfter=Math.max(0,retryAfter);

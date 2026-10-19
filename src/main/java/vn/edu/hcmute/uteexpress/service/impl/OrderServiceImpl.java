@@ -156,6 +156,14 @@ public class OrderServiceImpl implements OrderService {
     public Optional<Order> findByTrackingCode(String trackingCode) {
         return orderRepository.findByTrackingCode(trackingCode);
     }
+    @Override @Transactional(readOnly=true)
+    public Optional<Order> findOwnedOrderByCode(String trackingCode,String username) {
+        return orderRepository.findByTrackingCodeAndSenderUsername(trackingCode,username);
+    }
+    @Override public boolean canCancelOrder(Order order,String username) {
+        return order!=null && order.getSender()!=null && order.getSender().getUsername().equals(username)
+                && order.getStatus()==Order.OrderStatus.PENDING_PICKUP;
+    }
 
     @Override
     public Order findOwnedOrder(Long orderId, String username) {
@@ -251,7 +259,7 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getSender().getUsername().equals(username)) {
             throw new IllegalStateException("Bạn không có quyền huỷ đơn hàng này.");
         }
-        if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP) {
+        if (!canCancelOrder(order,username)) {
             throw new IllegalStateException("Chỉ huỷ được đơn khi shipper chưa tới lấy hàng.");
         }
 

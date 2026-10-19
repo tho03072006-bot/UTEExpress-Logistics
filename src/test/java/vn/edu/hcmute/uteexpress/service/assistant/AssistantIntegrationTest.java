@@ -140,7 +140,7 @@ class AssistantIntegrationTest {
         assertFalse(tools.definitions(access.requireActor(auth(customer))).toString().contains("get_shipper_work"));
         assertTrue(tools.definitions(access.requireActor(auth(shipper))).toString().contains("get_shipper_work"));
         var actor=auth(shipper); mvc.perform(get("/api/assistant/conversation").session(session(actor)).with(authentication(actor)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.role").value("SHIPPER")).andExpect(jsonPath("$.suggestions",hasSize(3)));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.role").value("SHIPPER")).andExpect(jsonPath("$.suggestions",hasSize(5)));
     }
     @Test void apiUsesValidatedPrincipalAndBlocksGuestsAndStaff() throws Exception {
         mvc.perform(get("/api/assistant/conversation")).andExpect(status().isUnauthorized());
@@ -204,5 +204,114 @@ class AssistantIntegrationTest {
         }
         mvc.perform(get("/uoc-tinh-cuoc")).andExpect(status().isOk()).andExpect(content().string(not(containsString("id=\"uteAssistant\""))));
         mvc.perform(get("/uoc-tinh-cuoc").with(user("staff").roles("ADMIN"))).andExpect(status().isOk()).andExpect(content().string(not(containsString("id=\"uteAssistant\""))));
+    }
+    JsonNode send(Authentication actor,MockHttpSession session,String body,int expected) throws Exception {
+        return mapper.readTree(mvc.perform(post("/api/assistant/messages").session(session).with(authentication(actor)).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().is(expected)).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    }
+    String selectedRequest(String id,String question,String code) throws Exception {
+        var body=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(request(id,question)); body.put("selectedOrderCode",code); return body.toString();
+    }
+    @Test void accountOrderPickerNeverContainsOtherCustomersOrShippersOrders() throws Exception {
+        for(var member:List.of(customer,shipper)) {
+            var actor=auth(member); var session=session(actor); conversation(actor,session);
+            mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+                .andExpect(jsonPath("$.orders",hasSize(1))).andExpect(jsonPath("$.orders[0].trackingCode").value("UTECHAT01"))
+                .andExpect(content().string(not(containsString("UTECHAT02")))).andExpect(content().string(not(containsString("PRIVATE-"))));
+            for(String identity:List.of("username","role","userId"))
+                mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param(identity,"other-account")).andExpect(status().isBadRequest());
+        }
+    }
+    @Test void orderPickerPaginationQueryAndValidationStayAccountScoped() throws Exception {
+        for(int i=10;i<21;i++) order("UTEPAGE"+i,customer,shipper);
+        var actor=auth(customer); var session=session(actor); conversation(actor,session);
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)))
+                .andExpect(jsonPath("$.orders",hasSize(10))).andExpect(jsonPath("$.total").value(12)).andExpect(jsonPath("$.hasNext").value(true));
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param("page","1"))
+                .andExpect(jsonPath("$.orders",hasSize(2))).andExpect(jsonPath("$.hasNext").value(false));
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param("query","UTECHAT02"))
+                .andExpect(jsonPath("$.orders",hasSize(0)));
+        for(String page:List.of("-1","1001","0.1","no","9999999999999999"))
+            mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param("page",page)).andExpect(status().isBadRequest());
+        for(String query:List.of("x".repeat(21),"' OR 1=1","%","<script>"))
+            mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param("query",query)).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor)).param("page","0","1")).andExpect(status().isBadRequest());
+        verifyNoInteractions(ai);
+    }
+    @Test void multipleOrdersAskForPickerAndResumeSameTurnWithoutManualCode() throws Exception {
+        order("UTECHAT03",customer,shipper);
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session), body=request(id,"Đơn của tôi đang ở đâu?");
+        var waiting=send(actor,session,body,409); assertEquals("NEEDS_ORDER",waiting.path("turns").path(0).path("status").asText()); verifyNoInteractions(ai);
+        var resume=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(body); resume.put("selectedOrderCode",own.getTrackingCode());
+        var completed=send(actor,session,resume.toString(),200); assertEquals(1,completed.path("turns").size());
+        assertEquals("COMPLETE",completed.path("turns").path(0).path("status").asText());
+        assertEquals(own.getTrackingCode(),completed.path("selectedOrderCode").asText());
+        assertTrue(completed.path("turns").path(0).path("links").path(0).path("path").asText().endsWith("/"+own.getId()));
+        send(actor,session,resume.toString(),200); verify(ai,times(1)).complete(any(),any(),anyString(),anyInt());
+    }
+    @Test void oneOwnedOrderIsResolvedAutomaticallyAndEmptyAccountRemainsHonest() throws Exception {
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session);
+        assertEquals("UTECHAT01",send(actor,session,request(id,"Đơn của tôi đang ở đâu?"),200).path("selectedOrderCode").asText());
+        var empty=account("chat-empty",AppUser.Role.USER); actor=auth(empty); session=session(actor); id=conversation(actor,session);
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor))).andExpect(jsonPath("$.orders",hasSize(0))).andExpect(jsonPath("$.total").value(0));
+        clearInvocations(ai); send(actor,session,request(id,"Đơn của tôi đang ở đâu?"),200);
+        var messages=org.mockito.ArgumentCaptor.forClass(com.fasterxml.jackson.databind.node.ArrayNode.class);
+        verify(ai).complete(messages.capture(),any(),anyString(),anyInt()); assertTrue(messages.getValue().toString().contains("NO_ORDERS"));
+    }
+    @Test void forgedSelectedOrderCannotReachAiOrLeakAnotherAccountsOrder() throws Exception {
+        for(var member:List.of(customer,shipper)) {
+            var actor=auth(member); var session=session(actor); String id=conversation(actor,session);
+            var result=send(actor,session,selectedRequest(id,"Đơn này ra sao?",foreign.getTrackingCode()),409);
+            assertEquals("NEEDS_ORDER",result.path("turns").path(0).path("status").asText());
+            assertEquals("ORDER_NOT_AVAILABLE",result.path("turns").path(0).path("error").path("code").asText());
+            assertFalse(result.toString().contains("PRIVATE-")); assertEquals(0,result.path("turns").path(0).path("links").size());
+        }
+        verifyNoInteractions(ai);
+    }
+    @Test void modelCanRequestAccountPickerWithoutKnowingAnyCode() throws Exception {
+        order("UTECHAT03",customer,shipper);
+        when(ai.complete(any(),any(),anyString(),anyInt())).thenAnswer(call -> {
+            var reply=mapper.createObjectNode(); reply.putArray("tool_calls").addObject().put("id","choose_1").put("type","function").putObject("function").put("name","request_order_selection").put("arguments","{}"); return reply;
+        });
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session);
+        assertEquals("NEEDS_ORDER",send(actor,session,request(id,"Tôi muốn hỏi tình hình kiện hàng của mình"),409).path("turns").path(0).path("status").asText());
+        verify(ai,times(1)).complete(any(),any(),anyString(),anyInt());
+    }
+    @Test void reassignmentDuringAiWaitDiscardsFormerShippersAnswer() throws Exception {
+        when(ai.complete(any(),any(),anyString(),anyInt())).thenAnswer(call -> { own.setShipper(otherShipper); orders.flush(); return mapper.createObjectNode().put("content","OLD_PRIVATE_ANSWER"); });
+        var actor=auth(shipper); var session=session(actor); String id=conversation(actor,session);
+        var result=send(actor,session,selectedRequest(id,"Tình trạng đơn này?",own.getTrackingCode()),409);
+        assertEquals("ORDER_NOT_AVAILABLE",result.path("turns").path(0).path("error").path("code").asText()); assertFalse(result.toString().contains("OLD_PRIVATE_ANSWER"));
+        mvc.perform(get("/api/assistant/orders").session(session).with(authentication(actor))).andExpect(jsonPath("$.orders",hasSize(0)));
+    }
+    @Test void orderChangedDuringGenerationRequiresFreshRetryNotAnOldAnswer() throws Exception {
+        when(ai.complete(any(),any(),anyString(),anyInt())).thenAnswer(call -> { own.setStatus(Order.OrderStatus.IN_TRANSIT); orders.flush(); return mapper.createObjectNode().put("content","STALE_ORDER_STATE"); });
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session);
+        var result=send(actor,session,selectedRequest(id,"Tình trạng đơn này?",own.getTrackingCode()),409);
+        assertEquals("ORDER_CHANGED",result.path("turns").path(0).path("error").path("code").asText()); assertFalse(result.toString().contains("STALE_ORDER_STATE"));
+    }
+    @Test void selectedOrderAndTypedCodeCannotSilentlyReferToDifferentOrders() throws Exception {
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session);
+        var result=send(actor,session,selectedRequest(id,"Tình trạng UTECHAT02",own.getTrackingCode()),409);
+        assertEquals("ORDER_SELECTION_CONFLICT",result.path("turns").path(0).path("error").path("code").asText()); verifyNoInteractions(ai);
+    }
+    @Test void strictJsonRejectsDuplicateKeysWrongTypesAndInvalidSelection() throws Exception {
+        var actor=auth(customer); var session=session(actor); String id=conversation(actor,session);
+        var body=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(request(id,"Hướng dẫn"));
+        for(var field:List.of("selectedOrderCode","question")) { var bad=body.deepCopy(); bad.put(field,42); send(actor,session,bad.toString(),400); }
+        for(String code:List.of("","../admin","x".repeat(21),"UTE CHAT01"," UTECHAT01 ")) { var bad=body.deepCopy(); bad.put("selectedOrderCode",code); send(actor,session,bad.toString(),400); }
+        var bad=body.deepCopy(); bad.put("retry","true"); send(actor,session,bad.toString(),400);
+        send(actor,session,body.toString().replace("\"question\":","\"question\":\"first\",\"question\":"),400);
+        verifyNoInteractions(ai);
+    }
+    @Test void anotherUserCannotResumeAConversationOrSelectionFromTheFirstUser() throws Exception {
+        var first=auth(customer); var firstSession=session(first); String firstId=conversation(first,firstSession);
+        var second=auth(otherCustomer); var secondSession=session(second); String secondId=conversation(second,secondSession);
+        var response=send(second,secondSession,selectedRequest(firstId,"Đơn này ra sao?",own.getTrackingCode()),409);
+        assertEquals("CONVERSATION_CHANGED",response.path("code").asText());
+        response=send(second,secondSession,selectedRequest(secondId,"Đơn này ra sao?",own.getTrackingCode()),409);
+        assertEquals("ORDER_NOT_AVAILABLE",response.path("turns").path(0).path("error").path("code").asText());
+        assertFalse(response.toString().contains("PRIVATE-")); verifyNoInteractions(ai);
     }
 }
