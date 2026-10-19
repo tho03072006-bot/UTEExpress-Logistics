@@ -1,0 +1,15 @@
+.git
+target
+config
+db
+docs
+src/test
+.env*
+*.log
+*.pem
+*.p12
+*.key
+src/main/resources/application*.properties*
+README.md
+.project
+.settings

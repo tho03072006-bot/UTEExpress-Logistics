@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xác nhận thanh toán · MoMo mô phỏng</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"><script defer th:src="@{/js/momo-simulator.js}"></script></head>
+<body><header class="topbar"><a th:href="@{/}" class="brand">UTE<span>Express</span></a><span class="badge">MÔ PHỎNG · KHÔNG THU TIỀN THẬT</span></header>
+<main class="checkout-shell"><div class="page-heading"><p class="eyebrow">UTEEXPRESS / CƯỚC VẬN CHUYỂN</p><h1>Thanh toán MoMo <span>mô phỏng</span></h1><p>Kiểm tra thông tin trước khi xác nhận giao dịch demo.</p></div>
+<div class="checkout-grid"><section class="card order-card"><div class="section-title"><span class="step">01</span><h2>Thông tin đơn hàng</h2></div>
+<dl class="details"><div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
+<div><dt>Người gửi</dt><dd th:text="${receipt.senderName ?: '—'}">—</dd></div>
+<div><dt>Người nhận</dt><dd><span th:text="${receipt.receiverName ?: '—'}">—</span><small th:text="${receipt.receiverPhone}"></small></dd></div>
+<div><dt>Dịch vụ</dt><dd th:text="${receipt.service}">—</dd></div>
+<div><dt>Khối lượng</dt><dd th:text="${receipt.weightKg == null ? '—' : receipt.weightKg + ' kg'}">—</dd></div></dl>
+<div class="costs"><div><span>Cước vận chuyển</span><strong data-money th:text="${receipt.originalAmount}">0</strong></div>
+<div><span>Giảm giá</span><strong><span>−</span><span data-money th:text="${receipt.discount}">0</span></strong></div>
+<div class="total"><span>Tổng thanh toán</span><strong data-money th:text="${receipt.amount}">0</strong></div></div>
+<p class="muted">Số tiền được đọc từ database chung Aiven, không thể thay đổi trên trang thanh toán.</p></section>
+<section class="card confirm-card"><div class="section-title"><span class="step">02</span><h2 th:text="${receipt.paid ? 'Biên nhận giao dịch' : 'Xác nhận mô phỏng'}">Xác nhận mô phỏng</h2></div>
+<div class="wallet-icon" th:classappend="${receipt.paid ? ' success-icon' : ''}" aria-hidden="true" th:text="${receipt.paid ? '✓' : 'm'}">m</div>
+<p class="wallet-label" th:text="${receipt.paid ? 'Thanh toán thành công' : 'MoMo · Ví mô phỏng'}">MoMo · Ví mô phỏng</p>
+<p class="hero-amount" data-money th:text="${receipt.amount}">0</p>
+<div th:if="${receipt.paid}" class="success" role="status"><p>Giao dịch đã được ghi nhận trên Aiven.</p><dl><dt>Mã giao dịch mô phỏng</dt><dd class="transaction" th:text="${receipt.transactionRef}">—</dd><dt>Thời gian (Việt Nam)</dt><dd th:text="${receipt.paidAt}">—</dd></dl><p>Bạn có thể đóng trang này. UTEExpress đang mở trên máy tính sẽ tự kiểm tra kết quả.</p></div>
+<div th:unless="${receipt.paid}" data-checkout th:attr="data-expires=${receipt.expiresAt}">
+<p class="timer">Phiên còn <strong data-countdown>10:00</strong></p>
+<form method="post" th:action="@{/momo/phien/{id}/xac-nhan(id=${checkoutId})}" data-confirm-form>
+<label class="consent"><input type="checkbox" name="simulationAcknowledged" value="true" required><span>Tôi hiểu đây là mô phỏng, không chuyển tiền thật.</span></label>
+<button class="button primary" type="submit" data-confirm-button>Xác nhận thanh toán mô phỏng</button></form>
+<p class="feedback" data-feedback role="status" aria-live="polite"></p>
+<form method="post" th:action="@{/momo/phien/{id}/huy(id=${checkoutId})}"><button class="button secondary" type="submit">Hủy phiên, không thanh toán</button></form>
+<p class="muted">Chỉ báo thành công sau khi Aiven ghi nhận. Mất mạng hoặc lỗi kết nối không được coi là đã trả tiền.</p></div>
+</section></div><p class="legal">Bản demo học tập độc lập, không liên kết với MoMo. Không yêu cầu đăng nhập ví hoặc OTP.</p></main>
+<footer>Bản quyền thuộc Nhóm 8 · Lập trình Web · HCMUTE</footer></body></html>

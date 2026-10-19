@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: uteexpress-momo-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: feature_Thang
+    dockerfilePath: ./deploy/momo/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: "off"
+    envVars:
+      - key: MOMO_SIMULATOR_URL
+        sync: false
+      - key: MOMO_SIM_SECRET
+        sync: false
+      - key: AIVEN_HOST
+        sync: false
+      - key: AIVEN_PORT
+        sync: false
+      - key: AIVEN_DATABASE
+        sync: false
+      - key: AIVEN_USER
+        sync: false
+      - key: AIVEN_PASSWORD
+        sync: false
+      - key: AIVEN_CA_PEM
+        sync: false
