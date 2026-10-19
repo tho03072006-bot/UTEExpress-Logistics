@@ -20,6 +20,14 @@ import vn.edu.hcmute.uteexpress.config.AivenOnlyConfig;
     @ComponentScan.Filter(type = FilterType.CUSTOM, classes = org.springframework.boot.context.TypeExcludeFilter.class)
 })
 public class IsolatedLogisticsTestConfiguration {
+    @Bean @Primary
+    vn.edu.hcmute.uteexpress.service.media.CloudMediaGateway isolatedCloudMedia(javax.sql.DataSource source) throws Exception {
+        try (var connection = source.getConnection()) {
+            if (!connection.getMetaData().getURL().startsWith("jdbc:h2:mem:"))
+                throw new IllegalStateException("Không dùng cloud gateway giả ngoài test H2 in-memory.");
+        }
+        return new InMemoryCloudMediaGateway();
+    }
     @Bean ApplicationRunner seedIsolatedPolicy(JdbcTemplate jdbc, org.springframework.transaction.PlatformTransactionManager manager) {
         return args -> {
             try (var connection = jdbc.getDataSource().getConnection()) {

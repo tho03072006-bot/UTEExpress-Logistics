@@ -34,6 +34,16 @@ import org.springframework.web.servlet.ModelAndView;
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    @ExceptionHandler(CloudStorageUnavailableException.class) @ResponseBody
+    public ResponseEntity<String> cloudUnavailable(Exception ex) {
+        return ResponseEntity.status(503).header("Cache-Control","no-store").body(ex.getMessage());
+    }
+    @ExceptionHandler(org.springframework.web.multipart.MultipartException.class) @ResponseBody
+    public ResponseEntity<String> uploadInvalid(org.springframework.web.multipart.MultipartException ex) {
+        boolean large=ex instanceof MaxUploadSizeExceededException;
+        return ResponseEntity.status(large ? 413 : 400).header("Cache-Control","no-store")
+                .body(large ? "Tệp tải lên vượt giới hạn. Hãy chọn tệp nhỏ hơn." : "Không đọc được tệp tải lên. Hãy chọn lại tệp.");
+    }
 
     @ExceptionHandler({IllegalArgumentException.class, org.springframework.validation.BindException.class,
         org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,

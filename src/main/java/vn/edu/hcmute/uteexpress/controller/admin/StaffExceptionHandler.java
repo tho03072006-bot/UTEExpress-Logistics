@@ -16,6 +16,21 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class StaffExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(StaffExceptionHandler.class);
+    @ExceptionHandler(vn.edu.hcmute.uteexpress.exception.CloudStorageUnavailableException.class)
+    public String cloudUnavailable(Exception ex, HttpServletResponse response, Model model) {
+        return showError(503, ex.getMessage(), response, model);
+    }
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public String handleStatus(org.springframework.web.server.ResponseStatusException ex,HttpServletResponse response,Model model) {
+        return showError(ex.getStatusCode().value(),"Tệp hoặc hồ sơ không còn khả dụng. Hãy tải lại trang và kiểm tra.",response,model);
+    }
+    @ExceptionHandler({org.springframework.web.multipart.MultipartException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class})
+    public String handleUpload(Exception ex,HttpServletResponse response,Model model) {
+        boolean large=ex instanceof org.springframework.web.multipart.MaxUploadSizeExceededException;
+        return showError(large ? 413 : 400,large ? "Tệp tải lên vượt giới hạn. Ảnh chứng từ tối đa 5 MB."
+                : "Tệp tải lên bị thiếu hoặc không đọc được. Hãy chọn lại tệp.",response,model);
+    }
 
     @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
     public String handleMethodNotAllowed(Exception ex, HttpServletResponse response, Model model) {
