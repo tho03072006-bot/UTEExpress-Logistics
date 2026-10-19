@@ -4,7 +4,7 @@
 
 - UTEExpress chính vẫn chạy local bằng `UteexpressApplication`. Chỉ `MomoSimulatorApplication` được đóng gói để deploy Render.
 - Hai ứng dụng dùng đúng database MySQL Aiven chung. Không tạo database local, không thay đổi schema và không seed đơn/tài khoản trên cloud cho các kiểm thử thanh toán.
-- Đã có source, Dockerfile, Blueprint và cấu hình mẫu. Chưa có URL Render được xác nhận hoạt động: cần kết nối Render, commit/push source rồi triển khai. Không sử dụng URL giả để tạo QR cho người dùng.
+- Đã có source, Dockerfile, Blueprint và cấu hình mẫu. Ba commit MoMo đã được merge vào `develop` qua PR #42, kiểm tra tại commit `6aab48e`. Render lấy source từ `develop`, không lấy trực tiếp `feature_Thang`. Chưa có URL Render được xác nhận hoạt động; không sử dụng URL giả để tạo QR cho người dùng.
 - File `config/momo-local.properties` đã được tạo riêng và được `.gitignore` bảo vệ. Khóa ngẫu nhiên được chuẩn bị bằng script; không gửi khóa, mật khẩu Aiven hoặc nội dung file cấu hình vào chat/Git.
 
 ## Thay đổi chức năng
@@ -53,13 +53,13 @@ Script giữ nguyên khóa đã có. Sau khi điền URL thực tế, khởi đ�
 
 ### Trên Render
 
-1. Push source lên `feature_Thang` trước. Tạo Web Service từ repository nhóm bằng Docker, hoặc Blueprint `render.yaml`.
+1. Phát triển và push lên `feature_Thang`, sau đó tạo PR `feature_Thang → develop` và merge trước khi deploy. Tạo Web Service từ repository nhóm bằng Docker, chọn Branch `develop`; hoặc tạo Blueprint từ `develop` với `render.yaml` cũng đặt `branch: develop`. Sau khi sửa file Blueprint trên máy phải commit/push và merge bản sửa đó vào `develop` trước khi tạo/sync Blueprint.
 2. Dockerfile: `deploy/momo/Dockerfile`; Docker context: `.`; region Singapore; plan Free; health check `/healthz`. Không dùng lệnh chạy `UteexpressApplication` cho service này.
 3. Điền các biến trong phần Environment của Render (không điền giá trị thật vào `render.yaml`):
 
 | Biến | Nguồn |
 | --- | --- |
-| `MOMO_SIMULATOR_URL` | URL HTTPS thực tế Render cấp cho service; cùng URL điền trên local |
+| `MOMO_SIMULATOR_URL` | Trên Render có thể dán nguyên văn `${RENDER_EXTERNAL_URL}` để Spring lấy URL do Render cấp; đã kiểm tra cơ chế resolve với code hiện tại. Trên local phải điền URL HTTPS thực tế, không dùng placeholder này. |
 | `MOMO_SIM_SECRET` | Giá trị khóa trong file MoMo private trên máy |
 | `AIVEN_HOST`, `AIVEN_PORT`, `AIVEN_DATABASE`, `AIVEN_USER`, `AIVEN_PASSWORD` | Cùng dịch vụ/database trong `config/aiven-local.properties` của nhóm |
 | `AIVEN_CA_PEM` | Toàn bộ nội dung CA PEM từ Aiven, gồm BEGIN/END CERTIFICATE; không phải đường dẫn Windows |
@@ -69,7 +69,9 @@ Có thể dùng Render Secret File thay cho `AIVEN_CA_PEM`: tải CA lên tên `
 4. Deploy, kiểm tra `/healthz` trả `ok` và trang `/` ghi rõ mô phỏng. Nếu Aiven có IP allowlist, bổ sung outbound IP của đúng service Render trong Aiven trước khi thử lại. Không tắt TLS hoặc bỏ xác minh CA để chữa lỗi kết nối.
 5. Mở UTEExpress local, tạo/chọn một đơn MoMo của tài khoản User, quét QR bằng điện thoại. Kiểm tra mã đơn/số tiền rồi xác nhận mô phỏng. Local phải tự hiện PAID và cùng mã giao dịch từ Aiven. Thử đổi sang User khác: không được xem QR/trạng thái đơn của chủ cũ. Thử nhấn hai lần không tạo hai mã giao dịch.
 
-Render Free ngủ sau 15 phút không hoạt động và có thể mất khoảng một phút để khởi động lại. Chu kỳ đọc database 3 giây ở local không loại bỏ được độ trễ đánh thức của Render. Xem [giới hạn Free](https://render.com/docs/free), [Docker](https://render.com/docs/docker) và [Blueprint](https://render.com/docs/blueprint-spec). Blueprint đang tắt auto-deploy để tránh redeploy ngoài ý muốn.
+Render Free ngủ sau 15 phút không hoạt động và có thể mất khoảng một phút để khởi động lại. Chu kỳ đọc database 3 giây ở local không loại bỏ được độ trễ đánh thức của Render. Xem [giới hạn Free](https://render.com/docs/free), [Docker](https://render.com/docs/docker) và [Blueprint](https://render.com/docs/blueprint-spec). Blueprint đặt `autoDeployTrigger: commit` để build/deploy khi `develop` có commit mới; cần kết nối GitHub với Render để dùng auto-deploy. Nếu build/deploy thất bại, không được coi bản Live đã cập nhật; phải xem Deploys/Logs và sửa lỗi. Chỉ ứng dụng MoMo được deploy, không đưa web UTEExpress chính lên cloud.
+
+Nếu đã có service trên Render, sửa **Settings → Branch → develop** và **Auto-Deploy → On Commit**, rồi **Manual Deploy → Deploy latest commit**. Nếu service do Blueprint quản lý, đồng bộ `render.yaml` đã sửa trên `develop` để lần sync sau không khôi phục cấu hình cũ. Không cần tạo thêm một service trùng.
 
 Dockerfile dùng user không đặc quyền; giới hạn heap 256 MB, metaspace 160 MB. `-Pmomo-simulator` chỉ đóng gói tài nguyên MoMo, không đóng gói `application.properties`/cấu hình riêng hoặc template User/Admin. Docker daemon trên máy chưa chạy, vì vậy chưa xác minh image Docker bằng local daemon; gói JAR riêng đã được kiểm thử khởi động và đọc Aiven. Deploy thực tế trên Render vẫn là bước cần kiểm tra tiếp.
 
@@ -118,4 +120,14 @@ git commit -m "test(payment): validation, dong thoi, TLS va polling MoMo"
 git push origin feature_Thang
 ```
 
-Không commit file `config/momo-local.properties`, mật khẩu Aiven hoặc CA/truststore. Khi source đã lên Git và Render đã kết nối, tiếp tục deploy/test QR thật; chỉ khi bước đó thành công mới coi luồng online hoàn tất.
+Không commit file `config/momo-local.properties`, mật khẩu Aiven hoặc CA/truststore. Source chỉ lên `feature_Thang` thì Render chưa cập nhật: phải merge PR sang `develop`. Khi Render đã kết nối, tiếp tục deploy/test QR thật; chỉ khi bước đó thành công mới coi luồng online hoàn tất.
+
+### Commit 4 — Render theo nhánh tích hợp của nhóm
+
+```powershell
+git add render.yaml docs/thang/MOMO_RENDER_2026_10_19.md
+git commit -m "chore(render): deploy tu develop va bat auto deploy"
+git push origin feature_Thang
+```
+
+Sau đó tạo PR `feature_Thang → develop` và merge. Render phải hiển thị Branch `develop`; mỗi lần merge code mới vào `develop`, kiểm tra Deploys đã Live ở đúng commit mới.
