@@ -21,7 +21,7 @@
         <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error != null and param.locked == null}"><i class="bi bi-exclamation-octagon-fill"></i>
             <span th:if="${staffLoginFailures != null}" th:text="|Sai tài khoản hoặc mật khẩu (lần ${staffLoginFailures}/${staffLoginMax}). Còn ${staffLoginMax - staffLoginFailures} lần trước khi bị khóa 15 phút.|">Sai lần 1/5</span>
             <span th:unless="${staffLoginFailures != null}">Sai tài khoản hoặc mật khẩu. Sai 5 lần sẽ bị khóa 15 phút.</span></p>
-        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.locked}"><i class="bi bi-lock-fill"></i><span>Tài khoản đang tạm khóa 15 phút vì nhập sai nhiều lần. Trong lúc này nhập đúng mật khẩu cũng không vào được.</span></p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.locked}"><i class="bi bi-lock-fill"></i><span>Tài khoản đang tạm khóa 15 phút vì nhập sai nhiều lần. Hãy thử lại sau.</span></p>
         <p class="shipper-notice sx-notice-warning" role="status" th:if="${param.expired}"><i class="bi bi-hourglass-bottom"></i><span>Phiên đã hết hạn, vui lòng đăng nhập lại.</span></p>
         <p class="shipper-notice sx-notice-success" role="status" th:if="${param.changed}"><i class="bi bi-check-circle-fill"></i><span>Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</span></p>
         <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param['too-many']}"><i class="bi bi-hourglass-split"></i><span>Đăng nhập sai quá nhiều lần từ máy này. Hãy chờ khoảng 10 phút.</span></p>

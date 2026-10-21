@@ -79,7 +79,7 @@
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
-        <input type="tel" th:field="*{receiverPhone}" class="form-control" required maxlength="20" inputmode="tel" placeholder="0901234567 hoặc +84901234567">
+        <input type="tel" th:field="*{receiverPhone}" class="form-control" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
     </div>
     <div class="mb-3">
@@ -99,7 +99,7 @@
             <label class="form-label" for="serviceType">Dịch vụ</label>
             <select th:field="*{serviceType}" class="form-select">
                 <option th:each="tariff : ${currentTariffs}" th:value="${tariff.serviceType}"
-                    th:text="|${tariff.serviceType.displayName} (${#numbers.formatDecimal(tariff.baseFee,0,'POINT',0,'COMMA')}đ + ${#numbers.formatDecimal(tariff.feePerKg,0,'POINT',0,'COMMA')}đ/kg)|"></option>
+                    th:text="|${tariff.serviceType.displayName} · ${#numbers.formatDecimal(tariff.baseFee,0,'POINT',0,'COMMA')}đ + ${#numbers.formatDecimal(tariff.feePerKg,0,'POINT',0,'COMMA')}đ/kg|"></option>
             </select>
         </div>
     </div>
@@ -118,7 +118,7 @@
             <input type="radio" th:field="*{paymentMethod}" th:value="${method}" class="form-check-input">
             <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
                 <span th:text="${method.displayName}">-</span>
-                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước (mô phỏng)</span>
+                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước qua ví</span>
                 <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt khi nhận hàng</span>
             </label>
         </div>
@@ -135,7 +135,7 @@
         <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
     </div>
 </form>
-<p class="text-muted small">Giá đang hiệu lực lúc tải trang; cước được chốt theo bảng giá Aiven khi tạo đơn thành công.</p>
+<p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Cước tính theo bảng giá tại lúc tạo đơn.</p>
 <script defer th:src="@{/js/order-form.js}"></script>
 </section>
 
