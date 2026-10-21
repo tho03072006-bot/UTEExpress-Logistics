@@ -42,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
     private final jakarta.validation.Validator validator;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -50,7 +51,8 @@ public class OrderServiceImpl implements OrderService {
                             vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
-                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events) {
+                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events,
+                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -61,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
         this.tariffService = tariffService;
         this.validator = validator;
         this.events = events;
+        this.submissions = submissions;
     }
 
     @Override
@@ -93,14 +96,19 @@ public class OrderServiceImpl implements OrderService {
 
         if (!sender.isEnabled() || sender.isLockedByAdmin() || sender.getRole()!=AppUser.Role.USER)
             throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được tạo đơn.");
-        String requestHash = creationHash(request);
+        String requestHash = vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.fingerprint(request);
+        // HTTP bắt buộc có token; giữ tương thích lời gọi nội bộ cũ không truyền token.
+        var submission = request.getSubmissionToken() == null ? null
+            : submissions.reserve(request, sender, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DIRECT);
         if (request.getSubmissionToken()!=null) {
             var existing=orderRepository.findByCreationToken(request.getSubmissionToken());
             if(existing.isPresent()) {
                 if(!existing.get().getSender().getId().equals(sender.getId()) || !requestHash.equals(existing.get().getCreationHash()))
                     throw new IllegalStateException("Phiên biểu mẫu đã được sử dụng cho dữ liệu khác. Hãy mở lại trang tạo đơn.");
+                submission.bindResource(existing.get().getId());
                 return existing.get();
             }
+            if (submission.getResourceId() != null) throw vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.reused();
         }
 
         Order order = new Order();
@@ -139,20 +147,8 @@ public class OrderServiceImpl implements OrderService {
         history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(savedOrder, sender,
                 Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PENDING_PICKUP, null,
                 "Người gửi tạo vận đơn.", null, now));
+        if (submission != null) submission.bindResource(savedOrder.getId());
         return savedOrder;
-    }
-
-    private String creationHash(OrderCreateRequest request) {
-        var canonical=new StringBuilder();
-        for(String part : java.util.List.of(request.getSenderName(),request.getSenderAddress(),request.getReceiverName(),
-                request.getReceiverPhone(),request.getReceiverAddress(),BigDecimal.valueOf(request.getWeightKg()).stripTrailingZeros().toPlainString(),
-                request.getServiceType().name(),request.getPaymentMethod().name(),
-                request.getPromoCode()==null?"":request.getPromoCode().toUpperCase(java.util.Locale.ROOT))) {
-            canonical.append(part.length()).append(':').append(part);
-        }
-        try { return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
-            .digest(canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8))); }
-        catch(java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException("Không hỗ trợ SHA-256.",ex); }
     }
 
     @Override

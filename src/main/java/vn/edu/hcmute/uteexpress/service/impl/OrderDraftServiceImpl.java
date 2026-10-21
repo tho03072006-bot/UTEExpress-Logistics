@@ -28,16 +28,19 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     private final OrderService orderService;
     private final PromoCodeService promoCodeService;
     private final jakarta.validation.Validator validator;
+    private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
                                  OrderService orderService,
-                                 PromoCodeService promoCodeService, jakarta.validation.Validator validator) {
+                                 PromoCodeService promoCodeService, jakarta.validation.Validator validator,
+                                 vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
         this.orderService = orderService;
         this.promoCodeService = promoCodeService;
         this.validator=validator;
+        this.submissions=submissions;
     }
 
     @Override
@@ -69,6 +72,11 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         var errors=validator.validate(request);
         if(!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
         AppUser owner = requireLockedUser(username);
+        var submission = submissions.reserve(request, owner, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DRAFT);
+        if (submission.getResourceId() != null) {
+            return draftOrderRepository.findByIdAndUser(submission.getResourceId(), owner)
+                .orElseThrow(vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard::reused);
+        }
 
         if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER) {
             throw new IllegalStateException("Giỏ đơn chỉ chứa tối đa " + MAX_DRAFTS_PER_USER
@@ -95,7 +103,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
             promoCodeService.requireUsableCode(request.getPromoCode(), fee);
         }
 
-        return draftOrderRepository.save(draft);
+        DraftOrder saved = draftOrderRepository.save(draft);
+        submission.bindResource(saved.getId());
+        return saved;
     }
 
     @Override
