@@ -15,9 +15,7 @@ public class StaffAccountCreateRequest extends StaffPasswordRequest {
     private String fullName;
 
     @NotBlank(message = "Vui lòng nhập email công việc.")
-    @Email(message = "Email không đúng định dạng.")
-    @Size(max = 100, message = "Email không được quá 100 ký tự.")
-    @Pattern(regexp = "[^\\s@]+@[^\\s@]+\\.[^\\s@]+", message = "Email cần có tên miền hợp lệ.")
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
     private String email;
 
     @NotNull(message = "Vui lòng chọn cấp quyền.")
