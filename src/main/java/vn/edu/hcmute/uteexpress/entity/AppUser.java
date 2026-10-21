@@ -58,6 +58,26 @@ public class AppUser {
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
 
+    @Column(name = "otp_attempts", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private int otpAttempts;
+    @Column(name = "otp_last_sent_at")
+    private LocalDateTime otpLastSentAt;
+    @Column(name = "otp_window_start")
+    private LocalDateTime otpWindowStart;
+    @Column(name = "otp_send_count", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private int otpSendCount;
+
+    public int getOtpAttempts() { return otpAttempts; }
+    public void setOtpAttempts(int value) { otpAttempts = value; }
+    public LocalDateTime getOtpLastSentAt() { return otpLastSentAt; }
+    public void setOtpLastSentAt(LocalDateTime value) { otpLastSentAt = value; }
+    public LocalDateTime getOtpWindowStart() { return otpWindowStart; }
+    public void setOtpWindowStart(LocalDateTime value) { otpWindowStart = value; }
+    public int getOtpSendCount() { return otpSendCount; }
+    public void setOtpSendCount(int value) { otpSendCount = value; }
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

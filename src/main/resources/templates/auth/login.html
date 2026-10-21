@@ -26,6 +26,7 @@
 
         <div th:if="${activated}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Kích hoạt tài khoản thành công, đăng nhập ngay.</span></div>
         <div th:if="${passwordReset}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</span></div>
+        <div th:if="${param.changed}" class="shipper-notice sx-notice-success" role="status">Đã đổi mật khẩu và thu hồi phiên cũ. Hãy đăng nhập bằng mật khẩu mới.</div>
         <div th:if="${param.error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span>Sai tên đăng nhập, mật khẩu, hoặc tài khoản chưa kích hoạt OTP.</span></div>
         <div th:if="${param.logout}" class="shipper-notice sx-notice-info" role="status"><i class="bi bi-box-arrow-right"></i><span>Bạn đã đăng xuất.</span></div>
 

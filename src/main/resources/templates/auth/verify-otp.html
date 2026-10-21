@@ -24,9 +24,11 @@
         <p class="shipper-hint">Mã OTP đã gửi tới email, hiệu lực 10 phút.</p>
 
         <div th:if="${error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+        <div th:if="${notice}" class="shipper-notice sx-notice-success" role="status" th:text="${notice}"></div>
 
         <form method="post" th:action="@{/xac-thuc-otp}">
-            <input type="hidden" name="username" th:value="${username}">
+            <label class="form-label" for="activationUsername">Tên đăng nhập đang chờ kích hoạt</label>
+            <input class="form-control mb-3" id="activationUsername" name="username" th:value="${username}" required minlength="3" maxlength="50" autocomplete="username">
             <div class="mb-4">
                 <label class="form-label" for="otp">Mã OTP (6 số)</label>
                 <input type="text" id="otp" name="otp" class="form-control ute-otp-input sx-otp" maxlength="6" required autofocus
@@ -34,6 +36,8 @@
                        title="Nhập đủ 6 chữ số">
             </div>
             <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-check2-circle"></i> Xác thực</button>
+            <button type="submit" class="btn btn-outline-secondary w-100 mt-2" th:formaction="@{/xac-thuc-otp/gui-lai}" formnovalidate>Gửi lại mã kích hoạt</button>
+            <p class="form-text">Mỗi mã tối đa 5 lần nhập sai. Chờ 60 giây giữa các lần gửi, tối đa 5 email OTP/giờ.</p>
         </form>
         <div class="sx-auth-links">
             <span>Nhập nhầm email? <a th:href="@{/dang-ky}">Đăng ký lại</a></span>

@@ -12,6 +12,8 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.service.AuthService;
 import vn.edu.hcmute.uteexpress.util.MailFromNameSetter;
+import vn.edu.hcmute.uteexpress.security.OtpPolicy;
+import vn.edu.hcmute.uteexpress.validation.PublicAccountValidation;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -28,22 +30,30 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final MailFromNameSetter mailFromNameSetter;
+    private final OtpPolicy otpPolicy;
+    private final vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges;
 
     public AuthServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-                            JavaMailSender mailSender, MailFromNameSetter mailFromNameSetter) {
+                            JavaMailSender mailSender, MailFromNameSetter mailFromNameSetter, OtpPolicy otpPolicy,
+                            vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
         this.mailFromNameSetter = mailFromNameSetter;
+        this.otpPolicy = otpPolicy;
+        this.emailChanges=emailChanges;
     }
 
     @Override
     @Transactional
     public void register(String username, String rawPassword, String email, String fullName) {
-        if (appUserRepository.existsByUsername(username)) {
+        username = PublicAccountValidation.text(username); email = PublicAccountValidation.email(email);
+        fullName = PublicAccountValidation.text(fullName);
+        PublicAccountValidation.requireRegistration(username, rawPassword, email, fullName);
+        if (appUserRepository.existsByUsernameIgnoreCase(username)) {
             throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
         }
-        if (appUserRepository.existsByEmail(email)) {
+        if (appUserRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("Email đã được đăng ký");
         }
 
@@ -53,28 +63,29 @@ public class AuthServiceImpl implements AuthService {
         appUser.setEnabled(false); // chi bat len sau khi xac thuc OTP
 
         String otp = generateOtp();
-        appUser.setOtpCode(otp);
-        appUser.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        otpPolicy.reserveSend(appUser); otpPolicy.issue(appUser, otp);
 
-        appUserRepository.save(appUser);
+        appUserRepository.saveAndFlush(appUser);
         sendOtpEmail(email, otp, "Mã xác thực đăng ký", "kích hoạt tài khoản");
     }
 
     @Override
     @Transactional
     public boolean verifyOtp(String username, String otpCode) {
-        Optional<AppUser> found = appUserRepository.findByUsername(username);
+        if (username == null || username.length() > 50) return false;
+        Optional<AppUser> found = appUserRepository.findLockedByUsername(username.strip());
         if (found.isEmpty() || found.get().isEnabled() || !allowsPublicOtp(found.get())) {
             return false;
         }
         AppUser appUser = found.get();
 
-        if (!isOtpValid(appUser, otpCode)) {
+        int previousAttempts=appUser.getOtpAttempts();
+        if (!otpPolicy.consume(appUser, otpCode)) {
+            if(previousAttempts!=appUser.getOtpAttempts()) appUserRepository.save(appUser);
             return false;
         }
 
         appUser.setEnabled(true);
-        clearOtp(appUser);
         appUserRepository.save(appUser);
         return true;
     }
@@ -82,7 +93,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void sendPasswordResetOtp(String email) {
-        Optional<AppUser> found = appUserRepository.findByEmail(email);
+        email = PublicAccountValidation.email(email); PublicAccountValidation.requireEmail(email);
+        Optional<AppUser> found = appUserRepository.findLockedByEmail(email);
 
         if (found.isEmpty()) {
             // Khong bao loi ra man hinh - xem giai thich o AuthService. Chi ghi log de nguoi
@@ -100,8 +112,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String otp = generateOtp();
-        appUser.setOtpCode(otp);
-        appUser.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        otpPolicy.reserveSend(appUser); otpPolicy.issue(appUser, otp);
         appUserRepository.save(appUser);
 
         sendOtpEmail(email, otp, "Mã đặt lại mật khẩu", "đặt lại mật khẩu");
@@ -110,41 +121,44 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public boolean resetPassword(String email, String otpCode, String newRawPassword) {
-        Optional<AppUser> found = appUserRepository.findByEmail(email);
+        email = PublicAccountValidation.email(email); PublicAccountValidation.requireEmail(email);
+        PublicAccountValidation.requirePassword(newRawPassword);
+        Optional<AppUser> found = appUserRepository.findLockedByEmail(email);
         if (found.isEmpty()) {
             return false;
         }
 
         AppUser appUser = found.get();
-        if (!appUser.isEnabled() || !allowsPublicOtp(appUser) || !isOtpValid(appUser, otpCode)) {
+        if (!appUser.isEnabled() || !allowsPublicOtp(appUser)) {
             return false;
+        }
+        int previousAttempts=appUser.getOtpAttempts();
+        if (!otpPolicy.consume(appUser, otpCode)) {
+            if(previousAttempts!=appUser.getOtpAttempts()) appUserRepository.save(appUser); return false;
         }
 
         appUser.setPassword(passwordEncoder.encode(newRawPassword));
         // Xoa OTP ngay sau khi dung - moi ma chi doi mat khau duoc dung mot lan.
-        clearOtp(appUser);
+        appUser.revokeSessions();
+        emailChanges.deleteByUser(appUser);
         appUserRepository.save(appUser);
         return true;
     }
 
     // ----- Phần dùng chung trong service -----
 
+    @Override @Transactional
+    public void resendRegistrationOtp(String username) {
+        if(username==null || !username.strip().matches(PublicAccountValidation.USERNAME)) return;
+        var found=appUserRepository.findLockedByUsername(username.strip());
+        if(found.isEmpty() || found.get().isEnabled() || !allowsPublicOtp(found.get())) return;
+        var user=found.get(); String otp=generateOtp();
+        otpPolicy.reserveSend(user); otpPolicy.issue(user,otp); appUserRepository.save(user);
+        sendOtpEmail(user.getEmail(),otp,"Mã xác thực đăng ký","kích hoạt tài khoản");
+    }
+
     private boolean allowsPublicOtp(AppUser user) {
         return !user.isLockedByAdmin() && (user.getRole() == AppUser.Role.USER || user.getRole() == AppUser.Role.SHIPPER);
-    }
-
-    /** Mã đúng và còn trong hạn 10 phút thì mới hợp lệ. */
-    private boolean isOtpValid(AppUser appUser, String otpCode) {
-        return otpCode != null
-                && appUser.getOtpCode() != null
-                && otpCode.equals(appUser.getOtpCode())
-                && appUser.getOtpExpiry() != null
-                && appUser.getOtpExpiry().isAfter(LocalDateTime.now());
-    }
-
-    private void clearOtp(AppUser appUser) {
-        appUser.setOtpCode(null);
-        appUser.setOtpExpiry(null);
     }
 
     /** Không ghi mã OTP vào log; lỗi gửi mail làm rollback mã vừa lưu. */

@@ -27,6 +27,15 @@ public class Order {
     @Column(name = "tracking_code", nullable = false, unique = true, length = 20)
     private String trackingCode;
 
+    @Column(name = "creation_token", unique = true, length = 36)
+    private String creationToken;
+    @Column(name = "creation_hash", length = 64)
+    private String creationHash;
+    public String getCreationToken() { return creationToken; }
+    public void setCreationToken(String value) { creationToken = value; }
+    public String getCreationHash() { return creationHash; }
+    public void setCreationHash(String value) { creationHash = value; }
+
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
     private AppUser sender; // User tao don

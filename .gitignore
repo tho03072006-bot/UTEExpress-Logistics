@@ -45,6 +45,8 @@ target/
 # application.properties chi chua placeholder; chi sua gia tri that o file private.
 application-local.properties
 application-local.properties.*
+application.properties.local*
+application.properties.backup*
 /config/aiven-local.properties
 /config/aiven-local.properties.*
 /config/sqlserver-before-aiven.properties

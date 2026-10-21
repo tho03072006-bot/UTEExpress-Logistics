@@ -13,6 +13,11 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
  */
 public class OrderCreateRequest {
 
+    @Pattern(regexp="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",message="Phiên biểu mẫu không hợp lệ. Hãy mở lại trang tạo đơn.")
+    private String submissionToken;
+    public String getSubmissionToken() { return submissionToken; }
+    public void setSubmissionToken(String value) { submissionToken=value; }
+
     /**
      * Id dia chi vua chon o o "Chon tu so dia chi" phia nguoi gui.
      * Chi phuc vu giao dien: giu nguyen lua chon tren dropdown khi form bi tra ve
@@ -50,6 +55,7 @@ public class OrderCreateRequest {
 
     @NotNull(message = "Vui lòng nhập khối lượng")
     @Positive(message = "Khối lượng phải lớn hơn 0")
+    @DecimalMin(value="0.01",message="Khối lượng tối thiểu 0,01 kg.")
     @DecimalMax(value = "100", message = "Khối lượng tối đa 100 kg.")
     private Double weightKg;
 

@@ -17,12 +17,14 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailChangeService emailChangeService;
+    private final jakarta.validation.Validator validator;
 
     public UserProfileServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-                                  EmailChangeService emailChangeService) {
+                                  EmailChangeService emailChangeService,jakarta.validation.Validator validator) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailChangeService = emailChangeService;
+        this.validator=validator;
     }
 
     @Override
@@ -33,7 +35,12 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public boolean updateProfile(String username, ProfileUpdateRequest form) {
-        AppUser appUser = requireUser(username);
+        if(form==null)throw new IllegalStateException("Thiếu dữ liệu tài khoản.");
+        var errors=validator.validate(form);if(!errors.isEmpty())throw new IllegalStateException(errors.iterator().next().getMessage());
+        AppUser appUser = appUserRepository.findLockedByUsername(username)
+            .orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        if(!appUser.isEnabled() || appUser.isLockedByAdmin() || (appUser.getRole()!=AppUser.Role.USER && appUser.getRole()!=AppUser.Role.SHIPPER))
+            throw new org.springframework.security.access.AccessDeniedException("Tài khoản không được cập nhật ở khu vực này.");
         String newEmail = form.getEmail().trim();
 
         // Họ tên và số điện thoại sai thì người dùng tự sửa lại được, lưu ngay không sao.
@@ -53,11 +60,17 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public void changePassword(String username, PasswordChangeRequest form) {
-        AppUser appUser = requireUser(username);
+        if (form==null || !form.isPasswordConfirmed()) throw new IllegalStateException("Hai mật khẩu mới không khớp.");
+        vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.requirePassword(form.getNewPassword());
+        AppUser appUser = appUserRepository.findLockedByUsername(username)
+            .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
+        if(!appUser.isEnabled() || appUser.isLockedByAdmin() || (appUser.getRole()!=AppUser.Role.USER && appUser.getRole()!=AppUser.Role.SHIPPER))
+            throw new org.springframework.security.access.AccessDeniedException("Tài khoản không được đổi mật khẩu ở khu vực này.");
 
         // Mật khẩu trong DB là chuỗi băm BCrypt, không thể so sánh bằng equals.
         // matches() băm lại chuỗi người dùng vừa nhập rồi mới đối chiếu.
-        if (!passwordEncoder.matches(form.getCurrentPassword(), appUser.getPassword())) {
+        if (form.getCurrentPassword()==null || form.getCurrentPassword().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72
+                || !passwordEncoder.matches(form.getCurrentPassword(), appUser.getPassword())) {
             throw new IllegalStateException("Mật khẩu hiện tại không đúng.");
         }
         if (passwordEncoder.matches(form.getNewPassword(), appUser.getPassword())) {
@@ -65,6 +78,8 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         appUser.setPassword(passwordEncoder.encode(form.getNewPassword()));
+        appUser.setOtpCode(null); appUser.setOtpExpiry(null); appUser.setOtpAttempts(0); appUser.revokeSessions();
+        if(appUser.getRole()==AppUser.Role.USER) emailChangeService.cancel(username);
         appUserRepository.save(appUser);
     }
 

@@ -24,11 +24,13 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     private final SavedAddressRepository savedAddressRepository;
     private final AppUserRepository appUserRepository;
+    private final jakarta.validation.Validator validator;
 
     public SavedAddressServiceImpl(SavedAddressRepository savedAddressRepository,
-                                   AppUserRepository appUserRepository) {
+                                   AppUserRepository appUserRepository,jakarta.validation.Validator validator) {
         this.savedAddressRepository = savedAddressRepository;
         this.appUserRepository = appUserRepository;
+        this.validator=validator;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public SavedAddress create(SavedAddressRequest request, String username) {
-        AppUser owner = requireUser(username);
+        validate(request); AppUser owner = requireLockedUser(username);
         SavedAddress.AddressType type = request.getAddressType();
 
         long currentCount = savedAddressRepository.countByUserAndAddressType(owner, type);
@@ -97,12 +99,14 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public SavedAddress update(Long id, SavedAddressRequest request, String username) {
-        AppUser owner = requireUser(username);
+        validate(request); AppUser owner = requireLockedUser(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
         SavedAddress.AddressType newType = request.getAddressType();
         SavedAddress.AddressType oldType = address.getAddressType();
+        if(newType!=oldType && savedAddressRepository.countByUserAndAddressType(owner,newType)>=MAX_ADDRESS_PER_TYPE)
+            throw new IllegalStateException("Loại địa chỉ đích đã đủ 20 địa chỉ. Hãy xóa bớt trước khi chuyển loại.");
 
         // Chỉ kiểm tra trùng nhãn khi người dùng thực sự đổi nhãn hoặc đổi loại địa chỉ.
         boolean labelChanged = !address.getLabel().equalsIgnoreCase(request.getLabel().trim());
@@ -125,7 +129,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public void delete(Long id, String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireLockedUser(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
@@ -139,7 +143,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
 
     @Override
     public void markAsDefault(Long id, String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireLockedUser(username);
         SavedAddress address = savedAddressRepository.findByIdAndUser(id, owner)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy địa chỉ này trong sổ địa chỉ của bạn"));
 
@@ -150,6 +154,16 @@ public class SavedAddressServiceImpl implements SavedAddressService {
     }
 
     // ----- Phần dùng chung trong service -----
+    private void validate(SavedAddressRequest form) {
+        if(form==null) throw new IllegalStateException("Thiếu dữ liệu địa chỉ.");
+        var errors=validator.validate(form);if(!errors.isEmpty())throw new IllegalStateException(errors.iterator().next().getMessage());
+    }
+    private AppUser requireLockedUser(String username) {
+        var user=appUserRepository.findLockedByUsername(username).orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        if(!user.isEnabled() || user.isLockedByAdmin() || user.getRole()!=AppUser.Role.USER)
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được thay đổi sổ địa chỉ.");
+        return user;
+    }
 
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)

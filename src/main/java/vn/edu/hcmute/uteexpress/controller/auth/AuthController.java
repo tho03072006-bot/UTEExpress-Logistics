@@ -3,6 +3,10 @@ package vn.edu.hcmute.uteexpress.controller.auth;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
+import vn.edu.hcmute.uteexpress.validation.PublicAccountValidation;
+import vn.edu.hcmute.uteexpress.validation.ValidPublicPassword;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -43,11 +47,16 @@ public class AuthController {
     public String register(@Validated @ModelAttribute("form") RegisterForm form, BindingResult bindingResult,
                             Model model) {
         if (bindingResult.hasErrors()) {
+            form.setPassword(null);
             return "auth/register";
         }
         try {
             authService.register(form.getUsername(), form.getPassword(), form.getEmail(), form.getFullName());
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            form.setPassword(null); model.addAttribute("error", "Tên đăng nhập hoặc email vừa được sử dụng. Hãy kiểm tra lại.");
+            return "auth/register";
         } catch (IllegalArgumentException | IllegalStateException ex) {
+            form.setPassword(null);
             model.addAttribute("error", ex.getMessage());
             return "auth/register";
         }
@@ -67,6 +76,20 @@ public class AuthController {
         return "auth/login";
     }
 
+    @GetMapping("/xac-thuc-otp")
+    public String activationPage(Model model) { model.addAttribute("username",""); return "auth/verify-otp"; }
+
+    @PostMapping("/xac-thuc-otp/gui-lai")
+    public String resendActivation(@RequestParam String username,Model model) {
+        username=PublicAccountValidation.text(username); model.addAttribute("username",username);
+        if(username==null || !username.matches(PublicAccountValidation.USERNAME)) {
+            model.addAttribute("error","Kiểm tra tên đăng nhập từ 3–50 ký tự."); return "auth/verify-otp";
+        }
+        try { authService.resendRegistrationOtp(username); } catch(IllegalStateException ex) { /* Phản hồi trung tính, không dò tài khoản. */ }
+        model.addAttribute("notice","Nếu tài khoản đang chờ kích hoạt, mã mới được gửi tới email đã đăng ký. Chờ 60 giây giữa các lần gửi, tối đa 5 email/giờ.");
+        return "auth/verify-otp";
+    }
+
     // ===================== Quen mat khau =====================
 
     @GetMapping("/quen-mat-khau")
@@ -81,8 +104,12 @@ public class AuthController {
      */
     @PostMapping("/quen-mat-khau")
     public String sendResetOtp(@RequestParam String email, Model model) {
+        email=PublicAccountValidation.email(email);
         try {
+            PublicAccountValidation.requireEmail(email);
             authService.sendPasswordResetOtp(email);
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("error",ex.getMessage()); return "auth/forgot-password";
         } catch (IllegalStateException ex) {
             // Giữ cùng phản hồi cho email tồn tại/không tồn tại để tránh dò tài khoản.
         }
@@ -105,14 +132,21 @@ public class AuthController {
     public String resetPassword(@Valid @ModelAttribute("form") PasswordResetRequest form,
                                 BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
+            form.clearSecrets();
             return "auth/reset-password";
         }
         if (!form.isPasswordConfirmed()) {
+            form.clearSecrets();
             model.addAttribute("error", "Hai ô mật khẩu không khớp nhau.");
             return "auth/reset-password";
         }
 
-        boolean done = authService.resetPassword(form.getEmail(), form.getOtp(), form.getNewPassword());
+        boolean done;
+        try { done = authService.resetPassword(form.getEmail(), form.getOtp(), form.getNewPassword()); }
+        catch(IllegalArgumentException | IllegalStateException ex) {
+            form.clearSecrets(); model.addAttribute("error",ex.getMessage()); return "auth/reset-password";
+        }
+        form.clearSecrets();
         if (!done) {
             model.addAttribute("error", "Mã OTP không đúng hoặc đã hết hạn. Vui lòng gửi lại mã mới.");
             return "auth/reset-password";
@@ -127,15 +161,19 @@ public class AuthController {
     public static class RegisterForm {
 
         @NotBlank(message = "Vui lòng nhập tên đăng nhập")
+        @Pattern(regexp="("+PublicAccountValidation.USERNAME+")?",message="Tên đăng nhập từ 3–50 ký tự, chỉ gồm chữ không dấu, số, dấu chấm/gạch ngang/gạch dưới.")
         private String username;
 
         @NotBlank(message = "Vui lòng nhập mật khẩu")
+        @ValidPublicPassword
         private String password;
 
         @NotBlank(message = "Vui lòng nhập email")
-        @Email(message = "Email không đúng định dạng")
+        @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
         private String email;
 
+        @Size(max=100,message="Họ tên tối đa 100 ký tự.")
+        @Pattern(regexp="[^\\p{Cntrl}]*",message="Họ tên không chứa ký tự điều khiển.")
         private String fullName;
 
         public String getUsername() {
@@ -143,7 +181,7 @@ public class AuthController {
         }
 
         public void setUsername(String username) {
-            this.username = username;
+            this.username = PublicAccountValidation.text(username);
         }
 
         public String getPassword() {
@@ -159,7 +197,7 @@ public class AuthController {
         }
 
         public void setEmail(String email) {
-            this.email = email;
+            this.email = PublicAccountValidation.email(email);
         }
 
         public String getFullName() {
@@ -167,7 +205,7 @@ public class AuthController {
         }
 
         public void setFullName(String fullName) {
-            this.fullName = fullName;
+            this.fullName = PublicAccountValidation.text(fullName);
         }
     }
 }

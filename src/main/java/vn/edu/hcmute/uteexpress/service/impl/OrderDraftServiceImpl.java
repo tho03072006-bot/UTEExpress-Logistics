@@ -27,15 +27,17 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     private final AppUserRepository appUserRepository;
     private final OrderService orderService;
     private final PromoCodeService promoCodeService;
+    private final jakarta.validation.Validator validator;
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
                                  OrderService orderService,
-                                 PromoCodeService promoCodeService) {
+                                 PromoCodeService promoCodeService, jakarta.validation.Validator validator) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
         this.orderService = orderService;
         this.promoCodeService = promoCodeService;
+        this.validator=validator;
     }
 
     @Override
@@ -64,7 +66,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         if (request == null || request.getPaymentMethod() == null || !request.isPaymentMethodSupported()) {
             throw new IllegalStateException("Chỉ hỗ trợ COD hoặc MoMo mô phỏng. Vui lòng chọn lại phương thức thanh toán.");
         }
-        AppUser owner = requireUser(username);
+        var errors=validator.validate(request);
+        if(!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
+        AppUser owner = requireLockedUser(username);
 
         if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER) {
             throw new IllegalStateException("Giỏ đơn chỉ chứa tối đa " + MAX_DRAFTS_PER_USER
@@ -101,7 +105,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public void clearDrafts(String username) {
-        draftOrderRepository.deleteByUser(requireUser(username));
+        draftOrderRepository.deleteByUser(requireLockedUser(username));
     }
 
     @Override
@@ -114,7 +118,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     @Override
     public List<Order> confirmAllDrafts(String username) {
-        AppUser owner = requireUser(username);
+        AppUser owner = requireLockedUser(username);
         List<DraftOrder> drafts = draftOrderRepository.findByUserOrderByCreatedAtDesc(owner);
         if (drafts.isEmpty()) {
             throw new IllegalStateException("Giỏ đơn đang trống, chưa có đơn nào để xác nhận.");
@@ -138,8 +142,16 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     }
 
     private DraftOrder requireOwnedDraft(Long draftId, String username) {
-        return draftOrderRepository.findByIdAndUser(draftId, requireUser(username))
+        if(draftId==null || draftId<=0) throw new IllegalStateException("ID đơn nháp không hợp lệ.");
+        return draftOrderRepository.findByIdAndUser(draftId, requireLockedUser(username))
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn nháp này trong giỏ đơn của bạn"));
+    }
+
+    private AppUser requireLockedUser(String username) {
+        var owner=appUserRepository.findLockedByUsername(username).orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        if(!owner.isEnabled() || owner.isLockedByAdmin() || owner.getRole()!=AppUser.Role.USER)
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được thay đổi giỏ đơn.");
+        return owner;
     }
 
     /**
@@ -152,6 +164,8 @@ public class OrderDraftServiceImpl implements OrderDraftService {
             throw new IllegalStateException("Đơn nháp VNPay cũ không còn được hỗ trợ. Hãy tạo lại đơn nháp và chọn COD hoặc MoMo.");
         }
         OrderCreateRequest request = new OrderCreateRequest();
+        request.setSubmissionToken(java.util.UUID.nameUUIDFromBytes(("UTEExpress:draft:"+draft.getUser().getId()+":"+draft.getId())
+            .getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString());
         request.setSenderName(draft.getSenderName());
         request.setSenderAddress(draft.getSenderAddress());
         request.setReceiverName(draft.getReceiverName());

@@ -71,7 +71,10 @@
 <details class="ute-panel sx-fee-rules mt-4">
     <summary><i class="bi bi-info-circle"></i> Cách tính cước tham khảo</summary>
     <div class="sx-fee-rules-grid">
-        <div><strong>Cước gốc</strong><p>Tiêu chuẩn 15.000 đ · Nhanh 25.000 đ · Hỏa tốc 40.000 đ, cộng 3.000 đ cho mỗi kilôgam.</p></div>
+        <div><strong>Cước gốc đang hiệu lực</strong><p th:each="tariff : ${currentTariffs}"><span th:text="${tariff.serviceType.displayName}"></span>:
+            <span th:replace="~{fragments/components :: money(${tariff.baseFee})}"></span> +
+            <span th:replace="~{fragments/components :: money(${tariff.feePerKg})}"></span>/kg.</p>
+            <p>Cước gốc lấy từ bảng giá/lịch giá đang hiệu lực trên Aiven tại lúc tải trang.</p></div>
         <div><strong>Phụ phí khoảng cách</strong><p>5 km đầu miễn phí · 5 - 30 km: 1.000 đ/km · 30 - 300 km: 25.000 đ + 300 đ/km · trên 300 km: 106.000 đ + 100 đ/km.</p></div>
         <div><strong>Hệ số dịch vụ</strong><p>Phụ phí khoảng cách nhân x1 (Tiêu chuẩn), x1,3 (Nhanh), x1,6 (Hỏa tốc). Hỏa tốc chỉ nhận trong 30 km.</p></div>
     </div>

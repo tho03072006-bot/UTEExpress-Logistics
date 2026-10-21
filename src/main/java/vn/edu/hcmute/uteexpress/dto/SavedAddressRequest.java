@@ -14,18 +14,21 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập nhãn gợi nhớ cho địa chỉ")
     @Size(max = 50, message = "Nhãn địa chỉ tối đa 50 ký tự")
+    @Pattern(regexp="[^\\p{Cntrl}]+",message="Nhãn không chứa ký tự điều khiển.")
     private String label;
 
     @NotBlank(message = "Vui lòng nhập họ tên người liên hệ")
-    @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
+    @Size(min=2,max = 100, message = "Họ tên từ 2–100 ký tự")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.NAME,message="Tên liên hệ chỉ chứa chữ và dấu phân cách tên hợp lệ.")
     private String contactName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại")
-    @Pattern(regexp = "^0[0-9]{9,10}$", message = "Số điện thoại phải bắt đầu bằng 0 và có 10 - 11 chữ số")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.PHONE,message="Nhập số di động Việt Nam 10 số, đầu 03/05/07/08/09 hoặc dạng +84.")
     private String contactPhone;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ chi tiết")
-    @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
+    @Size(min=5,max = 255, message = "Địa chỉ từ 5–255 ký tự")
+    @Pattern(regexp="[^\\p{Cntrl}]+",message="Địa chỉ không chứa ký tự điều khiển.")
     private String addressLine;
 
     @NotNull(message = "Vui lòng chọn loại địa chỉ")
@@ -56,7 +59,7 @@ public class SavedAddressRequest {
     }
 
     public void setLabel(String label) {
-        this.label = label;
+        this.label = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.text(label);
     }
 
     public String getContactName() {
@@ -64,7 +67,7 @@ public class SavedAddressRequest {
     }
 
     public void setContactName(String contactName) {
-        this.contactName = contactName;
+        this.contactName = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.text(contactName);
     }
 
     public String getContactPhone() {
@@ -72,7 +75,7 @@ public class SavedAddressRequest {
     }
 
     public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
+        this.contactPhone = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.phone(contactPhone);
     }
 
     public String getAddressLine() {
@@ -80,7 +83,7 @@ public class SavedAddressRequest {
     }
 
     public void setAddressLine(String addressLine) {
-        this.addressLine = addressLine;
+        this.addressLine = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.text(addressLine);
     }
 
     public SavedAddress.AddressType getAddressType() {

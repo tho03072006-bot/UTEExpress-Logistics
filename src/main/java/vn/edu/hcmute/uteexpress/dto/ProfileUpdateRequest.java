@@ -17,16 +17,16 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 public class ProfileUpdateRequest {
 
     @NotBlank(message = "Vui lòng nhập họ tên")
-    @Size(max = 100, message = "Họ tên không được quá 100 ký tự")
+    @Size(min=2,max = 100, message = "Họ tên từ 2–100 ký tự")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.NAME,message="Họ tên chỉ chứa chữ và dấu phân cách tên hợp lệ.")
     private String fullName;
 
     @NotBlank(message = "Vui lòng nhập email")
-    @Email(message = "Email không đúng định dạng")
-    @Size(max = 100, message = "Email không được quá 100 ký tự")
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
     private String email;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại")
-    @Pattern(regexp = "^0[0-9]{9,10}$", message = "Số điện thoại phải bắt đầu bằng 0 và có 10 - 11 chữ số")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.PHONE,message="Nhập số di động Việt Nam 10 số, đầu 03/05/07/08/09 hoặc dạng +84.")
     private String phone;
 
     public ProfileUpdateRequest() {
@@ -48,7 +48,7 @@ public class ProfileUpdateRequest {
     }
 
     public void setFullName(String fullName) {
-        this.fullName = fullName;
+        this.fullName = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.text(fullName);
     }
 
     public String getEmail() {
@@ -56,7 +56,7 @@ public class ProfileUpdateRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.email(email);
     }
 
     public String getPhone() {
@@ -64,6 +64,6 @@ public class ProfileUpdateRequest {
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        this.phone = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.phone(phone);
     }
 }

@@ -66,6 +66,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderCreateRequest prepareCreateForm(String username) {
         OrderCreateRequest form = new OrderCreateRequest();
+        form.setSubmissionToken(java.util.UUID.randomUUID().toString());
         form.setServiceType(Order.ServiceType.STANDARD);
         form.setPaymentMethod(OrderPayment.PaymentMethod.COD);
 
@@ -85,10 +86,25 @@ public class OrderServiceImpl implements OrderService {
         if (request == null) { throw new IllegalArgumentException("Thiếu dữ liệu đơn hàng."); }
         var errors = validator.validate(request);
         if (!errors.isEmpty()) { throw new IllegalArgumentException(errors.iterator().next().getMessage()); }
-        AppUser sender = appUserRepository.findByUsername(senderUsername)
+        // Khóa người gửi trước khi kiểm tra token: hai request đồng thời cùng tài khoản
+        // không thể cùng vượt qua bước "chưa có" rồi tạo hai đơn trên database chung.
+        AppUser sender = appUserRepository.findLockedByUsername(senderUsername)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
 
+        if (!sender.isEnabled() || sender.isLockedByAdmin() || sender.getRole()!=AppUser.Role.USER)
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được tạo đơn.");
+        String requestHash = creationHash(request);
+        if (request.getSubmissionToken()!=null) {
+            var existing=orderRepository.findByCreationToken(request.getSubmissionToken());
+            if(existing.isPresent()) {
+                if(!existing.get().getSender().getId().equals(sender.getId()) || !requestHash.equals(existing.get().getCreationHash()))
+                    throw new IllegalStateException("Phiên biểu mẫu đã được sử dụng cho dữ liệu khác. Hãy mở lại trang tạo đơn.");
+                return existing.get();
+            }
+        }
+
         Order order = new Order();
+        order.setCreationToken(request.getSubmissionToken()); order.setCreationHash(requestHash);
         order.setTrackingCode(generateTrackingCode());
         order.setSender(sender);
         order.setSenderName(request.getSenderName());
@@ -124,6 +140,19 @@ public class OrderServiceImpl implements OrderService {
                 Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PENDING_PICKUP, null,
                 "Người gửi tạo vận đơn.", null, now));
         return savedOrder;
+    }
+
+    private String creationHash(OrderCreateRequest request) {
+        var canonical=new StringBuilder();
+        for(String part : java.util.List.of(request.getSenderName(),request.getSenderAddress(),request.getReceiverName(),
+                request.getReceiverPhone(),request.getReceiverAddress(),BigDecimal.valueOf(request.getWeightKg()).stripTrailingZeros().toPlainString(),
+                request.getServiceType().name(),request.getPaymentMethod().name(),
+                request.getPromoCode()==null?"":request.getPromoCode().toUpperCase(java.util.Locale.ROOT))) {
+            canonical.append(part.length()).append(':').append(part);
+        }
+        try { return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+            .digest(canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8))); }
+        catch(java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException("Không hỗ trợ SHA-256.",ex); }
     }
 
     @Override

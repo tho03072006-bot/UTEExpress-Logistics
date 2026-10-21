@@ -11,6 +11,7 @@ public interface AuthService {
 
     /** Kiem tra OTP dang ky, neu dung thi kich hoat tai khoan (enabled = true). */
     boolean verifyOtp(String username, String otpCode);
+    void resendRegistrationOtp(String username);
 
     /**
      * Gui ma OTP dat lai mat khau toi email.
