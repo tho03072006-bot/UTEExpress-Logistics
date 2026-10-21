@@ -13,7 +13,9 @@
 <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-<form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}">
+<form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}" data-order-form>
+    <input type="hidden" name="submissionToken" th:value="${form.submissionToken}">
+    <div class="alert alert-warning" th:if="${#fields.hasErrors('submissionToken')}" th:errors="*{submissionToken}"></div>
     <h5 class="mt-2">Người gửi</h5>
 
     <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
@@ -38,12 +40,12 @@
 
     <div class="mb-3">
         <label class="form-label" for="senderName">Tên người gửi</label>
-        <input type="text" th:field="*{senderName}" class="form-control">
+        <input type="text" th:field="*{senderName}" class="form-control" required minlength="2" maxlength="100">
         <div class="text-danger small" th:if="${#fields.hasErrors('senderName')}" th:errors="*{senderName}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="senderAddress">Địa chỉ lấy hàng</label>
-        <input type="text" th:field="*{senderAddress}" class="form-control">
+        <input type="text" th:field="*{senderAddress}" class="form-control" required minlength="5" maxlength="255">
         <div class="text-danger small" th:if="${#fields.hasErrors('senderAddress')}" th:errors="*{senderAddress}"></div>
     </div>
 
@@ -72,17 +74,17 @@
 
     <div class="mb-3">
         <label class="form-label" for="receiverName">Tên người nhận</label>
-        <input type="text" th:field="*{receiverName}" class="form-control">
+        <input type="text" th:field="*{receiverName}" class="form-control" required minlength="2" maxlength="100">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverName')}" th:errors="*{receiverName}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
-        <input type="text" th:field="*{receiverPhone}" class="form-control">
+        <input type="tel" th:field="*{receiverPhone}" class="form-control" required maxlength="20" inputmode="tel" placeholder="0901234567 hoặc +84901234567">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverAddress">Địa chỉ giao hàng</label>
-        <input type="text" th:field="*{receiverAddress}" class="form-control">
+        <input type="text" th:field="*{receiverAddress}" class="form-control" required minlength="5" maxlength="255">
         <div class="text-danger small" th:if="${#fields.hasErrors('receiverAddress')}" th:errors="*{receiverAddress}"></div>
     </div>
 
@@ -90,15 +92,14 @@
     <div class="row">
         <div class="col-6 mb-3">
             <label class="form-label" for="weightKg">Khối lượng (kg)</label>
-            <input type="number" step="0.1" th:field="*{weightKg}" class="form-control">
+            <input type="number" step="0.01" min="0.01" max="100" required th:field="*{weightKg}" class="form-control">
             <div class="text-danger small" th:if="${#fields.hasErrors('weightKg')}" th:errors="*{weightKg}"></div>
         </div>
         <div class="col-6 mb-3">
             <label class="form-label" for="serviceType">Dịch vụ</label>
             <select th:field="*{serviceType}" class="form-select">
-                <option value="STANDARD">Tiêu chuẩn (15.000đ + 3.000đ/kg)</option>
-                <option value="EXPRESS">Nhanh (25.000đ + 3.000đ/kg)</option>
-                <option value="SUPER_EXPRESS">Hỏa tốc (40.000đ + 3.000đ/kg)</option>
+                <option th:each="tariff : ${currentTariffs}" th:value="${tariff.serviceType}"
+                    th:text="|${tariff.serviceType.displayName} (${#numbers.formatDecimal(tariff.baseFee,0,'POINT',0,'COMMA')}đ + ${#numbers.formatDecimal(tariff.feePerKg,0,'POINT',0,'COMMA')}đ/kg)|"></option>
             </select>
         </div>
     </div>
@@ -106,7 +107,7 @@
     <h5 class="mt-4">Mã giảm giá</h5>
     <div class="mb-4">
         <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
-        <input type="text" th:field="*{promoCode}" class="form-control ute-promo-input"
+        <input type="text" th:field="*{promoCode}" maxlength="30" class="form-control ute-promo-input"
                placeholder="Ví dụ: UTE10" autocomplete="off">
     </div>
 
@@ -134,6 +135,8 @@
         <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
     </div>
 </form>
+<p class="text-muted small">Giá đang hiệu lực lúc tải trang; cước được chốt theo bảng giá Aiven khi tạo đơn thành công.</p>
+<script defer th:src="@{/js/order-form.js}"></script>
 </section>
 
 </body>
