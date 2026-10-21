@@ -87,10 +87,7 @@ public class UserOrderController {
     @PostMapping("/tao-don")
     public String createOrder(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
                                Authentication authentication, Model model) {
-        if(form.getSubmissionToken()==null || bindingResult.hasFieldErrors("submissionToken")) {
-            form.setSubmissionToken(java.util.UUID.randomUUID().toString());
-            if(!bindingResult.hasFieldErrors("submissionToken")) bindingResult.rejectValue("submissionToken","expired","Biểu mẫu cũ đã hết hiệu lực. Kiểm tra thông tin và gửi lại.");
-        }
+        validateSubmissionToken(form, bindingResult);
         if (bindingResult.hasErrors()) {
             // Ve lai form thi phai nap lai so dia chi, neu khong 2 o chon nhanh se rong.
             addSavedAddressesToModel(model, authentication.getName());
@@ -132,6 +129,7 @@ public class UserOrderController {
     @PostMapping("/tao-don/them-vao-gio")
     public String addToCart(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
                             Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+        validateSubmissionToken(form, bindingResult);
         if (bindingResult.hasErrors()) {
             addSavedAddressesToModel(model, authentication.getName());
             return "user/order-form";
@@ -216,5 +214,14 @@ public class UserOrderController {
                 savedAddressService.findByType(username, SavedAddress.AddressType.SENDER));
         model.addAttribute("receiverAddresses",
                 savedAddressService.findByType(username, SavedAddress.AddressType.RECEIVER));
+    }
+
+    private void validateSubmissionToken(OrderCreateRequest form, BindingResult bindingResult) {
+        if (!vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.validToken(form.getSubmissionToken())
+                || bindingResult.hasFieldErrors("submissionToken")) {
+            form.setSubmissionToken(java.util.UUID.randomUUID().toString());
+            if (!bindingResult.hasFieldErrors("submissionToken"))
+                bindingResult.rejectValue("submissionToken", "expired", "Biểu mẫu cũ đã hết hiệu lực. Kiểm tra thông tin và gửi lại.");
+        }
     }
 }

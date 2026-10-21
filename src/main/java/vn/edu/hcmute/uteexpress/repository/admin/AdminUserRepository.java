@@ -32,6 +32,8 @@ public interface AdminUserRepository extends Repository<AppUser, Long> {
     long countAddresses(Long id);
     @Query("select count(d) from DraftOrder d where d.user.id = :id")
     long countDrafts(Long id);
+    @Query("select count(s) from OrderFormSubmission s where s.user.id = :id")
+    long countFormSubmissions(Long id);
     @Query("select count(r) from ServiceReview r where r.user.id = :id")
     long countReviews(Long id);
     @Query("select count(p) from DeliveryProof p where p.shipper.id = :id")

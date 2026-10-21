@@ -67,6 +67,9 @@ class PublicValidationIntegrationTest {
     @Autowired UserProfileService profiles;
     @Autowired PasswordEncoder encoder;
     @Autowired jakarta.validation.Validator validator;
+    @Autowired jakarta.persistence.EntityManagerFactory entityManagers;
+    @Autowired OrderDraftService drafts;
+    @Autowired OrderFormSubmissionRepository submissions;
     @MockBean JavaMailSender mail;
     AppUser customer;
 
@@ -106,6 +109,82 @@ class PublicValidationIntegrationTest {
         clock.advance(600);
         assertThrows(IllegalStateException.class,()->emailChanges.confirm(customer.getUsername(),correct));
         assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+    }
+    @Test void preloadedWebRequestsCannotLoseEmailOtpAttemptsOrSurviveTheFifthFailure() {
+        emailChanges.requestChange(customer.getUsername(),"cache"+SEQUENCE.incrementAndGet()+"@test.invalid");
+        var pending=emailChanges.findPending(customer.getUsername()).orElseThrow();
+        String incorrect=wrong(pending.getOtpCode());
+        for(int wave=0;wave<3;wave++) {
+            var contexts=new ArrayList<jakarta.persistence.EntityManager>();
+            try {
+                // Hai request đã đọc yêu cầu cùng lúc trước khi vào transaction confirm, như OSIV.
+                for(int request=0;request<2;request++) {
+                    var context=entityManagers.createEntityManager();contexts.add(context);
+                    context.getTransaction().begin();
+                    context.find(AppUser.class,customer.getId());
+                    assertNotNull(context.find(EmailChangeRequest.class,pending.getId()));
+                    context.getTransaction().commit();
+                }
+                for(var context:contexts) {
+                    org.springframework.transaction.support.TransactionSynchronizationManager.bindResource(entityManagers,new org.springframework.orm.jpa.EntityManagerHolder(context));
+                    try { assertThrows(IllegalStateException.class,()->emailChanges.confirm(customer.getUsername(),incorrect)); }
+                    finally { org.springframework.transaction.support.TransactionSynchronizationManager.unbindResource(entityManagers); }
+                }
+            } finally { for(var context:contexts)context.close(); }
+            if(wave<2) assertEquals((wave+1)*2,emailChanges.findPending(customer.getUsername()).orElseThrow().getAttemptCount());
+        }
+        assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+        assertThrows(IllegalStateException.class,()->emailChanges.confirm(customer.getUsername(),pending.getOtpCode()));
+    }
+    @Test void concurrentWrongEmailOtpAttemptsAreSerializedAndStopAtFive() throws Exception {
+        emailChanges.requestChange(customer.getUsername(),"parallel"+SEQUENCE.incrementAndGet()+"@test.invalid");
+        String incorrect=wrong(emailChanges.findPending(customer.getUsername()).orElseThrow().getOtpCode());
+        var executor=Executors.newFixedThreadPool(4);var start=new CountDownLatch(1);
+        try {
+            var calls=new ArrayList<Future<Boolean>>();
+            for(int i=0;i<6;i++)calls.add(executor.submit(()->{start.await();try{emailChanges.confirm(customer.getUsername(),incorrect);return false;}catch(IllegalStateException ex){return true;}}));
+            start.countDown();for(var call:calls)assertTrue(call.get(20,TimeUnit.SECONDS));
+        } finally { executor.shutdownNow(); }
+        assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+    }
+    @Test void changedEmailInvalidatesOldMailboxRecoveryButNewMailboxCanRecover() {
+        auth.sendPasswordResetOtp(customer.getEmail());
+        String oldCode=users.findById(customer.getId()).orElseThrow().getOtpCode();clock.advance(60);
+        String target="newmail"+SEQUENCE.incrementAndGet()+"@test.invalid";
+        emailChanges.requestChange(customer.getUsername(),target);
+        String confirmation=emailChanges.findPending(customer.getUsername()).orElseThrow().getOtpCode();
+        emailChanges.confirm(customer.getUsername(),confirmation);
+        var updated=users.findById(customer.getId()).orElseThrow();
+        assertEquals(target,updated.getEmail());assertNull(updated.getOtpCode());assertNull(updated.getOtpExpiry());assertEquals(0,updated.getOtpAttempts());
+        assertFalse(auth.resetPassword(target,oldCode,"NewReplacement123"));
+        assertFalse(auth.resetPassword(customer.getEmail(),oldCode,"NewReplacement123"));
+        clock.advance(60);auth.sendPasswordResetOtp(target);
+        String fresh=users.findById(customer.getId()).orElseThrow().getOtpCode();
+        assertTrue(auth.resetPassword(target,fresh,"NewReplacement123"));
+    }
+    @Test void failedEmailConfirmationDoesNotInvalidateLegitimateRecoveryCode() {
+        auth.sendPasswordResetOtp(customer.getEmail());
+        String reset=users.findById(customer.getId()).orElseThrow().getOtpCode();clock.advance(60);
+        emailChanges.requestChange(customer.getUsername(),"unconfirmed"+SEQUENCE.incrementAndGet()+"@test.invalid");
+        String correct=emailChanges.findPending(customer.getUsername()).orElseThrow().getOtpCode();
+        assertThrows(IllegalStateException.class,()->emailChanges.confirm(customer.getUsername(),wrong(correct)));
+        assertTrue(auth.resetPassword(customer.getEmail(),reset,"StillRecover123"));
+        assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+    }
+    @Test void cachedEmailChallengeUsesTheFreshCodeAfterResend() {
+        emailChanges.requestChange(customer.getUsername(),"resent"+SEQUENCE.incrementAndGet()+"@test.invalid");
+        var pending=emailChanges.findPending(customer.getUsername()).orElseThrow();
+        var context=entityManagers.createEntityManager();
+        try {
+            context.getTransaction().begin();context.find(EmailChangeRequest.class,pending.getId());context.getTransaction().commit();
+            clock.advance(60);emailChanges.resendOtp(customer.getUsername());
+            String fresh=emailChanges.findPending(customer.getUsername()).orElseThrow().getOtpCode();
+            assertNotEquals(pending.getOtpCode(),fresh);
+            org.springframework.transaction.support.TransactionSynchronizationManager.bindResource(entityManagers,new org.springframework.orm.jpa.EntityManagerHolder(context));
+            try { emailChanges.confirm(customer.getUsername(),fresh); }
+            finally { org.springframework.transaction.support.TransactionSynchronizationManager.unbindResource(entityManagers); }
+            assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+        } finally { context.close(); }
     }
     @Test void resetOtpIsInvalidatedAfterFiveFailuresAndNotRevivedByServiceRecreation(){
         auth.sendPasswordResetOtp(customer.getEmail());String code=users.findById(customer.getId()).orElseThrow().getOtpCode();
@@ -203,6 +282,96 @@ class PublicValidationIntegrationTest {
         assertThrows(IllegalStateException.class,()->orderService.createOrder(request,customer.getUsername()));
         var other=account(AppUser.Role.USER);
         assertThrows(IllegalStateException.class,()->orderService.createOrder(request,other.getUsername()));
+    }
+    @Test void repeatedCartSubmissionAndConfirmationProduceOneOrderOnly() {
+        var request=form();long before=orders.count();
+        var first=drafts.addDraft(request,customer.getUsername());
+        assertEquals(first.getId(),drafts.addDraft(request,customer.getUsername()).getId());
+        assertEquals(1,drafts.countDrafts(customer.getUsername()));
+        assertEquals(1,drafts.confirmAllDrafts(customer.getUsername()).size());assertEquals(before+1,orders.count());
+        assertThrows(IllegalStateException.class,()->drafts.addDraft(request,customer.getUsername()));
+        assertEquals(0,drafts.countDrafts(customer.getUsername()));assertEquals(before+1,orders.count());
+    }
+    @Test void concurrentCartSubmissionsHaveOneDurableTokenAndOneDraft() throws Exception {
+        var request=form();var executor=Executors.newFixedThreadPool(2);var start=new CountDownLatch(1);
+        try {
+            Callable<Long> call=()->{start.await();return drafts.addDraft(request,customer.getUsername()).getId();};
+            var first=executor.submit(call);var second=executor.submit(call);start.countDown();
+            assertEquals(first.get(15,TimeUnit.SECONDS),second.get(15,TimeUnit.SECONDS));
+        } finally { executor.shutdownNow(); }
+        assertEquals(1,drafts.countDrafts(customer.getUsername()));
+        assertNotNull(submissions.findByToken(request.getSubmissionToken()).orElseThrow().getResourceId());
+    }
+    @Test void samePayloadWithDifferentFormTokensCanCreateTwoLegitimateDrafts() {
+        var first=drafts.addDraft(form(),customer.getUsername());
+        var second=drafts.addDraft(form(),customer.getUsername());
+        assertNotEquals(first.getId(),second.getId());assertEquals(2,drafts.countDrafts(customer.getUsername()));
+    }
+    @Test void concurrentDirectAndCartUseOfOneTokenOnlyAllowsOneAction() throws Exception {
+        var request=form();long before=orders.count();var executor=Executors.newFixedThreadPool(2);var start=new CountDownLatch(1);
+        try {
+            var direct=executor.submit(()->{start.await();try{orderService.createOrder(request,customer.getUsername());return 1;}catch(IllegalStateException ex){return 0;}});
+            var cart=executor.submit(()->{start.await();try{drafts.addDraft(request,customer.getUsername());return 1;}catch(IllegalStateException ex){return 0;}});
+            start.countDown();assertEquals(1,direct.get(15,TimeUnit.SECONDS)+cart.get(15,TimeUnit.SECONDS));
+        } finally {executor.shutdownNow();}
+        assertEquals(1,(orders.count()-before)+drafts.countDrafts(customer.getUsername()));
+    }
+    @Test void concurrentDifferentAccountsCannotClaimTheSameFormToken() throws Exception {
+        var request=form();var other=account(AppUser.Role.USER);var executor=Executors.newFixedThreadPool(2);var start=new CountDownLatch(1);
+        try {
+            var tasks=new ArrayList<Future<Integer>>();
+            for(var actor:List.of(customer,other)) tasks.add(executor.submit(()->{
+                start.await();try{drafts.addDraft(request,actor.getUsername());return 1;}
+                catch(IllegalStateException | org.springframework.dao.DataIntegrityViolationException ex){return 0;}
+            }));
+            start.countDown();assertEquals(1,tasks.get(0).get(15,TimeUnit.SECONDS)+tasks.get(1).get(15,TimeUnit.SECONDS));
+        } finally {executor.shutdownNow();}
+        assertEquals(1,drafts.countDrafts(customer.getUsername())+drafts.countDrafts(other.getUsername()));
+    }
+    @Test void removedDraftAndClearedCartNeverReviveAnOldFormToken() {
+        var removed=form();var draft=drafts.addDraft(removed,customer.getUsername());drafts.removeDraft(draft.getId(),customer.getUsername());
+        assertThrows(IllegalStateException.class,()->drafts.addDraft(removed,customer.getUsername()));
+        var cleared=form();drafts.addDraft(cleared,customer.getUsername());drafts.clearDrafts(customer.getUsername());
+        assertThrows(IllegalStateException.class,()->drafts.addDraft(cleared,customer.getUsername()));
+        assertEquals(0,drafts.countDrafts(customer.getUsername()));
+    }
+    @Test void cartTokenCannotChangePayloadOwnerOrSwitchToDirectCreation() {
+        var request=form();drafts.addDraft(request,customer.getUsername());
+        assertThrows(IllegalStateException.class,()->orderService.createOrder(request,customer.getUsername()));
+        var other=account(AppUser.Role.USER);assertThrows(IllegalStateException.class,()->drafts.addDraft(request,other.getUsername()));
+        request.setReceiverName("Người Khác");assertThrows(IllegalStateException.class,()->drafts.addDraft(request,customer.getUsername()));
+        assertEquals(1,drafts.countDrafts(customer.getUsername()));assertEquals(0,drafts.countDrafts(other.getUsername()));
+    }
+    @Test void directTokenCannotSwitchToCartAndOldOrdersRemainIdempotent() {
+        var request=form();var order=orderService.createOrder(request,customer.getUsername());
+        assertThrows(IllegalStateException.class,()->drafts.addDraft(request,customer.getUsername()));
+        // Đơn cũ trước migration chưa có bản ghi dấu vết, vẫn phải retry về đúng đơn.
+        submissions.delete(submissions.findByToken(request.getSubmissionToken()).orElseThrow());
+        assertEquals(order.getId(),orderService.createOrder(request,customer.getUsername()).getId());
+    }
+    @Test void failedCartValidationRollsBackReservationAndAllowsCorrectedRetry() {
+        var request=form();request.setPromoCode("MISSINGCODE");
+        assertThrows(IllegalStateException.class,()->drafts.addDraft(request,customer.getUsername()));
+        assertTrue(submissions.findByToken(request.getSubmissionToken()).isEmpty());
+        request.setPromoCode(null);assertNotNull(drafts.addDraft(request,customer.getUsername()).getId());
+    }
+    @Test void retryAtCartLimitSucceedsButNewFormsAreRejected() {
+        var first=form();Long firstId=drafts.addDraft(first,customer.getUsername()).getId();
+        for(int i=1;i<30;i++)drafts.addDraft(form(),customer.getUsername());
+        assertEquals(firstId,drafts.addDraft(first,customer.getUsername()).getId());
+        var extra=form();assertThrows(IllegalStateException.class,()->drafts.addDraft(extra,customer.getUsername()));
+        assertTrue(submissions.findByToken(extra.getSubmissionToken()).isEmpty());assertEquals(30,drafts.countDrafts(customer.getUsername()));
+    }
+    @Test void cartHttpPostRequiresTokenAndDuplicatePostRedirectsWithoutDuplicating() throws Exception {
+        var request=form();
+        for(int i=0;i<3;i++) {
+            var post=post("/nguoi-dung/tao-don/them-vao-gio").with(user(customer.getUsername()).roles("USER")).with(csrf())
+                .param("senderName",request.getSenderName()).param("senderAddress",request.getSenderAddress()).param("receiverName",request.getReceiverName())
+                .param("receiverAddress",request.getReceiverAddress()).param("receiverPhone",request.getReceiverPhone()).param("weightKg","1").param("serviceType","STANDARD").param("paymentMethod","COD");
+            if(i==0)mvc.perform(post).andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form","submissionToken"));
+            else mvc.perform(post.param("submissionToken",request.getSubmissionToken())).andExpect(redirectedUrl("/nguoi-dung/tao-don"));
+        }
+        assertEquals(1,drafts.countDrafts(customer.getUsername()));
     }
     @Test void liveTariffAndScheduledVersionAreUsedByBothCustomerPages()throws Exception{
         var tariff=tariffs.findByServiceType(Order.ServiceType.STANDARD).orElseThrow();

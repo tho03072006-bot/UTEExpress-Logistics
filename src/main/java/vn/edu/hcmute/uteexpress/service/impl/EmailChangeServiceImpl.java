@@ -38,6 +38,8 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private final JavaMailSender mailSender;
     private final MailFromNameSetter mailFromNameSetter;
     private final OtpPolicy otpPolicy;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     public EmailChangeServiceImpl(EmailChangeRequestRepository emailChangeRequestRepository,
                                   AppUserRepository appUserRepository,
@@ -70,7 +72,7 @@ public class EmailChangeServiceImpl implements EmailChangeService {
 
         // Mỗi người chỉ giữ một yêu cầu: đổi ý gõ địa chỉ khác thì ghi đè lên yêu cầu cũ,
         // tránh tình trạng còn tồn nhiều mã cùng hiệu lực cho nhiều địa chỉ khác nhau.
-        EmailChangeRequest request = emailChangeRequestRepository.findByUser(appUser)
+        EmailChangeRequest request = lockedPending(appUser)
                 .orElseGet(() -> new EmailChangeRequest());
         request.setUser(appUser);
         request.setNewEmail(target);
@@ -100,18 +102,19 @@ public class EmailChangeServiceImpl implements EmailChangeService {
         AppUser appUser = requireLockedUser(username);
         EmailChangeRequest request = requirePending(appUser);
 
-        if (request.getExpiresAt()==null || !otpPolicy.now().isBefore(request.getExpiresAt())) {
+        if (request.getExpiresAt()==null || !otpPolicy.now().isBefore(request.getExpiresAt())
+                || request.getOtpCode()==null || request.getAttemptCount()>=MAX_ATTEMPTS) {
             emailChangeRequestRepository.delete(request);
             throw new OtpRejectedException("Mã xác thực đã hết hạn. Vui lòng yêu cầu đổi email lại từ đầu.");
         }
 
-        if (!request.getOtpCode().equals(otpCode == null ? null : otpCode.trim())) {
+        if (!otpPolicy.matchesCode(request.getOtpCode(), otpCode)) {
             request.setAttemptCount(request.getAttemptCount() + 1);
             request.setUpdatedAt(LocalDateTime.now());
             if (request.getAttemptCount() >= MAX_ATTEMPTS) {
                 emailChangeRequestRepository.delete(request);
                 throw new OtpRejectedException(
-                        "Bạn đã nhập sai mã quá " + MAX_ATTEMPTS + " lần. Yêu cầu đổi email đã bị huỷ, "
+                        "Bạn đã nhập sai mã " + MAX_ATTEMPTS + " lần. Yêu cầu đổi email đã bị huỷ, "
                                 + "vui lòng thực hiện lại từ trang tài khoản.");
             }
             emailChangeRequestRepository.save(request);
@@ -124,29 +127,32 @@ public class EmailChangeServiceImpl implements EmailChangeService {
         requireEmailAvailable(request.getNewEmail(), appUser);
 
         appUser.setEmail(request.getNewEmail());
+        // Mã khôi phục đã gửi tới hộp thư cũ không còn là bằng chứng sở hữu email mới.
+        otpPolicy.clear(appUser);
         appUserRepository.save(appUser);
         emailChangeRequestRepository.delete(request);
     }
 
     @Override
     public void cancel(String username) {
-        emailChangeRequestRepository.findByUser(requireLockedUser(username))
+        lockedPending(requireLockedUser(username))
                 .ifPresent(emailChangeRequestRepository::delete);
     }
 
     // ----- Phần dùng chung trong service -----
 
     private void applyFreshOtp(EmailChangeRequest request) {
-        request.setOtpCode(generateOtp());
+        String code;
+        do { code = generateOtp(); } while (code.equals(request.getOtpCode()));
+        request.setOtpCode(code);
         request.setExpiresAt(otpPolicy.now().plusMinutes(OTP_EXPIRY_MINUTES));
         request.setAttemptCount(0);
         request.setUpdatedAt(LocalDateTime.now());
     }
 
     /**
-     * Chặn trước lỗi ràng buộc unique của cột app_user.email. Phép so sánh bắt được cả
-     * khác biệt hoa thường là nhờ collation mặc định của SQL Server, không phải do đoạn
-     * Java này - và chính ràng buộc unique cũng dựa trên collation đó nên hai bên khớp nhau.
+     * Kiểm tra không phân biệt hoa thường; UNIQUE trên Aiven vẫn là chốt bảo vệ khi hai
+     * tài khoản đồng thời xác nhận cùng email. Lỗi database phải rollback toàn bộ.
      */
     private void requireEmailAvailable(String email, AppUser self) {
         Optional<AppUser> owner = appUserRepository.findByEmailIgnoreCase(email);
@@ -156,8 +162,15 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     }
 
     private EmailChangeRequest requirePending(AppUser appUser) {
-        return emailChangeRequestRepository.findByUser(appUser)
+        return lockedPending(appUser)
                 .orElseThrow(() -> new IllegalStateException("Không có yêu cầu đổi email nào đang chờ xác thực."));
+    }
+
+    /** Khóa AppUser trước, sau đó khóa/làm mới yêu cầu; không dùng lại ảnh chụp OSIV của controller. */
+    private Optional<EmailChangeRequest> lockedPending(AppUser appUser) {
+        var pending = emailChangeRequestRepository.findLockedByUser(appUser);
+        pending.ifPresent(request -> entityManager.refresh(request, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE));
+        return pending;
     }
 
     private AppUser requireUser(String username) {

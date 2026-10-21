@@ -30,7 +30,7 @@ class OrderFeeEstimateTest {
         }
         var pricing = new vn.edu.hcmute.uteexpress.service.admin.impl.ShippingTariffServiceImpl(repository, null, null, java.time.Clock.systemUTC(),
                 org.mockito.Mockito.mock(vn.edu.hcmute.uteexpress.repository.admin.ShippingTariffVersionRepository.class));
-        return new OrderServiceImpl(null, null, null, null, null, null, null, pricing, null, event -> { });
+        return new OrderServiceImpl(null, null, null, null, null, null, null, pricing, null, event -> { }, null);
     }
 
     @Test

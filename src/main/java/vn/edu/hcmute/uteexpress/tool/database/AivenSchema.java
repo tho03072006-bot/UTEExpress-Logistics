@@ -28,7 +28,7 @@ public final class AivenSchema {
         try {
             var sources = new MetadataSources(registry);
             for (Class<?> entity : List.of(AppUser.class, Order.class, SavedAddress.class,
-                    DraftOrder.class, PromoCode.class, OrderPayment.class, ServiceReview.class,
+                    DraftOrder.class, OrderFormSubmission.class, PromoCode.class, OrderPayment.class, ServiceReview.class,
                     EmailChangeRequest.class, DeliveryProof.class, StaffAccount.class,
                     OrderStatusHistory.class, ShipperNotification.class, OrderComplaint.class,
                     CodSettlement.class, CodSettlementItem.class, UserProfileDetail.class,
