@@ -29,14 +29,17 @@ public class OtpPolicy {
     public boolean consume(AppUser user, String submitted) {
         if (user.getOtpCode() == null || user.getOtpExpiry() == null || !now().isBefore(user.getOtpExpiry())
                 || user.getOtpAttempts() >= MAX_ATTEMPTS) return false;
-        boolean matches = submitted != null && submitted.matches("[0-9]{6}")
-            && MessageDigest.isEqual(user.getOtpCode().getBytes(StandardCharsets.UTF_8), submitted.getBytes(StandardCharsets.UTF_8));
+        boolean matches = matchesCode(user.getOtpCode(), submitted);
         if (!matches) {
             user.setOtpAttempts(user.getOtpAttempts() + 1);
             if (user.getOtpAttempts() >= MAX_ATTEMPTS) { clear(user); user.setOtpAttempts(MAX_ATTEMPTS); }
             return false;
         }
         clear(user); return true;
+    }
+    public boolean matchesCode(String expected, String submitted) {
+        return expected != null && submitted != null && submitted.matches("[0-9]{6}")
+            && MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), submitted.getBytes(StandardCharsets.UTF_8));
     }
     public void clear(AppUser user) { user.setOtpCode(null); user.setOtpExpiry(null); user.setOtpAttempts(0); }
 }
