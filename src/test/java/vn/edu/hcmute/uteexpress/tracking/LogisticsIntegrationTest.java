@@ -135,7 +135,7 @@ class LogisticsIntegrationTest {
                 .andExpect(status().isUnauthorized()).andExpect(header().doesNotExist("Location"));
         assertNull(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"));
         enableLogin(shipper);
-        mvc.perform(post("/dang-nhap").session(session).param("username", shipper.getUsername())
+        mvc.perform(post("/dang-nhap").with(csrf()).session(session).param("username", shipper.getUsername())
                 .param("password", "LoginTestOnly@2026"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/shipper/trang-chu"));
     }
@@ -153,7 +153,7 @@ class LogisticsIntegrationTest {
             assertSame(saved, session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"));
         }
         enableLogin(shipper);
-        mvc.perform(post("/dang-nhap").session(session).param("username", shipper.getUsername())
+        mvc.perform(post("/dang-nhap").with(csrf()).session(session).param("username", shipper.getUsername())
                 .param("password", "LoginTestOnly@2026"))
                 .andExpect(redirectedUrlPattern("**" + detail + "?continue"));
     }
@@ -166,7 +166,7 @@ class LogisticsIntegrationTest {
         new HttpSessionRequestCache().saveRequest(oldRequest, new MockHttpServletResponse());
         assertNotNull(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"));
         enableLogin(shipper);
-        mvc.perform(post("/dang-nhap").session(session).param("username", shipper.getUsername())
+        mvc.perform(post("/dang-nhap").with(csrf()).session(session).param("username", shipper.getUsername())
                 .param("password", "LoginTestOnly@2026"))
                 .andExpect(redirectedUrl("/shipper/trang-chu"));
         assertNull(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"));
@@ -187,7 +187,7 @@ class LogisticsIntegrationTest {
 
     @Test void directLoginStillOpensCustomerDashboard() throws Exception {
         enableLogin(customer);
-        mvc.perform(post("/dang-nhap").param("username", customer.getUsername()).param("password", "LoginTestOnly@2026"))
+        mvc.perform(post("/dang-nhap").with(csrf()).param("username", customer.getUsername()).param("password", "LoginTestOnly@2026"))
                 .andExpect(redirectedUrl("/nguoi-dung/trang-chu"));
     }
 
@@ -197,7 +197,7 @@ class LogisticsIntegrationTest {
         mvc.perform(get(detail).session(session).accept(MediaType.TEXT_HTML))
                 .andExpect(status().is3xxRedirection());
         enableLogin(customer);
-        mvc.perform(post("/dang-nhap").session(session).param("username", customer.getUsername())
+        mvc.perform(post("/dang-nhap").with(csrf()).session(session).param("username", customer.getUsername())
                 .param("password", "LoginTestOnly@2026"))
                 .andExpect(redirectedUrlPattern("**" + detail + "?continue"));
     }
