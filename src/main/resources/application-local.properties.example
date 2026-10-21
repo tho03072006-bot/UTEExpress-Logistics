@@ -18,6 +18,8 @@
 
 spring.mail.username=CHANGE_ME@gmail.com
 spring.mail.password=CHANGE_ME
+# Co the dung bien moi truong SMTP_USERNAME / SMTP_PASSWORD thay vi dien file private.
+# Neu da co cau hinh local, giu nguyen; khong copy mau de len file da dien.
 
 # Gia tri that can ngau nhien, toi thieu 32 byte; khong dung lai chuoi mau.
 app.jwt.secret=CHANGE_ME_chuoi_ngau_nhien_toi_thieu_32_byte
