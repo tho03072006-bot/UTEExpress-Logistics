@@ -60,7 +60,21 @@ public class StaffSecurityConfig {
                 })
                 .failureHandler((request, response, exception) -> {
                     attempts.recordFailure(request.getParameter("username"));
-                    response.sendRedirect(request.getContextPath() + "/noi-bo/dang-nhap?error");
+                    // Đang bị khóa tạm thì báo rõ (nhập đúng mật khẩu lúc này vẫn bị từ chối). Lần sai được đếm theo tên
+                    // gõ vào, kể cả tên không tồn tại, nên thông báo này không làm lộ tài khoản nào có thật.
+                    boolean locked = attempts.isBlocked(request.getParameter("username"));
+                    String target = request.getContextPath() + "/noi-bo/dang-nhap?error" + (locked ? "&locked" : "");
+                    // Số lần sai gửi qua flash (dùng một lần, lưu trong phiên) để trang đăng nhập hiện "lần N/5"; không đặt lên URL.
+                    // Bộ lọc này chạy trước DispatcherServlet nên tự lưu bằng SessionFlashMapManager (cùng cơ chế Spring MVC đọc lại).
+                    var flash = new org.springframework.web.servlet.FlashMap();
+                    flash.put("staffLoginFailures", attempts.failures(request.getParameter("username")));
+                    flash.put("staffLoginMax", attempts.maxAttempts());
+                    // Giữ lại tên đã gõ (không giữ mật khẩu) để khỏi nhập lại; Thymeleaf tự escape khi hiển thị.
+                    String typed = request.getParameter("username");
+                    flash.put("staffLoginUsername", typed == null ? "" : typed.strip().substring(0, Math.min(50, typed.strip().length())));
+                    flash.setTargetRequestPath(request.getContextPath() + "/noi-bo/dang-nhap");
+                    new org.springframework.web.servlet.support.SessionFlashMapManager().saveOutputFlashMap(flash, request, response);
+                    response.sendRedirect(target);
                 }))
             .logout(logout -> logout.logoutUrl("/noi-bo/dang-xuat")
                 .logoutSuccessUrl("/noi-bo/dang-nhap?logout"))

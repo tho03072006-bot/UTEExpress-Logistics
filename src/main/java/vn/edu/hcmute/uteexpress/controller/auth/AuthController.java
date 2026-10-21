@@ -127,15 +127,25 @@ public class AuthController {
     public static class RegisterForm {
 
         @NotBlank(message = "Vui lòng nhập tên đăng nhập")
+        @jakarta.validation.constraints.Pattern(regexp = "[A-Za-z][A-Za-z0-9._-]{3,49}",
+                message = "Tên đăng nhập 4–50 ký tự, bắt đầu bằng chữ; chỉ dùng chữ không dấu, số, . _ -")
         private String username;
 
         @NotBlank(message = "Vui lòng nhập mật khẩu")
+        @jakarta.validation.constraints.Size(min = 6, max = 64, message = "Mật khẩu từ 6 đến 64 ký tự")
+        @jakarta.validation.constraints.Pattern(regexp = "[^\\p{Cntrl}]*", message = "Mật khẩu không được chứa ký tự điều khiển")
+        @vn.edu.hcmute.uteexpress.validation.MaxUtf8Bytes
         private String password;
 
         @NotBlank(message = "Vui lòng nhập email")
         @Email(message = "Email không đúng định dạng")
+        @jakarta.validation.constraints.Size(max = 100, message = "Email tối đa 100 ký tự")
+        @jakarta.validation.constraints.Pattern(regexp = "[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}", message = "Email cần có tên miền hợp lệ, ví dụ ban@gmail.com")
         private String email;
 
+        @NotBlank(message = "Vui lòng nhập họ tên")
+        @jakarta.validation.constraints.Size(min = 2, max = 100, message = "Họ tên từ 2–100 ký tự")
+        @jakarta.validation.constraints.Pattern(regexp = "(?=.*\\p{L})[\\p{L}\\p{M} .'-]+", message = "Họ tên chỉ gồm chữ và khoảng trắng")
         private String fullName;
 
         public String getUsername() {
@@ -143,7 +153,7 @@ public class AuthController {
         }
 
         public void setUsername(String username) {
-            this.username = username;
+            this.username = username == null ? null : username.strip();
         }
 
         public String getPassword() {
@@ -159,7 +169,7 @@ public class AuthController {
         }
 
         public void setEmail(String email) {
-            this.email = email;
+            this.email = email == null ? null : email.strip();
         }
 
         public String getFullName() {
@@ -167,7 +177,7 @@ public class AuthController {
         }
 
         public void setFullName(String fullName) {
-            this.fullName = fullName;
+            this.fullName = fullName == null ? null : fullName.strip().replaceAll("\\s+", " ");
         }
     }
 }

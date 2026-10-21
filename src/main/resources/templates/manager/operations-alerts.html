@@ -3,7 +3,7 @@
 <nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Đơn cần xử lý</h1>
 <div class="d-flex flex-wrap gap-2 mb-3">
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='UNASSIGNED')}">Chưa phân công</a>
-<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='PAYMENT_ISSUE')}">Chờ thanh toán / cần đối chiếu cước</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='PAYMENT_ISSUE')}">Chờ thanh toán</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_PICKUP')}">Chậm lấy</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_DELIVERY')}">Quá hạn giao</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='RETRY_DUE')}">Đến hẹn giao lại</a>

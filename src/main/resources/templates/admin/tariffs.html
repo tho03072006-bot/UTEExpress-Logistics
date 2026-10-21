@@ -5,7 +5,7 @@
 <h1 class="h3">Cấu hình bảng cước</h1>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<p>Cước = cơ bản + phụ phí/kg × khối lượng. Chỉ áp dụng cho đơn mới.</p><div class="table-responsive ute-panel p-3"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cước cơ bản (VND)</th><th>Phụ phí / kg (VND)</th><th>Cập nhật</th><th></th></tr></thead>
+<p>Cước = cơ bản + phụ phí/kg × khối lượng. Chỉ áp dụng cho đơn mới.</p><div class="table-responsive ute-panel p-3"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cước cơ bản (VND)</th><th>Phụ phí mỗi kg (VND)</th><th>Cập nhật</th><th></th></tr></thead>
 <tbody><tr th:each="tariff : ${tariffs}"><td th:text="${tariff.serviceType.displayName}"></td>
 <td th:text="${#numbers.formatDecimal(tariff.baseFee, 1, 'POINT', 0, 'COMMA')}"></td>
 <td th:text="${#numbers.formatDecimal(tariff.feePerKg, 1, 'POINT', 0, 'COMMA')}"></td>

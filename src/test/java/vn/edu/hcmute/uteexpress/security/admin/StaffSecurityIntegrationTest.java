@@ -366,7 +366,7 @@ class StaffSecurityIntegrationTest {
     @Test void blocksCorrectPasswordAfterFiveFailures() throws Exception {
         for (int i = 0; i < 5; i++) { attempts.recordFailure("admin01"); }
         mvc.perform(post("/noi-bo/dang-nhap").with(csrf()).param("username", "admin01")
-                .param("password", "OriginalPass@2026")).andExpect(redirectedUrl("/noi-bo/dang-nhap?error"));
+                .param("password", "OriginalPass@2026")).andExpect(redirectedUrl("/noi-bo/dang-nhap?error&locked"));
     }
 
     @Test void mutationRequiresCsrfEvenForAdmin() throws Exception {

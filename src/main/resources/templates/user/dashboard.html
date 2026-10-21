@@ -9,7 +9,7 @@
 <section>
 <div class="ute-page-head sx-art-mascot">
     <div>
-        <h2>Xin chào, <span th:text="${username}">user</span></h2>
+        <h2>Xin chào, <span th:text="${displayName ?: username}">user</span></h2>
         <p>Tổng quan đơn gửi của bạn.</p>
     </div>
     <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">

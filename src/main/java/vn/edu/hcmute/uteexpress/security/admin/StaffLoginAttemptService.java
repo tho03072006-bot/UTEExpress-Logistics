@@ -35,6 +35,15 @@ public class StaffLoginAttemptService {
 
     public synchronized void clearFailures(String username) { attempts.remove(normalize(username)); }
 
+    /** Số lần sai còn hiệu lực của tên đăng nhập này (0 nếu chưa sai hoặc đã hết 15 phút). */
+    public synchronized int failures(String username) {
+        clearExpired();
+        Attempt attempt = attempts.get(normalize(username));
+        return attempt == null ? 0 : attempt.count;
+    }
+
+    public int maxAttempts() { return MAX_ATTEMPTS; }
+
     private void clearExpired() {
         Instant now = clock.instant();
         attempts.values().removeIf(a -> !a.expiresAt.isAfter(now));

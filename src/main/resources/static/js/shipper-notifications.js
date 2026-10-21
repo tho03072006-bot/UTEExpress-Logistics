@@ -11,6 +11,14 @@
         try { if (localStorage.getItem("ute-shipper-popup") === "off") return; } catch (e) { /* mặc định vẫn hiện */ }
         banner.querySelector("[data-notification-message]").textContent = "Bạn vừa nhận thông báo phân công vận đơn mới.";
         banner.hidden = false;
+        // Đang ở tab khác và Shipper đã cho phép: hiện thêm thông báo của trình duyệt.
+        try {
+            if (document.hidden && "Notification" in window && Notification.permission === "granted"
+                    && localStorage.getItem("ute-shipper-desktop") === "on") {
+                const note = new Notification("UTEExpress · Đơn mới", {body: "Bạn vừa được phân công vận đơn mới.", tag: "ute-assignment", icon: "/images/shipper/notify-bell.svg"});
+                note.onclick = function () { window.focus(); window.location.href = "/shipper/thong-bao"; note.close(); };
+            }
+        } catch (e) { /* trình duyệt không hỗ trợ: bỏ qua */ }
     }
     async function refresh() {
         if (sessionExpired) return;

@@ -8,7 +8,7 @@
         <div class="sx-hello">
             <div class="sx-hello-text">
                 <div class="sx-pretitle"><span class="sx-online" aria-hidden="true"></span> Đang nhận đơn · <span th:text="${#temporals.format(now, 'dd/MM/yyyy')}"></span></div>
-                <h2 th:text="|Chào, ${#authentication.name} 👋|">Chào, shipper 👋</h2>
+                <h2 th:text="|Chào, ${displayName ?: #authentication.name} 👋|">Chào, shipper 👋</h2>
                 <p th:if="${remaining > 0}">Hôm nay còn <strong th:text="|${remaining} việc|">0 việc</strong> cần làm<th:block th:if="${workCounts.retryDue > 0}">, trong đó <strong class="sx-text-rose" th:text="|${workCounts.retryDue} đơn|">0 đơn</strong> đã đến hẹn giao lại</th:block>.</p>
                 <p th:unless="${remaining > 0}">Bạn đã xong hết việc được giao. Nghỉ ngơi một chút nhé!</p>
                 <div class="sx-hello-progress"><div class="sx-meter" role="progressbar" aria-label="Tiến độ việc hôm nay" aria-valuemin="0" aria-valuemax="100" th:attr="aria-valuenow=${percent}"><span th:style="|width:${percent}%|"></span></div>
@@ -63,7 +63,6 @@
             <span class="sx-next-code" th:text="${o.trackingCode}"></span>
         </div>
         <div class="sx-next-actions">
-            <a class="btn sx-btn-white sx-next-btn" th:if="${!#strings.isEmpty(phone)}" th:href="${'tel:' + phone}" th:aria-label="|Gọi ${pickupStage ? o.senderName : o.receiverName}|"><i class="bi bi-telephone"></i><span>Gọi</span></a>
             <a class="btn sx-btn-white sx-next-btn" th:href="${@maps.to(pickupStage ? o.senderAddress : o.receiverAddress)}" target="_blank" rel="noopener noreferrer"><i class="bi bi-sign-turn-right"></i><span>Chỉ đường</span></a>
             <a class="btn btn-primary sx-next-btn" th:href="@{/shipper/don/{id}(id=${o.id})}"><i class="bi bi-box-arrow-in-right"></i><span>Mở đơn</span></a>
         </div>
@@ -128,7 +127,6 @@
                 </div>
                 <div class="sx-cell-status"><span class="badge" data-order-status th:classappend="${'badge-status-' + #strings.toLowerCase(st)}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span></div>
                 <div class="sx-cell-actions">
-                    <a class="btn sx-btn-white sx-icon-btn" th:if="${active and !#strings.isEmpty(phone)}" th:href="${'tel:' + phone}" th:title="${pickupStage} ? 'Gọi người gửi' : 'Gọi người nhận'" th:aria-label="|Gọi ${pickupStage ? order.senderName : order.receiverName}|"><i class="bi bi-telephone"></i><span class="sx-btn-text">Gọi</span></a>
                     <a class="btn sx-btn-white sx-icon-btn" th:if="${active}" th:href="${@maps.to(pickupStage ? order.senderAddress : order.receiverAddress)}" target="_blank" rel="noopener noreferrer" th:title="${pickupStage} ? 'Chỉ đường tới điểm lấy' : 'Chỉ đường tới người nhận'"><i class="bi bi-sign-turn-right"></i><span class="sx-btn-text">Chỉ đường</span></a>
                     <a class="btn sx-btn-white sx-open-btn" th:href="@{/shipper/don/{id}(id=${order.id})}">Chi tiết <i class="bi bi-chevron-right"></i></a>
                 </div>
@@ -144,7 +142,7 @@
         <input type="hidden" name="page" th:value="${orderPage.number}">
         <div class="sx-bulkbar" data-bulkbar hidden th:attr="data-max=${bulkMax}" role="region" aria-label="Cập nhật nhiều đơn">
             <strong><i class="bi bi-check2-square"></i> <span data-bulk-count>0</span> đơn đã chọn</strong>
-            <span class="sx-bulk-hint" data-bulk-hint>Chỉ áp dụng cho bước lấy hàng và bắt đầu giao. Giao thành công vẫn cần ảnh và chữ ký từng đơn.</span>
+            <span class="sx-bulk-hint" data-bulk-hint>Chỉ cho lấy hàng và bắt đầu giao.</span>
             <button type="button" class="btn sx-btn-violet" data-bulk-action="PICKED_UP"><i class="bi bi-bag-check"></i> Đã lấy hàng (<span data-bulk-n="PENDING_PICKUP">0</span>)</button>
             <button type="button" class="btn sx-btn-cyan" data-bulk-action="IN_TRANSIT"><i class="bi bi-truck"></i> Bắt đầu giao (<span data-bulk-n="PICKED_UP">0</span>)</button>
             <button type="button" class="btn btn-link" data-bulk-clear>Bỏ chọn</button>

@@ -355,7 +355,7 @@ class LogisticsIntegrationTest {
 
     @Test void complaintImageIsPrivateAndAllRolesSeeCorrectActions() throws Exception {
         mvc.perform(get("/nguoi-dung/don-hang/" + order.getId()).with(user(customer.getUsername()).roles("USER")))
-            .andExpect(status().isOk()).andExpect(content().string(containsString("Gửi / xem khiếu nại")));
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Khiếu nại</a>")));
         mvc.perform(get("/nguoi-dung/don-hang/" + order.getId() + "/khieu-nai").with(user(customer.getUsername()).roles("USER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("Gửi khiếu nại")));
         var image = new MockMultipartFile("image", "evidence.png", "image/png", qr.generate(order.getTrackingCode()));

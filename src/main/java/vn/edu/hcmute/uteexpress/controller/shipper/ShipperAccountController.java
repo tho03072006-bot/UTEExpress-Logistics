@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.hcmute.uteexpress.controller.profile.AvatarResponses;
+import vn.edu.hcmute.uteexpress.controller.profile.DisplayNameAdvice;
 import vn.edu.hcmute.uteexpress.dto.PasswordChangeRequest;
 import vn.edu.hcmute.uteexpress.dto.ProfileUpdateRequest;
 import vn.edu.hcmute.uteexpress.dto.profile.ProfileDetailForm;
@@ -44,11 +45,13 @@ public class ShipperAccountController {
 
     @PostMapping("/cap-nhat")
     public String updateContact(@Valid @ModelAttribute("form") ProfileUpdateRequest form, BindingResult bindingResult,
-                                Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+                                Authentication authentication, Model model, RedirectAttributes redirectAttributes,
+                                HttpSession session) {
         if (bindingResult.hasFieldErrors("fullName") || bindingResult.hasFieldErrors("phone")) {
             fill(authentication, model);
             return "shipper/account";
         }
+        session.removeAttribute(DisplayNameAdvice.SESSION_KEY);
         // Email Shipper do quản trị cấp: luôn giữ email đang lưu, bỏ qua giá trị gửi lên.
         form.setEmail(userProfileService.findByUsername(authentication.getName()).getEmail());
         try {

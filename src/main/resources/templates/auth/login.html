@@ -26,7 +26,9 @@
 
         <div th:if="${activated}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Kích hoạt tài khoản thành công, đăng nhập ngay.</span></div>
         <div th:if="${passwordReset}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</span></div>
-        <div th:if="${param.error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span>Sai tên đăng nhập, mật khẩu, hoặc tài khoản chưa kích hoạt OTP.</span></div>
+        <div th:if="${param.error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span>Sai tên đăng nhập, mật khẩu, hoặc tài khoản chưa kích hoạt OTP.<th:block th:if="${session.loginFailures != null and session.loginFailureLimit != null}"
+                th:text="| (lần ${session.loginFailures}/${session.loginFailureLimit}; còn ${session.loginFailureLimit - session.loginFailures} lần trước khi tạm chặn 10 phút)|"></th:block></span></div>
+        <div th:if="${param['too-many']}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-hourglass-split"></i><span>Đăng nhập sai quá nhiều lần. Hãy chờ khoảng 10 phút rồi thử lại.</span></div>
         <div th:if="${param.logout}" class="shipper-notice sx-notice-info" role="status"><i class="bi bi-box-arrow-right"></i><span>Bạn đã đăng xuất.</span></div>
 
         <!-- Form này do Spring Security formLogin xử lý (action /dang-nhap, POST) -->
@@ -35,6 +37,7 @@
                 <label class="form-label" for="loginUsername">Tên đăng nhập</label>
                 <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
                     <input type="text" id="loginUsername" name="username" class="form-control" maxlength="50"
+                           th:value="${param.error != null ? session.loginLastUsername : null}"
                            autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Nhập tên đăng nhập" required autofocus></div>
             </div>
             <div class="mb-3">

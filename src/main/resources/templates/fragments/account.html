@@ -80,12 +80,12 @@
 <!-- Mức độ hoàn thiện hồ sơ: vòng phần trăm + danh sách mục còn thiếu (bấm để nhảy tới ô cần điền) -->
 <div th:fragment="completeness(profile)" class="ute-panel mb-4 sx-complete" th:with="pct=${profile.completeness()}">
     <div class="sx-complete-head">
-        <div class="sx-ring" th:style="|--pct:${pct}|" role="img" th:attr="aria-label=|Hồ sơ hoàn thiện ${pct}%|">
+        <div class="sx-pct-ring" th:style="|--pct:${pct}|" role="img" th:attr="aria-label=|Hồ sơ hoàn thiện ${pct}%|">
             <strong th:text="|${pct}%|">0%</strong>
         </div>
         <div>
             <h5 class="mb-1" th:text="${pct == 100} ? 'Hồ sơ đã đầy đủ 🎉' : 'Hoàn thiện hồ sơ'">Hoàn thiện hồ sơ</h5>
-            <p class="mb-0" th:text="${pct == 100} ? 'Người gửi và Shipper dễ nhận ra bạn hơn.' : 'Điền thêm để mọi người dễ liên hệ với bạn.'">Điền thêm</p>
+            <p class="mb-0" th:text="${pct == 100} ? 'Đã điền đủ thông tin.' : 'Còn vài mục chưa điền.'">Còn vài mục</p>
         </div>
     </div>
     <ul class="sx-checklist-mini">
@@ -115,9 +115,9 @@
             </div>
         </div>
         <div class="col-sm-5">
-            <label class="form-label" for="province">Tỉnh / thành phố</label>
+            <label class="form-label" for="province">Tỉnh thành</label>
             <input type="text" id="province" th:field="*{province}" class="form-control" list="sxProvinceList"
-                   maxlength="60" placeholder="Chọn hoặc gõ tên" autocomplete="off">
+                   maxlength="60" autocomplete="off">
             <datalist id="sxProvinceList"><option th:each="p : ${provinces}" th:value="${p}"></option></datalist>
             <div class="ute-field-error" th:if="${#fields.hasErrors('province')}" th:errors="*{province}"></div>
         </div>

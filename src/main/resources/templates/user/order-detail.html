@@ -176,15 +176,17 @@
         </div>
     </div>
 </div>
-<div class="ute-panel mt-4">
-    <h4>Hành trình và hỗ trợ</h4>
-    <div class="d-flex flex-wrap gap-2 mb-3">
-        <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/hanh-trinh(id=${order.id})}">Xem lịch sử hành trình</a>
-        <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}">Gửi / xem khiếu nại</a>
-        <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/xu-ly(id=${order.id})}">Tiến độ giao lại / hoàn / bồi hoàn</a>
-        <a class="btn btn-outline-secondary" download="van-don.png" th:href="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}">Tải QR vận đơn</a>
+<div class="ute-panel mt-4 sx-support">
+    <div>
+        <h4>Hỗ trợ</h4>
+        <div class="sx-support-actions">
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/hanh-trinh(id=${order.id})}"><i class="bi bi-clock-history"></i> Lịch sử hành trình</a>
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}"><i class="bi bi-chat-left-text"></i> Khiếu nại</a>
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/xu-ly(id=${order.id})}"><i class="bi bi-arrow-repeat"></i> Xử lý sự cố</a>
+            <a class="btn btn-outline-secondary" download="van-don.png" th:href="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}"><i class="bi bi-download"></i> Tải QR</a>
+        </div>
     </div>
-    <img class="img-fluid bg-white rounded" width="160" height="160" th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="QR mã vận đơn">
+    <img class="sx-support-qr" width="128" height="128" th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="QR mã vận đơn">
 </div>
 </section>
 

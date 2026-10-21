@@ -5,7 +5,7 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 
 import java.util.Optional;
 
-public interface AppUserRepository extends JpaRepository<AppUser, Long> {
+public interface AppUserRepository extends JpaRepository<AppUser, Long>, AppUserLookup {
 
     org.springframework.data.domain.Page<AppUser> findByRoleAndEnabledTrue(
             AppUser.Role role, org.springframework.data.domain.Pageable pageable);

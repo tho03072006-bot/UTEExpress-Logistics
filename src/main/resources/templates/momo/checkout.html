@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Xác nhận thanh toán · MoMo mô phỏng</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"><script defer th:src="@{/js/momo-simulator.js}"></script></head>
 <body><header class="topbar"><a th:href="@{/}" class="brand">UTE<span>Express</span></a><span class="badge">MÔ PHỎNG · KHÔNG THU TIỀN THẬT</span></header>
-<main class="checkout-shell"><div class="page-heading"><p class="eyebrow">UTEEXPRESS / CƯỚC VẬN CHUYỂN</p><h1>Thanh toán MoMo <span>mô phỏng</span></h1><p>Kiểm tra thông tin trước khi xác nhận giao dịch demo.</p></div>
+<main class="checkout-shell"><div class="page-heading"><p class="eyebrow">CƯỚC VẬN CHUYỂN</p><h1>Thanh toán MoMo <span>mô phỏng</span></h1><p>Kiểm tra thông tin trước khi xác nhận giao dịch demo.</p></div>
 <div class="checkout-grid"><section class="card order-card"><div class="section-title"><span class="step">01</span><h2>Thông tin đơn hàng</h2></div>
 <dl class="details"><div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
 <div><dt>Người gửi</dt><dd th:text="${receipt.senderName ?: '—'}">—</dd></div>

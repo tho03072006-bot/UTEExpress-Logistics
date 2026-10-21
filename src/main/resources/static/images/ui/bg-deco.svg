@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" fill="none">
+  <!-- Họa tiết trang trí nền trang (góc phải trên / trái dưới): vòng tròn, dấu cộng, đường chấm, kiện hàng mờ -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="420" cy="90" r="64" stroke="#0072BC" stroke-opacity=".10" stroke-width="2"/>
+    <circle cx="420" cy="90" r="38" stroke="#6366F1" stroke-opacity=".10" stroke-width="2" stroke-dasharray="3 7"/>
+    <path d="M120 360C180 300 250 330 300 280S410 230 470 190" stroke="#0EA5E9" stroke-opacity=".22" stroke-width="2.5" stroke-dasharray="2 10"/>
+    <path d="M300 40v16M292 48h16" stroke="#6366F1" stroke-opacity=".35" stroke-width="2.5"/>
+    <path d="M60 220v12M54 226h12" stroke="#0EA5E9" stroke-opacity=".35" stroke-width="2.5"/>
+    <path d="M470 300v14M463 307h14" stroke="#F59E0B" stroke-opacity=".4" stroke-width="2.5"/>
+    <path d="M196 150l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#6366F1" fill-opacity=".22"/>
+    <path d="M360 330l2.5 6.5 6.5 2.5-6.5 2.5-2.5 6.5-2.5-6.5-6.5-2.5 6.5-2.5z" fill="#0EA5E9" fill-opacity=".25"/>
+    <!-- Kiện hàng viền mờ -->
+    <g transform="translate(330 120) rotate(-10)" stroke="#F59E0B" stroke-opacity=".35" stroke-width="2">
+      <path d="M0 12l20-10 20 10v24l-20 10-20-10z" fill="#FBBF24" fill-opacity=".08"/>
+      <path d="M0 12l20 10 20-10M20 22v24M10 7l20 10"/>
+    </g>
+    <g transform="translate(90 280) rotate(8)" stroke="#0072BC" stroke-opacity=".25" stroke-width="2">
+      <path d="M0 10l16-8 16 8v19l-16 8-16-8z" fill="#0072BC" fill-opacity=".05"/>
+      <path d="M0 10l16 8 16-8M16 18v19"/>
+    </g>
+    <!-- Ghim vị trí nhỏ -->
+    <path d="M250 210a11 11 0 0 1 11 11c0 9-11 19-11 19s-11-10-11-19a11 11 0 0 1 11-11z" fill="#F43F5E" fill-opacity=".14" stroke="#F43F5E" stroke-opacity=".3" stroke-width="1.5"/>
+    <circle cx="250" cy="221" r="3.5" fill="#F43F5E" fill-opacity=".35"/>
+    <g fill="#0072BC" fill-opacity=".18">
+      <circle cx="40" cy="60" r="4"/><circle cx="160" cy="40" r="3"/><circle cx="500" cy="380" r="4"/><circle cx="220" cy="400" r="3"/>
+    </g>
+  </g>
+</svg>

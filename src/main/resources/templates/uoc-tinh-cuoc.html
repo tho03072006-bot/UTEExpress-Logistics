@@ -18,14 +18,14 @@
                 <span class="sx-hero-input"><i class="bi bi-box2" aria-hidden="true"></i>
                     <input type="number" id="weightKg" th:field="*{weightKg}" step="0.1" min="0.1" max="100"
                            placeholder="Ví dụ 2.5" required inputmode="decimal"></span></label>
-            <label class="sx-hero-field" for="distanceKm"><span>Khoảng cách (km) <small>không bắt buộc</small></span>
+            <label class="sx-hero-field" for="distanceKm"><span>Khoảng cách (km)</span>
                 <span class="sx-hero-input"><i class="bi bi-signpost-2" aria-hidden="true"></i>
                     <input type="number" id="distanceKm" th:field="*{distanceKm}" step="0.1" min="0.1" max="2000"
-                           placeholder="Ví dụ 12" inputmode="decimal"></span></label>
+                           placeholder="Tùy chọn" inputmode="decimal"></span></label>
             <label class="sx-hero-field" for="serviceType"><span>Loại dịch vụ</span>
                 <span class="sx-hero-input"><i class="bi bi-truck" aria-hidden="true"></i>
                     <select id="serviceType" th:field="*{serviceType}">
-                        <option value="">So sánh cả 3 loại</option>
+                        <option value="">Cả 3 loại</option>
                         <option value="STANDARD">Tiêu chuẩn</option>
                         <option value="EXPRESS">Nhanh</option>
                         <option value="SUPER_EXPRESS">Hỏa tốc (trong 30 km)</option>
@@ -68,20 +68,22 @@
     </div>
 </div>
 
-<details class="ute-panel sx-fee-rules mt-4">
-    <summary><i class="bi bi-info-circle"></i> Cách tính cước tham khảo</summary>
-    <div class="sx-fee-rules-grid">
-        <div><strong>Cước gốc</strong><p>Tiêu chuẩn 15.000 đ · Nhanh 25.000 đ · Hỏa tốc 40.000 đ, cộng 3.000 đ cho mỗi kilôgam.</p></div>
-        <div><strong>Phụ phí khoảng cách</strong><p>5 km đầu miễn phí · 5 - 30 km: 1.000 đ/km · 30 - 300 km: 25.000 đ + 300 đ/km · trên 300 km: 106.000 đ + 100 đ/km.</p></div>
-        <div><strong>Hệ số dịch vụ</strong><p>Phụ phí khoảng cách nhân x1 (Tiêu chuẩn), x1,3 (Nhanh), x1,6 (Hỏa tốc). Hỏa tốc chỉ nhận trong 30 km.</p></div>
-    </div>
-</details>
-
-<div class="shipper-notice sx-notice-info mt-4">
-    <i class="bi bi-info-circle"></i>
-    <span>Mức tham khảo; cước thực tế tính khi tạo đơn.
-    Kiện trên 100 kg: liên hệ tổng đài.</span>
+<!-- Lần đầu mở trang: 3 thẻ dịch vụ có hình minh họa thay cho bảng chữ -->
+<div class="sx-service-cards" th:if="${quotes == null}">
+    <article class="sx-service-card sx-tone-teal">
+        <img th:src="@{/images/shipper/shipper-van.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Tiêu chuẩn</h3><p><i class="bi bi-clock"></i> 3 - 5 ngày</p><strong>từ 15.000 đ</strong>
+    </article>
+    <article class="sx-service-card sx-tone-amber">
+        <img th:src="@{/images/shipper/hero-delivery.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Nhanh</h3><p><i class="bi bi-clock"></i> 1 - 2 ngày</p><strong>từ 25.000 đ</strong>
+    </article>
+    <article class="sx-service-card sx-tone-rose">
+        <img th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Hỏa tốc</h3><p><i class="bi bi-clock"></i> Trong ngày · ≤ 30 km</p><strong>từ 40.000 đ</strong>
+    </article>
 </div>
+<p class="sx-fee-foot"><i class="bi bi-info-circle"></i> Cộng 3.000 đ/kg · 5 km đầu miễn phụ phí · Trên 100 kg: gọi tổng đài.</p>
 </section>
 
 </body>

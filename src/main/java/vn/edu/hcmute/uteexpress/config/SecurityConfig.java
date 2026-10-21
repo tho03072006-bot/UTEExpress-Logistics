@@ -44,6 +44,8 @@ public class SecurityConfig {
                         "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
                 // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
                 .requestMatchers("/error").permitAll()
+                // Kiểm tra "app còn sống" cho Render/giám sát: chỉ trả "ok", không đọc dữ liệu.
+                .requestMatchers("/healthz").permitAll()
                 .requestMatchers("/api/assistant/**").hasAnyRole("USER","SHIPPER")
                 .requestMatchers("/api/payments/**").hasRole("USER")
                 .requestMatchers("/nguoi-dung/**").hasRole("USER")

@@ -24,8 +24,8 @@
 <nav th:fragment="sidebarNav" class="ute-nav">
     <div sec:authorize="hasRole('USER')">
         <a class="sx-profile" th:href="@{/nguoi-dung/tai-khoan}" title="Tài khoản của tôi">
-            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">K</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/nguoi-dung/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
-            <div><strong sec:authentication="name">user</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Khách hàng</span></div>
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">K</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/nguoi-dung/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
+            <div><strong th:text="${displayName ?: #authentication.name}">user</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Khách hàng</span></div>
         </a>
         <p class="ute-nav-heading">Người gửi hàng</p>
         <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/nguoi-dung/trang-chu}">
@@ -52,8 +52,8 @@
 
     <div sec:authorize="hasRole('SHIPPER')">
         <a class="sx-profile" th:href="@{/shipper/tai-khoan}" title="Tài khoản của tôi">
-            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">S</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/shipper/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
-            <div><strong sec:authentication="name">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang nhận đơn</span></div>
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/shipper/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
+            <div><strong th:text="${displayName ?: #authentication.name}">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang nhận đơn</span></div>
         </a>
         <!-- Nhóm theo việc của tài xế giao hàng: làm việc trong ngày, rồi tiền và hiệu suất -->
         <p class="ute-nav-heading">Công việc</p>
@@ -83,8 +83,8 @@
          nhóm "Quản trị hệ thống" chỉ hiện với Admin. Cùng các mục với thanh nội bộ admin/navigation.html. -->
     <div sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
         <div class="sx-profile sx-profile-staff">
-            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(#authentication.name, 0, 1))}">M</span>
-            <div><strong sec:authentication="name">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span><th:block sec:authorize="hasRole('ADMIN')">Quản trị hệ thống</th:block><th:block sec:authorize="!hasRole('ADMIN')">Quản lý vận hành</th:block></span></div>
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">M</span>
+            <div><strong th:text="${displayName ?: #authentication.name}">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span><th:block sec:authorize="hasRole('ADMIN')">Quản trị hệ thống</th:block><th:block sec:authorize="!hasRole('ADMIN')">Quản lý vận hành</th:block></span></div>
         </div>
         <p class="ute-nav-heading">Vận hành</p>
         <a class="ute-nav-link sx-nav" th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2"></i> Tổng quan vận hành</a>

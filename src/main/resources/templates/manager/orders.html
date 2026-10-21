@@ -13,7 +13,7 @@
 <div class="col-md-2"><label for="to" class="form-label">Đến ngày</label><input id="to" name="to" type="date" required min="2000-01-01" th:max="${today}" th:value="${to}" class="form-control"></div>
 <div class="col-md-2 align-self-end"><button type="submit" class="btn btn-primary">Lọc đơn</button></div>
 </form><div data-realtime-region="manager-orders"><div class="ute-panel p-3"><div class="table-responsive"><table class="table align-middle">
-<thead><tr><th>Mã vận đơn</th><th>Người gửi / nhận</th><th>Shipper</th><th>Trạng thái</th><th>Cước phí</th><th>Ngày tạo</th></tr></thead><tbody>
+<thead><tr><th>Mã vận đơn</th><th>Gửi → nhận</th><th>Shipper</th><th>Trạng thái</th><th>Cước phí</th><th>Ngày tạo</th></tr></thead><tbody>
 <tr th:if="${orders.empty}"><td colspan="6" class="text-center py-4">Không có đơn phù hợp với bộ lọc.</td></tr>
 <tr th:each="order : ${orders.content}" th:attr="data-tracking-code=${order.trackingCode}"><td th:text="${order.trackingCode}"></td>
 <td><span th:text="${order.senderName}"></span><br><small th:text="${order.receiverName}"></small></td>

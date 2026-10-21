@@ -476,10 +476,10 @@ body.sx-app .ute-page-head:not(.shipper-hero) .btn-primary:hover {
 /* Thẻ tiêu đề trang: thêm hoa văn bản đồ mờ phía phải */
 body.sx-app .ute-page-head:not(.shipper-hero), .sx-app .shipper-workspace:not(.sx-public) .shipper-hero, .sx-hello {
     background:
-        url("../images/ui/map-lines.svg") right -3rem center / 26rem auto no-repeat,
+        url("../images/ui/hero-city.svg") right center / auto 100% no-repeat,
         linear-gradient(110deg, var(--app-card) 40%, color-mix(in srgb, var(--app-primary) 11%, var(--app-card)) 100%);
 }
-.sx-next { background: url("../images/ui/map-lines.svg") right 14rem center / 17rem auto no-repeat, var(--app-card); }
+.sx-next { background: radial-gradient(circle, color-mix(in srgb, var(--app-primary) 12%, transparent) 1px, transparent 1.4px) 0 0 / 16px 16px, var(--app-card); }
 
 /* Ô số liệu màu chuyển (kiểu AdminLTE / Materio): chữ trắng, biểu tượng trong ô kính mờ, hai vệt tròn trắng */
 .sx-kpi-card, .sx-app .ute-stat, .sx-app .shipper-workspace .shipper-metric {
@@ -521,11 +521,11 @@ a.sx-kpi-card:hover, .sx-app .ute-stat:hover, .sx-app .shipper-workspace a.shipp
 
 /* Đăng nhập / đăng ký và băng giới thiệu trang công khai: thêm hoa văn bản đồ */
 .sx-app .sx-auth-side, .sx-app .sx-auth-staff-theme .sx-auth-side {
-    background: url("../images/ui/map-lines-light.svg") right -4rem top -1rem / 26rem auto no-repeat, linear-gradient(150deg, #182433 0%, #1B2F5E 60%, #3730A3 100%); }
+    background: radial-gradient(circle, rgba(255, 255, 255, .09) 1px, transparent 1.4px) 0 0 / 18px 18px, radial-gradient(22rem 16rem at 85% 10%, rgba(99, 102, 241, .35), transparent 70%), linear-gradient(150deg, #182433 0%, #1B2F5E 60%, #3730A3 100%); }
 .sx-app .shipper-workspace.sx-public .shipper-hero {
-    background: url("../images/ui/map-lines-light.svg") left 42% center / 34rem auto no-repeat, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
+    background: url("../images/ui/hero-city-light.svg") right center / auto 100% no-repeat, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
 :root[data-theme="dark"] .sx-app .shipper-workspace.sx-public .shipper-hero {
-    background: url("../images/ui/map-lines-light.svg") left 42% center / 34rem auto no-repeat, linear-gradient(120deg, #0A2238 0%, #0B4F85 55%, #312E81 100%); }
+    background: url("../images/ui/hero-city-light.svg") right center / auto 100% no-repeat, linear-gradient(120deg, #0A2238 0%, #0B4F85 55%, #312E81 100%); }
 
 @media (max-width: 767.98px) {
     .sx-next { background: var(--app-card); }
@@ -561,7 +561,7 @@ a.sx-kpi-card:hover, .sx-app .ute-stat:hover, .sx-app .shipper-workspace a.shipp
 
 .sx-account-hero { overflow: hidden; margin-bottom: 1.25rem; border: 1px solid var(--app-border); border-radius: .75rem; background: var(--app-card); box-shadow: var(--app-shadow); }
 .sx-account-cover { height: 8.5rem;
-    background: url("../images/ui/map-lines-light.svg") right -2rem center / 30rem auto no-repeat, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
+    background: url("../images/ui/hero-city-light.svg") right center / auto 100% no-repeat, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
 .sx-account-main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem 1.5rem; padding: .9rem 1.5rem 1.25rem; }
 .sx-account-avatar { position: relative; flex: 0 0 auto; margin-top: -4.6rem; }
 .sx-app .sx-avatar.sx-avatar-xl { display: grid; place-items: center; width: 7.5rem; height: 7.5rem; border: 4px solid var(--app-card); border-radius: 50%;
@@ -623,9 +623,9 @@ a.sx-kpi-card:hover, .sx-app .ute-stat:hover, .sx-app .shipper-workspace a.shipp
 .sx-complete { background: linear-gradient(150deg, color-mix(in srgb, var(--sx-green) 9%, var(--app-card)), var(--app-card) 60%); }
 .sx-complete-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .sx-complete-head p { color: var(--app-muted); font-size: .85rem; }
-.sx-ring { --pct: 0; display: grid; place-items: center; flex: 0 0 4.5rem; width: 4.5rem; height: 4.5rem; border-radius: 50%;
+.sx-pct-ring { --pct: 0; display: grid; place-items: center; flex: 0 0 4.5rem; width: 4.5rem; height: 4.5rem; border-radius: 50%;
     background: radial-gradient(closest-side, var(--app-card) 76%, transparent 78% 100%), conic-gradient(var(--sx-green) calc(var(--pct) * 1%), var(--app-soft) 0); }
-.sx-ring strong { font-size: 1rem; color: var(--app-ink); }
+.sx-pct-ring strong { font-size: 1rem; color: var(--app-ink); }
 .sx-checklist-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem .75rem; margin: 0; padding: 0; list-style: none; font-size: .85rem; }
 .sx-checklist-mini li { display: flex; align-items: center; gap: .45rem; color: var(--app-muted); }
 .sx-checklist-mini li i { color: var(--app-muted); }
@@ -633,3 +633,139 @@ a.sx-kpi-card:hover, .sx-app .ute-stat:hover, .sx-app .shipper-workspace a.shipp
 .sx-checklist-mini li.is-done i { color: var(--sx-green); }
 @media (max-width: 767.98px) { .sx-account-cover-art { width: 8rem; right: 1rem; } }
 @media (max-width: 575.98px) { .sx-account-cover-art { display: none; } }
+
+/* ---------- Thẻ dịch vụ / hướng dẫn có hình minh họa (trang Ước tính cước, Tra cứu) ---------- */
+.sx-service-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.sx-service-card { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: 1.1rem 1rem 1.25rem; text-align: center;
+    border: 1px solid var(--app-border); border-radius: var(--app-radius); box-shadow: var(--app-shadow);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--tone) 12%, var(--app-card)) 0%, var(--app-card) 62%); transition: transform .18s ease, box-shadow .18s ease; }
+.sx-service-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px color-mix(in srgb, var(--tone) 18%, transparent); }
+.sx-service-card img { width: min(100%, 11rem); height: 7.5rem; object-fit: contain; margin-bottom: .35rem; filter: drop-shadow(0 8px 12px rgba(29, 39, 59, .12)); }
+.sx-service-card h3 { margin: 0; color: var(--app-ink); font-size: 1.05rem; font-weight: 700; }
+.sx-service-card p { margin: 0; color: var(--app-muted); font-size: .85rem; }
+.sx-service-card strong { margin-top: .35rem; padding: .2rem .7rem; border-radius: 999px; background: var(--tone-soft); color: var(--tone-ink); font-size: .9rem; }
+.sx-service-card p strong { margin: 0; padding: 0; background: none; color: var(--app-ink); font-size: inherit; }
+.sx-fee-foot { margin: 1rem 0 0; color: var(--app-muted); font-size: .85rem; text-align: center; }
+@media (max-width: 767.98px) { .sx-service-cards { grid-template-columns: 1fr; } .sx-service-card { flex-direction: row; text-align: left; flex-wrap: wrap; column-gap: .9rem; }
+    .sx-service-card img { width: 5.5rem; height: 4rem; margin: 0; } }
+
+/* Tiêu đề chi tiết đơn: trạng thái nằm ngay cạnh mã đơn, không đè lên hình */
+.sx-hero-title { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; }
+.sx-hero-title h2 { margin-bottom: .35rem !important; }
+.sx-hero-title .shipper-hero-status { margin-bottom: .2rem; }
+.sx-hero-form { align-items: start; }
+.sx-hero-form > .btn { align-self: end; }
+/* Quét mã: chỉ hiện điều kiện camera khi máy không đáp ứng */
+.sx-check-item[data-cam-check]:not(.sx-fail) { display: none; }
+/* Chi tiết đơn (người gửi): nút hỗ trợ bên trái, QR nhỏ bên phải */
+.sx-support { display: flex; align-items: center; justify-content: space-between; gap: 1rem 1.5rem; flex-wrap: wrap; }
+.sx-support h4 { margin-bottom: .75rem; }
+.sx-support-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.sx-support-qr { width: 8rem; height: 8rem; padding: .35rem; border: 1px solid var(--app-border); border-radius: .6rem; background: #FFFFFF; }
+
+/* Trang biểu mẫu hẹp (đổi mật khẩu, sửa địa chỉ…): căn giữa vùng nội dung thay vì dồn sang trái */
+.sx-app section:is(.ute-narrow, .ute-narrow-sm) { margin-inline: auto; }
+.sx-app section.ute-narrow-sm { max-width: 560px; }
+/* Thẻ hồ sơ ở menu trái: tách khỏi tiêu đề nhóm bên dưới, ảnh đại diện có viền sáng */
+.sx-app .sx-profile, .sx-app .sx-profile.sx-profile-staff { margin-bottom: .75rem; }
+.sx-app .sx-profile .sx-avatar { width: 2.2rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, .22); }
+/* Trạng thái trống gọn trong danh sách (sổ địa chỉ…) */
+.sx-empty-mini { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding: .75rem 1rem; border: 1px dashed var(--app-border); border-radius: var(--app-radius); background: var(--app-card); color: var(--app-muted); font-size: .9rem; }
+.sx-empty-mini img { width: 4.5rem; height: 3rem; object-fit: contain; }
+/* Tiêu đề dài xuống dòng cân hai dòng, không để một chữ lẻ loi ở dòng dưới */
+.sx-app :is(h1, h2, h3) { text-wrap: balance; }
+
+/* ---------- Trang trí nền và khung (kiểu template quản trị hiện đại) ---------- */
+/* Nền trang: hai vệt màu mờ + họa tiết ở góc phải trên và trái dưới, cố định khi cuộn */
+body.sx-app { position: relative; isolation: isolate; }
+body.sx-app::before {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+        url("../images/ui/bg-deco.svg") right -2rem top 3.5rem / 30rem auto no-repeat,
+        url("../images/ui/bg-deco.svg") left -6rem bottom -4rem / 26rem auto no-repeat,
+        radial-gradient(38rem 26rem at 100% 0%, color-mix(in srgb, var(--app-primary) 10%, transparent), transparent 70%),
+        radial-gradient(34rem 26rem at 0% 100%, color-mix(in srgb, #8B5CF6 9%, transparent), transparent 70%),
+        radial-gradient(circle, color-mix(in srgb, var(--app-primary) 9%, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+}
+:root[data-theme="dark"] body.sx-app::before { opacity: .55; }
+
+/* Menu trái: hoa văn thành phố mờ ở chân menu */
+.sx-app .ute-sidebar, .sx-app .ute-sidebar-offcanvas {
+    background: radial-gradient(circle, rgba(255, 255, 255, .07) 1px, transparent 1.4px) 0 0 / 18px 18px, linear-gradient(180deg, #182433 0%, #1C2752 100%); }
+:root[data-theme="dark"] .sx-app .ute-sidebar, :root[data-theme="dark"] .sx-app .ute-sidebar-offcanvas {
+    background: radial-gradient(circle, rgba(255, 255, 255, .05) 1px, transparent 1.4px) 0 0 / 18px 18px, linear-gradient(180deg, #0B111A 0%, #121A3A 100%); }
+
+/* Khung nội dung có tông màu: vệt sáng màu ở góc phải trên + vạch màu mảnh trên đầu */
+.sx-app .ute-panel[class*="sx-tone-"] { position: relative; overflow: hidden; isolation: isolate; }
+.sx-app .ute-panel[class*="sx-tone-"]::after {
+    content: ''; position: absolute; z-index: -1; top: -3.5rem; right: -3.5rem; width: 10rem; height: 10rem; border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--tone) 14%, transparent), transparent 70%); pointer-events: none; }
+.sx-app .ute-panel[class*="sx-tone-"]::before {
+    content: ''; position: absolute; top: 0; left: 1.25rem; right: 1.25rem; height: 3px; border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 20%, transparent)); }
+/* Biểu tượng đầu mục: ô màu chuyển nhẹ */
+.sx-app .shipper-section-head > i { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .6rem;
+    background: linear-gradient(135deg, var(--tone-soft, var(--app-soft)), color-mix(in srgb, var(--tone, var(--app-primary)) 18%, var(--app-card)));
+    color: var(--tone, var(--app-primary)); font-size: 1.05rem; }
+
+/* Chân trang: dải chấm màu nhỏ phía trên chữ */
+.sx-app .ute-footer { position: relative; }
+.sx-app .ute-footer::before { content: ''; position: absolute; top: -1px; left: 50%; width: 9rem; height: 3px; transform: translateX(-50%); border-radius: 3px;
+    background: linear-gradient(90deg, #0EA5E9, #6366F1, #F43F5E, #F59E0B); opacity: .7; }
+@media (min-width: 992px) { body.sx-side.sx-app::before { background-position: right -2rem top 3.5rem, left calc(var(--ute-sidebar-width) - 4rem) bottom -4rem, 0 0, 0 0, 0 0; } }
+/* Thẻ chào Shipper đã có hình xe máy riêng: chỉ giữ lưới chấm + vệt màu, tránh rối hình */
+.sx-app .sx-hello { background: radial-gradient(circle, color-mix(in srgb, var(--app-primary) 12%, transparent) 1px, transparent 1.4px) right top / 16px 16px,
+    linear-gradient(110deg, var(--app-card) 40%, color-mix(in srgb, var(--app-primary) 11%, var(--app-card)) 100%); }
+/* Ô nhập trong băng tiêu đề (Ước tính cước): khi vùng nội dung hẹp (có menu trái) thì xuống 2 cột, không bóp ô */
+@media (max-width: 1399.98px) {
+    .sx-side .sx-hero-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-side .sx-hero-form > .btn { grid-column: 1 / -1; }
+}
+@media (max-width: 1199.98px) {
+    .sx-hero-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-hero-form > .btn { grid-column: 1 / -1; }
+}
+/* Điện thoại: khung tiêu đề quá hẹp nên bỏ nền bản đồ (dễ đè sau chữ), chỉ giữ lưới chấm */
+@media (max-width: 767.98px) {
+    body.sx-app .ute-page-head:not(.shipper-hero), .sx-app .shipper-workspace:not(.sx-public) .shipper-hero {
+        background: radial-gradient(circle, color-mix(in srgb, var(--app-primary) 12%, transparent) 1px, transparent 1.4px) 0 0 / 16px 16px,
+            linear-gradient(110deg, var(--app-card) 40%, color-mix(in srgb, var(--app-primary) 11%, var(--app-card)) 100%); }
+    .sx-app .shipper-workspace.sx-public .shipper-hero, .sx-account-cover {
+        background: radial-gradient(circle, rgba(255, 255, 255, .12) 1px, transparent 1.4px) 0 0 / 16px 16px, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
+    /* Thẻ có hình: hình bên trái, chữ xếp gọn bên phải */
+    .sx-service-card { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); grid-auto-rows: min-content; align-items: center; column-gap: .9rem; row-gap: .15rem; text-align: left; }
+    .sx-service-card img { grid-row: 1 / span 3; width: 5.5rem; height: 4rem; margin: 0; }
+    .sx-service-card strong { justify-self: start; margin-top: .2rem; }
+}
+@media (max-width: 575.98px) { .sx-hero-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sx-hero-form > label:nth-of-type(3) { grid-column: 1 / -1; } }
+/* Danh sách đơn Shipper (màn hẹp): giữ chỗ cột ô chọn để biểu tượng các dòng luôn thẳng hàng */
+.sx-order-row > .sx-cell-check { min-width: 1.25rem; }
+/* Ô chọn trong bộ lọc không bị cắt chữ */
+.sx-app select.form-select:not([multiple]), .sx-app select.form-control { min-width: 11rem; }
+/* Trang lỗi: hình minh họa thay cho biểu tượng nhỏ */
+.sx-app .sx-error-panel { align-items: center; border-top-width: 3px; }
+.sx-app .sx-error-panel .sx-error-icon { display: none; }
+.sx-error-art { flex: 0 0 11rem; width: 11rem; height: auto; }
+@media (max-width: 575.98px) { .sx-error-art { width: 8rem; flex-basis: auto; } }
+/* Khách đánh giá Shipper */
+.sx-rating-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: .35rem .6rem; margin-bottom: .75rem; }
+.sx-rating-summary strong { color: var(--app-ink); font-size: 2rem; line-height: 1; }
+.sx-rating-summary small { color: var(--app-muted); }
+.sx-app .sx-stars { display: inline-flex; gap: .1rem; color: #F59E0B; font-size: 1rem; }
+.sx-app .sx-stars-sm { font-size: .8rem; }
+.sx-rating-list { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+.sx-rating-list li { padding: .65rem .75rem; border: 1px solid var(--app-border); border-radius: .6rem; background: var(--app-soft); }
+.sx-rating-list p { margin: .2rem 0; color: var(--app-ink); font-size: .85rem; }
+.sx-rating-list small { color: var(--app-muted); font-size: .75rem; }
+/* Bản đồ lộ trình trong trang (Leaflet) */
+.sx-route-map { height: 360px; border: 1px solid var(--app-border); border-radius: .6rem; overflow: hidden; z-index: 0; }
+.sx-map-pin { background: none; border: 0; }
+.sx-map-pin span { display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid #FFFFFF; border-radius: 50%;
+    color: #FFFFFF; font-size: .8rem; font-weight: 700; box-shadow: 0 4px 10px rgba(15, 23, 42, .3); }
+@media (max-width: 575.98px) { .sx-route-map { height: 280px; } }
+/* Ô chọn: style.css đặt padding hai bên bằng nhau nên chữ dài đè lên mũi tên; chừa chỗ cho mũi tên, chữ dài thì "…" */
+.sx-app select.form-select:not([multiple]):not([size]) { padding-right: 2.25rem; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+/* Chrome tự điền tài khoản: giữ nền, màu và cỡ chữ giống ô nhập thường (không bị nền xanh nhạt, chữ nhỏ) */
+.sx-app input:-webkit-autofill, .sx-app input:-webkit-autofill:hover, .sx-app input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--app-ink); caret-color: var(--app-ink); font-size: inherit;
+    -webkit-box-shadow: 0 0 0 1000px var(--app-card) inset; box-shadow: 0 0 0 1000px var(--app-card) inset; transition: background-color 9999s ease-out 0s; }

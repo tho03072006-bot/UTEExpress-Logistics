@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.hcmute.uteexpress.controller.profile.AvatarResponses;
+import vn.edu.hcmute.uteexpress.controller.profile.DisplayNameAdvice;
 import vn.edu.hcmute.uteexpress.dto.profile.ProfileDetailForm;
 import vn.edu.hcmute.uteexpress.exception.CloudStorageUnavailableException;
 import vn.edu.hcmute.uteexpress.service.profile.AccountProfileService;
@@ -124,11 +125,12 @@ public class UserProfileController {
     @PostMapping("/cap-nhat")
     public String updateProfile(@Valid @ModelAttribute("form") ProfileUpdateRequest form,
                                 BindingResult bindingResult, Authentication authentication,
-                                Model model, RedirectAttributes redirectAttributes) {
+                                Model model, RedirectAttributes redirectAttributes, HttpSession session) {
         if (bindingResult.hasErrors()) {
             fillProfileModel(authentication, model);
             return "user/profile";
         }
+        session.removeAttribute(DisplayNameAdvice.SESSION_KEY);
 
         boolean needEmailVerification;
         try {

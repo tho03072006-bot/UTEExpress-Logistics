@@ -141,6 +141,40 @@ class AccountProfileIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(containsString("action=\"/shipper/tai-khoan/doi-mat-khau\"")));
     }
 
+    @Test void shipperSeesAverageRatingFromServiceReviewsOfDeliveredOrders() throws Exception {
+        mvc.perform(get(SHIPPER_BASE).servletPath(SHIPPER_BASE).with(user(shipper.getUsername()).roles("SHIPPER")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Chưa có lượt đánh giá nào.")));
+        review(delivered("UTE-RATE-01"), 5, "Giao rất nhanh, gọi trước khi tới, gói hàng còn nguyên vẹn và sạch sẽ.");
+        review(delivered("UTE-RATE-02"), 4, "Shipper thân thiện, giao đúng giờ hẹn, hướng dẫn thanh toán rõ ràng dễ hiểu.");
+        var view = profiles.view(shipper.getUsername());
+        assertEquals(2, view.rating().count());
+        assertEquals(new java.math.BigDecimal("4.5"), view.rating().average());
+        assertEquals("UTE-RATE-02", view.rating().latest().get(0).trackingCode());
+        mvc.perform(get(SHIPPER_BASE).servletPath(SHIPPER_BASE).with(user(shipper.getUsername()).roles("SHIPPER")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("2 lượt đánh giá")))
+                .andExpect(content().string(containsString("UTE-RATE-01")));
+        assertNull(profiles.view(customer.getUsername()).rating());
+    }
+
+    @Autowired vn.edu.hcmute.uteexpress.repository.OrderRepository orders;
+    @Autowired vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews;
+
+    private vn.edu.hcmute.uteexpress.entity.Order delivered(String code) {
+        var order = new vn.edu.hcmute.uteexpress.entity.Order(); order.setTrackingCode(code); order.setSender(customer); order.setShipper(shipper);
+        order.setSenderName("Người gửi"); order.setReceiverName("Người nhận"); order.setReceiverPhone("0901234567");
+        order.setSenderAddress("1 Võ Văn Ngân"); order.setReceiverAddress("2 Lê Văn Việt"); order.setWeightKg(1.0);
+        order.setShippingFee(new java.math.BigDecimal("18000")); order.setStatus(vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED);
+        order.setCreatedAt(java.time.LocalDateTime.now().minusDays(1)); order.setUpdatedAt(java.time.LocalDateTime.now().minusDays(1));
+        return orders.saveAndFlush(order);
+    }
+
+    private void review(vn.edu.hcmute.uteexpress.entity.Order order, int stars, String content) {
+        var review = new vn.edu.hcmute.uteexpress.entity.ServiceReview(); review.setOrder(order); review.setUser(customer);
+        review.setRating(stars); review.setContent(content);
+        review.setCreatedAt(java.time.LocalDateTime.now().plusSeconds(order.getId())); review.setUpdatedAt(review.getCreatedAt());
+        reviews.saveAndFlush(review);
+    }
+
     @Test void eachRoleOnlyReachesItsOwnAccountPage() throws Exception {
         mvc.perform(get(USER_BASE).servletPath(USER_BASE).with(user(shipper.getUsername()).roles("SHIPPER")))
                 .andExpect(status().isForbidden());

@@ -138,7 +138,7 @@
             const max = Number(input.dataset.sxMax);
             let error = '';
             if (file && !/^image\/(jpeg|png)$/.test(file.type)) error = 'Chỉ nhận ảnh JPG hoặc PNG.';
-            else if (file && file.size > max) error = 'Ảnh tối đa ' + Math.round(max / 1048576) + ' MB. Hãy chọn ảnh nhỏ hơn.';
+            else if (file && file.size > max && !input.hasAttribute('data-sx-compress')) error = 'Ảnh tối đa ' + Math.round(max / 1048576) + ' MB. Hãy chọn ảnh nhỏ hơn.';
             input.setCustomValidity(error);
             input.classList.toggle('is-invalid', Boolean(error));
             if (error) input.reportValidity();
@@ -193,7 +193,7 @@
             }
             const hint = bulkBar.querySelector('[data-bulk-hint]');
             hint.textContent = selected.length > max ? 'Mỗi lần tối đa ' + max + ' đơn.'
-                    : 'Chỉ áp dụng cho bước lấy hàng và bắt đầu giao. Giao thành công vẫn cần ảnh và chữ ký từng đơn.';
+                    : 'Chỉ cho lấy hàng và bắt đầu giao.';
         }
         checks.forEach(c => c.addEventListener('change', render));
         if (all) all.addEventListener('change', () => { checks.forEach(c => { c.checked = all.checked; }); render(); });

@@ -41,13 +41,12 @@
                     <label class="form-label" for="email">Email</label>
                     <input type="email" id="email" th:field="*{email}" class="form-control"
                            placeholder="ten@example.com">
-                    <div class="form-text">Dùng để nhận mã OTP. Đổi email cần xác thực địa chỉ mới.</div>
+                    <div class="form-text">Đổi email cần xác thực lại.</div>
                     <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
                 </div>
                 <div class="col-sm-5">
                     <label class="form-label" for="phone">Số điện thoại</label>
-                    <input type="text" id="phone" th:field="*{phone}" class="form-control" placeholder="0901234567">
-                    <div class="form-text">Shipper sẽ gọi vào số này khi đến lấy hàng.</div>
+                    <input type="tel" id="phone" th:field="*{phone}" class="form-control" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="0901234567">
                     <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
                 </div>
                 <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin liên hệ</button></div>
@@ -64,7 +63,7 @@
             <form method="post" th:action="@{/nguoi-dung/tai-khoan/thong-bao}" data-auto-submit>
                 <label class="sx-switch-row">
                     <span><strong>Email cập nhật vận đơn</strong>
-                        <small>Khi lấy hàng thất bại, giao thành công, giao thất bại hoặc hoàn trả.</small></span>
+                        <small>Khi giao xong, thất bại hoặc hoàn trả.</small></span>
                     <span class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" role="switch" name="notifyOrderEmail" value="true"
                                th:checked="${profile.notifyOrderEmail()}">
@@ -81,16 +80,6 @@
                 <div><dt>Vai trò</dt><dd>Người gửi hàng</dd></div>
                 <div><dt>Ngày tạo</dt><dd th:text="${account.createdAt != null ? #temporals.format(account.createdAt, 'dd/MM/yyyy') : '—'}">01/01/2026</dd></div>
             </dl>
-            <a th:href="@{/nguoi-dung/tai-khoan/doi-mat-khau}" class="btn sx-btn-white w-100"><i class="bi bi-key"></i> Đổi mật khẩu</a>
-        </div>
-
-        <div class="ute-panel">
-            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-teal"><i class="bi bi-lightning-charge"></i></span> Lối tắt</h5>
-            <div class="sx-link-list">
-                <a th:href="@{/nguoi-dung/don-hang}"><i class="bi bi-list-check"></i> Đơn hàng của tôi <i class="bi bi-chevron-right"></i></a>
-                <a th:href="@{/nguoi-dung/dia-chi}"><i class="bi bi-geo-alt"></i> Sổ địa chỉ <i class="bi bi-chevron-right"></i></a>
-                <a th:href="@{/nguoi-dung/tao-don}"><i class="bi bi-plus-square"></i> Tạo đơn gửi hàng <i class="bi bi-chevron-right"></i></a>
-            </div>
         </div>
     </div>
 </div>

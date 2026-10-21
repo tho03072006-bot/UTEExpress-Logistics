@@ -41,7 +41,14 @@ public class AccountProfileService {
     public record Stats(long total, long active, long delivered, long returned, long cancelled, java.math.BigDecimal successRate,
             long savedAddresses) { }
 
-    public record View(AppUser account, UserProfileDetail detail, Stats stats) {
+    /** Khách chấm sao cho Shipper (tổng hợp từ đánh giá dịch vụ của các đơn Shipper đã giao). */
+    public record Rating(long count, java.math.BigDecimal average, java.util.List<RatingItem> latest) {
+        public int fullStars() { return average.setScale(0, java.math.RoundingMode.HALF_UP).intValue(); }
+    }
+
+    public record RatingItem(int stars, String content, String trackingCode, LocalDateTime createdAt) { }
+
+    public record View(AppUser account, UserProfileDetail detail, Stats stats, Rating rating) {
         public boolean hasAvatar() { return detail != null && detail.hasAvatar(); }
         /** Mốc lưu hồ sơ gần nhất: đổi mỗi lần lưu nên trình duyệt tải ảnh mới; luôn > 0 vì 0 là "chưa biết" ở menu. */
         public long avatarVersion() { return detail == null ? 0 : version(detail); }
@@ -80,16 +87,30 @@ public class AccountProfileService {
     private final CloudMediaGateway gateway;
     private final Clock clock;
 
+    private final vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews;
+
     public AccountProfileService(AppUserRepository users, UserProfileDetailRepository details, OrderRepository orders,
-            SavedAddressRepository addresses, CloudMediaStorageService storage, CloudMediaGateway gateway, Clock clock) {
+            SavedAddressRepository addresses, CloudMediaStorageService storage, CloudMediaGateway gateway, Clock clock,
+            vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews) {
         this.users = users; this.details = details; this.orders = orders; this.addresses = addresses;
-        this.storage = storage; this.gateway = gateway; this.clock = clock;
+        this.storage = storage; this.gateway = gateway; this.clock = clock; this.reviews = reviews;
     }
 
     @Transactional(readOnly = true)
     public View view(String username) {
         AppUser user = account(username);
-        return new View(user, details.findByUser(user).orElse(null), stats(user));
+        return new View(user, details.findByUser(user).orElse(null), stats(user), user.getRole() == Role.SHIPPER ? rating(user) : null);
+    }
+
+    private Rating rating(AppUser shipper) {
+        Object[] row = reviews.ratingSummaryForShipper(shipper).stream().findFirst().orElse(new Object[]{0L, 0.0});
+        long count = row[0] == null ? 0 : ((Number) row[0]).longValue();
+        java.math.BigDecimal average = count == 0 ? java.math.BigDecimal.ZERO
+                : java.math.BigDecimal.valueOf(((Number) row[1]).doubleValue()).setScale(1, java.math.RoundingMode.HALF_UP);
+        var latest = count == 0 ? java.util.List.<RatingItem>of() : reviews.latestForShipper(shipper,
+                org.springframework.data.domain.PageRequest.of(0, 3)).stream()
+                .map(r -> new RatingItem(r.getRating(), r.getContent(), r.getOrder().getTrackingCode(), r.getCreatedAt())).toList();
+        return new Rating(count, average, latest);
     }
 
     @Transactional

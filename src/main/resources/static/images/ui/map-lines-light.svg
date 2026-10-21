@@ -14,5 +14,4 @@
   <circle cx="70" cy="250" r="3" fill="#FFFFFF" fill-opacity=".5"/>
   <path d="M340 44a15 15 0 0 1 15 15c0 12-15 26-15 26s-15-14-15-26a15 15 0 0 1 15-15z" fill="#FB7185" fill-opacity=".45"/>
   <circle cx="340" cy="59" r="5" fill="#FFFFFF" fill-opacity=".85"/>
-  <rect x="196" y="146" width="20" height="18" rx="3" fill="#FBBF24" fill-opacity=".4"/>
 </svg>

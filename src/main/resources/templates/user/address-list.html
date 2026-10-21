@@ -24,9 +24,10 @@
 <section class="mb-5" th:each="group : ${addressGroups}">
     <h5 class="border-bottom pb-2 mb-3" th:text="${group.key.displayName}">Loại địa chỉ</h5>
 
-    <p class="text-muted" th:if="${#lists.isEmpty(group.value)}">
-        Chưa có địa chỉ nào trong mục này.
-    </p>
+    <div class="sx-empty-mini" th:if="${#lists.isEmpty(group.value)}">
+        <img th:src="@{/images/shipper/house-pin.svg}" alt="" aria-hidden="true" width="96" height="64">
+        <span>Chưa có địa chỉ nào trong mục này.</span>
+    </div>
 
     <div class="row g-3">
         <div class="col-md-6" th:each="address : ${group.value}">

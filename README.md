@@ -9,8 +9,8 @@ Project hiện dùng MySQL trên Aiven; xem [SETUP.md](SETUP.md) để cấu hì
 
 ## Công nghệ
 
-Spring Boot 3.3.4 · Java 17 · Maven · Thymeleaf + Bootstrap 5.3.3 ·
-Spring Data JPA + SQL Server · Spring Security 6 · Spring Mail (OTP) · WebSocket · JWT
+Spring Boot 3.3.4 · Java 21 · Maven · Thymeleaf + Bootstrap 5.3.3 ·
+Spring Data JPA + MySQL 8 (Aiven) · Spring Security 6 · Spring Mail (OTP) · WebSocket · JWT
 
 Kiến trúc 3 tầng: Controller điều hướng → Service xử lý nghiệp vụ → Repository đọc ghi dữ liệu.
 
@@ -26,135 +26,90 @@ Luồng Git: `feature_*` → Pull Request → `develop` → (cuối kỳ) `main`
 
 ---
 
-## Chạy lần đầu — 4 bước
+## Chạy lần đầu
 
 ### 1. Cần có sẵn trên máy
 
-- JDK 17 trở lên (dự án đang chạy JDK 21)
-- Maven
-- SQL Server (bản Express là đủ) — chỉ cần nếu muốn chạy bằng database trên máy mình
+- JDK 21 và Maven (hoặc Spring Tools for Eclipse đã kèm sẵn)
+- Kết nối Internet: dự án dùng **database MySQL chung trên Aiven**, không cần cài database trên máy
 
-> **Lưu ý:** nếu `mvn` báo lỗi `class file has wrong version 61.0, should be 52.0`
-> nghĩa là `JAVA_HOME` đang trỏ vào Java 8. Trỏ lại vào JDK 17+ rồi chạy lại.
+### 2. Tạo file cấu hình trong thư mục `config/`
 
-### 2. Tạo file cấu hình
+Các file chứa khóa thật đều nằm trong `.gitignore`, **không bao giờ commit**.
+Copy từ file mẫu (bỏ đuôi `.example`) rồi điền thông tin xin trong nhóm chat:
 
-Dự án có 2 file cấu hình chứa mật khẩu thật, **cả hai đều nằm trong `.gitignore`** nên
-không bao giờ lên Git. Mỗi người tự tạo trên máy mình từ file mẫu:
+| File | Dùng cho |
+|---|---|
+| `config/aiven-local.properties` + thư mục `config/certificates/` | Kết nối database Aiven (bắt buộc) |
+| `config/cloudinary-local.properties` | Lưu ảnh bằng chứng, ảnh đại diện |
+| `config/groq-local.properties` | Trợ lý AI |
+| `config/jwt-local.properties` | API nội bộ dùng JWT |
+| `config/momo-local.properties` | Thanh toán MoMo mô phỏng |
 
-| Tạo file này | Từ file mẫu | Dùng để |
-|---|---|---|
-| `src/main/resources/application-local.properties` | `application-local.properties.example` | Chạy bằng SQL Server trên máy mình |
-| `src/main/resources/application-cloud.properties` | `application-cloud.properties.example` | Chạy bằng database chung của nhóm |
-
-Mở file mẫu ra, copy thành file thật (bỏ đuôi `.example`) rồi điền vào các chỗ `CHANGE_ME`.
-**Thông tin thật xin trong nhóm chat, đừng commit lên Git.**
-
-### 3. Tạo bảng trong database (chỉ khi chạy bằng database trên máy mình)
-
-Tạo database rỗng tên `uteexpress` trong SSMS, chạy app một lần cho Hibernate tạo bảng,
-rồi chạy lần lượt các script trong thư mục `db/`:
+### 3. Chạy app
 
 ```powershell
-sqlcmd -S "localhost\SQLEXPRESS" -E -C -f 65001 -i "db\01_chuyen_cot_chu_sang_nvarchar.sql"
-# ... làm tương tự cho 02, 03, 04, 05, 06 theo đúng thứ tự
-```
-
-> **Quan trọng — nếu bỏ qua bước này thì tiếng Việt có dấu sẽ lưu thành `?`.**
-> Script `01` đổi các cột chữ sang `nvarchar`. Cờ `-f 65001` bắt buộc phải có,
-> thiếu là dữ liệu tiếng Việt trong script hỏng thật chứ không phải hiển thị sai.
-
-### 4. Chạy app
-
-```powershell
-# Dùng database trên máy mình — code hằng ngày thì dùng cái này cho nhanh
 mvn spring-boot:run
-
-# Dùng database chung của nhóm — khi test chung và khi demo
-mvn spring-boot:run -Dspring-boot.run.profiles=cloud
 ```
 
-Trong Eclipse: `Run Configurations` → tab `Arguments` → ô `VM arguments`
-thêm `-Dspring.profiles.active=cloud` nếu muốn chạy database chung.
+Trong STS/Eclipse: mở `UteexpressApplication.java` → chuột phải → **Run As → Spring Boot App**.
+Lần sau bấm **mũi tên ▾ cạnh nút Run** và chọn `uteexpress - UteexpressApplication`.
 
-Mở `http://localhost:8080`.
+> **Đừng chạy `MomoSimulatorApplication`.** Đó là web MoMo giả lập chỉ để deploy lên Render,
+> chạy trên máy sẽ báo `Thiếu biến cấu hình AIVEN_HOST`.
+>
+> Sửa code mà trang không đổi / báo 500 sau khi `git pull`: **Stop** app → chọn project → **F5** →
+> **Project → Build Project** → chạy lại. Nếu project hiện là thư mục xám (Closed): **Project → Open Project**.
+
+Mở `http://localhost:8080`. Trang `http://localhost:8080/healthz` trả `ok` khi app đang chạy.
 
 ---
 
-## Database chung của nhóm
+### Chạy thử không cần Aiven (dữ liệu mẫu trên máy)
 
-Trước đây mỗi người chạy SQL Server riêng nên tài khoản test và dữ liệu khác nhau,
-demo máy này ra kết quả khác máy kia. Nay nhóm có thêm một database chung đặt trên
-MonsterASP để ba máy nhìn cùng một dữ liệu.
+Muốn thử giao diện hoặc thao tác ghi dữ liệu mà không đụng database chung:
 
-**Vẫn giữ database trên máy mình** để code hằng ngày — nhanh hơn, và sửa hỏng cũng
-không ảnh hưởng người khác.
+1. STS → **Run Configurations** → tạo **Java Application** cho class `vn.edu.hcmute.uteexpress.support.LocalDemoApplication` (nằm trong `src/test/java`).
+2. Tab **Environment** → thêm biến `UTE_DEMO_PASSWORD` = mật khẩu bạn tự chọn (ít nhất 6 ký tự) cho các tài khoản mẫu.
+3. Run, mở `http://localhost:8085`. Đăng nhập bằng `shipper-demo`, `khach-demo`, `manager-demo`, `admin-demo` với mật khẩu vừa đặt.
 
-### Ba điều phải nhớ
+Dữ liệu nằm trong bộ nhớ (H2), tắt app là mất; ảnh tải lên lưu tạm, không gửi lên Cloudinary.
+Nếu app chính đang chạy cổng 8085 thì thêm biến `UTE_DEMO_PORT` (ví dụ `8095`).
 
-1. **Đừng commit `application-cloud.properties`.** Repo này public, lộ mật khẩu là
-   người lạ xoá được dữ liệu.
+---
 
-2. **Database chung để `ddl-auto=validate`, không phải `update`.** Sửa entity
-   (thêm/đổi cột) thì app sẽ **báo lỗi khởi động** chứ không tự đổi schema — đây là cố ý.
-   Cần đổi schema thì **báo nhóm rồi viết thêm script `db/07_...sql`** và chạy lên
-   database chung, giống cách nhóm vẫn làm từ đầu.
+## Database chung (Aiven)
 
-3. **Chỉ bật `cloud` khi cần.** Ba người cùng nghịch một database dễ phá dữ liệu của nhau.
-
-### Sao lưu — phòng khi mất mạng hoặc sự cố
-
-Gói đang dùng không có sao lưu tự động. Trước buổi demo nên kéo dữ liệu về máy:
-
-```powershell
-# Sao lưu database chung (thông tin kết nối xin trong nhóm chat)
-.\db\backup-du-lieu.ps1 -Server "<hostname>" -Database "<ten-db>" -User "<login>" -Password "<mat-khau>"
-
-# Sao lưu database trên máy mình
-.\db\backup-du-lieu.ps1
-```
-
-File kết quả nằm ở `db/backup/`, chỉ chứa **dữ liệu** (câu lệnh tạo bảng đã có sẵn
-trong `db/01` → `db/06`). Hôm demo mất mạng thì đổ ngược vào máy rồi chạy không cần
-profile cloud:
-
-```powershell
-sqlcmd -S "localhost\SQLEXPRESS" -E -C -f 65001 -d uteexpress -i "db\backup\<ten-file>.sql"
-```
+- App chạy với `ddl-auto=validate`: sửa entity mà chưa có bảng/cột tương ứng thì app **báo lỗi khởi động**.
+  Cần đổi schema thì **báo nhóm**, viết công cụ nâng cấp trong `tool/database` (kiểu `UpgradeAivenProfiles`,
+  có `--check` / `--apply`) rồi mới chạy lên database chung.
+- Database dùng chung cho cả nhóm: **không tạo dữ liệu thử lung tung**; muốn thử ghi dữ liệu thì viết test chạy trên H2.
+- Không commit file trong `config/`. Repo public, lộ khóa là người lạ sửa/xóa được dữ liệu.
 
 ---
 
 ## Mail OTP
 
-Đăng ký, quên mật khẩu và đổi email đều gửi mã OTP. Nhóm dùng **chung một hộp thư**
-để người nhận luôn thấy cùng một tên người gửi:
-
-```
-UTEExpress <uteexpress8@gmail.com>
-```
-
-Điền `spring.mail.username` và `spring.mail.password` vào file cấu hình của máy mình.
-**Mật khẩu phải là "App Password" 16 ký tự** lấy trong Google Account → Bảo mật →
-Xác minh 2 bước → Mật khẩu ứng dụng. Mật khẩu đăng nhập Gmail thường sẽ bị từ chối
-với lỗi `Authentication failed`.
-
-Chưa cấu hình mail thì ba chức năng trên sẽ báo "Không gửi được email OTP" và dừng lại —
-đây là hành vi cố ý, không phải lỗi.
+Đăng ký, quên mật khẩu và đổi email đều gửi mã OTP từ hộp thư chung của nhóm.
+Điền `spring.mail.username` và `spring.mail.password` (App Password 16 ký tự của Gmail) vào file cấu hình trên máy.
+Chưa cấu hình mail thì các chức năng này báo "Không gửi được email OTP" — đây là hành vi cố ý.
 
 ---
 
 ## Tài khoản test
 
-Mật khẩu đều là `Test@12345`, riêng `newuser1` là `MatKhauMoi@2026`.
+**Mật khẩu xin trong nhóm chat — không ghi vào README hay commit lên Git.**
+Tài khoản nội bộ (Manager/Admin) đăng nhập ở `/noi-bo/dang-nhap` và **bị khóa sau 5 lần nhập sai**;
+mọi trang đăng nhập còn tạm chặn theo IP nếu sai quá 20 lần trong 10 phút.
 
 | Tên đăng nhập | Vai trò | Ghi chú |
 |---|---|---|
-| `thotest` | USER | Có sẵn đơn hàng, địa chỉ, đánh giá — dùng để demo |
-| `newuser1` | USER | Mật khẩu khác |
-| `chuakichhoat` | USER | Chưa kích hoạt OTP, dùng để thử ca đăng nhập lỗi |
-| `shipper1` | SHIPPER | |
-| `manager1` | MANAGER | |
-| `admin` | ADMIN | |
+| `thotest`, `huongshop`, `minhstore`, `lanboutique` | USER | Có sẵn đơn hàng để demo |
+| `newuser1` | USER | |
+| `chuakichhoat` | USER | Chưa kích hoạt OTP, dùng thử ca đăng nhập lỗi |
+| `shipper1`, `shipper2`, `shipper3` | SHIPPER | |
+| `manager1` | MANAGER | Đăng nhập ở `/noi-bo/dang-nhap` |
+| `admin` | ADMIN | Đăng nhập ở `/noi-bo/dang-nhap` |
 
 Mã giảm giá: `UTE10` (giảm 10%), `FREESHIP15` (giảm 15.000đ cho đơn từ 30.000đ),
 `HETHAN` (đã hết hạn), `DATAT` (đã tắt) — hai mã sau dùng để thử ca lỗi.
@@ -171,9 +126,10 @@ Mã giảm giá: `UTE10` (giảm 10%), `FREESHIP15` (giảm 15.000đ cho đơn t
   Route API: tiếng Anh, tiền tố `/api`.
 - **Mọi trang Thymeleaf phải đi qua template chung** `fragments/base.html`,
   không tự dựng lại head/navbar/footer.
-- **Bảng màu chỉ xanh `#0072BC` + trắng + xám trung tính** (biến `--ute-*` trong
-  `static/css/style.css`). Không dùng đỏ/vàng/lục ở bất kỳ đâu, kể cả để báo trạng thái.
-  Giao diện có sẵn hai chế độ sáng/tối, thêm trang mới không phải làm gì thêm.
+- **Giao diện**: lớp chung `static/css/ute-app.css` (kiểu template quản trị, menu trái cho mọi vai trò) nạp sau cùng,
+  ghi đè `style.css`. Màu chính xanh `#0072BC`; màu phụ chỉ dùng cho trạng thái và ô số liệu.
+  Trước khi đặt tên lớp CSS mới, tìm trong các file CSS/JS xem đã có chưa để tránh trùng.
+  Có sẵn hai chế độ sáng/tối.
 
 ### Hai entity dùng chung — không ai tự sửa
 
@@ -182,18 +138,29 @@ trỏ tới chúng bằng `@ManyToOne` / `@OneToOne`, không thêm cột vào ha
 Các entity `SavedAddress`, `DraftOrder`, `OrderPayment`, `ServiceReview`, `PromoCode`,
 `DeliveryProof`, `EmailChangeRequest` đều làm theo cách này.
 
-### Bẫy `nvarchar`
+### Chữ tiếng Việt trong cột mới
 
-Hibernate mặc định sinh cột `varchar` trên SQL Server, tiếng Việt có dấu lưu xuống
-thành `?`. **Mọi cột chữ trong entity mới phải đánh `@Nationalized`.**
+Database chung dùng `utf8mb4`. Vẫn giữ thói quen đánh `@Nationalized` cho mọi cột chữ trong entity mới
+để chạy đúng cả trên H2 lúc test.
 
 ---
 
 ## Chạy test
 
 ```powershell
-mvn test
+mvn test "-Dtest=!Aiven*IntegrationTest" "-Dsurefire.failIfNoSpecifiedTests=false"
 ```
+
+Test chạy trên H2 riêng trong bộ nhớ, không đụng database chung. Các test `Aiven*IntegrationTest` cần kết nối Aiven thật nên bỏ qua khi chạy thường.
+`InputFuzzIntegrationTest` tự gửi dữ liệu xấu vào mọi form để bảo đảm không trang nào bị lỗi 500.
+
+### CI trên GitHub
+
+Mỗi pull request vào `develop`/`main` và mỗi lần push lên `develop`, GitHub Actions
+(`.github/workflows/test.yml`) tự build và chạy toàn bộ test Java 21 bằng H2 trong bộ nhớ
+(bỏ qua `Aiven*IntegrationTest` và `UteexpressApplicationTests` vì cần database thật),
+cùng các test JS trong `src/test/js` bằng Node 20. CI không có file bí mật trong `config/`
+và không kết nối Aiven. PR có dấu ✗ đỏ nghĩa là build hoặc test hỏng — sửa xong mới merge.
 
 ## Tài liệu chi tiết
 

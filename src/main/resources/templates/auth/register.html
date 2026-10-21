@@ -30,12 +30,14 @@
             <div class="mb-3">
                 <label class="form-label" for="fullName">Họ tên</label>
                 <div class="sx-input-icon"><i class="bi bi-person-vcard" aria-hidden="true"></i>
-                    <input type="text" th:field="*{fullName}" class="form-control" maxlength="100" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A"></div>
+                    <input type="text" th:field="*{fullName}" class="form-control" required minlength="2" maxlength="100" autocomplete="name"
+                           placeholder="Ví dụ: Nguyễn Văn A" th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="username">Tên đăng nhập</label>
                 <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
-                    <input type="text" th:field="*{username}" class="form-control" required maxlength="50" autocomplete="username"
+                    <input type="text" th:field="*{username}" class="form-control" required minlength="4" maxlength="50" pattern="[A-Za-z][A-Za-z0-9._-]{3,49}" title="4–50 ký tự, bắt đầu bằng chữ; chỉ dùng chữ không dấu, số, . _ -" autocomplete="username"
                            autocapitalize="none" spellcheck="false" placeholder="Chữ, số, không dấu" th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'"></div>
                 <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
             </div>
@@ -49,7 +51,7 @@
             <div class="mb-3">
                 <label class="form-label" for="password">Mật khẩu</label>
                 <div class="sx-input-icon"><i class="bi bi-lock" aria-hidden="true"></i>
-                    <input type="password" th:field="*{password}" class="form-control" required autocomplete="new-password"
+                    <input type="password" th:field="*{password}" class="form-control" required minlength="6" maxlength="64" autocomplete="new-password"
                            placeholder="Tạo mật khẩu" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
                     <button type="button" class="sx-eye" data-toggle-password="password" aria-label="Hiện mật khẩu" title="Hiện / ẩn mật khẩu"><i class="bi bi-eye"></i></button></div>
                 <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>

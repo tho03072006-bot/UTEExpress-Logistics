@@ -18,14 +18,18 @@
     <div class="sx-auth-form">
         <span class="sx-pill sx-dot sx-tone-indigo mb-3">Dành cho Admin và Manager</span>
         <h1>Đăng nhập nội bộ</h1>
-        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error}"><i class="bi bi-exclamation-octagon-fill"></i><span>Sai tài khoản hoặc mật khẩu. Sai 5 lần sẽ bị khóa 15 phút.</span></p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.error != null and param.locked == null}"><i class="bi bi-exclamation-octagon-fill"></i>
+            <span th:if="${staffLoginFailures != null}" th:text="|Sai tài khoản hoặc mật khẩu (lần ${staffLoginFailures}/${staffLoginMax}). Còn ${staffLoginMax - staffLoginFailures} lần trước khi bị khóa 15 phút.|">Sai lần 1/5</span>
+            <span th:unless="${staffLoginFailures != null}">Sai tài khoản hoặc mật khẩu. Sai 5 lần sẽ bị khóa 15 phút.</span></p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param.locked}"><i class="bi bi-lock-fill"></i><span>Tài khoản đang tạm khóa 15 phút vì nhập sai nhiều lần. Trong lúc này nhập đúng mật khẩu cũng không vào được.</span></p>
         <p class="shipper-notice sx-notice-warning" role="status" th:if="${param.expired}"><i class="bi bi-hourglass-bottom"></i><span>Phiên đã hết hạn, vui lòng đăng nhập lại.</span></p>
         <p class="shipper-notice sx-notice-success" role="status" th:if="${param.changed}"><i class="bi bi-check-circle-fill"></i><span>Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</span></p>
+        <p class="shipper-notice sx-notice-danger" role="alert" th:if="${param['too-many']}"><i class="bi bi-hourglass-split"></i><span>Đăng nhập sai quá nhiều lần từ máy này. Hãy chờ khoảng 10 phút.</span></p>
         <p class="shipper-notice sx-notice-info" role="status" th:if="${param.logout}"><i class="bi bi-box-arrow-right"></i><span>Đã đăng xuất.</span></p>
         <form th:action="@{/noi-bo/dang-nhap}" method="post">
             <div class="mb-3"><label for="username" class="form-label">Tên tài khoản được cấp</label>
                 <div class="sx-input-icon"><i class="bi bi-person-badge" aria-hidden="true"></i>
-                    <input id="username" name="username" class="form-control" required maxlength="50" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tên tài khoản nội bộ"></div></div>
+                    <input id="username" name="username" class="form-control" th:value="${staffLoginUsername}" required maxlength="50" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tên tài khoản nội bộ"></div></div>
             <div class="mb-3"><label for="password" class="form-label">Mật khẩu</label>
                 <div class="sx-input-icon"><i class="bi bi-lock" aria-hidden="true"></i>
                     <input id="password" name="password" type="password" class="form-control" required maxlength="64" autocomplete="current-password" placeholder="Mật khẩu">
@@ -34,7 +38,7 @@
             <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập nội bộ</button>
         </form>
         <p class="sx-auth-staff"><i class="bi bi-info-circle"></i> Quên mật khẩu? Liên hệ Admin để được cấp lại.</p>
-        <p class="small mb-0"><a th:href="@{/dang-nhap}"><i class="bi bi-arrow-left"></i> Đăng nhập khách hàng / Shipper</a></p>
+        <p class="small mb-0"><a th:href="@{/dang-nhap}"><i class="bi bi-arrow-left"></i> Đăng nhập khách hàng và Shipper</a></p>
     </div>
 </div>
 <div th:replace="~{fragments/auth :: scripts}"></div>

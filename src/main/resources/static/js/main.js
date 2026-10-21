@@ -379,5 +379,30 @@ window.addEventListener('pageshow', function (event) {
                 try { localStorage.setItem('ute-shipper-popup', popupToggle.checked ? 'on' : 'off'); } catch (e) { /* trình duyệt chặn */ }
             });
         }
+
+        // Thông báo của trình duyệt khi đang ở tab khác: chỉ bật khi người dùng tự gạt và cho phép.
+        var desktopToggle = document.querySelector('[data-shipper-desktop-toggle]');
+        if (desktopToggle) {
+            var hint = document.querySelector('[data-desktop-hint]');
+            var supported = 'Notification' in window;
+            function syncDesktop() {
+                var on = false;
+                try { on = localStorage.getItem('ute-shipper-desktop') === 'on'; } catch (e) { /* mặc định tắt */ }
+                desktopToggle.checked = supported && on && Notification.permission === 'granted';
+                if (!supported) { desktopToggle.disabled = true; if (hint) hint.textContent = 'Trình duyệt này không hỗ trợ.'; }
+                else if (Notification.permission === 'denied') { desktopToggle.disabled = true; if (hint) hint.textContent = 'Bạn đã chặn thông báo; mở lại trong cài đặt trang của trình duyệt.'; }
+            }
+            syncDesktop();
+            desktopToggle.addEventListener('change', function () {
+                if (!desktopToggle.checked) {
+                    try { localStorage.setItem('ute-shipper-desktop', 'off'); } catch (e) { /* bỏ qua */ }
+                    return;
+                }
+                Notification.requestPermission().then(function (result) {
+                    try { localStorage.setItem('ute-shipper-desktop', result === 'granted' ? 'on' : 'off'); } catch (e) { /* bỏ qua */ }
+                    syncDesktop();
+                });
+            });
+        }
     });
 })();

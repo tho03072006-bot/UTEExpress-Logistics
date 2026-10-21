@@ -55,7 +55,7 @@
     <div th:if="${order == null}" class="ute-panel shipper-empty">
         <img class="sx-empty-art" th:src="@{/images/shipper/not-found.svg}" alt="" aria-hidden="true" width="200" height="142">
         <h3>Không tìm thấy vận đơn này</h3>
-        <p>Kiểm tra lại mã vận đơn (thường bắt đầu bằng <strong>UTE</strong>) hoặc hỏi người gửi hàng.</p>
+        <p>Kiểm tra lại mã (bắt đầu bằng <strong>UTE</strong>).</p>
     </div>
 
     <article th:if="${order != null}" class="ute-panel sx-track-card"
@@ -93,10 +93,19 @@
     </article>
 </div>
 
-<div class="sx-tip-grid" th:unless="${searched}">
-    <div class="sx-tip sx-tone-indigo"><i class="bi bi-upc"></i><div><strong>Mã vận đơn ở đâu?</strong><p>In trên phiếu gửi hàng hoặc trong mục Đơn hàng của tôi.</p></div></div>
-    <div class="sx-tip sx-tone-teal"><i class="bi bi-qr-code"></i><div><strong>Có mã QR?</strong><p>Mã QR trên vận đơn chứa đúng mã để tra cứu.</p></div></div>
-    <div class="sx-tip sx-tone-amber"><i class="bi bi-bell"></i><div><strong>Nhận thông báo</strong><p>Người gửi nhận email khi đơn giao thành công hoặc gặp sự cố.</p></div></div>
+<div class="sx-service-cards sx-help-cards" th:unless="${searched}">
+    <article class="sx-service-card sx-tone-indigo">
+        <img th:src="@{/images/shipper/order-receipt.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Mã in trên phiếu gửi</h3><p>Bắt đầu bằng <strong>UTE</strong></p>
+    </article>
+    <article class="sx-service-card sx-tone-teal">
+        <img th:src="@{/images/shipper/scan-qr.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Quét QR trên vận đơn</h3><p>Không cần gõ mã</p>
+    </article>
+    <article class="sx-service-card sx-tone-amber">
+        <img th:src="@{/images/shipper/notify-bell.svg}" alt="" aria-hidden="true" width="180" height="120">
+        <h3>Báo qua email</h3><p>Khi giao xong hoặc có sự cố</p>
+    </article>
 </div>
 <script th:src="@{/js/vendor/zxing/zxing-browser-0.1.5.min.js}" defer></script>
 <script th:src="@{/js/public-qr-lookup.js}" defer></script>

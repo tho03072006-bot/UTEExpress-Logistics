@@ -19,7 +19,7 @@ public class StaffAccessPolicy {
     public void requireAdmin(String actor) { requireRole(actor, true); }
     private void requireRole(String actor, boolean adminOnly) {
         if (actor == null || actor.isBlank()) { throw new AccessDeniedException("Cần đăng nhập nội bộ."); }
-        var account = accounts.findByUserUsername(actor)
+        var account = loadForRequest(actor)
             .orElseThrow(() -> new AccessDeniedException("Tài khoản nội bộ không hợp lệ."));
         var role = account.getUser().getRole();
         if (!account.isActive() || !account.getUser().isEnabled() || account.getUser().isLockedByAdmin() || account.isPasswordChangeRequired()
@@ -28,6 +28,26 @@ public class StaffAccessPolicy {
             throw new AccessDeniedException("Không có quyền thực hiện chức năng này.");
         }
     }
+    /**
+     * Một trang tổng quan gọi kiểm tra quyền ở nhiều khối số liệu (mỗi khối một giao dịch riêng): đọc tài khoản
+     * nội bộ một lần cho cả lượt tải trang (mỗi câu SQL lên Aiven ~100 ms). Lượt tải sau đọc lại từ DB nên khóa/thu hồi
+     * quyền vẫn có hiệu lực ngay. Chỉ dùng cho trang xem (GET): thao tác ghi (vd. tự khóa tài khoản) luôn kiểm tra lại
+     * từ DB ở mỗi bước. Ngoài request web (job, test gọi thẳng service) thì luôn đọc DB.
+     */
+    @SuppressWarnings("unchecked")
+    private java.util.Optional<vn.edu.hcmute.uteexpress.entity.admin.StaffAccount> loadForRequest(String actor) {
+        var attributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (!(attributes instanceof org.springframework.web.context.request.ServletRequestAttributes servlet)
+                || !"GET".equalsIgnoreCase(servlet.getRequest().getMethod())) return accounts.findByUserUsername(actor);
+        String key = StaffAccessPolicy.class.getName() + ":" + actor;
+        var scope = org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
+        var cached = attributes.getAttribute(key, scope);
+        if (cached instanceof java.util.Optional<?> found) return (java.util.Optional<vn.edu.hcmute.uteexpress.entity.admin.StaffAccount>) found;
+        var loaded = accounts.findByUserUsername(actor);
+        attributes.setAttribute(key, loaded, scope);
+        return loaded;
+    }
+
     public void validate(Object form) {
         if (form == null) { throw new IllegalArgumentException("Thiếu dữ liệu yêu cầu."); }
         var errors = validator.validate(form);

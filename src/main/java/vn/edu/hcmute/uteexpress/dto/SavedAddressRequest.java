@@ -14,18 +14,21 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập nhãn gợi nhớ cho địa chỉ")
     @Size(max = 50, message = "Nhãn địa chỉ tối đa 50 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Nhãn không được chứa ký tự điều khiển")
     private String label;
 
     @NotBlank(message = "Vui lòng nhập họ tên người liên hệ")
-    @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
+    @Size(min = 2, max = 100, message = "Họ tên từ 2–100 ký tự")
+    @Pattern(regexp = "(?=.*\\p{L})[\\p{L}\\p{M} .'-]+", message = "Tên người liên hệ chỉ gồm chữ và khoảng trắng")
     private String contactName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại")
-    @Pattern(regexp = "^0[0-9]{9,10}$", message = "Số điện thoại phải bắt đầu bằng 0 và có 10 - 11 chữ số")
+    @Pattern(regexp = "0[35789][0-9]{8}", message = "Nhập số di động Việt Nam 10 số, bắt đầu bằng 03, 05, 07, 08 hoặc 09")
     private String contactPhone;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ chi tiết")
-    @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
+    @Size(min = 5, max = 255, message = "Địa chỉ từ 5–255 ký tự")
+    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Địa chỉ không được chứa ký tự điều khiển")
     private String addressLine;
 
     @NotNull(message = "Vui lòng chọn loại địa chỉ")
@@ -56,7 +59,7 @@ public class SavedAddressRequest {
     }
 
     public void setLabel(String label) {
-        this.label = label;
+        this.label = label == null ? null : label.strip().replaceAll(" {2,}", " ");
     }
 
     public String getContactName() {
@@ -64,7 +67,7 @@ public class SavedAddressRequest {
     }
 
     public void setContactName(String contactName) {
-        this.contactName = contactName;
+        this.contactName = contactName == null ? null : contactName.strip().replaceAll(" {2,}", " ");
     }
 
     public String getContactPhone() {
@@ -72,7 +75,9 @@ public class SavedAddressRequest {
     }
 
     public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
+        String value = contactPhone == null ? null : contactPhone.strip().replace(" ", "").replace("-", "").replace(".", "");
+        if (value != null && value.startsWith("+84")) value = "0" + value.substring(3);
+        this.contactPhone = value;
     }
 
     public String getAddressLine() {
@@ -80,7 +85,7 @@ public class SavedAddressRequest {
     }
 
     public void setAddressLine(String addressLine) {
-        this.addressLine = addressLine;
+        this.addressLine = addressLine == null ? null : addressLine.strip().replaceAll(" {2,}", " ");
     }
 
     public SavedAddress.AddressType getAddressType() {

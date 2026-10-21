@@ -25,12 +25,15 @@ public class ProfileDetailForm {
     private UserProfileDetail.Gender gender;
 
     @Size(max = 160, message = "Giới thiệu tối đa 160 ký tự")
+    @jakarta.validation.constraints.Pattern(regexp = "[^\\x00-\\x09\\x0B\\x0C\\x0E-\\x1F\\x7F]*", message = "Giới thiệu chứa ký tự không hợp lệ")
     private String bio;
 
-    @Size(max = 60, message = "Tỉnh/thành tối đa 60 ký tự")
+    @Size(max = 60, message = "Tỉnh thành tối đa 60 ký tự")
+    @jakarta.validation.constraints.Pattern(regexp = "[^\\p{Cntrl}]*", message = "Tỉnh thành chứa ký tự không hợp lệ")
     private String province;
 
     @Size(max = 200, message = "Địa chỉ tối đa 200 ký tự")
+    @jakarta.validation.constraints.Pattern(regexp = "[^\\p{Cntrl}]*", message = "Địa chỉ chứa ký tự không hợp lệ")
     private String addressLine;
 
     public static ProfileDetailForm from(UserProfileDetail detail) {
