@@ -164,6 +164,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByTrackingCodeAndShipper(String trackingCode, AppUser shipper);
 
     Optional<Order> findByTrackingCode(String trackingCode);
+    Optional<Order> findByCreationToken(String creationToken);
     Optional<Order> findByTrackingCodeAndSenderUsername(String trackingCode,String username);
 
     /**

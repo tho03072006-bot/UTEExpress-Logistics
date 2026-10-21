@@ -21,7 +21,8 @@ class AivenDatabaseToolsTest {
                 "order_status_history", "shipper_notification", "order_complaint", "cod_settlement", "cod_settlement_item", "user_profile_detail",
                 "shipping_tariff", "audit_event", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version"), tables);
         assertEquals(27, schema.stream().filter(sql -> sql.contains("foreign key")).count());
-        assertEquals(15, schema.stream().filter(sql -> sql.contains(" unique ")).count());
+        assertEquals(16, schema.stream().filter(sql -> sql.contains(" unique ")).count());
+        assertTrue(schema.stream().anyMatch(sql -> sql.contains("unique (creation_token)")));
         assertTrue(schema.stream().filter(sql -> sql.startsWith("create table "))
                 .allMatch(sql -> sql.contains("auto_increment") && sql.contains("charset=utf8mb4")));
         assertFalse(String.join("\n", schema).contains("character set utf8 "));
