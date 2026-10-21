@@ -42,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
     private final jakarta.validation.Validator validator;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -50,7 +51,8 @@ public class OrderServiceImpl implements OrderService {
                             vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
-                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events) {
+                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events,
+                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -61,11 +63,13 @@ public class OrderServiceImpl implements OrderService {
         this.tariffService = tariffService;
         this.validator = validator;
         this.events = events;
+        this.submissions = submissions;
     }
 
     @Override
     public OrderCreateRequest prepareCreateForm(String username) {
         OrderCreateRequest form = new OrderCreateRequest();
+        form.setSubmissionToken(java.util.UUID.randomUUID().toString());
         form.setServiceType(Order.ServiceType.STANDARD);
         form.setPaymentMethod(OrderPayment.PaymentMethod.COD);
 
@@ -85,10 +89,30 @@ public class OrderServiceImpl implements OrderService {
         if (request == null) { throw new IllegalArgumentException("Thiếu dữ liệu đơn hàng."); }
         var errors = validator.validate(request);
         if (!errors.isEmpty()) { throw new IllegalArgumentException(errors.iterator().next().getMessage()); }
-        AppUser sender = appUserRepository.findByUsername(senderUsername)
+        // Khóa người gửi trước khi kiểm tra token: hai request đồng thời cùng tài khoản
+        // không thể cùng vượt qua bước "chưa có" rồi tạo hai đơn trên database chung.
+        AppUser sender = appUserRepository.findLockedByUsername(senderUsername)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
 
+        if (!sender.isEnabled() || sender.isLockedByAdmin() || sender.getRole()!=AppUser.Role.USER)
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được tạo đơn.");
+        String requestHash = vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.fingerprint(request);
+        // HTTP bắt buộc có token; giữ tương thích lời gọi nội bộ cũ không truyền token.
+        var submission = request.getSubmissionToken() == null ? null
+            : submissions.reserve(request, sender, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DIRECT);
+        if (request.getSubmissionToken()!=null) {
+            var existing=orderRepository.findByCreationToken(request.getSubmissionToken());
+            if(existing.isPresent()) {
+                if(!existing.get().getSender().getId().equals(sender.getId()) || !requestHash.equals(existing.get().getCreationHash()))
+                    throw new IllegalStateException("Phiên biểu mẫu đã được sử dụng cho dữ liệu khác. Hãy mở lại trang tạo đơn.");
+                submission.bindResource(existing.get().getId());
+                return existing.get();
+            }
+            if (submission.getResourceId() != null) throw vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.reused();
+        }
+
         Order order = new Order();
+        order.setCreationToken(request.getSubmissionToken()); order.setCreationHash(requestHash);
         order.setTrackingCode(generateTrackingCode());
         order.setSender(sender);
         order.setSenderName(request.getSenderName());
@@ -123,6 +147,7 @@ public class OrderServiceImpl implements OrderService {
         history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(savedOrder, sender,
                 Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PENDING_PICKUP, null,
                 "Người gửi tạo vận đơn.", null, now));
+        if (submission != null) submission.bindResource(savedOrder.getId());
         return savedOrder;
     }
 

@@ -19,6 +19,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Bean
+    public vn.edu.hcmute.uteexpress.security.PublicAuthRateGuard publicAuthRateGuard() {
+        return new vn.edu.hcmute.uteexpress.security.PublicAuthRateGuard(java.time.Clock.systemUTC());
+    }
+
     // Dung de ma hoa mat khau truoc khi luu DB (theo dung yeu cau de bai)
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -28,7 +33,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
             vn.edu.hcmute.uteexpress.repository.AppUserRepository users,
-            vn.edu.hcmute.uteexpress.repository.admin.StaffAccountRepository staff) throws Exception {
+            vn.edu.hcmute.uteexpress.repository.admin.StaffAccountRepository staff,
+            vn.edu.hcmute.uteexpress.security.PublicAuthRateGuard authRateGuard) throws Exception {
         var pageRequestCache = new vn.edu.hcmute.uteexpress.security.PageRequestCache();
         http
             .requestCache(cache -> cache.requestCache(pageRequestCache))
@@ -39,7 +45,7 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**", "/private-proof/**").denyAll()
                 .requestMatchers("/tep-danh-gia/**").permitAll()
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
-                        "/dang-ky", "/dang-nhap", "/xac-thuc-otp",
+                        "/dang-ky", "/dang-nhap", "/xac-thuc-otp", "/xac-thuc-otp/gui-lai",
                         "/quen-mat-khau", "/dat-lai-mat-khau",
                         "/css/**", "/js/**", "/images/**", "/api/tracking/**").permitAll()
                 // Trang lỗi chung (templates/error.html) phải mở được cả khi chưa đăng nhập.
@@ -56,11 +62,19 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/dang-nhap")
                 .successHandler((request, response, authentication) -> {
+                    authRateGuard.loginSucceeded(authentication.getName());
+                    vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.forgetLoginFailures(request);
                     var handler = new org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler();
                     handler.setRequestCache(pageRequestCache);
                     handler.setDefaultTargetUrl(authentication.getAuthorities().stream()
                             .anyMatch(a -> a.getAuthority().equals("ROLE_SHIPPER")) ? "/shipper/trang-chu" : "/nguoi-dung/trang-chu");
                     handler.onAuthenticationSuccess(request, response, authentication);
+                })
+                .failureHandler((request,response,exception) -> {
+                    authRateGuard.loginFailed(request.getParameter("username"));
+                    vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.rememberLoginFailure(request,authRateGuard,request.getParameter("username"));
+                    response.sendRedirect(request.getContextPath()+"/dang-nhap?error"
+                            + (authRateGuard.loginBlocked(request.getParameter("username")) ? "&locked" : ""));
                 })
                 .permitAll()
             )
@@ -68,14 +82,11 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            // Cả hai khu vực nghiệp vụ phải có CSRF, kể cả hủy đơn và thanh toán ví mô phỏng.
-            .csrf(csrf -> csrf.requireCsrfProtectionMatcher(request -> {
-                String path = request.getServletPath();
-                if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
-                return !java.util.Set.of("GET", "HEAD", "OPTIONS", "TRACE").contains(request.getMethod())
-                        && (path.startsWith("/shipper/") || path.startsWith("/nguoi-dung/")
-                            || path.startsWith("/api/assistant/") || path.startsWith("/api/payments/") || path.equals("/logout"));
-            }))
+            // Bảo vệ mọi POST, kể cả đăng nhập/đăng ký/OTP. SockJS chỉ vận chuyển sự kiện đọc,
+            // kiểm tra cùng origin và chặn SEND vào topic; không phải API thay đổi nghiệp vụ.
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/ws-tracking/**"))
+            .addFilterBefore(new vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter(authRateGuard),
+                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.PublicAccountSessionFilter(users),
                 org.springframework.security.web.access.intercept.AuthorizationFilter.class)
             .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.StaffSessionFilter(staff),

@@ -46,16 +46,19 @@ public class UserOrderController {
     private final OrderDraftService orderDraftService;
     private final OrderPaymentService orderPaymentService;
     private final ServiceReviewService serviceReviewService;
+    private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
                                OrderDraftService orderDraftService,
                                OrderPaymentService orderPaymentService,
-                               ServiceReviewService serviceReviewService) {
+                               ServiceReviewService serviceReviewService,
+                               vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs) {
         this.orderService = orderService;
         this.savedAddressService = savedAddressService;
         this.orderDraftService = orderDraftService;
         this.orderPaymentService = orderPaymentService;
         this.serviceReviewService = serviceReviewService;
+        this.tariffs=tariffs;
     }
 
     /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
@@ -84,6 +87,7 @@ public class UserOrderController {
     @PostMapping("/tao-don")
     public String createOrder(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
                                Authentication authentication, Model model) {
+        validateSubmissionToken(form, bindingResult);
         if (bindingResult.hasErrors()) {
             // Ve lai form thi phai nap lai so dia chi, neu khong 2 o chon nhanh se rong.
             addSavedAddressesToModel(model, authentication.getName());
@@ -106,8 +110,15 @@ public class UserOrderController {
             return "redirect:/nguoi-dung/thanh-toan/" + order.getId();
         }
 
-        model.addAttribute("order", order);
-        model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
+        return "redirect:/nguoi-dung/don-hang/" + order.getId() + "/da-tao";
+    }
+
+    @GetMapping("/don-hang/{id}/da-tao")
+    public String createdOrder(@PathVariable Long id,Authentication authentication,Model model) {
+        Order order;
+        try { order=orderService.findOwnedOrder(id,authentication.getName()); }
+        catch(IllegalStateException ex) { throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,"Không tìm thấy đơn hàng."); }
+        model.addAttribute("order",order); model.addAttribute("payment",orderPaymentService.findByOrder(order).orElse(null));
         return "user/order-created";
     }
 
@@ -118,6 +129,7 @@ public class UserOrderController {
     @PostMapping("/tao-don/them-vao-gio")
     public String addToCart(@Valid @ModelAttribute("form") OrderCreateRequest form, BindingResult bindingResult,
                             Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+        validateSubmissionToken(form, bindingResult);
         if (bindingResult.hasErrors()) {
             addSavedAddressesToModel(model, authentication.getName());
             return "user/order-form";
@@ -197,9 +209,19 @@ public class UserOrderController {
      * de cac trang khac (trang chu, lich su don) khoi phai chay them 2 cau truy van thua.
      */
     private void addSavedAddressesToModel(Model model, String username) {
+        model.addAttribute("currentTariffs",tariffs.currentTariffs());
         model.addAttribute("senderAddresses",
                 savedAddressService.findByType(username, SavedAddress.AddressType.SENDER));
         model.addAttribute("receiverAddresses",
                 savedAddressService.findByType(username, SavedAddress.AddressType.RECEIVER));
+    }
+
+    private void validateSubmissionToken(OrderCreateRequest form, BindingResult bindingResult) {
+        if (!vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.validToken(form.getSubmissionToken())
+                || bindingResult.hasFieldErrors("submissionToken")) {
+            form.setSubmissionToken(java.util.UUID.randomUUID().toString());
+            if (!bindingResult.hasFieldErrors("submissionToken"))
+                bindingResult.rejectValue("submissionToken", "expired", "Biểu mẫu cũ đã hết hiệu lực. Kiểm tra thông tin và gửi lại.");
+        }
     }
 }

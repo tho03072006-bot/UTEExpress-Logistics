@@ -231,7 +231,8 @@ public class UserProfileController {
     @PostMapping("/doi-mat-khau")
     public String changePassword(@Valid @ModelAttribute("form") PasswordChangeRequest form,
                                  BindingResult bindingResult, Authentication authentication,
-                                 Model model, RedirectAttributes redirectAttributes) {
+                                 Model model, RedirectAttributes redirectAttributes,
+                                 jakarta.servlet.http.HttpServletRequest request,jakarta.servlet.http.HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
             return "user/change-password";
         }
@@ -245,9 +246,8 @@ public class UserProfileController {
             model.addAttribute("error", ex.getMessage());
             return "user/change-password";
         }
-        redirectAttributes.addFlashAttribute("message",
-                "Đã đổi mật khẩu thành công. Lần đăng nhập sau hãy dùng mật khẩu mới.");
-        return "redirect:/nguoi-dung/tai-khoan";
+        new org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler().logout(request,response,authentication);
+        return "redirect:/dang-nhap?changed";
     }
 
     // ----- Phần dùng chung trong controller -----

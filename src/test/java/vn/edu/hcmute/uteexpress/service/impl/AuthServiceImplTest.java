@@ -40,6 +40,7 @@ class AuthServiceImplTest {
 
     @Mock
     private JavaMailSender mailSender;
+    @Mock private vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private AuthService authService;
@@ -50,7 +51,12 @@ class AuthServiceImplTest {
         // khong goi ra ngoai nen mock cung khong loi gi hon.
         authService = new AuthServiceImpl(
                 appUserRepository, passwordEncoder, mailSender,
-                new MailFromNameSetter("UTEExpress", "uteexpress@example.com"));
+                new MailFromNameSetter("UTEExpress", "uteexpress@example.com"),
+                new vn.edu.hcmute.uteexpress.security.OtpPolicy(java.time.Clock.systemDefaultZone()),emailChanges);
+        org.mockito.Mockito.lenient().when(appUserRepository.findLockedByUsername(org.mockito.ArgumentMatchers.anyString()))
+            .thenAnswer(call -> appUserRepository.findByUsername(call.getArgument(0)));
+        org.mockito.Mockito.lenient().when(appUserRepository.findLockedByEmail(org.mockito.ArgumentMatchers.anyString()))
+            .thenAnswer(call -> appUserRepository.findByEmail(call.getArgument(0)));
     }
 
     @Test
@@ -59,7 +65,7 @@ class AuthServiceImplTest {
                 "khachhang", "matkhau123", "uteexpress8@gmail.com", "Khách Hàng");
 
         ArgumentCaptor<AppUser> userCaptor = ArgumentCaptor.forClass(AppUser.class);
-        verify(appUserRepository).save(userCaptor.capture());
+        verify(appUserRepository).saveAndFlush(userCaptor.capture());
         AppUser user = userCaptor.getValue();
         assertFalse(user.isEnabled());
         assertTrue(passwordEncoder.matches("matkhau123", user.getPassword()));
@@ -141,7 +147,7 @@ class AuthServiceImplTest {
         assertTrue(authService.resetPassword(user.getEmail(), code, "newPass123"));
         assertTrue(passwordEncoder.matches("newPass123", user.getPassword()));
         assertNull(user.getOtpCode());
-        assertFalse(authService.resetPassword(user.getEmail(), code, "otherPass"));
+        assertFalse(authService.resetPassword(user.getEmail(), code, "otherPass123"));
     }
 
     @Test

@@ -68,22 +68,19 @@
     </div>
 </div>
 
-<!-- Lần đầu mở trang: 3 thẻ dịch vụ có hình minh họa thay cho bảng chữ -->
+<!-- Lần đầu mở trang: thẻ dịch vụ có hình; giá lấy từ bảng giá đang hiệu lực trên Aiven (currentTariffs) -->
 <div class="sx-service-cards" th:if="${quotes == null}">
-    <article class="sx-service-card sx-tone-teal">
-        <img th:src="@{/images/shipper/shipper-van.svg}" alt="" aria-hidden="true" width="180" height="120">
-        <h3>Tiêu chuẩn</h3><p><i class="bi bi-clock"></i> 3 - 5 ngày</p><strong>từ 15.000 đ</strong>
-    </article>
-    <article class="sx-service-card sx-tone-amber">
-        <img th:src="@{/images/shipper/hero-delivery.svg}" alt="" aria-hidden="true" width="180" height="120">
-        <h3>Nhanh</h3><p><i class="bi bi-clock"></i> 1 - 2 ngày</p><strong>từ 25.000 đ</strong>
-    </article>
-    <article class="sx-service-card sx-tone-rose">
-        <img th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="180" height="120">
-        <h3>Hỏa tốc</h3><p><i class="bi bi-clock"></i> Trong ngày · ≤ 30 km</p><strong>từ 40.000 đ</strong>
+    <article class="sx-service-card" th:each="tariff : ${currentTariffs}" th:with="type=${tariff.serviceType.name()}"
+             th:classappend="${type == 'SUPER_EXPRESS'} ? 'sx-tone-rose' : (${type == 'EXPRESS'} ? 'sx-tone-amber' : 'sx-tone-teal')">
+        <img th:src="@{${type == 'SUPER_EXPRESS' ? '/images/shipper/route-map.svg' : (type == 'EXPRESS' ? '/images/shipper/hero-delivery.svg' : '/images/shipper/shipper-van.svg')}}"
+             alt="" aria-hidden="true" width="180" height="120">
+        <h3 th:text="${tariff.serviceType.displayName}">Tiêu chuẩn</h3>
+        <p><i class="bi bi-clock"></i> <th:block th:text="${type == 'SUPER_EXPRESS'} ? 'Trong ngày · ≤ 30 km' : (${type == 'EXPRESS'} ? '1 - 2 ngày' : '3 - 5 ngày')">3 - 5 ngày</th:block></p>
+        <strong>từ <span th:replace="~{fragments/components :: money(${tariff.baseFee})}">15.000 đ</span></strong>
+        <p class="sx-service-extra">+ <span th:replace="~{fragments/components :: money(${tariff.feePerKg})}">3.000 đ</span> mỗi kg</p>
     </article>
 </div>
-<p class="sx-fee-foot"><i class="bi bi-info-circle"></i> Cộng 3.000 đ/kg · 5 km đầu miễn phụ phí · Trên 100 kg: gọi tổng đài.</p>
+<p class="sx-fee-foot"><i class="bi bi-info-circle"></i> Theo bảng giá đang áp dụng · 5 km đầu miễn phụ phí khoảng cách · Trên 100 kg: gọi tổng đài.</p>
 </section>
 
 </body>

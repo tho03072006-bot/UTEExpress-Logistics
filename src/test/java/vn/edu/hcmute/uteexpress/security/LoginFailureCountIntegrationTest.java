@@ -16,7 +16,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Trang đăng nhập hiện số lần nhập sai: nội bộ "lần N/5" (khóa theo tài khoản), khách hàng "lần N/20" (chặn theo máy). */
+/** Trang đăng nhập hiện số lần nhập sai: nội bộ "lần N/5", khách hàng/Shipper "lần N/10" (đều khóa theo tên đăng nhập 15 phút). */
 @SpringBootTest(classes = vn.edu.hcmute.uteexpress.support.IsolatedLogisticsTestConfiguration.class, properties = {
     "spring.datasource.url=jdbc:h2:mem:login-failure-count;MODE=MySQL;DB_CLOSE_DELAY=-1;IGNORE_UNKNOWN_SETTINGS=TRUE",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
@@ -59,28 +59,39 @@ class LoginFailureCountIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.not(containsString("lần 4/5"))));
     }
 
-    @Test void customerLoginShowsAttemptNumberAndClearsAfterSuccess() throws Exception {
-        var customer = new AppUser("count-customer", encoder.encode("DungMatKhau@2026"), "count-customer@test.invalid");
-        customer.setRole(AppUser.Role.USER); customer.setEnabled(true); customer.setFullName("Trần Minh Khôi");
-        users.saveAndFlush(customer);
+    @Test void customerLoginShowsAttemptNumberKeepsUsernameAndLocksAfterTen() throws Exception {
+        account("count-customer");
         var session = new MockHttpSession();
-        // Bộ đếm tính theo máy (mọi trang đăng nhập), nên chỉ kiểm tra số lần tăng đúng 1 sau mỗi lần sai.
-        int previous = -1;
-        for (int attempt = 1; attempt <= 2; attempt++) {
+        for (int attempt = 1; attempt <= 9; attempt++) {
             mvc.perform(post("/dang-nhap").session(session).with(csrf()).param("username", "count-customer").param("password", "sai"))
                     .andExpect(redirectedUrl("/dang-nhap?error"));
-            String page = mvc.perform(get("/dang-nhap").param("error", "").session(session))
-                    .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-            var match = java.util.regex.Pattern.compile("lần (\\d+)/20; còn (\\d+) lần").matcher(page);
-            org.junit.jupiter.api.Assertions.assertTrue(match.find(), "Trang đăng nhập phải hiện số lần sai");
-            org.junit.jupiter.api.Assertions.assertTrue(page.contains("value=\"count-customer\""), "Phải giữ lại tên đã gõ");
-            int count = Integer.parseInt(match.group(1));
-            org.junit.jupiter.api.Assertions.assertEquals(20 - count, Integer.parseInt(match.group(2)));
-            if (previous >= 0) org.junit.jupiter.api.Assertions.assertEquals(previous + 1, count);
-            previous = count;
+            mvc.perform(get("/dang-nhap").param("error", "").session(session))
+                    .andExpect(content().string(containsString("lần " + attempt + "/10; còn " + (10 - attempt) + " lần")))
+                    .andExpect(content().string(containsString("value=\"count-customer\"")));
         }
+        // Lần thứ 10: khóa 15 phút, trang báo rõ là đang khóa (nhập đúng mật khẩu lúc này cũng bị từ chối).
+        mvc.perform(post("/dang-nhap").session(session).with(csrf()).param("username", "count-customer").param("password", "sai"))
+                .andExpect(redirectedUrl("/dang-nhap?error&locked"));
         mvc.perform(post("/dang-nhap").session(session).with(csrf()).param("username", "count-customer").param("password", "DungMatKhau@2026"))
+                .andExpect(redirectedUrl("/dang-nhap?error&locked"));
+        mvc.perform(get("/dang-nhap").param("error", "").param("locked", "").session(session))
+                .andExpect(content().string(containsString("Tài khoản đang tạm khóa 15 phút")));
+    }
+
+    @Test void successfulCustomerLoginClearsFailureCount() throws Exception {
+        account("count-customer2");
+        var session = new MockHttpSession();
+        mvc.perform(post("/dang-nhap").session(session).with(csrf()).param("username", "count-customer2").param("password", "sai"))
+                .andExpect(redirectedUrl("/dang-nhap?error"));
+        org.junit.jupiter.api.Assertions.assertEquals(1, session.getAttribute(PublicAuthRequestFilter.FAILURES_ATTRIBUTE));
+        mvc.perform(post("/dang-nhap").session(session).with(csrf()).param("username", "count-customer2").param("password", "DungMatKhau@2026"))
                 .andExpect(status().is3xxRedirection());
-        org.junit.jupiter.api.Assertions.assertNull(session.getAttribute(LoginRateLimitFilter.FAILURES_ATTRIBUTE));
+        org.junit.jupiter.api.Assertions.assertNull(session.getAttribute(PublicAuthRequestFilter.FAILURES_ATTRIBUTE));
+    }
+
+    private void account(String username) {
+        var customer = new AppUser(username, encoder.encode("DungMatKhau@2026"), username + "@test.invalid");
+        customer.setRole(AppUser.Role.USER); customer.setEnabled(true); customer.setFullName("Trần Minh Khôi");
+        users.saveAndFlush(customer);
     }
 }

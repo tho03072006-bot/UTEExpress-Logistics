@@ -1,6 +1,5 @@
 package vn.edu.hcmute.uteexpress.dto;
 
-import vn.edu.hcmute.uteexpress.validation.MaxUtf8Bytes;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -15,8 +14,7 @@ import jakarta.validation.constraints.Size;
 public class PasswordResetRequest {
 
     @NotBlank(message = "Vui lòng nhập email đã đăng ký")
-    @Email(message = "Email không đúng định dạng")
-    @Size(max = 100, message = "Email tối đa 100 ký tự")
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
     private String email;
 
     @NotBlank(message = "Vui lòng nhập mã OTP")
@@ -24,13 +22,11 @@ public class PasswordResetRequest {
     private String otp;
 
     @NotBlank(message = "Vui lòng nhập mật khẩu mới")
-    @Size(min = 6, max = 64, message = "Mật khẩu mới từ 6 đến 64 ký tự")
-    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Mật khẩu không được chứa ký tự điều khiển")
-    @MaxUtf8Bytes
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicPassword
     private String newPassword;
 
     @NotBlank(message = "Vui lòng nhập lại mật khẩu mới")
-    @Size(max = 64, message = "Mật khẩu nhập lại không khớp")
+    @Size(max=64,message="Xác nhận mật khẩu tối đa 64 ký tự.")
     private String confirmPassword;
 
     public PasswordResetRequest() {
@@ -51,7 +47,7 @@ public class PasswordResetRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.email(email);
     }
 
     public String getOtp() {
@@ -77,4 +73,5 @@ public class PasswordResetRequest {
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
     }
+    public void clearSecrets() { newPassword=null; confirmPassword=null; }
 }

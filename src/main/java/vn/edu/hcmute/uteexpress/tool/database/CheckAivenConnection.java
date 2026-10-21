@@ -11,7 +11,8 @@ public final class CheckAivenConnection {
             "app_user", "shipment_order", "saved_address", "draft_order", "promo_code",
             "order_payment", "service_review", "email_change_request", "delivery_proof", "staff_account",
             "shipping_tariff", "audit_event", "order_status_history", "shipper_notification", "order_complaint",
-            "cod_settlement", "cod_settlement_item", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version");
+            "cod_settlement", "cod_settlement_item", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version",
+            "user_profile_detail", "order_form_submission");
 
     private CheckAivenConnection() { }
 

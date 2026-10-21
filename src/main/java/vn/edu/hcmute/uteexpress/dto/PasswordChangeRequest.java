@@ -1,7 +1,5 @@
 package vn.edu.hcmute.uteexpress.dto;
 
-import vn.edu.hcmute.uteexpress.validation.MaxUtf8Bytes;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -16,17 +14,15 @@ import jakarta.validation.constraints.Size;
 public class PasswordChangeRequest {
 
     @NotBlank(message = "Vui lòng nhập mật khẩu hiện tại")
-    @Size(max = 100, message = "Mật khẩu hiện tại không đúng")
+    @Size(max=256,message="Mật khẩu hiện tại quá dài.")
     private String currentPassword;
 
     @NotBlank(message = "Vui lòng nhập mật khẩu mới")
-    @Size(min = 6, max = 64, message = "Mật khẩu mới từ 6 đến 64 ký tự")
-    @Pattern(regexp = "[^\\p{Cntrl}]*", message = "Mật khẩu không được chứa ký tự điều khiển")
-    @MaxUtf8Bytes
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicPassword
     private String newPassword;
 
     @NotBlank(message = "Vui lòng nhập lại mật khẩu mới")
-    @Size(max = 64, message = "Mật khẩu nhập lại không khớp")
+    @Size(max=64,message="Xác nhận mật khẩu tối đa 64 ký tự.")
     private String confirmPassword;
 
     public PasswordChangeRequest() {

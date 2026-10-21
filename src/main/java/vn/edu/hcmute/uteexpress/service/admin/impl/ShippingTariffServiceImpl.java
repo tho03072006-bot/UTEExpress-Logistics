@@ -30,14 +30,22 @@ public class ShippingTariffServiceImpl implements ShippingTariffService {
         if (serviceType == null || !Double.isFinite(weightKg) || weightKg <= 0 || weightKg > 100) {
             throw new IllegalArgumentException("Chọn dịch vụ và khối lượng lớn hơn 0, không quá 100 kg.");
         }
+        var tariff = currentTariff(serviceType);
+        return tariff.baseFee().add(tariff.feePerKg().multiply(BigDecimal.valueOf(weightKg)))
+            .setScale(0, RoundingMode.HALF_UP);
+    }
+    @Override @Transactional(readOnly = true)
+    public List<vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse> currentTariffs() {
+        return java.util.Arrays.stream(Order.ServiceType.values()).map(this::currentTariff).toList();
+    }
+    private vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse currentTariff(Order.ServiceType serviceType) {
         ShippingTariff tariff = tariffs.findByServiceType(serviceType)
             .orElseThrow(() -> new IllegalStateException("Chưa cấu hình cước cho dịch vụ này. Liên hệ Admin."));
         var active = versions.active(serviceType, LocalDateTime.now(clock));
         if (active.size() > 1) throw new IllegalStateException("Lịch cước bị trùng. Liên hệ Admin, không tự chọn giá.");
         BigDecimal base = active.isEmpty() ? tariff.getBaseFee() : active.get(0).getBaseFee();
         BigDecimal perKg = active.isEmpty() ? tariff.getFeePerKg() : active.get(0).getFeePerKg();
-        return base.add(perKg.multiply(BigDecimal.valueOf(weightKg)))
-            .setScale(0, RoundingMode.HALF_UP);
+        return new vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse(serviceType,base,perKg);
     }
     @Override @Transactional(readOnly = true)
     public List<vn.edu.hcmute.uteexpress.dto.admin.ShippingTariffResponse> findTariffs(String actor) {

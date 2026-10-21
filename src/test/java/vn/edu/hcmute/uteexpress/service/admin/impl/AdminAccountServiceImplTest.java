@@ -190,6 +190,7 @@ class AdminAccountServiceImplTest {
         when(users.countOrders(3L)).thenReturn(1L); rejectsDeletion(); when(users.countOrders(3L)).thenReturn(0L);
         when(users.countAddresses(3L)).thenReturn(1L); rejectsDeletion(); when(users.countAddresses(3L)).thenReturn(0L);
         when(users.countDrafts(3L)).thenReturn(1L); rejectsDeletion(); when(users.countDrafts(3L)).thenReturn(0L);
+        when(users.countFormSubmissions(3L)).thenReturn(1L); rejectsDeletion(); when(users.countFormSubmissions(3L)).thenReturn(0L);
         when(users.countReviews(3L)).thenReturn(1L); rejectsDeletion(); when(users.countReviews(3L)).thenReturn(0L);
         when(users.countProofs(3L)).thenReturn(1L); rejectsDeletion(); when(users.countProofs(3L)).thenReturn(0L);
         when(users.countEmailChanges(3L)).thenReturn(1L); rejectsDeletion(); when(users.countEmailChanges(3L)).thenReturn(0L);

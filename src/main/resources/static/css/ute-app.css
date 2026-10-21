@@ -734,7 +734,7 @@ body.sx-app::before {
         background: radial-gradient(circle, rgba(255, 255, 255, .12) 1px, transparent 1.4px) 0 0 / 16px 16px, linear-gradient(120deg, #0B3B66 0%, #0072BC 55%, #4F46E5 100%); }
     /* Thẻ có hình: hình bên trái, chữ xếp gọn bên phải */
     .sx-service-card { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); grid-auto-rows: min-content; align-items: center; column-gap: .9rem; row-gap: .15rem; text-align: left; }
-    .sx-service-card img { grid-row: 1 / span 3; width: 5.5rem; height: 4rem; margin: 0; }
+    .sx-service-card img { grid-row: 1 / span 4; width: 5.5rem; height: 4rem; margin: 0; }
     .sx-service-card strong { justify-self: start; margin-top: .2rem; }
 }
 @media (max-width: 575.98px) { .sx-hero-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sx-hero-form > label:nth-of-type(3) { grid-column: 1 / -1; } }
@@ -769,3 +769,4 @@ body.sx-app::before {
 .sx-app input:-webkit-autofill, .sx-app input:-webkit-autofill:hover, .sx-app input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--app-ink); caret-color: var(--app-ink); font-size: inherit;
     -webkit-box-shadow: 0 0 0 1000px var(--app-card) inset; box-shadow: 0 0 0 1000px var(--app-card) inset; transition: background-color 9999s ease-out 0s; }
+.sx-service-card .sx-service-extra { color: var(--app-muted); font-size: .8rem; }

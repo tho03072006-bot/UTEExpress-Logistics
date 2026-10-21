@@ -16,8 +16,23 @@ class AdminAccountValidationTest {
     void invalidUsernameIsRejected(String value) { var f = valid(); f.setUsername(value); assertFalse(validator.validate(f).isEmpty()); }
     @ParameterizedTest @ValueSource(strings = {"", "a", "1234", "<script>alert(1)</script>", "Name\nControl"})
     void invalidNameIsRejected(String value) { var f = valid(); f.setFullName(value); assertFalse(validator.validate(f).isEmpty()); }
-    @ParameterizedTest @ValueSource(strings = {"", "abc", "a@localhost", "a b@example.com", "a@example.com\r\nBcc:x@example.com"})
+    @ParameterizedTest @ValueSource(strings = {"", "abc", "a@localhost", "a b@example.com", "a@example.com\r\nBcc:x@example.com",
+        "audit@example.c", ".name@example.com", "name.@example.com", "name..x@example.com", "name@-example.com", "name@example-.com", "name@example..com", "name@example.123"})
     void invalidEmailIsRejected(String value) { var f = valid(); f.setEmail(value); assertFalse(validator.validate(f).isEmpty()); }
+    @ParameterizedTest @ValueSource(strings = {"audit@example.c", ".name@example.com", "name..x@example.com", "name@-example.com", "name@example..com", "name@example.123"})
+    void internalAndPublicEmailPoliciesRejectTheSameInvalidInputs(String email) {
+        var staff = new StaffAccountCreateRequest(); staff.setEmail(email);
+        var edit = new vn.edu.hcmute.uteexpress.dto.ProfileUpdateRequest(); edit.setEmail(email);
+        var profile = new AdminAccountProfileRequest(); profile.setEmail(email);
+        var reset = new vn.edu.hcmute.uteexpress.dto.PasswordResetRequest(); reset.setEmail(email);
+        for (Object form : java.util.List.of(staff, edit, profile, reset))
+            assertFalse(validator.validateProperty(form, "email").isEmpty());
+    }
+    @ParameterizedTest @ValueSource(strings = {" USER+demo@EXAMPLE.COM ", "name.o'hara@example.com", "name@sub.example.com"})
+    void acceptedEmailsStayCompatibleWithPublicRecovery(String email) {
+        var form = valid(); form.setEmail(email); assertTrue(validator.validateProperty(form, "email").isEmpty());
+        assertDoesNotThrow(() -> vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.requireEmail(form.getEmail()));
+    }
     @ParameterizedTest @ValueSource(strings = {"", "0123456789", "123", "09012345678", "090abc4567", "+1 901234567", "090\t1234567"})
     void invalidPhoneIsRejected(String value) { var f = valid(); f.setPhone(value); assertFalse(validator.validate(f).isEmpty()); }
     @ParameterizedTest @ValueSource(strings = {"", "short", "onlylowercase123!", "NoNumbersHere!", "NoSpecial12345", "Has Space@2026"})

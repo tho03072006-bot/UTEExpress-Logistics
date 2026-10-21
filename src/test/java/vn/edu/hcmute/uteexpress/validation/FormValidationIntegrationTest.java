@@ -17,7 +17,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Quy tắc nhập liệu của các form phía khách hàng: đăng ký, đổi mật khẩu, hồ sơ, sổ địa chỉ. Chạy trên H2 riêng. */
+/** Quy tắc nhập liệu của các form phía khách hàng (theo PublicAccountValidation): đăng ký, đổi mật khẩu, hồ sơ, sổ địa chỉ. Chạy trên H2 riêng. */
 @SpringBootTest(classes = vn.edu.hcmute.uteexpress.support.IsolatedLogisticsTestConfiguration.class, properties = {
     "spring.datasource.url=jdbc:h2:mem:form-validation-test;MODE=MySQL;DB_CLOSE_DELAY=-1;IGNORE_UNKNOWN_SETTINGS=TRUE",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
@@ -46,14 +46,14 @@ class FormValidationIntegrationTest {
         mvc.perform(post("/dang-ky").with(csrf()).param("fullName", "12345").param("username", "a b")
                         .param("email", "ban@localhost").param("password", "ờ".repeat(30)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Họ tên chỉ gồm chữ và khoảng trắng")))
-                .andExpect(content().string(containsString("Tên đăng nhập 4–50 ký tự")))
-                .andExpect(content().string(containsString("Email cần có tên miền hợp lệ")))
-                .andExpect(content().string(containsString("Mật khẩu quá dài")));
+                .andExpect(content().string(containsString("Họ tên chỉ chứa chữ và dấu phân cách tên hợp lệ")))
+                .andExpect(content().string(containsString("Tên đăng nhập từ 3–50 ký tự")))
+                .andExpect(content().string(containsString("Email cần tên hộp thư và tên miền hợp lệ")))
+                .andExpect(content().string(containsString("tối đa 72 byte UTF-8")));
         mvc.perform(post("/dang-ky").with(csrf()).param("fullName", " ").param("username", "x".repeat(60))
                         .param("email", "a@b.vn").param("password", "123"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Mật khẩu từ 6 đến 64 ký tự")));
+                .andExpect(content().string(containsString("Mật khẩu từ 8–64 ký tự")));
         assertTrue(users.findByUsername("a b").isEmpty());
     }
 
@@ -65,7 +65,7 @@ class FormValidationIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Mật khẩu")));
         mvc.perform(post(path).servletPath(path).with(user(customer.getUsername()).roles("USER")).with(csrf())
                         .param("currentPassword", CURRENT).param("newPassword", "abc\u0000def").param("confirmPassword", "abc\u0000def"))
-                .andExpect(status().isOk()).andExpect(content().string(containsString("ký tự điều khiển")));
+                .andExpect(status().isOk()).andExpect(content().string(containsString("không có khoảng trắng")));
         assertTrue(encoder.matches(CURRENT, users.findByUsername(customer.getUsername()).orElseThrow().getPassword()));
     }
 
@@ -74,8 +74,8 @@ class FormValidationIntegrationTest {
         mvc.perform(post(path).servletPath(path).with(user(customer.getUsername()).roles("USER")).with(csrf())
                         .param("fullName", "<b>123</b>").param("email", "khoi@mail").param("phone", "0281234567"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Họ tên chỉ gồm chữ và khoảng trắng")))
-                .andExpect(content().string(containsString("Email cần có tên miền hợp lệ")))
+                .andExpect(content().string(containsString("Họ tên chỉ chứa chữ và dấu phân cách tên hợp lệ")))
+                .andExpect(content().string(containsString("Email cần tên hộp thư và tên miền hợp lệ")))
                 .andExpect(content().string(containsString("Nhập số di động Việt Nam 10 số")));
         assertEquals("Trần Minh Khôi", users.findByUsername(customer.getUsername()).orElseThrow().getFullName());
     }
@@ -87,7 +87,7 @@ class FormValidationIntegrationTest {
                         .param("addressLine", "12\u0007 Võ Văn Ngân").param("addressType", "SENDER"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Nhập số di động Việt Nam 10 số")))
-                .andExpect(content().string(containsString("Địa chỉ không được chứa ký tự điều khiển")));
+                .andExpect(content().string(containsString("Địa chỉ không chứa ký tự điều khiển")));
         assertEquals(0, addresses.countByUser(customer));
     }
 }

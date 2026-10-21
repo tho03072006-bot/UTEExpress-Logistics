@@ -464,7 +464,7 @@ class StaffSecurityIntegrationTest {
 
     @Test void privilegedOtpActivationIsBlockedWithoutCallingSharedService() throws Exception {
         when(users.findByUsername("admin01")).thenReturn(Optional.of(admin.getUser()));
-        mvc.perform(post("/xac-thuc-otp").param("username", "admin01").param("otp", "123456"))
+        mvc.perform(post("/xac-thuc-otp").with(csrf()).param("username", "admin01").param("otp", "123456"))
                 .andExpect(status().isOk()).andExpect(view().name("auth/verify-otp"))
                 .andExpect(model().attributeExists("error"));
         verifyNoInteractions(authService);
@@ -472,17 +472,17 @@ class StaffSecurityIntegrationTest {
 
     @Test void privilegedPublicPasswordRecoveryIsBlocked() throws Exception {
         when(users.findByEmailIgnoreCase("manager@example.com")).thenReturn(Optional.of(manager.getUser()));
-        mvc.perform(post("/quen-mat-khau").param("email", "manager@example.com"))
+        mvc.perform(post("/quen-mat-khau").with(csrf()).param("email", "manager@example.com"))
                 .andExpect(status().isOk()).andExpect(view().name("auth/reset-password"))
                 .andExpect(model().attribute("otpJustSent", true));
-        mvc.perform(post("/dat-lai-mat-khau").param("email", "manager@example.com"))
+        mvc.perform(post("/dat-lai-mat-khau").with(csrf()).param("email", "manager@example.com"))
                 .andExpect(status().isOk()).andExpect(model().attributeExists("error"));
         verifyNoInteractions(authService);
     }
 
     @Test void forgedUsernameCannotBypassPrivilegedEmailPolicy() throws Exception {
         when(users.findByEmailIgnoreCase("manager@example.com")).thenReturn(Optional.of(manager.getUser()));
-        mvc.perform(post("/quen-mat-khau").param("email", "manager@example.com").param("username", "customer"))
+        mvc.perform(post("/quen-mat-khau").with(csrf()).param("email", "manager@example.com").param("username", "customer"))
                 .andExpect(status().isOk()).andExpect(view().name("auth/reset-password"));
         verifyNoInteractions(authService);
     }
@@ -526,7 +526,7 @@ class StaffSecurityIntegrationTest {
         var customer = new AppUser("customer", "hash", "customer@example.com");
         when(users.findByUsername("customer")).thenReturn(Optional.of(customer));
         when(authService.verifyOtp("customer", "123456")).thenReturn(true);
-        mvc.perform(post("/xac-thuc-otp").param("username", "customer").param("otp", "123456"))
+        mvc.perform(post("/xac-thuc-otp").with(csrf()).param("username", "customer").param("otp", "123456"))
                 .andExpect(status().isOk()).andExpect(view().name("auth/login"));
         verify(authService).verifyOtp("customer", "123456");
     }

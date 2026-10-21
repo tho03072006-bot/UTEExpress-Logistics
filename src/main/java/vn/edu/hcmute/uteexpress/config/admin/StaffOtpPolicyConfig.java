@@ -23,6 +23,8 @@ public class StaffOtpPolicyConfig implements WebMvcConfigurer {
                 if (!"POST".equals(request.getMethod())) { return true; }
                 String username = request.getParameter("username");
                 String email = request.getParameter("email");
+                // Không gửi tham số quá dài xuống database trước khi DTO/controller kiểm tra.
+                if((username!=null && username.length()>50) || (email!=null && email.length()>100)) return true;
                 boolean activation = request.getRequestURI().endsWith("/xac-thuc-otp");
                 var found = activation && username != null ? users.findByUsername(username)
                         : !activation && email != null ? users.findByEmailIgnoreCase(email.strip())

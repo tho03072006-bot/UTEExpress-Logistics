@@ -29,27 +29,27 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Nhãn gợi nhớ</label>
-        <input type="text" th:field="*{label}" class="form-control" placeholder="Ví dụ: Nhà riêng, Kho quận 9, Nhà mẹ">
+        <label class="form-label" for="label">Nhãn gợi nhớ</label>
+        <input type="text" th:field="*{label}" class="form-control" required maxlength="50" placeholder="Ví dụ: Nhà riêng, Kho quận 9, Nhà mẹ">
         <div class="text-danger small" th:if="${#fields.hasErrors('label')}" th:errors="*{label}"></div>
     </div>
 
     <div class="row">
         <div class="col-md-6 mb-3">
-            <label class="form-label">Họ tên người liên hệ</label>
-            <input type="text" th:field="*{contactName}" class="form-control">
+            <label class="form-label" for="contactName">Họ tên người liên hệ</label>
+            <input type="text" th:field="*{contactName}" class="form-control" required minlength="2" maxlength="100">
             <div class="text-danger small" th:if="${#fields.hasErrors('contactName')}" th:errors="*{contactName}"></div>
         </div>
         <div class="col-md-6 mb-3">
-            <label class="form-label">Số điện thoại</label>
-            <input type="tel" th:field="*{contactPhone}" class="form-control" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="0901234567">
+            <label class="form-label" for="contactPhone">Số điện thoại</label>
+            <input type="tel" th:field="*{contactPhone}" class="form-control" required maxlength="20" placeholder="0901234567 hoặc +84901234567">
             <div class="text-danger small" th:if="${#fields.hasErrors('contactPhone')}" th:errors="*{contactPhone}"></div>
         </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Địa chỉ chi tiết</label>
-        <textarea th:field="*{addressLine}" class="form-control" rows="2"
+        <label class="form-label" for="addressLine">Địa chỉ chi tiết</label>
+        <textarea th:field="*{addressLine}" class="form-control" rows="2" required minlength="5" maxlength="255"
                   placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
         <div class="text-danger small" th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}"></div>
     </div>

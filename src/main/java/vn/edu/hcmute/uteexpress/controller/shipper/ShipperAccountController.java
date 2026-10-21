@@ -116,7 +116,8 @@ public class ShipperAccountController {
 
     @PostMapping("/doi-mat-khau")
     public String changePassword(@Valid @ModelAttribute("form") PasswordChangeRequest form, BindingResult bindingResult,
-                                 Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+                                 Authentication authentication, Model model, RedirectAttributes redirectAttributes,
+                                 jakarta.servlet.http.HttpServletRequest request,jakarta.servlet.http.HttpServletResponse response) {
         model.addAttribute("accountBase", BASE);
         if (bindingResult.hasErrors()) return "user/change-password";
         if (!form.isPasswordConfirmed()) {
@@ -129,8 +130,8 @@ public class ShipperAccountController {
             model.addAttribute("error", ex.getMessage());
             return "user/change-password";
         }
-        redirectAttributes.addFlashAttribute("message", "Đã đổi mật khẩu. Lần đăng nhập sau hãy dùng mật khẩu mới.");
-        return "redirect:" + BASE;
+        new org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler().logout(request,response,authentication);
+        return "redirect:/dang-nhap?changed";
     }
 
     private void fill(Authentication authentication, Model model) {

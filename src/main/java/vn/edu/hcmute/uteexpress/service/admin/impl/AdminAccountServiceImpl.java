@@ -103,7 +103,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         }
         protectLastAdmin(locked, user, false);
         if (hasLinkedData(user)) {
-            throw new IllegalArgumentException("Không thể xóa tài khoản có đơn hàng, địa chỉ, giỏ đơn, đánh giá, bằng chứng, yêu cầu đổi email hoặc lịch sử cấp tài khoản. Hãy khóa tài khoản để giữ dữ liệu.");
+            throw new IllegalArgumentException("Không thể xóa tài khoản có đơn hàng, địa chỉ, giỏ đơn, dấu vết biểu mẫu, đánh giá, bằng chứng, yêu cầu đổi email hoặc lịch sử cấp tài khoản. Hãy khóa tài khoản để giữ dữ liệu.");
         }
         var account = internalAccount(locked, user);
         // Không cascade: FK vẫn bảo vệ nếu một nghiệp vụ khác vừa tạo liên kết mới.
@@ -175,7 +175,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     }
     private boolean hasLinkedData(AppUser user) {
         var id = user.getId();
-        return users.countOrders(id) > 0 || users.countAddresses(id) > 0 || users.countDrafts(id) > 0
+        return users.countOrders(id) > 0 || users.countAddresses(id) > 0 || users.countDrafts(id) > 0 || users.countFormSubmissions(id) > 0
             || users.countReviews(id) > 0 || users.countProofs(id) > 0 || users.countEmailChanges(id) > 0
             || users.countIssuedAccounts(user.getUsername()) > 0 || users.countJourneyActions(id) > 0
             || users.countHandledComplaints(id) > 0 || users.countCashRecords(id) > 0;

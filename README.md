@@ -100,7 +100,7 @@ Chưa cấu hình mail thì các chức năng này báo "Không gửi được e
 
 **Mật khẩu xin trong nhóm chat — không ghi vào README hay commit lên Git.**
 Tài khoản nội bộ (Manager/Admin) đăng nhập ở `/noi-bo/dang-nhap` và **bị khóa sau 5 lần nhập sai**;
-mọi trang đăng nhập còn tạm chặn theo IP nếu sai quá 20 lần trong 10 phút.
+tài khoản khách hàng/Shipper bị khóa 15 phút sau 10 lần sai. Trang đăng nhập hiện "lần N/5" hoặc "lần N/10" để biết còn bao nhiêu lần.
 
 | Tên đăng nhập | Vai trò | Ghi chú |
 |---|---|---|

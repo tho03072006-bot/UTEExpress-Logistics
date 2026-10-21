@@ -25,12 +25,15 @@ public class HomeController {
     private final OrderService orderService;
     private final ServiceReviewService serviceReviewService;
     private final vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService;
+    private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
 
     public HomeController(OrderService orderService, ServiceReviewService serviceReviewService,
-                          vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService) {
+                          vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService,
+                          vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs) {
         this.orderService = orderService;
         this.serviceReviewService = serviceReviewService;
         this.feeEstimateService = feeEstimateService;
+        this.tariffs=tariffs;
     }
 
     @GetMapping("/")
@@ -50,6 +53,7 @@ public class HomeController {
     @GetMapping("/uoc-tinh-cuoc")
     public String feeEstimatePage(@Valid @ModelAttribute("form") FeeEstimateRequest form,
                                   BindingResult bindingResult, Model model) {
+        model.addAttribute("currentTariffs",tariffs.currentTariffs());
         // Chua nhap gi (vua mo trang) hoac nhap sai thi chi hien lai form, chua tinh cuoc.
         if (form.getWeightKg() == null || bindingResult.hasErrors()) {
             return "uoc-tinh-cuoc";
