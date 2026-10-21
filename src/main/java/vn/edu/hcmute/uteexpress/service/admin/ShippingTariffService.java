@@ -8,6 +8,7 @@ import vn.edu.hcmute.uteexpress.dto.admin.ShippingTariffUpdateRequest;
 
 public interface ShippingTariffService {
     BigDecimal quote(Order.ServiceType serviceType, double weightKg);
+    List<vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse> currentTariffs();
     List<vn.edu.hcmute.uteexpress.dto.admin.ShippingTariffResponse> findTariffs(String actor);
     void updateTariff(String actor, Order.ServiceType serviceType, ShippingTariffUpdateRequest request);
 }
