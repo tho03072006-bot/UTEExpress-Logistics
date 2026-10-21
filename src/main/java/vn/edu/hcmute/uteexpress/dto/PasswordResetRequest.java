@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Size;
 public class PasswordResetRequest {
 
     @NotBlank(message = "Vui lòng nhập email đã đăng ký")
-    @Email(message = "Email không đúng định dạng")
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
     private String email;
 
     @NotBlank(message = "Vui lòng nhập mã OTP")
@@ -22,10 +22,11 @@ public class PasswordResetRequest {
     private String otp;
 
     @NotBlank(message = "Vui lòng nhập mật khẩu mới")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
+    @vn.edu.hcmute.uteexpress.validation.ValidPublicPassword
     private String newPassword;
 
     @NotBlank(message = "Vui lòng nhập lại mật khẩu mới")
+    @Size(max=64,message="Xác nhận mật khẩu tối đa 64 ký tự.")
     private String confirmPassword;
 
     public PasswordResetRequest() {
@@ -46,7 +47,7 @@ public class PasswordResetRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.email(email);
     }
 
     public String getOtp() {
@@ -72,4 +73,5 @@ public class PasswordResetRequest {
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
     }
+    public void clearSecrets() { newPassword=null; confirmPassword=null; }
 }
