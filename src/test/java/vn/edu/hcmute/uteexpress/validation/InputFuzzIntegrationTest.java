@@ -43,7 +43,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
     "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop",
-    "app.upload.dir=target/test-proof-uploads", "app.mail.order-updates.enabled=false"
+    "app.upload.dir=target/test-proof-uploads", "app.mail.order-updates.enabled=false",
+    // Khóa giả chỉ dùng cho test: bật JWT để /api/internal/** được thử thật, không phụ thuộc config/jwt-local.properties (CI không có).
+    "app.jwt.api.enabled=true", "app.jwt.api.signing-key=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
 })
 @AutoConfigureMockMvc
 @org.springframework.test.context.ActiveProfiles("isolated-logistics")
