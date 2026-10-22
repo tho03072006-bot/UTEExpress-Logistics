@@ -29,12 +29,16 @@ public class PaymentController {
             if (orderId <= 0) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
             var payment = payments.findOwnedPayment(orderId, authentication.getName());
             model.addAttribute("payment", payment); model.addAttribute("order", payment.getOrder());
-            model.addAttribute("momoStartup", startup.snapshot());
             if (payment.getMethod() == OrderPayment.PaymentMethod.MOMO
                     && payment.getStatus() == OrderPayment.PaymentStatus.UNPAID && !WalletPaymentRules.isClosed(payment.getOrder())) {
-                try { model.addAttribute("checkout", momo.createCheckout(orderId, authentication.getName())); }
+                try {
+                    model.addAttribute("checkout", momo.createCheckout(orderId, authentication.getName()));
+                    // Render Free có thể đang ngủ: đánh thức ở nền ngay khi hiện QR, trước lúc khách kịp quét.
+                    startup.wakeForPayment();
+                }
                 catch (IllegalStateException exception) { model.addAttribute("checkoutError", exception.getMessage()); }
             }
+            model.addAttribute("momoStartup", startup.snapshot());
             return "user/payment-gateway";
         } catch (IllegalStateException | IllegalArgumentException exception) {
             redirect.addFlashAttribute("error", "Không thể mở thanh toán. Hãy chọn lại đơn hàng của bạn.");

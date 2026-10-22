@@ -17,7 +17,7 @@
 <div th:if="${payment.status.name() == 'PAID'}" class="alert alert-success mb-0" role="status"><h5>Đã thanh toán</h5><p class="small text-break" th:text="${payment.transactionRef}"></p><span th:if="${payment.paidAt != null}" th:text="${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span></div>
 <div th:if="${checkoutError}" class="alert alert-warning" th:text="${checkoutError}" role="alert"></div>
 <div th:if="${checkout != null}" data-momo-payment th:attr="data-status-url=@{/api/payments/momo/{id}/status(id=${order.id})},data-expires=${checkout.expiresAt}">
-<p th:if="${momoStartup != null}" class="small text-muted" role="status" data-momo-render-status th:text="${momoStartup.message}"></p>
+<p th:if="${momoStartup != null}" class="small sx-momo-render" role="status" aria-live="polite" data-momo-render-status th:attr="data-state=${momoStartup.state}" th:text="${momoStartup.message}"></p>
 <h5>Quét QR để thanh toán mô phỏng</h5><p class="small text-muted">Mở bằng camera điện thoại hoặc mở trang demo trong tab mới.</p>
 <div data-checkout-controls><img th:src="${checkout.qrDataUrl}" alt="QR mở trang MoMo mô phỏng của đơn hàng này" width="280" height="280" class="img-fluid bg-white rounded p-2" style="max-width:280px;width:100%;height:auto">
 <p class="small mt-2">QR có hiệu lực <strong data-momo-countdown>10 phút</strong>. Không chia sẻ QR công khai.</p>

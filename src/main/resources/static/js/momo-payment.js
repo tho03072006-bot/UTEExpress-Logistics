@@ -15,7 +15,7 @@
         onUpdate: function (data) {
             status.textContent = data.message;
             var render = node.querySelector('[data-momo-render-status]');
-            if (render && data.render && typeof data.render.message === 'string') render.textContent = data.render.message;
+            if (render && data.render && typeof data.render.message === 'string') { render.textContent = data.render.message; render.dataset.state = String(data.render.state || ''); }
             if (data.state === 'PAID') {
                 terminal = true; status.className = 'alert alert-success mt-4';
                 if (render) render.hidden = true;

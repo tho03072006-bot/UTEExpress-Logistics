@@ -29,7 +29,7 @@ class MomoHealthClientTest {
         assertEquals("https://uteexpress-momo-test.onrender.com/healthz", request.getValue().uri().toString());
         assertEquals("GET", request.getValue().method()); assertTrue(request.getValue().bodyPublisher().isEmpty());
         assertTrue(request.getValue().headers().firstValue("Authorization").isEmpty());
-        assertEquals(java.time.Duration.ofSeconds(20), request.getValue().timeout().orElseThrow());
+        assertEquals(java.time.Duration.ofSeconds(90), request.getValue().timeout().orElseThrow());
     }
     @Test void loadingPageRedirectAndHttpFailureAreNotReportedAsOnline() throws Exception {
         for (int status : new int[]{200,302,404,500,503}) {

@@ -836,3 +836,11 @@ body.sx-app::before {
 .sx-shipper-card { display: flex; gap: .75rem; align-items: center; padding: .75rem .9rem; border-radius: .75rem; background: var(--app-soft); }
 .sx-shipper-card .sx-avatar { width: 2.2rem; }
 .sx-shipper-card .sx-avatar.is-empty { background: var(--app-border); color: var(--app-muted); }
+/* Trạng thái đánh thức MoMo trên Render (trang thanh toán) */
+.sx-momo-render { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem .8rem; border-radius: 999px; color: var(--app-muted); background: rgba(100, 116, 139, .1); }
+.sx-momo-render[data-state="CHECKING"] { color: #b45309; background: rgba(245, 158, 11, .14); }
+.sx-momo-render[data-state="CHECKING"]::before { content: ""; width: .85rem; height: .85rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sx-momo-spin .8s linear infinite; flex: none; }
+.sx-momo-render[data-state="ONLINE"] { color: #047857; background: rgba(16, 185, 129, .14); }
+.sx-momo-render[data-state="UNREACHABLE"] { color: #b91c1c; background: rgba(239, 68, 68, .12); }
+@keyframes sx-momo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sx-momo-render[data-state="CHECKING"]::before { animation: none; } }

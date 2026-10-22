@@ -77,6 +77,39 @@ class MomoStartupServiceTest {
         } finally { service.close(); }
         assertTrue(interrupted.await(2, TimeUnit.SECONDS)); assertNotEquals("ONLINE", service.snapshot().state());
     }
+    @Test void openingPaymentPageWakesRenderAgainAfterItWasUnreachable() throws Exception {
+        when(client.isReachable(any())).thenReturn(false, false, false, true);
+        try (var service = service(environment)) {
+            service.onApplicationReady(); await().atMost(2, TimeUnit.SECONDS).until(() -> "UNREACHABLE".equals(service.snapshot().state()));
+            service.wakeForPayment();
+            await().atMost(2, TimeUnit.SECONDS).until(() -> "ONLINE".equals(service.snapshot().state()));
+            verify(client, times(4)).isReachable(any());
+        }
+    }
+    @Test void recentlyOnlineRenderIsNotPingedOnEveryPageLoad() throws Exception {
+        when(client.isReachable(any())).thenReturn(true);
+        try (var service = service(environment)) {
+            service.onApplicationReady(); await().atMost(2, TimeUnit.SECONDS).until(() -> "ONLINE".equals(service.snapshot().state()));
+            service.wakeForPayment(); service.wakeForPayment();
+            verify(client, times(1)).isReachable(any());
+        }
+    }
+    @Test void reloadingPaymentPageDuringAWakeDoesNotStackRequests() throws Exception {
+        var release = new CountDownLatch(1);
+        when(client.isReachable(any())).thenAnswer(invocation -> { release.await(2, TimeUnit.SECONDS); return true; });
+        try (var service = service(environment)) {
+            service.onApplicationReady();
+            for (int i = 0; i < 5; i++) service.wakeForPayment();
+            release.countDown();
+            await().atMost(3, TimeUnit.SECONDS).until(() -> "ONLINE".equals(service.snapshot().state()));
+            verify(client, times(1)).isReachable(any());
+        }
+    }
+    @Test void wakeDoesNothingWhenMomoIsNotConfiguredOrDisabled() {
+        try (var service = service(new MockEnvironment())) { service.onApplicationReady(); service.wakeForPayment(); verifyNoInteractions(client); }
+        environment.setActiveProfiles("isolated-logistics");
+        try (var service = service(environment)) { service.onApplicationReady(); service.wakeForPayment(); verifyNoInteractions(client); }
+    }
     @Test void closedApplicationDoesNotStartAProbe() {
         var service = service(environment); service.close(); service.onApplicationReady(); verifyNoInteractions(client);
     }
