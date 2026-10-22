@@ -12,5 +12,8 @@ public interface MomoPaymentService {
     Status status(long orderId, String username);
     Receipt view(String ticket);
     Receipt confirm(String ticket);
+    /** paidNow = chính lần bấm này ghi nhận thanh toán; false nghĩa là đơn đã được trả từ trước (thiết bị khác đã bấm). */
+    record Confirmation(Receipt receipt, boolean paidNow) { }
+    Confirmation confirmOnce(String ticket);
     void switchLegacyPayment(long orderId, String username);
 }

@@ -188,6 +188,37 @@ class MomoSimulatorIntegrationTest {
         assertEquals("PAID", service.status(orderId, "momo-owner").state());
         mvc.perform(get(page).session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Thanh toán thành công")));
     }
+    @Test void simultaneousConfirmationReportsExactlyOnePayer() throws Exception {
+        var pool = Executors.newFixedThreadPool(2); var start = new CountDownLatch(1);
+        Callable<Boolean> pay = () -> { start.await(); return service.confirmOnce(token).paidNow(); };
+        try {
+            var a = pool.submit(pay); var b = pool.submit(pay); start.countDown();
+            assertEquals(1, (a.get(10, TimeUnit.SECONDS) ? 1 : 0) + (b.get(10, TimeUnit.SECONDS) ? 1 : 0));
+        } finally { start.countDown(); pool.shutdownNow(); }
+    }
+    @Test void secondPhoneScanningSameQrIsBlockedAfterFirstPhonePaid() throws Exception {
+        var first = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
+        String firstPage = first.getResponse().getRedirectedUrl(); var firstPhone = (MockHttpSession) first.getRequest().getSession(false);
+        var second = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
+        String secondPage = second.getResponse().getRedirectedUrl(); var secondPhone = (MockHttpSession) second.getRequest().getSession(false);
+        // Cả hai cùng mở trang trước khi ai bấm; máy 1 bấm trước.
+        mvc.perform(post(firstPage + "/xac-nhan").session(firstPhone).with(csrf()).param("simulationAcknowledged", "true")).andExpect(status().is3xxRedirection());
+        mvc.perform(get(firstPage).session(firstPhone)).andExpect(content().string(org.hamcrest.Matchers.containsString("Thanh toán thành công")));
+        // Máy 2 tải lại hoặc vẫn bấm xác nhận: bị chặn, không báo thành công, không có nút thanh toán.
+        mvc.perform(get(secondPage).session(secondPhone)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đơn đã được thanh toán")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Thanh toán thành công"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-confirm-form"))));
+        mvc.perform(post(secondPage + "/xac-nhan").session(secondPhone).with(csrf()).param("simulationAcknowledged", "true")).andExpect(status().is3xxRedirection());
+        mvc.perform(get(secondPage).session(secondPhone))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đơn đã được thanh toán")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Thanh toán thành công"))));
+        // Máy mới quét sau khi đã trả cũng bị chặn.
+        var late = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
+        mvc.perform(get(late.getResponse().getRedirectedUrl()).session((MockHttpSession) late.getRequest().getSession(false)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đơn đã được thanh toán")));
+        assertEquals(1, jdbc.queryForObject("select count(*) from order_payment where order_id=? and status='PAID'", Integer.class, orderId));
+    }
     @Test void closingSessionDoesNotPretendToCancelOrPayOrder() throws Exception {
         var opened = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
         String page = opened.getResponse().getRedirectedUrl(); var session = (MockHttpSession) opened.getRequest().getSession(false);

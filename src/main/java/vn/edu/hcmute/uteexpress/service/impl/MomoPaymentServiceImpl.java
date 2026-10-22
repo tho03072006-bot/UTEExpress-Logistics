@@ -59,7 +59,10 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
     }
 
     @Override
-    public Receipt confirm(String token) {
+    public Receipt confirm(String token) { return confirmOnce(token).receipt(); }
+
+    @Override
+    public Confirmation confirmOnce(String token) {
         var ticket = tickets.verify(token, Instant.now());
         // Cùng khóa Order với hủy/điều phối ở web local, rồi mới đọc bản ghi thanh toán.
         var order = orders.lock(ticket.orderId()).orElseThrow(MomoPaymentServiceImpl::unavailable);
@@ -71,13 +74,15 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
         payment = bound(ticket);
         // Cùng mã QR bấm lại thì trả đúng biên nhận đã có; mã QR khác (người thứ hai quét) thì bị từ chối.
         requirePaidByThisQr(payment, token);
-        if (payment.getStatus() != OrderPayment.PaymentStatus.PAID) {
+        // Đang giữ khóa Order nên chỉ đúng một lần bấm thấy UNPAID ở đây, kể cả hai điện thoại quét cùng QR bấm cùng lúc.
+        boolean paidNow = payment.getStatus() != OrderPayment.PaymentStatus.PAID;
+        if (paidNow) {
             WalletPaymentRules.markPaid(payment, Instant.now());
             payment.setTransactionRef(transactionRef(token));
             events.publishEvent(new OrderStatusChangedEvent(order.getId(), order.getTrackingCode(),
                     order.getStatus().name(), payment.getUpdatedAt()));
         }
-        return receipt(payment, ticket.expiresAt());
+        return new Confirmation(receipt(payment, ticket.expiresAt()), paidNow);
     }
 
     @Override public void switchLegacyPayment(long orderId, String username) {
@@ -144,6 +149,7 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
                 && (payment.getPaidAt() == null || payment.getTransactionRef() == null || payment.getTransactionRef().isBlank()))
             throw new IllegalStateException("Thiếu biên nhận thanh toán. Hãy liên hệ Manager để kiểm tra.");
     }
+    private static final java.time.format.DateTimeFormatter PAID_AT = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
     private Receipt receipt(OrderPayment payment, long expiresAt) {
         var order = payment.getOrder();
         String phone = order.getReceiverPhone();
@@ -152,6 +158,6 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
                 order.getServiceType() == null ? "—" : order.getServiceType().getDisplayName(), order.getWeightKg(),
                 text(order.getShippingFee()), text(payment.getDiscountAmount() == null ? BigDecimal.ZERO : payment.getDiscountAmount()),
                 text(payment.getAmount()), payment.getStatus() == OrderPayment.PaymentStatus.PAID,
-                payment.getTransactionRef(), text(payment.getPaidAt()), expiresAt);
+                payment.getTransactionRef(), payment.getPaidAt() == null ? "" : payment.getPaidAt().format(PAID_AT), expiresAt);
     }
 }

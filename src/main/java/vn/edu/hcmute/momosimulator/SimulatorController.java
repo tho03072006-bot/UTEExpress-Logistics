@@ -17,7 +17,8 @@ public class SimulatorController {
     private final MomoPaymentService payments;
     private final JdbcTemplate jdbc;
     public SimulatorController(MomoPaymentService payments, JdbcTemplate jdbc) { this.payments = payments; this.jdbc = jdbc; }
-    private record SessionCheckout(String token, long expiresAt) implements java.io.Serializable { }
+    /** paidHere = trình duyệt này đã bấm xác nhận và chính lần bấm đó ghi nhận thanh toán. */
+    private record SessionCheckout(String token, long expiresAt, boolean paidHere) implements java.io.Serializable { }
 
     @GetMapping("/") public String home() { return "momo/home"; }
     @GetMapping("/healthz") @ResponseBody public ResponseEntity<String> health() {
@@ -33,7 +34,7 @@ public class SimulatorController {
             checkouts.values().removeIf(item -> item.expiresAt() <= Instant.now().getEpochSecond());
             for (var entry : checkouts.entrySet()) if (entry.getValue().token().equals(token)) return "redirect:/momo/phien/" + entry.getKey();
             if (checkouts.size() >= 5) throw new IllegalArgumentException("Bạn đã mở nhiều phiên thanh toán. Hãy đóng phiên cũ hoặc đợi 10 phút.");
-            String id = UUID.randomUUID().toString(); checkouts.put(id, new SessionCheckout(token, receipt.expiresAt()));
+            String id = UUID.randomUUID().toString(); checkouts.put(id, new SessionCheckout(token, receipt.expiresAt(), false));
             // Xóa vé nhạy cảm khỏi thanh địa chỉ; mỗi tab có id riêng trong cùng session.
             return "redirect:/momo/phien/" + id;
         }
@@ -41,7 +42,10 @@ public class SimulatorController {
 
     @GetMapping("/momo/phien/{id}")
     public String checkout(@PathVariable String id, HttpServletRequest request, Model model) {
-        model.addAttribute("receipt", payments.view(token(request, id))); model.addAttribute("checkoutId", id);
+        var checkout = checkout(request, id);
+        model.addAttribute("receipt", payments.view(checkout.token())); model.addAttribute("checkoutId", id);
+        // Hai điện thoại quét cùng một QR: chỉ máy đã trả thấy "Thanh toán thành công", máy kia thấy đơn đã được trả.
+        model.addAttribute("paidHere", checkout.paidHere());
         return "momo/checkout";
     }
 
@@ -50,22 +54,24 @@ public class SimulatorController {
             @RequestParam(defaultValue = "false") boolean simulationAcknowledged) {
         if (!simulationAcknowledged) throw new IllegalArgumentException("Cần xác nhận đây là giao dịch mô phỏng.");
         // Không bind amount/orderId/status từ form. Chỉ vé đã xác thực trong session.
-        payments.confirm(token(request, id));
+        var checkout = checkout(request, id);
+        if (payments.confirmOnce(checkout.token()).paidNow())
+            checkouts(request.getSession(false)).put(id, new SessionCheckout(checkout.token(), checkout.expiresAt(), true));
         return "redirect:/momo/phien/" + id;
     }
 
     @PostMapping("/momo/phien/{id}/huy")
     public String cancel(@PathVariable String id, HttpServletRequest request, Model model) {
-        payments.view(token(request, id));
+        payments.view(checkout(request, id).token());
         model.addAttribute("notice", "Đã đóng phiên mô phỏng. Trạng thái thanh toán trong database không bị thay đổi. Bạn có thể quét lại QR nếu muốn tiếp tục.");
         checkouts(request.getSession(false)).remove(id); return "momo/home";
     }
 
-    private String token(HttpServletRequest request, String id) {
+    private SessionCheckout checkout(HttpServletRequest request, String id) {
         if (!id.matches("[a-f0-9-]{36}") || request.getSession(false) == null) throw invalid();
         var checkout = checkouts(request.getSession(false)).get(id);
         if (checkout == null || checkout.expiresAt() <= Instant.now().getEpochSecond()) throw invalid();
-        return checkout.token();
+        return checkout;
     }
     @SuppressWarnings("unchecked")
     private Map<String, SessionCheckout> checkouts(HttpSession session) {

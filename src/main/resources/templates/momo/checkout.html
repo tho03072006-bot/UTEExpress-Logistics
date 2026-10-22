@@ -11,8 +11,20 @@
 </header>
 
 <main class="wallet-shell">
-    <!-- ĐÃ THANH TOÁN: màn hình kết quả -->
-    <section th:if="${receipt.paid}" class="wallet-card wallet-result" role="status">
+    <!-- ĐÃ THANH TOÁN TRÊN THIẾT BỊ KHÁC: chặn, không hiện nút thanh toán -->
+    <section th:if="${receipt.paid and paidHere != true}" class="wallet-card wallet-result is-blocked" role="alert">
+        <div class="result-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+        <h1>Đơn đã được thanh toán</h1>
+        <p class="result-note">Mã QR này đã được thanh toán trên một thiết bị khác. Bạn không cần và không thể thanh toán lại.</p>
+        <dl class="wallet-rows">
+            <div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
+            <div><dt>Đã thanh toán lúc</dt><dd th:text="${receipt.paidAt}">—</dd></div>
+        </dl>
+        <p class="wallet-fine">Không có khoản tiền nào bị trừ thêm. Kiểm tra trạng thái đơn tại UTEExpress.</p>
+    </section>
+
+    <!-- ĐÃ THANH TOÁN (chính trình duyệt này bấm): màn hình kết quả -->
+    <section th:if="${receipt.paid and paidHere == true}" class="wallet-card wallet-result" role="status">
         <div class="result-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h1>Thanh toán thành công</h1>
         <p class="result-amount" data-money th:text="${receipt.amount}">0</p>
