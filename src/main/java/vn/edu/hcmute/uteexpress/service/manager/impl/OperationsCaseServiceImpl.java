@@ -78,7 +78,12 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         switch (kind) {
             case RETRY, RETURN -> revision = orders.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn.")).getRevision();
             case CASH_SUPPLEMENT, CASH_REFUND -> revision = settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp.")).getRevision();
-            case COMPENSATION -> revision = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại.")).getRevision();
+            case COMPENSATION -> {
+                var complaint = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+                if (!isPaid(complaint.getOrder()))
+                    throw new IllegalArgumentException("Đơn chưa thanh toán nên không lập phiếu bồi hoàn cước.");
+                revision = complaint.getRevision();
+            }
             default -> throw new IllegalArgumentException("Loại hồ sơ không hợp lệ.");
         }
         return new OperationsCaseRequest(kind, id, revision, null, null, "", "", UUID.randomUUID().toString());
@@ -141,7 +146,16 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         if (image != null) record.setEvidenceAsset(cloud.storeBytes(vn.edu.hcmute.uteexpress.service.media.MediaPurpose.RECEIPT,image,"receipt.png"));
         cases.saveAndFlush(record);
         audit.record(actor, "CASE_REQUEST", "operations-case:" + record.getId(), form.kind() + "; " + note);
-        publishProgress(record, null);
+        // Phân quyền: chuyển hoàn và giao lại còn trong giới hạn có hiệu lực ngay khi lập, không cần ai duyệt.
+        // Giao lại vượt giới hạn và mọi hồ sơ tiền vẫn ở "Chờ duyệt" cho Admin.
+        boolean immediate = form.kind() == OperationsCase.Kind.RETURN || (form.kind() == OperationsCase.Kind.RETRY
+                && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < policies.current().getMaxDeliveryAttempts());
+        if (immediate) {
+            record.review(true, actor, "Có hiệu lực ngay khi lập (không cần duyệt).", now); cases.saveAndFlush(record);
+            audit.record(actor, "CASE_APPROVE", "operations-case:" + record.getId(), "Tự có hiệu lực khi lập.");
+        }
+        publishProgress(record, immediate && form.kind() == OperationsCase.Kind.RETRY
+                ? vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETRY_APPROVED : null);
         return record.getId();
     }
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
@@ -304,6 +318,9 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var payment = payments.findByOrder(order).orElseThrow(() -> new IllegalArgumentException("Đơn chưa có thanh toán."));
         if (payment.getStatus() != OrderPayment.PaymentStatus.PAID || amount.compareTo(payment.getAmount()) > 0)
             throw new IllegalArgumentException("Mô hình hiện tại chỉ hỗ trợ hoàn/bồi hoàn cước không vượt cước đã thanh toán, không phải giá trị hàng hóa.");
+    }
+    public boolean isPaid(Order order) {
+        return order != null && payments.findByOrder(order).map(p -> p.getStatus() == OrderPayment.PaymentStatus.PAID).orElse(false);
     }
     private boolean isFinancial(OperationsCase record) {
         return record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND

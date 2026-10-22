@@ -151,6 +151,23 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void resetPasswordRejectsCurrentPasswordOnlyAfterValidOtp() {
+        AppUser user = enabledUser();
+        user.setPassword(passwordEncoder.encode("CurrentPass123"));
+        String currentHash = user.getPassword();
+        when(appUserRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        authService.sendPasswordResetOtp(user.getEmail());
+        String code = user.getOtpCode();
+
+        // Sai OTP: không tiết lộ mật khẩu trùng hay không.
+        assertFalse(authService.resetPassword(user.getEmail(), "000000", "CurrentPass123"));
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> authService.resetPassword(user.getEmail(), code, "CurrentPass123"));
+        assertEquals(AuthServiceImpl.SAME_PASSWORD_MESSAGE, error.getMessage());
+        assertEquals(currentHash, user.getPassword());
+    }
+
+    @Test
     void resetPasswordDoesNotSendForUnknownOrDisabledAccount() {
         AppUser disabled = unverifiedUser();
         when(appUserRepository.findByEmail("unknown@example.com"))

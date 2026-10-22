@@ -155,7 +155,7 @@ class CrossRoleSynchronizationIntegrationTest {
         order.setStatus(Order.OrderStatus.FAILED); orders.flush();
         long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.RETURN, order.getId(), order.getRevision(), null), null);
         var record = cases.view(manager.getUsername(), id);
-        cases.review(manager.getUsername(), id, new OperationsReviewRequest(record.getRevision(), true, "Đủ điều kiện chuyển hoàn"));
+        assertEquals(OperationsCase.Status.APPROVED, record.getStatus()); // chuyển hoàn có hiệu lực ngay khi Manager lập
         cases.startReturn(manager.getUsername(), id, record.getRevision(), "Bắt đầu bàn giao cho người gửi");
         cases.complete(manager.getUsername(), id, record.getRevision(), "Biên nhận người gửi TEST-01", image());
         assertEquals(Order.OrderStatus.RETURNED, order.getStatus());
@@ -163,7 +163,7 @@ class CrossRoleSynchronizationIntegrationTest {
         assertEquals(List.of(SenderOrderUpdateEvent.Kind.RETURN_STARTED, SenderOrderUpdateEvent.Kind.RETURNED),
                 mails.stream().map(SenderOrderUpdateEvent::kind).toList());
         assertEquals(customer.getEmail(), mails.get(1).email());
-        assertEquals(4, events.stream(OrderStatusChangedEvent.class).count());
+        assertEquals(3, events.stream(OrderStatusChangedEvent.class).count()); // lập (có hiệu lực ngay), bắt đầu hoàn, hoàn tất
         assertEquals(manager.getId(), history.findByOrder(order, org.springframework.data.domain.PageRequest.of(0, 20)).getContent().get(0).getActor().getId());
         var summary = statistics.getStatistics(shipper.getUsername(), ShipperStatisticsPeriod.DAY);
         assertEquals(1, summary.totalOrders()); assertEquals(1, summary.days().get(0).returned());
@@ -185,7 +185,7 @@ class CrossRoleSynchronizationIntegrationTest {
         assertMoney("0", progress.findSettlementBalance(settlement.getId(), shipper.getUsername()).outstanding());
         assertEquals(new BigDecimal("10000"), settlement.getDeclaredAmount());
         mvc.perform(get("/shipper/doi-soat/" + settlement.getId()).with(user(shipper.getUsername()).roles("SHIPPER")))
-                .andExpect(status().isOk()).andExpect(content().string(containsString("Số dư sau xử lý")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Chênh lệch sau khi Manager xác nhận")))
                 .andExpect(content().string(containsString("Đã duyệt")));
     }
 
@@ -241,10 +241,16 @@ class CrossRoleSynchronizationIntegrationTest {
 
     @Test void progressPaginationDoesNotLeakInternalReasonsAndRejectsInvalidPages() throws Exception {
         order.setStatus(Order.OrderStatus.FAILED); orders.flush();
+        // Giao lại vượt giới hạn vẫn chờ Admin duyệt (chuyển hoàn giờ có hiệu lực ngay nên không dùng để tạo nhiều hồ sơ bị từ chối).
+        for (int index = 0; index < 3; index++) history.save(new OrderStatusHistory(order, shipper,
+                Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.FAILED, DeliveryFailureReason.CUSTOMER_ABSENT,
+                "Giao không thành công", null, NOW.minusHours(4 - index)));
+        history.flush();
         for (int index = 0; index < 21; index++) {
-            long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.RETURN, order.getId(), order.getRevision(), null), null);
-            var record = cases.view(manager.getUsername(), id);
-            cases.review(manager.getUsername(), id, new OperationsReviewRequest(record.getRevision(), false, "INTERNAL-ONLY-NOTE-" + index));
+            long id = cases.request(manager.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETRY, order.getId(),
+                    order.getRevision(), null, NOW.plusHours(1), "Đề nghị giao vượt giới hạn", "", UUID.randomUUID().toString()), null);
+            var record = cases.view(admin.getUsername(), id);
+            cases.review(admin.getUsername(), id, new OperationsReviewRequest(record.getRevision(), false, "INTERNAL-ONLY-NOTE-" + index));
         }
         var first = progress.findOrderProgress(order.getId(), customer.getUsername(), 0);
         assertEquals(21, first.getTotalElements()); assertEquals(20, first.getContent().size()); assertTrue(first.hasNext());

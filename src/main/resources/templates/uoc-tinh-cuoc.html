@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head>
     <title>Ước tính cước phí - UTEExpress</title>
@@ -63,7 +63,7 @@
         </article>
     </div>
     <div class="d-flex flex-wrap gap-2 mt-4">
-        <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng</a>
+        <a sec:authorize="!hasAnyRole('SHIPPER','MANAGER','ADMIN')" th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng</a>
         <a th:href="@{/tra-cuu}" class="btn btn-outline-secondary"><i class="bi bi-search"></i> Tra cứu vận đơn</a>
     </div>
 </div>

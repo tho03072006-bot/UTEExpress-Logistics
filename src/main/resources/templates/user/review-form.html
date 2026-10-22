@@ -45,11 +45,11 @@
         <div class="mb-3">
             <label class="form-label" for="content">Nhận xét của bạn</label>
             <textarea th:field="*{content}" class="form-control" rows="5" id="reviewContent"
-                      data-min-length="50"
+                      maxlength="1000"
                       placeholder="Shipper giao đúng hẹn không, hàng còn nguyên vẹn không, thái độ phục vụ thế nào..."></textarea>
             <div class="form-text">
-                Cần ít nhất <strong>50 ký tự</strong> — đã nhập
-                <span id="reviewCharCount">0</span> ký tự.
+                Đã nhập
+                <span id="reviewCharCount">0</span>/1000 ký tự.
             </div>
             <div class="text-danger small" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
         </div>

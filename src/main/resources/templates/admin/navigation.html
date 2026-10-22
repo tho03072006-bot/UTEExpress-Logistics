@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi"><body>
 <!-- Các trang cũ vẫn gọi fragment này; menu chính chỉ xuất hiện trong sidebar của base. -->
-<nav th:fragment="navigation" class="staff-context" aria-label="Khu vực đang sử dụng">
+<nav th:fragment="navigation" class="staff-context" aria-label="Khu vực đang sử dụng" hidden>
 <span><i class="bi bi-building-lock" aria-hidden="true"></i> Không gian làm việc</span>
 <span sec:authorize="hasRole('ADMIN')" class="badge text-bg-dark">ADMIN · Quản trị hệ thống</span>
 <span sec:authorize="hasRole('MANAGER')" class="badge text-bg-primary">MANAGER · Quản lý vận hành</span>

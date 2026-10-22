@@ -8,6 +8,14 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 
 @ControllerAdvice(basePackageClasses = SimulatorController.class)
 public class SimulatorErrorHandler {
+    /** Người khác đã trả đơn này bằng mã QR khác: báo rõ, không hiện nút thanh toán. */
+    @ExceptionHandler(vn.edu.hcmute.uteexpress.service.payment.PaidByAnotherQrException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String paidElsewhere(Exception exception, Model model) {
+        model.addAttribute("alreadyPaid", true);
+        model.addAttribute("notice", exception.getMessage());
+        return "momo/home";
+    }
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String invalid(Exception exception, Model model) {

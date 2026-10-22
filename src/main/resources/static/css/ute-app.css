@@ -770,3 +770,69 @@ body.sx-app::before {
     -webkit-text-fill-color: var(--app-ink); caret-color: var(--app-ink); font-size: inherit;
     -webkit-box-shadow: 0 0 0 1000px var(--app-card) inset; box-shadow: 0 0 0 1000px var(--app-card) inset; transition: background-color 9999s ease-out 0s; }
 .sx-service-card .sx-service-extra { color: var(--app-muted); font-size: .8rem; }
+
+/* ===== 2026-10-22: huy hiệu vai trò cũ, hội thoại khiếu nại, ô chênh lệch COD ===== */
+.staff-context[hidden] { display: none !important; }
+
+/* Khiếu nại dạng hội thoại */
+.sx-cx-grid { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1.25rem; align-items: start; }
+.sx-cx-side { display: grid; gap: 1rem; }
+@media (max-width: 991.98px) { .sx-cx-grid { grid-template-columns: 1fr; } }
+.sx-cx-new { max-width: 46rem; }
+.sx-cx-new-head { display: flex; gap: .9rem; align-items: flex-start; margin-bottom: 1.25rem; }
+.sx-cx-icon { display: inline-grid; place-items: center; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: .75rem;
+    background: var(--sx-blue-soft); color: var(--sx-blue); font-size: 1.3rem; }
+.sx-cx-empty { display: flex; gap: .75rem; align-items: center; color: var(--app-muted); }
+.sx-cx-empty i { font-size: 1.5rem; }
+.sx-cx-chat { display: flex; flex-direction: column; padding: 0 !important; overflow: hidden; }
+.sx-cx-chat-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--app-border); }
+.sx-cx-thread { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; max-height: 34rem; overflow-y: auto;
+    background: color-mix(in srgb, var(--app-soft) 55%, transparent); }
+.sx-cx-msg { display: flex; flex-direction: column; max-width: min(36rem, 85%); align-self: flex-start; }
+.sx-cx-msg.is-mine { align-self: flex-end; align-items: flex-end; }
+.sx-cx-meta { display: flex; gap: .5rem; align-items: baseline; font-size: .78rem; color: var(--app-muted); margin: 0 .25rem .25rem; }
+.sx-cx-meta strong { color: var(--app-ink); font-size: .82rem; }
+.sx-cx-bubble { padding: .65rem .9rem; border-radius: 1rem 1rem 1rem .3rem; background: var(--app-card); border: 1px solid var(--app-border);
+    color: var(--app-ink); box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+.sx-cx-bubble p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sx-cx-msg.is-mine .sx-cx-bubble { border-radius: 1rem 1rem .3rem 1rem; background: var(--app-primary); border-color: var(--app-primary); color: #FFFFFF; }
+.sx-cx-msg.is-staff .sx-cx-bubble { background: var(--sx-blue-soft); border-color: transparent; }
+.sx-cx-msg.is-shipper .sx-cx-bubble { background: var(--sx-amber-soft); border-color: transparent; }
+.sx-cx-attach { display: block; margin-top: .6rem; }
+.sx-cx-attach img { display: block; max-width: 100%; max-height: 16rem; border-radius: .6rem; }
+.sx-cx-system { align-self: center; display: inline-flex; gap: .4rem; align-items: center; padding: .25rem .75rem; border-radius: 999px;
+    background: var(--app-card); border: 1px dashed var(--app-border); color: var(--app-muted); font-size: .78rem; }
+.sx-cx-pager { display: flex; justify-content: center; gap: .5rem; padding: .75rem; border-top: 1px solid var(--app-border); }
+.sx-cx-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem; align-items: end; padding: 1rem 1.25rem;
+    border-top: 1px solid var(--app-border); background: var(--app-card); }
+.sx-cx-compose textarea { resize: vertical; min-height: 2.75rem; }
+.sx-cx-compose.is-staff { grid-template-columns: 1fr; }
+.sx-cx-compose-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; }
+.sx-cx-compose-actions .form-select { width: auto; }
+.sx-cx-compose .sx-cx-hint { grid-column: 1 / -1; }
+.sx-cx-hint { display: flex; gap: .4rem; align-items: center; margin: 0; padding: .75rem 1.25rem; font-size: .85rem; color: var(--app-muted); }
+.sx-cx-compose .sx-cx-hint { padding: 0; }
+.sx-cx-facts { display: grid; grid-template-columns: auto 1fr; gap: .55rem 1rem; margin: 0; font-size: .9rem; }
+.sx-cx-facts dt { font-weight: 500; color: var(--app-muted); }
+.sx-cx-facts dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+
+/* Ô chênh lệch tiền COD */
+.sx-gap-head { margin-bottom: 1rem; }
+.sx-gap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; }
+.sx-gap-item { display: flex; flex-direction: column; gap: .2rem; padding: .85rem 1rem; border-radius: .75rem;
+    border: 1px solid var(--app-border); background: var(--app-soft); }
+.sx-gap-item strong { font-size: 1.35rem; line-height: 1.2; color: var(--app-ink); }
+.sx-gap-item small { color: var(--app-muted); }
+.sx-gap-item .btn { align-self: flex-start; }
+.sx-gap-label { display: inline-flex; gap: .35rem; align-items: center; font-size: .85rem; font-weight: 600; color: var(--app-muted); }
+.sx-gap-item.is-due { background: var(--sx-rose-soft); border-color: transparent; }
+.sx-gap-item.is-due strong, .sx-gap-item.is-due .sx-gap-label { color: var(--sx-rose-ink); }
+.sx-gap-item.is-refund { background: var(--sx-green-soft); border-color: transparent; }
+.sx-gap-item.is-refund strong, .sx-gap-item.is-refund .sx-gap-label { color: var(--sx-green-ink); }
+.sx-gap-ok { display: flex; gap: .4rem; align-items: center; margin-top: .9rem; color: var(--sx-green-ink); font-weight: 500; }
+
+/* Chi tiết đơn của khách: Shipper đã giao hoặc đang phụ trách */
+.sx-shipper-card { display: flex; gap: .75rem; align-items: center; padding: .75rem .9rem; border-radius: .75rem; background: var(--app-soft); }
+.sx-shipper-card .sx-avatar { width: 2.2rem; }
+.sx-shipper-card .sx-avatar.is-empty { background: var(--app-border); color: var(--app-muted); }

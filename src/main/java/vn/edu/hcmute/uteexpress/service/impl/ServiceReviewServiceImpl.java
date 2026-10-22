@@ -68,9 +68,9 @@ public class ServiceReviewServiceImpl implements ServiceReviewService {
         if (orderId == null || orderId<=0 || request == null) throw new IllegalArgumentException("Dữ liệu đánh giá không hợp lệ.");
         String content = request.getContent() == null ? "" : request.getContent().strip();
         if (request.getRating() == null || request.getRating()<1 || request.getRating()>5
-                || content.length()<50 || content.length()>1000
+                || content.isEmpty() || content.length()>1000
                 || content.chars().anyMatch(c -> Character.isISOControl(c) && c!='\n' && c!='\r' && c!='\t'))
-            throw new IllegalArgumentException("Số sao từ 1–5; nhận xét từ 50–1000 ký tự, không chứa ký tự điều khiển.");
+            throw new IllegalArgumentException("Số sao từ 1–5; nhận xét tối đa 1000 ký tự, không để trống, không chứa ký tự điều khiển.");
         // Khóa đơn trước khi upload để hai tab không đồng thời tạo hai tệp cho một đánh giá.
         Order order = orderRepository.findLockedById(orderId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hàng này"));

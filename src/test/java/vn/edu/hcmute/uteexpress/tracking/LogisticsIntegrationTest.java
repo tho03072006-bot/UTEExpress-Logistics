@@ -363,7 +363,8 @@ class LogisticsIntegrationTest {
         var complaint = complaints.findByOrder(order).orElseThrow();
         mvc.perform(get("/nguoi-dung/don-hang/" + order.getId() + "/khieu-nai").with(user(customer.getUsername()).roles("USER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("Giao hàng chậm")))
-            .andExpect(content().string(not(containsString("Xử lý khiếu nại"))));
+            .andExpect(content().string(not(containsString("Trả lời khách hàng"))))
+            .andExpect(content().string(containsString("Nhắn thêm cho UTEExpress")));
         mvc.perform(get("/nguoi-dung/khieu-nai/" + complaint.getId() + "/anh").with(user(anotherCustomer.getUsername()).roles("USER")))
             .andExpect(status().isForbidden());
         mvc.perform(get("/shipper/khieu-nai/" + complaint.getId() + "/anh").with(user(anotherShipper.getUsername()).roles("SHIPPER")))
@@ -372,7 +373,7 @@ class LogisticsIntegrationTest {
             .andExpect(status().isOk()).andExpect(content().contentType("image/png"));
         mvc.perform(get("/manager/khieu-nai").with(authentication(managerAuth))).andExpect(status().isOk());
         mvc.perform(get("/manager/khieu-nai/" + complaint.getId()).with(authentication(managerAuth)))
-            .andExpect(status().isOk()).andExpect(content().string(containsString("Xử lý khiếu nại")));
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Trả lời khách hàng")));
         mvc.perform(get("/shipper/khieu-nai/" + complaint.getId()).with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("Bổ sung thông tin giao hàng")));
     }
@@ -390,6 +391,21 @@ class LogisticsIntegrationTest {
                 complaint.getRevision(), "Không được ghi đè hồ sơ đã kết thúc."));
         assertThrows(IllegalArgumentException.class, () -> complaintService.create(order.getId(), customer.getUsername(),
                 "Hồ sơ trùng", "Không được tạo hai hồ sơ trên cùng vận đơn", null));
+    }
+
+    @Test void customerCanKeepMessagingAndReopenResolvedComplaint() {
+        complaintService.create(order.getId(), customer.getUsername(), "X", "Y", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        complaintService.respond(complaint.getId(), "manager-test", complaint.getRevision(), OrderComplaint.Status.RESOLVED, "Ok");
+        assertTrue(complaint.getStatus().isClosed());
+        complaintService.customerMessage(complaint.getId(), customer.getUsername(), "Vẫn chưa nhận được hàng");
+        complaintService.customerMessage(complaint.getId(), customer.getUsername(), "?");
+        assertEquals(OrderComplaint.Status.IN_PROGRESS, complaint.getStatus());
+        var thread = complaintService.timeline(complaint.getId(), customer.getUsername(), 0).getContent();
+        assertEquals(2, thread.stream().filter(entry -> entry.getAction().equals("CUSTOMER_MESSAGE")).count());
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> complaintService.customerMessage(complaint.getId(), anotherCustomer.getUsername(), "Không phải đơn của tôi"));
+        assertThrows(IllegalArgumentException.class, () -> complaintService.customerMessage(complaint.getId(), customer.getUsername(), "   "));
     }
 
     @Test void workViewsUseLatestRetryAndExcludeForeignOrCompletedOrders() throws Exception {

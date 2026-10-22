@@ -151,6 +151,16 @@ class MomoSimulatorIntegrationTest {
         try { var a = pool.submit(pay); var b = pool.submit(pay); start.countDown(); assertEquals(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS)); }
         finally { start.countDown(); pool.shutdownNow(); }
     }
+    @Test void secondQrCannotPayAfterFirstQrPaid() {
+        String second = transaction.execute(status -> codec.issue(payments.find(orderId).orElseThrow(), Instant.now()));
+        assertNotEquals(token, second);
+        var paid = service.confirm(token);
+        var error = assertThrows(IllegalStateException.class, () -> service.confirm(second));
+        assertTrue(error.getMessage().contains("mã QR khác"));
+        assertThrows(IllegalStateException.class, () -> service.view(second));
+        assertEquals(paid.transactionRef(), service.confirm(token).transactionRef());
+        assertEquals(paid.transactionRef(), jdbc.queryForObject("select transaction_ref from order_payment where order_id=?", String.class, orderId));
+    }
     @Test void cancellationCommittedBeforeWaitingConfirmationWins() throws Exception {
         var pool = Executors.newFixedThreadPool(2); var locked = new CountDownLatch(1); var release = new CountDownLatch(1);
         try {

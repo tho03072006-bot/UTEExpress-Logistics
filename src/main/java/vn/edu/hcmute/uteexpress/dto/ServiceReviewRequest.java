@@ -19,8 +19,8 @@ public class ServiceReviewRequest {
     private Integer rating;
 
     @NotBlank(message = "Vui lòng viết nhận xét về dịch vụ")
-    @Size(min = 50, max = 1000,
-          message = "Nhận xét phải dài ít nhất 50 ký tự và không quá 1000 ký tự")
+    @Size(max = 1000,
+          message = "Nhận xét tối đa 1000 ký tự")
     private String content;
 
     /** Khong bat buoc - de trong thi danh gia khong co anh/video dinh kem. */

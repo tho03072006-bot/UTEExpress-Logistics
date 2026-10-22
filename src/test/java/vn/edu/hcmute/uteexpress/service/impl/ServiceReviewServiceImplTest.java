@@ -35,7 +35,7 @@ class ServiceReviewServiceImplTest {
             var form=form(); form.setRating(rating);
             assertThrows(IllegalArgumentException.class,() -> service.createReview(1L,form,"reviewer"));
         }
-        for (String content : new String[]{null," ".repeat(60),"a".repeat(49),"a".repeat(1001),"a".repeat(60)+"\u0000"}) {
+        for (String content : new String[]{null," ".repeat(60),"","a".repeat(1001),"a".repeat(60)+"\u0000"}) {
             var form=form(); form.setContent(content);
             assertThrows(IllegalArgumentException.class,() -> service.createReview(1L,form,"reviewer"));
         }

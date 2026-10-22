@@ -24,16 +24,25 @@
     </table></div>
 </article>
 <aside>
-    <div class="ute-panel mb-3" data-realtime-region="settlement-balance" th:if="${!staff and balance != null}"><h3 class="h5">Số dư sau xử lý</h3>
-        <p>Cước còn phải nộp bổ sung: <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|"></strong></p>
-        <p>Cước nộp thừa chưa được chi hoàn: <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|"></strong></p>
-        
+    <div class="ute-panel mb-3 sx-gap-panel" data-realtime-region="settlement-balance" th:if="${!staff and balance != null}">
+        <th:block th:replace="~{fragments/components :: cashGap(${balance})}"></th:block>
     </div>
-    <div class="ute-panel mb-3" th:if="${staff and outstanding != null}"><h3 class="h5">Theo dõi khoản thiếu</h3><p th:text="|Cước còn phải nộp bổ sung: ${outstanding} VND|"></p>
-        <a th:if="${outstanding.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_SUPPLEMENT',targetId=${settlement.id})}">Lập phiếu bổ sung kèm chứng từ để Admin duyệt</a>
-        <p th:if="${refundable != null and refundable.signum() > 0}" th:text="|Cước nộp thừa còn có thể đề nghị hoàn: ${refundable} VND|"></p>
-        <a th:if="${refundable != null and refundable.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_REFUND',targetId=${settlement.id})}">Lập đề nghị hoàn cước nộp thừa</a>
+    <div class="ute-panel mb-3 sx-gap-panel" th:if="${staff and outstanding != null}">
+        <div class="sx-gap-head"><h3 class="h5 mb-1">Chênh lệch của phiếu này</h3>
+            <p class="shipper-hint mb-0">So sánh tiền mặt Shipper nộp với tổng cước COD. Khoản lệch cần lập phiếu để Admin duyệt.</p></div>
+        <div class="sx-gap-grid">
+            <div class="sx-gap-item" th:classappend="${outstanding.signum() > 0} ? 'is-due'">
+                <span class="sx-gap-label"><i class="bi bi-arrow-up-circle"></i> Shipper còn nộp thiếu</span>
+                <strong th:text="|${#numbers.formatInteger(outstanding, 1, 'POINT')} đ|">0 đ</strong>
+                <a class="btn btn-sm btn-outline-primary mt-1" th:if="${outstanding.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_SUPPLEMENT',targetId=${settlement.id})}"><i class="bi bi-plus-lg"></i> Ghi nhận nộp thêm</a>
+            </div>
+            <div class="sx-gap-item" th:classappend="${refundable != null and refundable.signum() > 0} ? 'is-refund'">
+                <span class="sx-gap-label"><i class="bi bi-arrow-down-circle"></i> Shipper đã nộp thừa</span>
+                <strong th:text="|${#numbers.formatInteger(refundable == null ? 0 : refundable, 1, 'POINT')} đ|">0 đ</strong>
+                <a class="btn btn-sm btn-outline-primary mt-1" th:if="${refundable != null and refundable.signum() > 0}" th:href="@{/manager/ho-so-van-hanh/tao(kind='CASH_REFUND',targetId=${settlement.id})}"><i class="bi bi-plus-lg"></i> Đề nghị trả lại</a>
+            </div>
         </div>
+    </div>
     <article class="ute-panel sx-tone-indigo"><span class="shipper-eyebrow"><i class="bi bi-chat-left-text"></i> TRAO ĐỔI</span><h3 class="mt-2">Ghi chú</h3>
         <div class="shipper-payment-row"><span>Tổng cước COD</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.totalAmount})}"></th:block></strong></div>
         <div class="shipper-payment-row"><span>Tiền mặt nộp</span><strong><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong></div>

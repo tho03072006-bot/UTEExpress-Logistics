@@ -24,7 +24,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser appUser = appUserRepository.findByUsername(username)
+        // Tên đăng nhập không chứa '@' nên chuỗi có '@' là email đã đăng ký; principal vẫn mang tên đăng nhập thật.
+        String typed = username == null ? "" : username.strip();
+        AppUser appUser = (typed.contains("@") ? appUserRepository.findByEmailIgnoreCase(typed) : appUserRepository.findByUsername(typed))
                 .orElseThrow(() -> new UsernameNotFoundException("Khong tim thay tai khoan: " + username));
 
         if (appUser.getRole() == AppUser.Role.ADMIN || appUser.getRole() == AppUser.Role.MANAGER) {

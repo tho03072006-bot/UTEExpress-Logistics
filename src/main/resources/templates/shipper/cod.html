@@ -12,10 +12,8 @@
 <div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
 <div class="shipper-notice sx-notice-warning" th:if="${pending != null}"><i class="bi bi-hourglass-split"></i><span>Bạn có phiếu <a th:href="@{/shipper/doi-soat/{id}(id=${pending.id})}" th:text="|#${pending.id}|"></a> đang chờ Manager xác nhận.</span></div>
 
-<div class="ute-panel mb-3" data-realtime-region="shipper-cash-balance"><h3 class="h5">Chênh lệch các phiếu đã xác nhận</h3>
-    <p>Cước còn phải nộp bổ sung: <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|"></strong></p>
-    <p>Cước nộp thừa chưa được chi hoàn: <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|"></strong></p>
-    
+<div class="ute-panel mb-3 sx-gap-panel" data-realtime-region="shipper-cash-balance">
+    <th:block th:replace="~{fragments/components :: cashGap(${balance})}"></th:block>
 </div>
 <div class="sx-cod-grid">
 <article class="ute-panel sx-tone-gold"><div class="shipper-section-head"><div><span class="shipper-eyebrow">ĐƠN ĐÃ THU TIỀN</span><h3>Chọn đơn để nộp</h3></div><i class="bi bi-list-check"></i></div>

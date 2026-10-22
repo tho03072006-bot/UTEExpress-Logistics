@@ -52,6 +52,9 @@ public class OrderComplaint {
         this.handledBy = manager; this.status = status; this.managerReply = reply; this.updatedAt = now;
     }
     public void supplement(String note, LocalDateTime now) { this.shipperNote = note; this.updatedAt = now; }
+    /** Người gửi nhắn tiếp vào hồ sơ đã kết thúc: quay lại "Đang xử lý" (chưa ai nhận thì "Chờ xử lý"). */
+    public void reopen(LocalDateTime now) { this.status = handledBy == null ? Status.OPEN : Status.IN_PROGRESS; this.updatedAt = now; }
+    public void touch(LocalDateTime now) { this.updatedAt = now; }
     public Long getId() { return id; }
     public long getRevision() { return revision; }
     public Order getOrder() { return order; }

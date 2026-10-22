@@ -63,6 +63,7 @@ public class SecurityConfig {
                 .loginPage("/dang-nhap")
                 .successHandler((request, response, authentication) -> {
                     authRateGuard.loginSucceeded(authentication.getName());
+                    authRateGuard.loginSucceeded(request.getParameter("username")); // gõ email thì xóa cả bộ đếm theo email
                     vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.forgetLoginFailures(request);
                     var handler = new org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler();
                     handler.setRequestCache(pageRequestCache);

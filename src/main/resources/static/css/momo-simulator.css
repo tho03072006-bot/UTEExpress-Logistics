@@ -1,1 +1,101 @@
-:root{color-scheme:light;--ink:#23253b;--muted:#687087;--pink:#a81969;--line:#e9eaf1;--paper:#fff;--bg:#f6f5f9;--green:#16724f}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100dvh;display:flex;flex-direction:column}.topbar{background:var(--paper);border-bottom:1px solid var(--line);padding:18px max(24px,calc((100vw - 1100px)/2));display:flex;justify-content:space-between;gap:16px;align-items:center}.brand{font-size:22px;font-weight:850;text-decoration:none;color:var(--ink)}.brand span{color:var(--pink)}.badge{font-size:10px;letter-spacing:.08em;font-weight:750;background:#f9e9f2;color:#8b1758;border-radius:6px;padding:7px 10px}.checkout-shell{width:min(1100px,100%);margin:44px auto 28px;padding:0 24px;flex:1}.page-heading{margin-bottom:28px}.eyebrow{letter-spacing:.15em;font-size:11px;font-weight:800;color:var(--pink);margin:0 0 8px}h1{font-size:clamp(25px,3vw,34px);line-height:1.25;letter-spacing:-.035em;margin:0 0 12px}h1 span{font-weight:450;color:var(--muted)}h2{font-size:17px;margin:0}p{margin:0 0 16px}.page-heading>p:last-child{color:var(--muted);font-size:14px}.checkout-grid{display:grid;grid-template-columns:1.12fr 1fr;gap:24px;align-items:start}.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 8px 28px #24223b05;min-width:0}.section-title{display:flex;gap:12px;align-items:center;margin-bottom:26px}.step{font-size:12px;font-weight:800;display:grid;place-items:center;background:#f7edf3;color:var(--pink);width:32px;height:32px;border-radius:10px}.details{margin:0}.details>div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}dt{color:var(--muted);font-size:13px}dd{margin:0;text-align:right;font-size:14px;font-weight:600;overflow-wrap:anywhere}dd small{display:block;color:var(--muted);font-size:12px;font-weight:400}.tracking{color:var(--pink);font-weight:800}.costs{padding-top:22px}.costs>div{display:flex;justify-content:space-between;gap:16px;font-size:14px;margin-bottom:10px}.costs .total{margin:18px 0;padding-top:18px;border-top:1px dashed #d9dbe7;align-items:center}.total strong{font-size:24px;color:var(--pink);white-space:nowrap}.muted{font-size:12px;color:var(--muted);margin:18px 0 0}.confirm-card{text-align:center}.confirm-card .section-title{text-align:left}.wallet-icon{width:70px;height:70px;display:grid;place-items:center;margin:6px auto 16px;border-radius:22px;background:#f8e9f2;color:var(--pink);font-size:45px;font-weight:900;line-height:1}.wallet-label{font-size:14px;font-weight:700;margin:0 0 4px}.hero-amount{font-size:clamp(30px,3vw,40px);font-weight:800;letter-spacing:-.04em;margin-bottom:20px}.timer{font-size:12px;background:#f7f7fb;padding:10px;border-radius:8px;color:var(--muted)}.timer strong{color:var(--ink);font-variant-numeric:tabular-nums}.consent{display:flex;align-items:start;gap:10px;font-size:12px;text-align:left;margin:20px 0}.consent input{width:17px;height:17px;flex-shrink:0;accent-color:var(--pink)}.button{display:block;min-height:48px;border-radius:10px;font:700 14px/1.4 inherit;width:100%;padding:13px 18px;cursor:pointer;border:1px solid transparent}.primary{background:var(--pink);color:#fff;box-shadow:0 5px 12px #a8196920}.primary:hover{background:#901358}.secondary{background:#fff;border-color:var(--line);color:var(--muted);margin-top:10px}.button:disabled{opacity:.55;cursor:not-allowed}a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #d590b9;outline-offset:3px}.legal{text-align:center;color:var(--muted);font-size:11px;margin:24px 0}.success-icon{background:#e7f5ed;color:var(--green);font-size:36px}.success{color:var(--green);background:#f1faf5;border:1px solid #daf0e3;border-radius:12px;padding:16px;font-size:13px}.success dl{text-align:left}.success dd{text-align:left;margin:6px 0 14px}.transaction{font-size:11px;overflow-wrap:anywhere}.success p:last-child{margin:0}.feedback{font-size:12px;color:#92400e;margin:10px 0}.landing{width:min(640px,100%);margin:56px auto;padding:0 24px;text-align:center;flex:1}.landing .wallet-icon{margin-bottom:24px}.lead{color:var(--muted)}.intro{text-align:left;margin-top:28px}.intro h2{margin-bottom:12px}.intro p,.intro li{font-size:14px}.intro ol{padding-left:22px}.notice{padding:16px;border:1px solid #ecdba8;background:#fffae9;border-radius:12px;font-size:14px}.intro .muted{font-size:12px}footer{font-size:11px;color:var(--muted);text-align:center;padding:20px 24px;border-top:1px solid var(--line);background:#fff;margin-top:auto}@media(max-width:720px){.topbar{padding:14px 18px}.brand{font-size:19px}.badge{max-width:165px;text-align:right;font-size:9px}.checkout-shell{margin-top:28px;padding:0 16px}.checkout-grid{grid-template-columns:1fr;gap:16px}.card{padding:22px}.page-heading{margin-bottom:20px}.details>div{grid-template-columns:105px minmax(0,1fr);gap:12px}.total strong{font-size:22px}.landing{margin-top:36px;padding:0 16px}.hero-amount{font-size:34px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* Ví điện tử mô phỏng: bố cục như màn hình thanh toán trên điện thoại sau khi quét QR. */
+:root {
+    color-scheme: light;
+    --pink: #A50064; --pink-2: #D82D8B; --pink-soft: #FCE8F3; --pink-ink: #7A004A;
+    --ink: #1F2233; --muted: #6B7084; --line: #ECEDF3; --paper: #FFFFFF; --bg: #F3F3F7;
+    --green: #12805C; --green-soft: #E5F6EE; --amber: #B45309; --amber-soft: #FFF5DD;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: inherit; }
+h1, h2, p { margin: 0; }
+
+/* Thanh tiêu đề hồng */
+.wallet-bar { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 2.5rem 1fr auto; align-items: center; gap: .5rem;
+    padding: .75rem max(1rem, calc((100vw - 30rem) / 2)); color: #FFFFFF;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-2) 100%); box-shadow: 0 2px 10px rgba(165, 0, 100, .25); }
+.wallet-back { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; text-decoration: none; font-size: 1.8rem; line-height: 1; }
+a.wallet-back:hover { background: rgba(255, 255, 255, .15); }
+.wallet-bar-title { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.wallet-bar-title strong { font-size: 1.02rem; }
+.wallet-bar-title span { font-size: .72rem; opacity: .85; }
+.wallet-demo { justify-self: end; padding: .2rem .5rem; border-radius: .4rem; background: rgba(255, 255, 255, .2); font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
+
+/* Khung nội dung rộng bằng điện thoại */
+.wallet-shell { width: min(30rem, 100%); margin: 0 auto; padding: 1rem 1rem 1.5rem; flex: 1; display: flex; flex-direction: column; gap: .85rem; }
+.wallet-card { background: var(--paper); border-radius: 1rem; padding: 1.1rem 1.15rem; box-shadow: 0 1px 3px rgba(31, 34, 51, .06); }
+.wallet-card h2 { font-size: .95rem; margin-bottom: .6rem; }
+
+/* Người nhận tiền + số tiền */
+.wallet-merchant { text-align: center; padding-top: 1.4rem; }
+.merchant-logo { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; margin: 0 auto .6rem; border-radius: 1rem;
+    background: linear-gradient(135deg, #0B3B66, #0072BC); color: #FFFFFF; font-weight: 900; font-size: .95rem; letter-spacing: .02em; }
+.merchant-name { display: flex; flex-direction: column; }
+.merchant-name strong { font-size: 1.05rem; }
+.merchant-name span { color: var(--muted); font-size: .85rem; }
+.pay-label { margin-top: 1.1rem; color: var(--muted); font-size: .85rem; }
+.pay-amount { font-size: clamp(2rem, 9vw, 2.6rem); font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.pay-timer { display: inline-block; margin-top: .4rem; padding: .3rem .75rem; border-radius: 999px; background: var(--amber-soft); color: var(--amber); font-size: .8rem; }
+.pay-timer strong { font-variant-numeric: tabular-nums; }
+
+/* Danh sách dòng thông tin */
+.wallet-rows { margin: 0; }
+.wallet-rows > div { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--line); }
+.wallet-rows > div:last-child { border-bottom: 0; }
+.wallet-rows dt { color: var(--muted); font-size: .87rem; flex-shrink: 0; }
+.wallet-rows dd { margin: 0; text-align: right; font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
+.wallet-rows dd small { display: block; color: var(--muted); font-weight: 400; font-size: .78rem; }
+.wallet-rows .tracking { color: var(--pink); font-weight: 800; }
+.wallet-rows .discount { color: var(--green); }
+.wallet-rows .row-total { padding-top: .85rem; border-top: 1px dashed #D9DBE7; }
+.wallet-rows .row-total dt { color: var(--ink); font-weight: 700; }
+.wallet-rows .row-total dd { color: var(--pink); font-size: 1.15rem; font-weight: 800; }
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .78rem !important; }
+
+/* Nguồn tiền */
+.source-row { display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border: 1.5px solid var(--pink); border-radius: .8rem; background: var(--pink-soft); }
+.source-icon { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: .6rem; background: var(--pink); color: #FFFFFF; font-weight: 800; }
+.source-row > div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.source-row strong { font-size: .92rem; }
+.source-row span { font-size: .78rem; color: var(--muted); }
+.source-check { color: var(--pink); font-weight: 900; }
+
+/* Nút xác nhận dính đáy màn hình trên điện thoại */
+.wallet-actions { position: sticky; bottom: 0; margin: 0 -1rem; padding: .9rem 1rem calc(.9rem + env(safe-area-inset-bottom));
+    background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(31, 34, 51, .06); }
+.consent { display: flex; align-items: flex-start; gap: .55rem; margin-bottom: .75rem; font-size: .82rem; color: var(--muted); }
+.consent input { width: 1.1rem; height: 1.1rem; margin-top: .1rem; flex-shrink: 0; accent-color: var(--pink); }
+.button { display: block; width: 100%; min-height: 3rem; padding: .75rem 1rem; border: 1px solid transparent; border-radius: .8rem;
+    font: 700 1rem/1.3 inherit; cursor: pointer; }
+.primary { background: linear-gradient(135deg, var(--pink), var(--pink-2)); color: #FFFFFF; box-shadow: 0 6px 16px rgba(165, 0, 100, .25); }
+.primary:hover { filter: brightness(.95); }
+.ghost { margin-top: .5rem; background: transparent; color: var(--muted); min-height: 2.5rem; font-weight: 600; font-size: .9rem; }
+.ghost:hover { color: var(--pink); }
+.button:disabled { opacity: .55; cursor: not-allowed; }
+.feedback { font-size: .82rem; color: var(--amber); margin-top: .5rem; }
+.feedback:empty { display: none; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #E59BC6; outline-offset: 3px; }
+
+/* Màn hình kết quả */
+.wallet-result { text-align: center; padding-top: 1.75rem; }
+.result-badge { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; margin: 0 auto 1rem; border-radius: 50%;
+    background: var(--green-soft); color: var(--green); box-shadow: 0 0 0 8px rgba(18, 128, 92, .06); }
+.wallet-result h1 { font-size: 1.3rem; color: var(--green); }
+.result-amount { margin: .3rem 0 .2rem; font-size: 2.1rem; font-weight: 800; letter-spacing: -.03em; }
+.result-note { color: var(--muted); font-size: .88rem; margin-bottom: 1rem; }
+.wallet-result .wallet-rows { text-align: left; }
+.wallet-result.is-blocked .result-badge { background: var(--amber-soft); color: var(--amber); box-shadow: 0 0 0 8px rgba(180, 83, 9, .07); }
+.wallet-result.is-blocked h1 { color: var(--amber); }
+.wallet-fine { margin-top: .85rem; font-size: .8rem; color: var(--muted); }
+.wallet-notice { background: var(--amber-soft); color: #7C3A06; font-size: .88rem; }
+
+/* Trang chào */
+.wallet-steps { list-style: none; margin: 1.1rem 0 0; padding: 0; text-align: left; display: grid; gap: .6rem; }
+.wallet-steps li { display: flex; gap: .65rem; align-items: flex-start; font-size: .9rem; }
+.wallet-steps li span { display: grid; place-items: center; flex: 0 0 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--pink-soft); color: var(--pink); font-weight: 800; font-size: .8rem; }
+
+.legal { text-align: center; color: var(--muted); font-size: .72rem; margin-top: .25rem; }
+footer { font-size: .72rem; color: var(--muted); text-align: center; padding: 1rem; border-top: 1px solid var(--line); background: var(--paper); }
+@media (min-width: 40rem) { .wallet-actions { position: static; margin: 0; border-radius: 1rem; border-top: 0; box-shadow: 0 1px 3px rgba(31, 34, 51, .06); } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }

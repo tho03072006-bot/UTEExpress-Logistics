@@ -17,10 +17,12 @@ public class OrderExtrasController {
     private final OrderComplaintService complaints;
     private final DeliveryProofFileService proofFiles;
     private final OperationsProgressService progress;
+    private final vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository payments;
     public OrderExtrasController(OrderJourneyService journey, ShipmentQrService qr, OrderComplaintService complaints,
-            DeliveryProofFileService proofFiles, OperationsProgressService progress) {
+            DeliveryProofFileService proofFiles, OperationsProgressService progress,
+            vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository payments) {
         this.journey = journey; this.qr = qr; this.complaints = complaints; this.proofFiles = proofFiles;
-        this.progress = progress;
+        this.progress = progress; this.payments = payments;
     }
     @GetMapping({"/shipper/don/{orderId}/xu-ly", "/nguoi-dung/don-hang/{orderId}/xu-ly"})
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -109,6 +111,16 @@ public class OrderExtrasController {
         } catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
         return "redirect:/manager/khieu-nai/" + id;
     }
+    @PostMapping("/nguoi-dung/khieu-nai/{id}/nhan-tin")
+    public String customerMessage(@PathVariable Long id, @RequestParam String message, Authentication auth, RedirectAttributes flash) {
+        try {
+            complaints.customerMessage(id, auth.getName(), message);
+            flash.addFlashAttribute("message", "Đã gửi tin nhắn. Manager sẽ phản hồi trong hồ sơ này.");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage()); flash.addFlashAttribute("draft", message);
+        }
+        return "redirect:/nguoi-dung/khieu-nai/" + id + "#tin-nhan";
+    }
     @PostMapping("/shipper/khieu-nai/{id}/bo-sung")
     public String supplement(@PathVariable Long id, @RequestParam long revision, @RequestParam String note,
             Authentication auth, RedirectAttributes flash) {
@@ -137,6 +149,8 @@ public class OrderExtrasController {
         model.addAttribute("imagePrefix", viewer.equals("staff") ? "/manager/khieu-nai/"
                 : viewer.equals("shipper") ? "/shipper/khieu-nai/" : "/nguoi-dung/khieu-nai/");
         model.addAttribute("statuses", OrderComplaint.Status.values());
+        // Đơn chưa thanh toán thì không có lựa chọn lập phiếu bồi hoàn cước.
+        model.addAttribute("orderPaid", payments.findByOrder(order).map(p -> p.getStatus() == OrderPayment.PaymentStatus.PAID).orElse(false));
     }
     private String prefix(Authentication auth) {
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SHIPPER"))

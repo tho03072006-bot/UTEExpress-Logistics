@@ -39,6 +39,6 @@ public final class PublicAuthRateGuard {
     public synchronized void loginSucceeded(String username) { windows.remove(loginKey(username)); }
     private String loginKey(String username) {
         String value=username==null?"":username.strip().toLowerCase(Locale.ROOT);
-        return "login:"+value.substring(0,Math.min(value.length(),50));
+        return "login:"+value.substring(0,Math.min(value.length(),100));
     }
 }

@@ -25,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int OTP_EXPIRY_MINUTES = 10;
+    public static final String SAME_PASSWORD_MESSAGE = "Mật khẩu mới không được trùng với mật khẩu gần đây. Hãy chọn mật khẩu khác.";
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -135,6 +136,11 @@ public class AuthServiceImpl implements AuthService {
         int previousAttempts=appUser.getOtpAttempts();
         if (!otpPolicy.consume(appUser, otpCode)) {
             if(previousAttempts!=appUser.getOtpAttempts()) appUserRepository.save(appUser); return false;
+        }
+        // Chỉ so sau khi OTP đúng để người không có mã không dò được mật khẩu hiện tại. Ném lỗi làm giao dịch
+        // hoàn tác, nên OTP chưa bị dùng: người dùng nhập mật khẩu khác với cùng mã đó.
+        if (passwordEncoder.matches(newRawPassword, appUser.getPassword())) {
+            throw new IllegalArgumentException(SAME_PASSWORD_MESSAGE);
         }
 
         appUser.setPassword(passwordEncoder.encode(newRawPassword));

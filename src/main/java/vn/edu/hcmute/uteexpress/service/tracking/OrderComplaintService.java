@@ -46,8 +46,8 @@ public class OrderComplaintService {
     @Transactional
     public void create(Long orderId, String username, String subject, String description, MultipartFile image) {
         AppUser customer = access.customer(username);
-        String title = LogisticsInput.text(subject, 5, 100, "Tiêu đề");
-        String body = LogisticsInput.text(description, 10, 2000, "Nội dung khiếu nại");
+        String title = LogisticsInput.text(subject, 1, 100, "Tiêu đề");
+        String body = LogisticsInput.text(description, 1, 2000, "Nội dung khiếu nại");
         byte[] attachment = images.png(image);
         var order = orders.findLockedById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
         if (!customer.getId().equals(order.getSender().getId()))
@@ -80,7 +80,7 @@ public class OrderComplaintService {
                 vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED,
                 vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
             throw new IllegalArgumentException("Không từ chối khiếu nại đã có khoản bồi hoàn được duyệt/chi trả.");
-        complaint.respond(manager, status, LogisticsInput.text(reply, 5, 2000, "Phản hồi"), LocalDateTime.now(clock));
+        complaint.respond(manager, status, LogisticsInput.text(reply, 1, 2000, "Phản hồi"), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint);
         activity(complaint, actor, "RESPOND", reply);
     }
@@ -89,7 +89,7 @@ public class OrderComplaintService {
         access.shipper(username);
         var complaint = lockedComplaint(id, username);
         checkRevision(complaint, revision);
-        complaint.supplement(LogisticsInput.text(note, 5, 1000, "Thông tin bổ sung"), LocalDateTime.now(clock));
+        complaint.supplement(LogisticsInput.text(note, 1, 1000, "Thông tin bổ sung"), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint);
         activity(complaint, username, "SUPPLEMENT", note);
     }
@@ -101,12 +101,28 @@ public class OrderComplaintService {
         complaint.respond(manager, OrderComplaint.Status.IN_PROGRESS, complaint.getManagerReply(), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint); activity(complaint, actor, "CLAIM", "Nhận phụ trách hồ sơ.");
     }
+    /**
+     * Người gửi nhắn tiếp vào hồ sơ, không giới hạn số lần. Hồ sơ đã kết thúc thì được mở lại để Manager xử lý tiếp;
+     * khoản bồi hoàn đã duyệt (nếu có) giữ nguyên.
+     */
+    @Transactional
+    public void customerMessage(Long id, String username, String message) {
+        AppUser customer = access.customer(username);
+        var complaint = lockedComplaint(id, username);
+        if (!customer.getId().equals(complaint.getOrder().getSender().getId()))
+            throw new org.springframework.security.access.AccessDeniedException("Vận đơn không thuộc tài khoản của bạn.");
+        String text = LogisticsInput.text(message, 1, 2000, "Tin nhắn");
+        if (complaint.getStatus().isClosed()) complaint.reopen(LocalDateTime.now(clock));
+        else complaint.touch(LocalDateTime.now(clock));
+        complaints.saveAndFlush(complaint);
+        activity(complaint, username, "CUSTOMER_MESSAGE", text);
+    }
     public Page<vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity> timeline(Long id, String actor, int page) {
-        view(id, actor); return activities.findByComplaintIdOrderByCreatedAtAscIdAsc(id, PageRequest.of(LogisticsInput.page(page), 20));
+        view(id, actor); return activities.findByComplaintIdOrderByCreatedAtAscIdAsc(id, PageRequest.of(LogisticsInput.page(page), 50));
     }
     private void activity(OrderComplaint complaint, String actor, String action, String message) {
         activities.save(new vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity(complaint, actor, action,
-                LogisticsInput.text(message, 5, 2000, "Nội dung"), LocalDateTime.now(clock)));
+                LogisticsInput.text(message, 1, 2000, "Nội dung"), LocalDateTime.now(clock)));
     }
     private OrderComplaint lockedComplaint(Long id, String actor) {
         var complaint = complaints.lockById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));

@@ -114,10 +114,10 @@ class OperationsControlsIntegrationTest {
         mvc.perform(get("/manager/ho-so-van-hanh").with(user(customer.getUsername()).roles("USER"))).andExpect(status().isForbidden());
         mvc.perform(post("/manager/ho-so-van-hanh").with(authentication(auth(managerAccount)))).andExpect(status().isForbidden());
     }
-    @Test void returnNeedsApprovalStartAndEvidenceThenCannotCompleteTwice() throws Exception {
+    @Test void returnTakesEffectOnCreateThenNeedsStartAndEvidenceAndCannotCompleteTwice() throws Exception {
         Long id = newReturn(); var record = cases.view(manager.getUsername(), id);
         mvc.perform(get("/manager/ho-so-van-hanh/"+id).with(authentication(auth(managerAccount)))).andExpect(status().isOk());
-        cases.review(manager.getUsername(), id, new OperationsReviewRequest(record.getRevision(),true,"Đủ điều kiện hoàn hàng"));
+        assertEquals(OperationsCase.Status.APPROVED, record.getStatus()); // Manager lập là có hiệu lực, không cần duyệt
         record = cases.view(manager.getUsername(),id); cases.startReturn(manager.getUsername(),id,record.getRevision(),"Bắt đầu bàn giao hoàn");
         record = cases.view(manager.getUsername(),id); cases.complete(manager.getUsername(),id,record.getRevision(),"Nguyễn Văn Người Gửi",image());
         assertEquals(Order.OrderStatus.RETURNED, order.getStatus()); assertTrue(record.isHasEvidence());
@@ -280,12 +280,21 @@ class OperationsControlsIntegrationTest {
         assertThrows(IllegalArgumentException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,
                 complaint.getId(),complaint.getRevision(),new BigDecimal("18001"),null),image()));
     }
+    @Test void unpaidOrderHasNoCompensationOption() throws Exception {
+        var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Yêu cầu bồi hoàn cước","Đơn chưa thanh toán",null,NOW));
+        var error=assertThrows(IllegalArgumentException.class,()->cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()));
+        assertTrue(error.getMessage().contains("chưa thanh toán"));
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+        paid();
+        assertEquals(OperationsCase.Kind.COMPENSATION, cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()).kind());
+    }
     @Test void invalidUploadAndIncompleteReturnDoNotFinishOrder() {
         Long id=newReturn(); var record=cases.view(manager.getUsername(),id);
         assertThrows(IllegalArgumentException.class,()->cases.complete(manager.getUsername(),id,record.getRevision(),"Tên người gửi nhận lại",null));
         assertThrows(IllegalArgumentException.class,()->cases.complete(manager.getUsername(),id,record.getRevision(),"Tên người gửi nhận lại",
                 new MockMultipartFile("evidence","fake.png","image/png","not-an-image".getBytes())));
-        assertThrows(StaffConflictException.class,()->cases.startReturn(manager.getUsername(),id,record.getRevision(),"Chưa duyệt không được bắt đầu"));
+        assertEquals(OperationsCase.Status.APPROVED, record.getStatus()); assertEquals(Order.OrderStatus.FAILED, order.getStatus());
     }
     @Test void overdueCashRemainsVisibleUntilSupplementIsActuallyApproved() {
         var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Nộp thiếu có ghi nhận",NOW.minusDays(8)));
@@ -300,7 +309,7 @@ class OperationsControlsIntegrationTest {
         history.saveAndFlush(new OrderStatusHistory(order,shipper,Order.OrderStatus.IN_TRANSIT,Order.OrderStatus.FAILED,
                 DeliveryFailureReason.CUSTOMER_ABSENT,"Khách không có mặt",NOW.minusHours(1),NOW.minusHours(2)));
         Long id=cases.request(manager.getUsername(),request(OperationsCase.Kind.RETRY,order.getId(),order.getRevision(),null,NOW.plusHours(1)),null);
-        var record=cases.view(manager.getUsername(),id); cases.review(manager.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Duyệt hẹn giao lại mới"));
+        assertEquals(OperationsCase.Status.APPROVED, cases.view(manager.getUsername(),id).getStatus()); // trong giới hạn: có hiệu lực ngay
         assertEquals(0,orders.countDueRetries(shipper,NOW,policies.current().getMaxDeliveryAttempts()));
         assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.RETRY_DUE,0).isEmpty());
         clock.at(NOW.plusHours(2));

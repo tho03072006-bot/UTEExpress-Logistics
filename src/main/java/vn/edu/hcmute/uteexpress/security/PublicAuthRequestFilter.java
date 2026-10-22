@@ -28,7 +28,7 @@ public final class PublicAuthRequestFilter extends OncePerRequestFilter {
         }
         if(path.equals("/dang-nhap")) {
             String username=request.getParameter("username"),password=request.getParameter("password");
-            if(username==null || username.length()>50 || password==null || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72) {
+            if(username==null || username.length()>100 || password==null || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72) {
                 guard.loginFailed(username); rememberLoginFailure(request,guard,username);
                 response.sendRedirect(request.getContextPath()+"/dang-nhap?error"); return;
             }
@@ -47,7 +47,7 @@ public final class PublicAuthRequestFilter extends OncePerRequestFilter {
         String typed=username==null?"":username.strip();
         session.setAttribute(FAILURES_ATTRIBUTE,guard.loginFailures(typed));
         session.setAttribute(LIMIT_ATTRIBUTE,PublicAuthRateGuard.MAX_LOGIN_FAILURES);
-        session.setAttribute(USERNAME_ATTRIBUTE,typed.substring(0,Math.min(50,typed.length())));
+        session.setAttribute(USERNAME_ATTRIBUTE,typed.substring(0,Math.min(100,typed.length())));
     }
 
     public static void forgetLoginFailures(HttpServletRequest request) {

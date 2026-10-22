@@ -219,5 +219,24 @@
     <th:block th:case="*" th:text="${serviceType}">—</th:block>
 </th:block>
 
+<!-- Chênh lệch tiền COD của Shipper sau khi Manager xác nhận phiếu nộp (balance: CashBalanceResponse) -->
+<th:block th:fragment="cashGap(balance)">
+    <div class="sx-gap-head"><h3 class="h5 mb-1">Chênh lệch sau khi Manager xác nhận</h3>
+        <p class="shipper-hint mb-0">Nếu tiền mặt bạn nộp khác tổng cước COD của phiếu, phần lệch được ghi ở đây cho tới khi xử lý xong.</p></div>
+    <div class="sx-gap-grid">
+        <div class="sx-gap-item" th:classappend="${balance.outstanding.signum() > 0} ? 'is-due'">
+            <span class="sx-gap-label"><i class="bi bi-arrow-up-circle"></i> Bạn còn nộp thiếu</span>
+            <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|">0 đ</strong>
+            <small>Số tiền bạn cần nộp thêm cho Manager. Manager ghi nhận khoản nộp thêm, Admin duyệt.</small>
+        </div>
+        <div class="sx-gap-item" th:classappend="${balance.refundDue.signum() > 0} ? 'is-refund'">
+            <span class="sx-gap-label"><i class="bi bi-arrow-down-circle"></i> Bạn đã nộp thừa</span>
+            <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|">0 đ</strong>
+            <small>Khoản UTEExpress sẽ trả lại bạn sau khi Admin duyệt phiếu hoàn.</small>
+        </div>
+    </div>
+    <p class="sx-gap-ok mb-0" th:if="${balance.outstanding.signum() == 0 and balance.refundDue.signum() == 0}"><i class="bi bi-check-circle-fill"></i> Các phiếu đã xác nhận đều khớp tiền, không có chênh lệch.</p>
+</th:block>
+
 </body>
 </html>

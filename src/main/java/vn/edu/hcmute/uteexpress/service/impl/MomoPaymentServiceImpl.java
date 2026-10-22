@@ -53,7 +53,9 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
     @Override @Transactional(readOnly = true)
     public Receipt view(String token) {
         var ticket = tickets.verify(token, Instant.now());
-        return receipt(bound(ticket), ticket.expiresAt());
+        var payment = bound(ticket);
+        requirePaidByThisQr(payment, token);
+        return receipt(payment, ticket.expiresAt());
     }
 
     @Override
@@ -67,9 +69,11 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
         var payment = bound(ticket);
         entityManager.refresh(payment);
         payment = bound(ticket);
-        // Xác nhận lặp lại trả đúng biên nhận đã có, không tạo giao dịch thứ hai.
+        // Cùng mã QR bấm lại thì trả đúng biên nhận đã có; mã QR khác (người thứ hai quét) thì bị từ chối.
+        requirePaidByThisQr(payment, token);
         if (payment.getStatus() != OrderPayment.PaymentStatus.PAID) {
             WalletPaymentRules.markPaid(payment, Instant.now());
+            payment.setTransactionRef(transactionRef(token));
             events.publishEvent(new OrderStatusChangedEvent(order.getId(), order.getTrackingCode(),
                     order.getStatus().name(), payment.getUpdatedAt()));
         }
@@ -110,6 +114,17 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
         return payment;
     }
 
+    /** Mã giao dịch sinh từ chính mã QR đã trả tiền, nên biết được mã QR nào đã thanh toán đơn. */
+    static String transactionRef(String token) {
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return "SIM-MOMO-" + java.util.HexFormat.of().formatHex(hash, 0, 16);
+        } catch (java.security.NoSuchAlgorithmException exception) { throw new IllegalStateException(exception); }
+    }
+    private static void requirePaidByThisQr(OrderPayment payment, String token) {
+        if (payment.getStatus() == OrderPayment.PaymentStatus.PAID && !transactionRef(token).equals(payment.getTransactionRef()))
+            throw new vn.edu.hcmute.uteexpress.service.payment.PaidByAnotherQrException();
+    }
     private static void requireActive(AppUser user) {
         if (user == null || user.getRole() != AppUser.Role.USER || !user.isEnabled() || user.isLockedByAdmin()) throw unavailable();
     }

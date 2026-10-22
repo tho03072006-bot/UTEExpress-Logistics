@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#A50064">
 <title>MoMo mô phỏng · UTEExpress</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"></head>
-<body><header class="topbar"><a th:href="@{/}" class="brand">UTE<span>Express</span></a><span class="badge">ĐỒ ÁN · KHÔNG THU TIỀN THẬT</span></header>
-<main class="landing"><div class="wallet-icon" aria-hidden="true">m</div><p class="eyebrow">CỔNG THANH TOÁN DEMO</p>
-<h1>MoMo mô phỏng</h1><p class="lead">Một bước xác nhận. Đồng bộ với UTEExpress.</p>
-<p class="notice" th:if="${notice}" th:text="${notice}" role="status"></p>
-<div class="card intro"><h2>Bắt đầu từ đơn hàng của bạn</h2><p>Đăng nhập UTEExpress trên máy tính, chọn thanh toán bằng MoMo và quét mã QR. Trang này chỉ mở thanh toán khi có liên kết hợp lệ.</p>
-<ol><li>Chọn đơn và tạo QR tại UTEExpress.</li><li>Kiểm tra mã đơn, số tiền trên trang mô phỏng.</li><li>Xác nhận mô phỏng và xem kết quả tại UTEExpress.</li></ol>
-<p class="muted">Không nhập mật khẩu ví, OTP, số thẻ hoặc thông tin ngân hàng. Đây không phải sản phẩm của MoMo và không kết nối cổng thanh toán thật.</p></div></main>
+<body class="wallet">
+<header class="wallet-bar">
+    <span class="wallet-back" aria-hidden="true"></span>
+    <div class="wallet-bar-title"><strong>Ví điện tử mô phỏng</strong><span>Cổng thanh toán demo của UTEExpress</span></div>
+    <span class="wallet-demo" title="Không thu tiền thật">DEMO</span>
+</header>
+<main class="wallet-shell">
+    <!-- Đơn đã được trả bằng mã QR khác -->
+    <section th:if="${alreadyPaid == true}" class="wallet-card wallet-result is-blocked" role="alert">
+        <div class="result-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+        <h1>Đơn đã được thanh toán</h1>
+        <p class="result-note" th:text="${notice}">Đơn này đã được thanh toán bằng một mã QR khác.</p>
+        <p class="wallet-fine">Không có khoản tiền nào bị trừ thêm. Kiểm tra trạng thái đơn tại UTEExpress.</p>
+    </section>
+
+    <section th:if="${notice != null and alreadyPaid != true}" class="wallet-card wallet-notice" role="status">
+        <p th:text="${notice}"></p>
+    </section>
+
+    <section class="wallet-card wallet-merchant" th:if="${alreadyPaid != true}">
+        <div class="merchant-logo" aria-hidden="true">UTE</div>
+        <div class="merchant-name"><strong>Thanh toán bằng mã QR</strong><span>Mở từ đơn hàng trên UTEExpress</span></div>
+        <ol class="wallet-steps">
+            <li><span>1</span>Trên UTEExpress, chọn đơn và bấm thanh toán bằng MoMo.</li>
+            <li><span>2</span>Quét mã QR bằng điện thoại để mở trang này.</li>
+            <li><span>3</span>Kiểm tra số tiền rồi bấm xác nhận.</li>
+        </ol>
+    </section>
+    <p class="legal">Bản demo học tập, không liên kết với MoMo. Không nhập mật khẩu ví, OTP, số thẻ hay thông tin ngân hàng.</p>
+</main>
 <footer>Bản quyền thuộc Nhóm 8 · Lập trình Web · HCMUTE</footer></body></html>

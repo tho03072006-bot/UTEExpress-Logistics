@@ -114,7 +114,7 @@
                 <i class="bi bi-bell-fill"></i><span class="sx-bell-dot" data-notification-count hidden>0</span>
             </a>
             <a th:if="${isStaff}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{/noi-bo/tai-khoan}" aria-label="Xem thông tin tài khoản của tôi">
-                <i class="bi bi-person-circle"></i><span th:text="${displayName ?: #authentication.name}">staff</span>
+                <span class="sx-avatar sx-avatar-xs" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</span><span th:text="${displayName ?: #authentication.name}">staff</span>
             </a>
             <!-- Người gửi / Shipper: ảnh đại diện + tên, bấm để mở trang tài khoản. Phiên đã biết là chưa có ảnh (-1) thì khỏi tải. -->
             <a th:if="${accountUrl != null}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{${accountUrl}}" aria-label="Tài khoản của tôi">
@@ -189,6 +189,7 @@
 <th:block th:if="${isUser or isShipper}"><div th:replace="~{fragments/assistant :: widget}"></div></th:block>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/form-messages-vi.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script defer th:src="@{/js/account-validation.js}"></script>
 <script th:src="@{/js/address-picker.js}"></script>

@@ -89,6 +89,20 @@
                     <div class="text-muted small" th:text="${order.receiverAddress} ?: '—'">-</div>
                 </div>
             </div>
+            <!-- Shipper đã giao (đơn đã giao) hoặc đang phụ trách đơn -->
+            <div class="sx-shipper-card mt-3" th:with="s=${order.shipper}">
+                <span class="sx-avatar sx-avatar-sm" aria-hidden="true" th:if="${s != null}"
+                      th:text="${#strings.toUpperCase(#strings.substring(s.fullName ?: s.username, 0, 1))}">S</span>
+                <span class="sx-avatar sx-avatar-sm is-empty" aria-hidden="true" th:if="${s == null}"><i class="bi bi-person-dash"></i></span>
+                <div>
+                    <div class="ute-profile-label" th:text="${order.status.name() == 'DELIVERED'} ? 'Shipper đã giao đơn' : 'Shipper phụ trách'">Shipper</div>
+                    <th:block th:if="${s != null}">
+                        <div class="ute-profile-value" th:text="${s.fullName ?: s.username}">Tên shipper</div>
+                        <a class="text-muted small text-decoration-none" th:if="${s.phone != null}" th:href="|tel:${s.phone}|"><i class="bi bi-telephone"></i> <span th:text="${s.phone}"></span></a>
+                    </th:block>
+                    <div class="text-muted small" th:if="${s == null}">Chưa phân công Shipper.</div>
+                </div>
+            </div>
         </div>
 
         <div class="ute-panel mb-3">
