@@ -55,7 +55,7 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ lấy hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ lấy hàng từ 5–255 ký tự.")
-    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String senderAddress;
 
     @NotBlank(message = "Vui lòng nhập tên người nhận")
@@ -69,7 +69,7 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ giao hàng từ 5–255 ký tự.")
-    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String receiverAddress;
 
     @NotNull(message = "Vui lòng nhập khối lượng")

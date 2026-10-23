@@ -10,6 +10,7 @@ public class OrderQuoteRequest {
     @NotBlank @Size(max=40) private String pickupAreaCode;
     @NotBlank @Size(max=10) private String deliveryProvinceCode;
     @NotBlank @Size(max=40) private String deliveryAreaCode;
+    @NotNull(message="Vui lòng chọn hình thức gửi hàng.")
     private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER;
     public String getPickupProvinceCode() { return pickupProvinceCode; }
     public void setPickupProvinceCode(String value) { pickupProvinceCode=value; }
@@ -29,11 +30,11 @@ public class OrderQuoteRequest {
     }
     @NotBlank(message="Vui lòng nhập địa chỉ lấy hàng.")
     @Size(min=5, max=255, message="Địa chỉ lấy hàng từ 5–255 ký tự.")
-    @Pattern(regexp=ShippingInputValidation.ADDRESS, message="Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp=ShippingInputValidation.ADDRESS, message="Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String senderAddress;
     @NotBlank(message="Vui lòng nhập địa chỉ giao hàng.")
     @Size(min=5, max=255, message="Địa chỉ giao hàng từ 5–255 ký tự.")
-    @Pattern(regexp=ShippingInputValidation.ADDRESS, message="Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp=ShippingInputValidation.ADDRESS, message="Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String receiverAddress;
     @NotNull(message="Vui lòng nhập khối lượng.")
     @DecimalMin(value=ShippingInputValidation.MIN_WEIGHT, message="Khối lượng tối thiểu 0,01 kg.")

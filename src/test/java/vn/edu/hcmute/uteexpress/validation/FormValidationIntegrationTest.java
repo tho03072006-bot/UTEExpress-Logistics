@@ -87,7 +87,7 @@ class FormValidationIntegrationTest {
                         .param("addressLine", "12\u0007 Võ Văn Ngân").param("addressType", "SENDER"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Nhập số di động Việt Nam 10 số")))
-                .andExpect(content().string(containsString("Địa chỉ không chứa ký tự điều khiển")));
+                .andExpect(content().string(containsString("Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển")));
         assertEquals(0, addresses.countByUser(customer));
     }
 }
