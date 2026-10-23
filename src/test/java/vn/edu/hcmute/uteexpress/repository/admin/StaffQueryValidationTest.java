@@ -21,6 +21,10 @@ class StaffQueryValidationTest {
                 .build();
         try (var factory = new MetadataSources(registry).addAnnotatedClass(AppUser.class)
                 .addAnnotatedClass(Order.class).addAnnotatedClass(StaffAccount.class)
+                // Tra soát đơn lọc theo chi nhánh qua order_route nên câu truy vấn cần các entity tuyến.
+                .addAnnotatedClass(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.class)
+                .addAnnotatedClass(vn.edu.hcmute.uteexpress.entity.routing.Branch.class)
+                .addAnnotatedClass(vn.edu.hcmute.uteexpress.entity.routing.ProvinceArea.class)
                 .buildMetadata().buildSessionFactory(); var session = factory.openSession()) {
             for (Class<?> repository : java.util.List.of(StaffAccountRepository.class, ManagerOrderReadRepository.class)) {
                 for (var method : repository.getMethods()) {

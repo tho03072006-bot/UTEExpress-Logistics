@@ -111,7 +111,10 @@ Lưu ý thêm: trên máy tôi, một tiến trình app cũ (Spring Boot, cổng
 ### 2.3. Kết quả test gần nhất
 
 Đã chạy riêng các lớp test liên quan và đạt hết (StaffSecurityIntegrationTest, ManagerOperationsServiceImplTest, ManagerOrderServiceImplTest, StaffWorkbenchServiceImplTest, StaffDashboardChartServiceImplTest, ManagerDashboardServiceImplTest, OperationsControlsIntegrationTest, CrossRoleSynchronizationIntegrationTest, LogisticsIntegrationTest, ShipperOperationsIntegrationTest, StaffWorkspaceIntegrationTest, DropOffIntegrationTest, BranchSchemaSqlTest, HubServiceTest, TrackingServiceImplTest, UpgradeAivenBranchesTest, AivenDatabaseToolsTest, ControlsValidationTest).
-**Chưa chạy lại full `mvn test` sau bước 10–11.** Trước đó có 2 lỗi sẵn (không do kế hoạch này): `AivenOperationsIntegrationTest.realQueriesAssignmentTariffAndAuditUseSharedSchema` và `AivenControlsIntegrationTest.returnWorkflowLocksRealRowsAndPreservesHistory`. Hai test Aiven này cũng sẽ lỗi validate schema cho tới khi apply `UpgradeAivenDropOff`.
+**Full `mvn test` tối 23/10 (trên nhánh này): 1085 test, 1 failure đã sửa sau đó (`StaffQueryValidationTest` thiếu entity tuyến), 13 error.**
+Cả 13 error là các test chạy thật trên Aiven (`UteexpressApplicationTests`, `AivenAccountIntegrationTest`, `AivenControlsIntegrationTest`, `AivenOperationsIntegrationTest`):
+context không nạp được vì `Schema-validation: missing column [drop_off_discount] in table [operations_policy]`, tức là do chưa apply `UpgradeAivenDropOff`.
+Sau khi apply, chạy lại full test. Kỳ vọng chỉ còn 2 lỗi có sẵn từ trước (không do kế hoạch này): `AivenOperationsIntegrationTest.realQueriesAssignmentTariffAndAuditUseSharedSchema` và `AivenControlsIntegrationTest.returnWorkflowLocksRealRowsAndPreservesHistory`.
 
 ---
 
