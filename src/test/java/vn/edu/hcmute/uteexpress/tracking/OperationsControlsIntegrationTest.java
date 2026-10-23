@@ -297,6 +297,12 @@ class OperationsControlsIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
         paid();
         assertEquals(OperationsCase.Kind.COMPENSATION, cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()).kind());
+        // B8: Manager có nút đề xuất; Admin (người duyệt chi tiền) chỉ thấy ghi chú, không có nút.
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước")));
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phiếu tiền do Manager lập, Admin duyệt.")));
     }
     @Test void invalidUploadAndIncompleteReturnDoNotFinishOrder() {
         Long id=newReturn(); var record=cases.view(manager.getUsername(),id);
