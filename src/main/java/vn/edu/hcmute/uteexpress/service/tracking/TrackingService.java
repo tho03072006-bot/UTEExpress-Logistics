@@ -40,6 +40,11 @@ public interface TrackingService {
 
     boolean canReportPickupFailure(Order order);
 
+    /** Đơn liên tỉnh vừa lấy hàng: shipper bàn giao vào kho chi nhánh gửi và hết giữ đơn. */
+    Order handoverToHub(Long orderId, String shipperUsername);
+
+    boolean canHandoverToHub(Order order);
+
     Optional<Order> findAssignedOrderByCode(String code, String username);
 
     /**

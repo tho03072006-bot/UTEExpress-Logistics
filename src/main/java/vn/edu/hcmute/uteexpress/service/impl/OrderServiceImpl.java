@@ -33,7 +33,7 @@ public class OrderServiceImpl implements OrderService {
     private final java.time.Clock clock;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
     private final org.springframework.context.ApplicationEventPublisher events;
-    private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
     private final OrderCreationWriter creationWriter;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
@@ -42,7 +42,7 @@ public class OrderServiceImpl implements OrderService {
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
                             org.springframework.context.ApplicationEventPublisher events,
-                            vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService,
+                            vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing,
                             OrderCreationWriter creationWriter) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
@@ -51,7 +51,7 @@ public class OrderServiceImpl implements OrderService {
         this.clock = clock;
         this.tariffService = tariffService;
         this.events = events;
-        this.pricingService = pricingService;
+        this.routing = routing;
         this.creationWriter = creationWriter;
     }
 
@@ -74,11 +74,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order createOrder(OrderCreateRequest request, String senderUsername) {
-        // Hai transaction ngắn, tra bản đồ ở giữa khi không còn khóa/kết nối database.
-        var existing = creationWriter.findExisting(request, senderUsername);
-        if (existing != null) return existing;
-        var route = pricingService.resolveRoute(request.getSenderAddress(), request.getReceiverAddress());
-        return creationWriter.createResolved(request, senderUsername, route);
+        // Tuyến mới dùng danh mục khu vực trên Aiven, không gọi bản đồ/mạng trong transaction.
+        return creationWriter.createRouted(request, senderUsername);
     }
 
     @Override
@@ -135,31 +132,58 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderTimelineStep> buildTimeline(Order order) {
         Order.OrderStatus current = order.getStatus();
 
-        // Ba trang thai ket thuc bat thuong: don dung lai giua duong, khong di het 4 moc.
+        // Ba trang thai ket thuc bat thuong: don dung lai giua duong, khong di het cac moc.
         boolean cancelled = current == Order.OrderStatus.CANCELLED;
         boolean failed = current == Order.OrderStatus.FAILED;
         boolean returned = current == Order.OrderStatus.RETURNED;
+        // Don cu chua co tuyen thi giu dung 4 moc nhu truoc.
+        var route = routing.routeOf(order.getId()).orElse(null);
+        boolean dropOff = route != null && route.isDropOff();
+        var origin = route == null ? null : route.getOriginBranch();
 
         List<OrderTimelineStep> steps = new ArrayList<>();
 
         // Moc 1 luon da xong - co don nghia la da tao don.
-        steps.add(new OrderTimelineStep("Chờ lấy hàng",
-                "Đơn đã được tạo, đang chờ shipper tới lấy hàng.",
-                true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt()));
+        steps.add(dropOff
+                ? new OrderTimelineStep("Chờ bạn mang hàng tới chi nhánh",
+                        "Mang hàng tới quầy " + origin.getName() + ": " + origin.getHubAddress() + ".",
+                        true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt())
+                : new OrderTimelineStep("Chờ lấy hàng",
+                        "Đơn đã được tạo, đang chờ shipper tới lấy hàng.",
+                        true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt()));
 
         if (cancelled) {
             // Don bi huy khi con dang cho lay hang nen khong co moc nao khac nua.
             steps.add(new OrderTimelineStep("Đã hủy",
-                    "Đơn đã được hủy, shipper sẽ không tới lấy hàng.",
+                    dropOff ? "Đơn đã được hủy, chi nhánh sẽ không nhận hàng." : "Đơn đã được hủy, shipper sẽ không tới lấy hàng.",
                     true, true, order.getUpdatedAt()));
             return steps;
         }
 
         int rank = statusRank(current);
+        int stage = route == null ? -1 : stageRank(route.getStage());
+        boolean hubs = route != null && route.isInterprovincial();
+        boolean pickedUpHere = current == Order.OrderStatus.PICKED_UP && (!hubs || stage == 0);
 
-        steps.add(new OrderTimelineStep("Đã lấy hàng",
-                "Shipper đã nhận hàng từ người gửi.",
-                rank >= 1, current == Order.OrderStatus.PICKED_UP, timeOf(order, current, Order.OrderStatus.PICKED_UP)));
+        steps.add(dropOff
+                ? new OrderTimelineStep("Đã nhận tại quầy " + origin.getName(),
+                        origin.getName() + " đã nhận hàng bạn mang tới.",
+                        rank >= 1, pickedUpHere, pickedUpHere ? order.getUpdatedAt() : null)
+                : new OrderTimelineStep("Đã lấy hàng",
+                        "Shipper đã nhận hàng từ người gửi.",
+                        rank >= 1, pickedUpHere, pickedUpHere ? order.getUpdatedAt() : null));
+
+        if (hubs) {
+            // Lien tinh: hang qua kho gui, chuyen trung chuyen roi kho nhan truoc khi giao.
+            var dest = route.getDestBranch();
+            boolean active = current == Order.OrderStatus.PICKED_UP;
+            steps.add(hubStep("Tại kho gửi", "Hàng nằm trong kho " + origin.getName() + ", chờ xếp chuyến.",
+                    rank >= 2 || stage >= 1, active && stage == 1, order));
+            steps.add(hubStep("Đang trung chuyển", "Hàng đang trên chuyến từ " + origin.getName() + " tới " + dest.getName() + ".",
+                    rank >= 2 || stage >= 2, active && stage == 2, order));
+            steps.add(hubStep("Tới kho nhận", "Hàng đã tới kho " + dest.getName() + ", chờ shipper giao.",
+                    rank >= 2 || stage >= 3, active && stage >= 3, order));
+        }
 
         steps.add(new OrderTimelineStep("Đang giao",
                 "Hàng đang trên đường tới người nhận.",
@@ -180,6 +204,21 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return steps;
+    }
+
+    private static OrderTimelineStep hubStep(String label, String description, boolean done, boolean current, Order order) {
+        return new OrderTimelineStep(label, description, done, current, current ? order.getUpdatedAt() : null);
+    }
+
+    /** Thu tu chang tren tuyen; LAST_MILE xep sau kho nhan. */
+    private static int stageRank(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage stage) {
+        return switch (stage) {
+            case PICKUP -> 0;
+            case ORIGIN_HUB -> 1;
+            case LINEHAUL -> 2;
+            case DEST_HUB -> 3;
+            case LAST_MILE -> 4;
+        };
     }
 
     /**

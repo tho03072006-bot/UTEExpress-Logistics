@@ -22,9 +22,10 @@ public class ManagerCodController {
     @GetMapping
     @Transactional(readOnly = true) // một giao dịch cho cả trang: bớt lượt đi về database ở xa
     public String list(@RequestParam(required = false) CodSettlement.Status status,
-            @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
-        model.addAttribute("settlements", settlements.search(auth.getName(), status, page));
-        model.addAttribute("summary", settlements.managerSummary(auth.getName()));
+            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
+        model.addAttribute("settlements", settlements.search(auth.getName(), status, branchId, page));
+        model.addAttribute("summary", settlements.managerSummary(auth.getName(), branchId));
+        model.addAttribute("branches", cases.branches(auth.getName())); model.addAttribute("branchId", branchId);
         model.addAttribute("statuses", CodSettlement.Status.values());
         model.addAttribute("selectedStatus", status);
         return "manager/cod-settlements";

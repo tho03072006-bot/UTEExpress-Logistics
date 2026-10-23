@@ -26,7 +26,7 @@ class StaffDashboardChartServiceImplTest {
     @BeforeEach void setUp() {
         // UTC còn ngày 18 nhưng Việt Nam đã sang ngày 19.
         var clock = Clock.fixed(Instant.parse("2026-10-18T18:30:00Z"), ZoneId.of("Asia/Ho_Chi_Minh"));
-        service = new StaffDashboardChartServiceImpl(orders, access, clock);
+        service = new StaffDashboardChartServiceImpl(orders, access, clock, org.mockito.Mockito.mock(vn.edu.hcmute.uteexpress.service.routing.BranchScope.class, invocation -> null));
     }
 
     @Test void fillsExactlyFourteenDaysAndUsesVietnamMidnightBoundaries() {

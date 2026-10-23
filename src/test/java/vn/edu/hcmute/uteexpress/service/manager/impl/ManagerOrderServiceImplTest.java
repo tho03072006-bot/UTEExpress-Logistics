@@ -15,40 +15,43 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(MockitoExtension.class)
 class ManagerOrderServiceImplTest {
     @Mock ManagerOrderReadRepository orders;
+    @Mock vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
     private ManagerOrderServiceImpl service;
     private final LocalDate today = LocalDate.of(2026, 9, 18);
     @BeforeEach void setUp() {
-        service = new ManagerOrderServiceImpl(orders, Clock.fixed(Instant.parse("2026-09-18T05:00:00Z"), ZoneOffset.UTC));
+        service = new ManagerOrderServiceImpl(orders, Clock.fixed(Instant.parse("2026-09-18T05:00:00Z"), ZoneOffset.UTC), scope);
     }
     @Test void includesEntireEndDateAndStablePagination() {
-        when(orders.findOrders(anyString(), any(), any(), any(), any())).thenReturn(Page.empty());
-        assertTrue(service.findOrders(" UTE123 ", Order.OrderStatus.PENDING_PICKUP, today.minusDays(29), today, 0).isEmpty());
-        verify(orders).findOrders(eq("UTE123"), eq(Order.OrderStatus.PENDING_PICKUP),
+        when(orders.findOrders(any(), anyString(), any(), any(), any(), any())).thenReturn(Page.empty());
+        when(scope.of("manager01", null)).thenReturn(2L);
+        assertTrue(service.findOrders("manager01", null, " UTE123 ", Order.OrderStatus.PENDING_PICKUP, today.minusDays(29), today, 0).isEmpty());
+        // Phạm vi chi nhánh của Manager được truyền thẳng xuống truy vấn.
+        verify(orders).findOrders(eq(2L), eq("UTE123"), eq(Order.OrderStatus.PENDING_PICKUP),
                 eq(today.minusDays(29).atStartOfDay()), eq(today.plusDays(1).atStartOfDay()),
                 eq(PageRequest.of(0, 20, Sort.by("createdAt").descending().and(Sort.by("id").descending()))));
     }
     @Test void rejectsReversedDates() {
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("", null, today, today.minusDays(1), 0));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "", null, today, today.minusDays(1), 0));
         verifyNoInteractions(orders);
     }
     @Test void rejectsFutureDate() {
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("", null, today, today.plusDays(1), 0));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "", null, today, today.plusDays(1), 0));
     }
     @Test void rejectsExcessivelyWideRange() {
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("", null, today.minusDays(366), today, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "", null, today.minusDays(366), today, 0));
     }
     @Test void rejectsInvalidPage() {
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("", null, today, today, -1));
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("", null, today, today, 10001));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "", null, today, today, -1));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "", null, today, today, 10001));
     }
     @Test void rejectsInvalidTrackingCode() {
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("' OR 1=1 --", null, today, today, 0));
-        assertThrows(IllegalArgumentException.class, () -> service.findOrders("A".repeat(21), null, today, today, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "' OR 1=1 --", null, today, today, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.findOrders("manager01", null, "A".repeat(21), null, today, today, 0));
     }
     @Test void returnsSafeDtoWhenShipperAndFeeAreMissing() {
         Order order = new Order(); order.setTrackingCode("UTE123");
-        when(orders.findOrders(anyString(), any(), any(), any(), any())).thenReturn(new PageImpl<>(java.util.List.of(order)));
-        var result = service.findOrders("", null, today, today, 0).getContent().get(0);
+        when(orders.findOrders(any(), anyString(), any(), any(), any(), any())).thenReturn(new PageImpl<>(java.util.List.of(order)));
+        var result = service.findOrders("manager01", null, "", null, today, today, 0).getContent().get(0);
         assertEquals("Chưa phân công", result.shipperName()); assertNull(result.shippingFee());
     }
 }

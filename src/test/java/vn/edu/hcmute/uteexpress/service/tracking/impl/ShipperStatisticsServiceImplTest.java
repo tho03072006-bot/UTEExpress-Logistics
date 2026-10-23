@@ -63,6 +63,30 @@ class ShipperStatisticsServiceImplTest {
         shipper.setEnabled(true);
         when(appUserRepository.findByUsername("nguyentai"))
                 .thenReturn(Optional.of(shipper));
+        // Mặc định shipper vẫn giữ mọi đơn đang chạy; test bàn giao kho sẽ stub riêng.
+        when(statisticsRepository.heldBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(shipper)))
+                .thenAnswer(call -> new java.util.ArrayList<Long>(call.<java.util.Collection<Long>>getArgument(0)));
+    }
+
+    @Test
+    void interprovincialPickupHandedToHubCountsAsPickedUpNotDeliveredOrInProgress() {
+        LocalDateTime from = LocalDateTime.of(2026, 9, 13, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2026, 9, 14, 0, 0);
+        stubEmptyPeriod(from, to);
+        // Shipper SGN lấy đơn SGN -> HAN rồi bàn giao vào kho: lịch sử chỉ có lượt "chờ lấy -> đã lấy" của shipper.
+        when(historyRepository.activities(shipper, from, to)).thenReturn(List.of(
+                new vn.edu.hcmute.uteexpress.dto.tracking.ShipperActivity(41L, Order.OrderStatus.PICKED_UP, from.plusHours(9))));
+        when(statisticsRepository.heldBy(List.of(41L), shipper)).thenReturn(List.of());
+
+        ShipperStatisticsResponse result = statisticsService.getStatistics("nguyentai", ShipperStatisticsPeriod.DAY);
+
+        assertEquals(1, result.pickedUpOrders());
+        assertEquals(0, result.deliveredOrders());
+        assertEquals(0, result.inProgressOrders(), "Đã bàn giao kho thì shipper hết giữ đơn");
+        assertEquals(1, result.days().get(0).pickedUp());
+        String csv = new String(statisticsService.exportCsv("nguyentai", ShipperStatisticsPeriod.DAY, null, null), java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("Ngày,Đã lấy hàng,Giao thành công"));
+        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("2026-09-13,1,0,0,0,"));
     }
 
     @Test

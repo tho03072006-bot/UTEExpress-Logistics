@@ -8,4 +8,6 @@ public record OperationsPolicyRequest(@NotNull @Min(0) Long revision,
         @NotNull @Min(1) @Max(10) Integer maxDeliveryAttempts,
         @NotNull @Min(1) @Max(168) Integer complaintResponseHours,
         @NotNull @Min(1) @Max(2160) Integer complaintResolveHours,
+        @NotNull @Min(1) @Max(100) Integer maxActiveOrders,
+        @NotNull @Min(0) @Max(20000) Integer dropOffDiscount,
         @NotBlank @Size(min = 5, max = 500) String reason) { }

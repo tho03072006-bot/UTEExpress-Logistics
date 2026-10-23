@@ -5,10 +5,12 @@
 <h1 class="h3">Báo cáo vận hành</h1>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<th:block th:replace="~{fragments/branch-filter :: note(${branches})}"></th:block>
 <form th:action="@{/manager/bao-cao}" method="get" class="d-flex flex-wrap gap-2 mb-4 align-items-end">
+<div th:replace="~{fragments/branch-filter :: select(${branches}, ${branchId})}"></div>
 <div><label class="form-label" for="from">Từ ngày tạo đơn</label><input class="form-control" type="date" id="from" name="from" min="2000-01-01" th:max="${today}" th:value="${report.from}" required></div>
 <div><label class="form-label" for="to">Đến ngày</label><input class="form-control" type="date" id="to" name="to" min="2000-01-01" th:max="${today}" th:value="${report.to}" required></div>
-<button class="btn btn-primary">Xem báo cáo</button><a class="btn btn-outline-primary" th:href="@{/manager/bao-cao/csv(from=${report.from},to=${report.to})}">Tải CSV tổng hợp</a></form>
+<button class="btn btn-primary">Xem báo cáo</button><a class="btn btn-outline-primary" th:href="@{/manager/bao-cao/csv(from=${report.from},to=${report.to},branchId=${branchId})}">Tải CSV tổng hợp</a></form>
 <div class="row g-3 mb-4"><div class="col-md-4"><div class="ute-panel p-4"><div>Tổng đơn tạo trong khoảng</div><strong class="h3" th:text="${report.totalOrders}"></strong></div></div>
 <div class="col-md-4"><div class="ute-panel p-4"><div>Tỷ lệ giao thành công</div><strong class="h3" th:text="|${report.completionRate}%|"></strong><p class="small text-muted mb-0">Đã giao / (đã giao + hoàn).</p></div></div>
 <div class="col-md-4"><div class="ute-panel p-4"><div>Cước đã thanh toán trong khoảng</div><strong class="h3" th:text="|${#numbers.formatDecimal(report.paidShippingFees, 1, 'POINT', 0, 'COMMA')} đ|"></strong><p class="small text-muted mb-0">Đã trừ khuyến mãi.</p></div></div></div>

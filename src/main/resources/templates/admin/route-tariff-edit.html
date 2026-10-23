@@ -1,0 +1,14 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Sửa cước tuyến - UTEExpress</title></head><body><section>
+<div class="ute-panel p-4 mx-auto" style="max-width:760px">
+<h1 class="h3" th:text="|${tariff.originBranch.code} → ${tariff.destBranch.code} · ${tariff.serviceType.displayName}|"></h1>
+<form method="post" th:action="@{/admin/cuoc-tuyen/{id}/sua(id=${tariff.id})}" th:object="${form}">
+<input type="hidden" th:field="*{revision}">
+<div th:if="${#fields.hasAnyErrors()}" class="ute-field-error mb-3" role="alert"><p th:each="e : ${#fields.allErrors()}" th:text="${e}"></p></div>
+<div class="mb-3"><label class="form-label" for="surcharge">Phụ phí tuyến (đ)</label>
+<input class="form-control" th:field="*{surcharge}" type="number" min="0" max="100000000" step="1" required th:readonly="${tariff.originBranch.id == tariff.destBranch.id}">
+<p class="form-text">Phụ phí tuyến nội tỉnh luôn bằng 0; khoảng cách được tính riêng.</p></div>
+<div class="mb-3"><label class="form-label" for="leadTimeText">Thời gian dự kiến</label><input class="form-control" th:field="*{leadTimeText}" required maxlength="100"></div>
+<div class="mb-3"><label class="form-label" for="reason">Lý do thay đổi</label><input class="form-control" th:field="*{reason}" required minlength="5" maxlength="200"></div>
+<button class="btn btn-primary" type="submit">Lưu biểu giá</button> <a class="btn btn-outline-secondary" th:href="@{/admin/cuoc-tuyen}">Hủy</a>
+</form></div></section></body></html>

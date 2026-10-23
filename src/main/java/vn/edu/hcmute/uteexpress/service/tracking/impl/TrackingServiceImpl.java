@@ -23,6 +23,8 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
+import vn.edu.hcmute.uteexpress.entity.routing.OrderRoute;
+import vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository;
 import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 import vn.edu.hcmute.uteexpress.service.tracking.TrackingService;
@@ -39,6 +41,7 @@ public class TrackingServiceImpl implements TrackingService {
     private final OrderStatusHistoryRepository history;
     private final Clock clock;
     private final vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations;
+    private final OrderRouteRepository routes;
 
     public TrackingServiceImpl(
             AppUserRepository appUserRepository,
@@ -47,7 +50,8 @@ public class TrackingServiceImpl implements TrackingService {
             DeliveryProofService deliveryProofService,
             ApplicationEventPublisher eventPublisher,
             OrderStatusHistoryRepository history, Clock clock,
-            vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations) {
+            vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations,
+            OrderRouteRepository routes) {
         this.appUserRepository = appUserRepository;
         this.orderRepository = orderRepository;
         this.orderPaymentService = orderPaymentService;
@@ -56,6 +60,7 @@ public class TrackingServiceImpl implements TrackingService {
         this.history = history;
         this.clock = clock;
         this.operations = operations;
+        this.routes = routes;
     }
 
     @Override
@@ -134,6 +139,19 @@ public class TrackingServiceImpl implements TrackingService {
             orderPaymentService.requireReadyForFulfillment(order);
         }
 
+        // Đơn có tuyến chi nhánh: chỉ được đi giao khi đúng chặng; đơn cũ chưa có tuyến giữ luồng cũ.
+        OrderRoute route = routes.findByOrder_Id(order.getId()).orElse(null);
+        if (route != null && order.getStatus() == Order.OrderStatus.PICKED_UP && newStatus == Order.OrderStatus.IN_TRANSIT) {
+            if (route.getStage() == OrderRoute.Stage.PICKUP) {
+                if (route.isInterprovincial())
+                    throw new IllegalStateException("Đơn liên tỉnh: sau khi lấy hàng hãy bàn giao vào kho "
+                            + route.getOriginBranch().getName() + ", không tự đi giao.");
+                route.startLastMile();
+            } else if (route.getStage() != OrderRoute.Stage.LAST_MILE) {
+                throw new IllegalStateException("Đơn đang ở kho hoặc trên chuyến trung chuyển, chưa tới chặng giao.");
+            }
+        }
+
         LocalDateTime now = now();
         String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
         if (newStatus == Order.OrderStatus.FAILED && failureReason == null)
@@ -175,6 +193,37 @@ public class TrackingServiceImpl implements TrackingService {
         }
 
         return savedOrder;
+    }
+
+    @Override
+    @Transactional
+    public Order handoverToHub(Long orderId, String shipperUsername) {
+        AppUser shipper = findShipper(shipperUsername);
+        Order order = orderRepository.findLockedByIdAndShipper(orderId, shipper)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn hoặc đơn không được phân công cho bạn."));
+        OrderRoute route = routes.findByOrder_Id(order.getId())
+                .orElseThrow(() -> new IllegalStateException("Đơn chưa có tuyến chi nhánh nên không bàn giao vào kho được."));
+        if (order.getStatus() != Order.OrderStatus.PICKED_UP || route.getStage() != OrderRoute.Stage.PICKUP || !route.isInterprovincial())
+            throw new IllegalStateException("Chỉ bàn giao vào kho đơn liên tỉnh bạn vừa lấy hàng.");
+        LocalDateTime now = now();
+        String hub = route.getOriginBranch().getName();
+        route.receiveAtOriginHub();
+        // Bàn giao xong thì shipper hết giữ đơn: không còn tính vào số đơn tối đa của shipper.
+        order.setShipper(null);
+        order.setUpdatedAt(now);
+        Order saved = orderRepository.save(order);
+        history.save(new OrderStatusHistory(saved, shipper, Order.OrderStatus.PICKED_UP, Order.OrderStatus.PICKED_UP,
+                null, "Bàn giao vào kho " + hub + ".", null, now));
+        publishStatusChanged(saved);
+        publishSenderUpdate(saved, SenderOrderUpdateEvent.Kind.AT_ORIGIN_HUB, null, null);
+        return saved;
+    }
+
+    @Override
+    public boolean canHandoverToHub(Order order) {
+        if (order.getStatus() != Order.OrderStatus.PICKED_UP) return false;
+        return routes.findByOrder_Id(order.getId())
+                .filter(route -> route.getStage() == OrderRoute.Stage.PICKUP && route.isInterprovincial()).isPresent();
     }
 
     @Override
@@ -244,7 +293,10 @@ public class TrackingServiceImpl implements TrackingService {
         AppUser sender = order.getSender();
         if (sender == null) return;
         String name = sender.getFullName() == null || sender.getFullName().isBlank() ? order.getSenderName() : sender.getFullName();
-        eventPublisher.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, reason, next));
+        // Đơn có tuyến chi nhánh thì email ghi thêm kho/chi nhánh đang giữ hàng.
+        String location = routes.findByOrder_Id(order.getId())
+                .map(route -> vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService.describe(order, route)).orElse(null);
+        eventPublisher.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, reason, next, location));
     }
 
     private LocalDateTime now() {

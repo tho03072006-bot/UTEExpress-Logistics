@@ -22,6 +22,16 @@ public record AuditEventResponse(String actor, String action, String target, Str
             case "TARIFF_SCHEDULE" -> "Lập lịch cước";
             case "TARIFF_CANCEL" -> "Hủy lịch cước";
             case "POLICY_UPDATE" -> "Cập nhật chính sách";
+            case "ROUTE_TARIFF_UPDATE" -> "Cập nhật phụ phí tuyến";
+            case "BRANCH_UPDATE" -> "Cập nhật chi nhánh";
+            case "STAFF_BRANCH_ASSIGN" -> "Gán chi nhánh cho nhân sự";
+            case "STAFF_BRANCH_REMOVE" -> "Gỡ chi nhánh của nhân sự";
+            case "TRIP_CREATE" -> "Tạo chuyến trung chuyển";
+            case "TRIP_CANCEL" -> "Hủy chuyến trung chuyển";
+            case "TRIP_DEPART" -> "Xuất kho chuyến trung chuyển";
+            case "TRIP_ARRIVE" -> "Nhận chuyến trung chuyển";
+            case "TRIP_ITEM_LATE" -> "Nhận bổ sung kiện thiếu";
+            case "COUNTER_RECEIVE" -> "Nhận hàng tại quầy";
             case "PROMOTION_CREATE" -> "Tạo khuyến mãi";
             case "PROMOTION_UPDATE" -> "Cập nhật khuyến mãi";
             case "PROMOTION_STATUS" -> "Đổi trạng thái khuyến mãi";

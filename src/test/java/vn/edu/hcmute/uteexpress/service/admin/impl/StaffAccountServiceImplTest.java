@@ -21,6 +21,7 @@ class StaffAccountServiceImplTest {
     @Mock StaffAccountRepository accounts;
     @Mock AdminUserRepository users;
     @Mock vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
+    @Mock vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments;
     private ValidatorFactory factory;
     private StaffAccountServiceImpl service;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
@@ -28,7 +29,7 @@ class StaffAccountServiceImplTest {
     private StaffAccount manager;
     @BeforeEach void setUp() {
         factory = Validation.buildDefaultValidatorFactory();
-        service = new StaffAccountServiceImpl(accounts, users, encoder, factory.getValidator(), audit);
+        service = new StaffAccountServiceImpl(accounts, users, encoder, factory.getValidator(), audit, branchAssignments);
         admin = account(1L, "admin01", AppUser.Role.ADMIN);
         manager = account(2L, "manager01", AppUser.Role.MANAGER);
     }
@@ -74,6 +75,7 @@ class StaffAccountServiceImplTest {
         assertTrue(created.isPasswordChangeRequired());
         assertEquals("admin01", created.getIssuedBy());
         assertEquals(AppUser.Role.MANAGER, created.getUser().getRole());
+        verify(branchAssignments).assign("admin01", created.getUser(), request.getAssignment());
     }
     @Test void managerCannotProvisionAccounts() {
         when(accounts.lockAccounts()).thenReturn(List.of(manager));

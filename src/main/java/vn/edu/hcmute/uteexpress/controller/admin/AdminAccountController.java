@@ -15,7 +15,16 @@ import vn.edu.hcmute.uteexpress.service.admin.AdminAccountService;
 @Controller @RequestMapping("/admin/quan-ly-tai-khoan")
 public class AdminAccountController {
     private final AdminAccountService service;
-    public AdminAccountController(AdminAccountService service) { this.service = service; }
+    private final vn.edu.hcmute.uteexpress.service.routing.StaffBranchService assignments;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
+    public AdminAccountController(AdminAccountService service,
+            vn.edu.hcmute.uteexpress.service.routing.StaffBranchService assignments,
+            vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog) {
+        this.service = service; this.assignments = assignments; this.catalog = catalog;
+    }
+    @ModelAttribute public void routingOptions(Model model) {
+        model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
+    }
     @GetMapping public String list(Principal actor, @RequestParam(required = false) AppUser.Role role,
             @RequestParam(defaultValue = "0") int page, Model model) {
         model.addAttribute("accounts", service.findAccounts(actor.getName(), role, page));
@@ -41,6 +50,7 @@ public class AdminAccountController {
         form.setRevision(account.revision()); form.setActive(account.active());
         form.getProfile().setFullName(account.fullName()); form.getProfile().setEmail(account.email());
         form.getProfile().setPhone(account.phone()); form.getProfile().setRole(account.role());
+        form.getProfile().setAssignment(assignments.selection(actor.getName(), id));
         model.addAttribute("form", form); addAccount(actor, id, model); return "admin/all-account-edit";
     }
     @PostMapping("/{id}/sua") public String edit(Principal actor, @PathVariable Long id,

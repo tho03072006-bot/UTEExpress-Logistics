@@ -18,6 +18,7 @@ class OperationsValidationTest {
     @AfterEach void close() { factory.close(); }
     private OrderCreateRequest order() {
         var form = new OrderCreateRequest(); form.setSenderName("Nguyễn Thắng"); form.setSenderAddress("Số 1 Võ Văn Ngân");
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(form);
         form.setReceiverName("Trần Minh Thọ"); form.setReceiverPhone("+84 901 234 567");
         form.setReceiverAddress("Số 2 Võ Văn Ngân"); form.setWeightKg(1.0); form.setServiceType(Order.ServiceType.STANDARD);
         return form;

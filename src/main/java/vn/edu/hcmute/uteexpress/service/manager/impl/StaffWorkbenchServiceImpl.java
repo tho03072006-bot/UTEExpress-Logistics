@@ -17,10 +17,11 @@ public class StaffWorkbenchServiceImpl implements StaffWorkbenchService {
     private final StaffAccessPolicy access;
     private final OperationsOverviewService overview;
     private final ManagerOrderReadRepository orders;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
 
     public StaffWorkbenchServiceImpl(StaffAccessPolicy access, OperationsOverviewService overview,
-            ManagerOrderReadRepository orders) {
-        this.access = access; this.overview = overview; this.orders = orders;
+            ManagerOrderReadRepository orders, vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
+        this.access = access; this.overview = overview; this.orders = orders; this.scope = scope;
     }
 
     public List<WorkQueueResponse> getWorkQueues(String actor) {
@@ -55,9 +56,12 @@ public class StaffWorkbenchServiceImpl implements StaffWorkbenchService {
         }
         var found = orders.findByTrackingCodeIn(codes).stream().collect(Collectors.toMap(
                 order -> order.getTrackingCode().toUpperCase(Locale.ROOT), Function.identity()));
+        // Manager chỉ xem đơn gửi đi hoặc giao tới chi nhánh mình; đơn khác chỉ báo thuộc chi nhánh khác.
+        var visible = scope.visible(actor, found.values());
         return codes.stream().map(code -> {
             Order order = found.get(code);
             if (order == null) return new BatchTrackingResponse(code, false, "Không tìm thấy", "", null, null, false);
+            if (!visible.contains(order.getId())) return new BatchTrackingResponse(code, false, "Thuộc chi nhánh khác", "", null, null, false);
             return new BatchTrackingResponse(code, true,
                 order.getStatus() == null ? "Chưa xác định" : ManagerOrderResponse.getStatusLabels().getOrDefault(order.getStatus(), "Chưa xác định"),
                 order.getServiceType() == null ? "Chưa xác định" : order.getServiceType().name(),

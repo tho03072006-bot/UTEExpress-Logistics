@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.service.tracking.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,6 +55,7 @@ class TrackingServiceImplTest {
 
     @Mock private vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
     @Mock private vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService operations;
+    @Mock private vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
     @Spy private java.time.Clock clock = java.time.Clock.fixed(java.time.Instant.parse("2026-10-11T02:00:00Z"),
             java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
 
@@ -301,6 +303,79 @@ class TrackingServiceImplTest {
                 Arguments.of(
                         Order.OrderStatus.FAILED,
                         Order.OrderStatus.RETURNED));
+    }
+
+    @Test
+    void interprovincialPickupLegCannotStartDelivery() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
+        var route = route(order, "SGN", "HAN");
+        when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route));
+        var error = assertThrows(IllegalStateException.class,
+                () -> trackingService.updateStatus(1L, "nguyentai", Order.OrderStatus.IN_TRANSIT));
+        assertTrue(error.getMessage().contains("bàn giao vào kho"));
+        assertEquals(Order.OrderStatus.PICKED_UP, order.getStatus());
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void intraprovincialDeliveryMovesRouteToLastMile() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        var route = route(order, "SGN", "SGN");
+        when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route));
+        trackingService.updateStatus(1L, "nguyentai", Order.OrderStatus.IN_TRANSIT);
+        assertEquals(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE, route.getStage());
+        assertEquals(Order.OrderStatus.IN_TRANSIT, order.getStatus());
+    }
+
+    @Test
+    void handoverToHubReleasesShipperAndMovesToOriginHub() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+        var route = route(order, "SGN", "HAN");
+        when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route));
+        trackingService.handoverToHub(1L, "nguyentai");
+        assertEquals(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB, route.getStage());
+        assertNull(order.getShipper());
+        assertEquals(Order.OrderStatus.PICKED_UP, order.getStatus());
+        verify(history).save(any());
+    }
+
+    @Test
+    void handoverRejectsIntraprovincialOrder() {
+        AppUser shipper = createShipper();
+        Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
+        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
+        when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route(order, "SGN", "SGN")));
+        assertThrows(IllegalStateException.class, () -> trackingService.handoverToHub(1L, "nguyentai"));
+        assertSame(shipper, order.getShipper());
+    }
+
+    private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute route(Order order, String from, String to) {
+        var origin = branch(from.equals("SGN") ? 1L : 2L, from);
+        var dest = from.equals(to) ? origin : branch(2L, to);
+        var pickup = new vn.edu.hcmute.uteexpress.entity.routing.ProvinceArea("79", from + "-A", "Khu A", origin,
+                java.math.BigDecimal.ONE, java.math.BigDecimal.ONE);
+        var delivery = new vn.edu.hcmute.uteexpress.entity.routing.ProvinceArea("01", to + "-B", "Khu B", dest,
+                java.math.BigDecimal.ONE, java.math.BigDecimal.ONE);
+        return new vn.edu.hcmute.uteexpress.entity.routing.OrderRoute(order, pickup, delivery);
+    }
+
+    private vn.edu.hcmute.uteexpress.entity.routing.Branch branch(Long id, String code) {
+        var branch = new vn.edu.hcmute.uteexpress.entity.routing.Branch(code, "Kho " + code, "79", "Địa chỉ", code + "-A",
+                java.time.LocalDateTime.of(2026, 10, 1, 8, 0));
+        org.springframework.test.util.ReflectionTestUtils.setField(branch, "id", id);
+        return branch;
     }
 
     private AppUser createShipper() {

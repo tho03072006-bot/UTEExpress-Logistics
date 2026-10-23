@@ -59,6 +59,7 @@
                     <td><span th:replace="~{fragments/components :: money(${draft.estimatedFee})}">0 đ</span></td>
                     <td>
                         <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" th:href="@{/nguoi-dung/gio-don/{id}/khu-vuc(id=${draft.id})}">Chọn khu vực</a>
                             <form method="post" th:action="@{'/nguoi-dung/gio-don/' + ${draft.id} + '/xac-nhan'}">
                                 <button type="submit" class="btn btn-sm btn-outline-primary">Gửi đơn này</button>
                             </form>

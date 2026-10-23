@@ -34,11 +34,25 @@ public interface OperationsCaseRepository extends JpaRepository<OperationsCase, 
             @Param("statuses") Collection<OperationsCase.Status> statuses);
     @Lock(LockModeType.PESSIMISTIC_WRITE) @Query("select c from OperationsCase c where c.id = :id")
     Optional<OperationsCase> lockCase(@Param("id") Long id);
-    @Query("""
-        select new vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseResponse(c.id, c.kind, c.status, c.createdBy, c.createdAt)
-        from OperationsCase c where (:kind is null or c.kind = :kind)
-        """)
-    Page<vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseResponse> search(@Param("kind") OperationsCase.Kind kind, Pageable pageable);
+    /**
+     * Hồ sơ theo đơn (giao lại, hoàn, bồi hoàn) thuộc chi nhánh gửi/nhận của đơn; phiếu tiền thuộc chi nhánh của Shipper.
+     * branchId null là mọi chi nhánh. Hồ sơ "Chờ duyệt" luôn đứng đầu.
+     */
+    String CASE_FILTER = """
+        from OperationsCase c left join c.order o left join c.settlement st left join st.shipper u
+        where (:kind is null or c.kind = :kind) and (:status is null or c.status = :status)
+          and (:branchId is null
+            or (o.id is not null and (not exists (select r0.id from OrderRoute r0 where r0.order = o)
+                or exists (select r1.id from OrderRoute r1 where r1.order = o and (r1.originBranch.id = :branchId or r1.destBranch.id = :branchId))))
+            or (u.id is not null and (not exists (select sb0.id from StaffBranch sb0 where sb0.user = u)
+                or exists (select sb1.id from StaffBranch sb1 where sb1.user = u and sb1.branch.id = :branchId))))
+        """;
+    @Query(value = "select new vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseResponse(c.id, c.kind, c.status, c.createdBy, c.createdAt) "
+            + CASE_FILTER + " order by case when c.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.REQUESTED then 0 else 1 end,"
+            + " c.createdAt desc, c.id desc",
+            countQuery = "select count(c) " + CASE_FILTER)
+    Page<vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseResponse> search(@Param("kind") OperationsCase.Kind kind,
+            @Param("status") OperationsCase.Status status, @Param("branchId") Long branchId, Pageable pageable);
     List<OperationsCase> findByOrderAndKindAndStatus(Order order, OperationsCase.Kind kind, OperationsCase.Status status);
     boolean existsByOrderAndStatusIn(Order order, Collection<OperationsCase.Status> statuses);
     boolean existsByOrderAndKindAndStatusIn(Order order, OperationsCase.Kind kind, Collection<OperationsCase.Status> statuses);

@@ -25,6 +25,7 @@ import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 import vn.edu.hcmute.uteexpress.service.ServiceReviewService;
+import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 
 /**
  * Vai tro User (nguoi gui hang) - muc 03 ke hoach, TV1 phu trach.
@@ -47,8 +48,10 @@ public class UserOrderController {
     private final OrderPaymentService orderPaymentService;
     private final ServiceReviewService serviceReviewService;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
-    private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
-    /** Báo giá gọi dịch vụ bản đồ: giới hạn mỗi tài khoản 40 lần/phút để không bị khóa quota. */
+    private final DeliveryProofService deliveryProofService;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
+    private final vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService savedRoutes;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
     private final java.util.Map<String, long[]> quoteWindows = new java.util.concurrent.ConcurrentHashMap<>();
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
@@ -56,14 +59,20 @@ public class UserOrderController {
                                OrderPaymentService orderPaymentService,
                                ServiceReviewService serviceReviewService,
                                vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs,
-                               vn.edu.hcmute.uteexpress.service.OrderPricingService pricing) {
-        this.pricing = pricing;
+                               DeliveryProofService deliveryProofService,
+                               vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog,
+                               vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService savedRoutes,
+                               vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) {
         this.orderService = orderService;
         this.savedAddressService = savedAddressService;
         this.orderDraftService = orderDraftService;
         this.orderPaymentService = orderPaymentService;
         this.serviceReviewService = serviceReviewService;
         this.tariffs=tariffs;
+        this.deliveryProofService = deliveryProofService;
+        this.catalog = catalog;
+        this.savedRoutes = savedRoutes;
+        this.routing = routing;
     }
 
     /** Danh sach phuong thuc thanh toan cho o chon tren form tao don. */
@@ -84,7 +93,10 @@ public class UserOrderController {
 
     @GetMapping("/tao-don")
     public String createOrderForm(Authentication authentication, Model model) {
-        model.addAttribute("form", orderService.prepareCreateForm(authentication.getName()));
+        var form = orderService.prepareCreateForm(authentication.getName());
+        var selection = savedRoutes.selections(authentication.getName()).get(form.getSenderAddressId());
+        if (selection != null) { form.setPickupProvinceCode(selection.provinceCode()); form.setPickupAreaCode(selection.areaCode()); }
+        model.addAttribute("form", form);
         addSavedAddressesToModel(model, authentication.getName());
         return "user/order-form";
     }
@@ -101,7 +113,7 @@ public class UserOrderController {
         Order order;
         try {
             order = orderService.createOrder(form, authentication.getName());
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             // Hay gap nhat o day la ma giam gia sai/het han - phai ve lai form kem loi
             // de nguoi dung sua, khong de vang ra trang bao loi he thong.
             addSavedAddressesToModel(model, authentication.getName());
@@ -119,7 +131,7 @@ public class UserOrderController {
     }
 
     /**
-     * Báo giá trực tiếp trên form tạo đơn: khoảng cách đường chim bay + cước. Chỉ để hiển thị; lúc tạo đơn server
+     * Báo giá theo cùng tuyến/khu vực với form mới. Chỉ để hiển thị; lúc tạo đơn server
      * tính lại từ đầu nên sửa số trên trình duyệt cũng không đổi được tiền.
      */
     @PostMapping(value = "/tao-don/bao-gia", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
@@ -135,9 +147,10 @@ public class UserOrderController {
             return org.springframework.http.ResponseEntity.status(429).cacheControl(noStore)
                     .body(java.util.Map.of("ok", false, "message", "Bạn xem báo giá quá nhanh. Đợi một chút rồi thử lại."));
         try {
-            var price = pricing.price(form.getSenderAddress(), form.getReceiverAddress(), form.getServiceType(), form.getWeightKg());
+            var price = routing.quote(form.toRoutingRequest());
             return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", true,
-                    "distanceKm", price.distanceKm(), "baseFee", price.baseFee(), "distanceFee", price.distanceFee(), "total", price.total()));
+                    "distanceKm", price.distanceKm(), "baseFee", price.baseFee(), "distanceFee", price.distanceFee(),
+                    "routeFee", price.routeFee(), "dropOffDiscount", price.dropOffDiscount(), "total", price.total()));
         } catch (IllegalStateException | IllegalArgumentException ex) {
             return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", false, "message", ex.getMessage()));
         }
@@ -173,7 +186,7 @@ public class UserOrderController {
         }
         try {
             orderDraftService.addDraft(form, authentication.getName());
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             addSavedAddressesToModel(model, authentication.getName());
             model.addAttribute("error", ex.getMessage());
             return "user/order-form";
@@ -223,8 +236,11 @@ public class UserOrderController {
 
         model.addAttribute("order", order);
         model.addAttribute("timeline", orderService.buildTimeline(order));
+        model.addAttribute("route", routing.summary(order).orElse(null));
         model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
         model.addAttribute("review", serviceReviewService.findByOrderId(order.getId()).orElse(null));
+        // Ảnh và chữ ký Shipper lưu khi giao; đơn chưa giao thì chưa có, trang tự ẩn khối này.
+        model.addAttribute("deliveryProof", deliveryProofService.findViewableByOrder(order).orElse(null));
         return "user/order-detail";
     }
 
@@ -246,6 +262,9 @@ public class UserOrderController {
      * de cac trang khac (trang chu, lich su don) khoi phai chay them 2 cau truy van thua.
      */
     private void addSavedAddressesToModel(Model model, String username) {
+        model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
+        model.addAttribute("dropOffDiscount", catalog.dropOffDiscount());
+        model.addAttribute("savedAreas", savedRoutes.selections(username));
         model.addAttribute("currentTariffs",tariffs.currentTariffs());
         model.addAttribute("senderAddresses",
                 savedAddressService.findByType(username, SavedAddress.AddressType.SENDER));

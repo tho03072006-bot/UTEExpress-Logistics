@@ -16,6 +16,7 @@
 <div class="mb-3"><label for="email" class="form-label">Email công việc</label><input th:field="*{email}" type="email" class="form-control" required maxlength="100" autocomplete="off"></div>
 <div class="mb-3"><label for="role" class="form-label">Cấp quyền</label><select th:field="*{role}" class="form-select" required>
 <option value="">Chọn quyền phù hợp</option><option value="MANAGER">Manager — vận hành và tra soát</option><option value="ADMIN">Admin — quản trị tài khoản và toàn bộ quyền Manager</option></select></div>
+<div th:replace="~{admin/branch-fields :: fields('assignment', 'role')}"></div>
 <div class="mb-3"><label for="password" class="form-label">Mật khẩu mới</label>
 <input id="password" name="password" type="password" class="form-control" required minlength="12" maxlength="64" autocomplete="new-password" aria-describedby="password-help"></div>
 <div class="mb-3"><label for="confirmPassword" class="form-label">Nhập lại mật khẩu mới</label>

@@ -89,6 +89,23 @@ class AssistantIntegrationTest {
         return mapper.writeValueAsString(Map.of("conversationId",conversation,"requestId",UUID.randomUUID(),"question",question));
     }
 
+    @Test void lookupReportsBranchRouteAndCurrentHubForInterprovincialOrderInLinehaul(
+            @Autowired org.springframework.context.ApplicationContext context,
+            @Autowired vn.edu.hcmute.uteexpress.repository.routing.ProvinceAreaRepository areas,
+            @Autowired vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
+        var route=new vn.edu.hcmute.uteexpress.entity.routing.OrderRoute(own,areas.findByAreaCode("SGN-THUDUC").orElseThrow(),areas.findByAreaCode("HAN-CAUGIAY").orElseThrow());
+        own.setStatus(Order.OrderStatus.PICKED_UP); own.setServiceType(Order.ServiceType.STANDARD); orders.saveAndFlush(own);
+        route.receiveAtOriginHub(); route.departLinehaul(); routes.saveAndFlush(route);
+        var data=lookup(customer,own.getTrackingCode()).path("route");
+        String origin=route.getOriginBranch().getName(), dest=route.getDestBranch().getName();
+        assertEquals(origin,data.path("origin_branch").asText()); assertEquals(dest,data.path("dest_branch").asText());
+        assertTrue(data.path("interprovincial").asBoolean());
+        assertEquals("Đang trung chuyển từ "+origin+" tới "+dest,data.path("current_location").asText());
+        assertFalse(data.path("lead_time").asText().isBlank(),"Thời gian dự kiến lấy từ bảng cước tuyến");
+        // Đơn chưa có tuyến (đơn cũ) thì không bịa thông tin tuyến.
+        assertTrue(lookup(otherCustomer,foreign.getTrackingCode()).path("route").isMissingNode());
+    }
     @Test void userReadsOwnOrderOnlyAndForeignIsIndistinguishableFromMissing() {
         var data=lookup(customer,own.getTrackingCode()); assertTrue(data.path("ok").asBoolean()); assertTrue(data.path("can_cancel").asBoolean());
         assertTrue(data.path("estimated_delivery_at").isNull()); assertEquals(OrderPayment.PaymentMethod.COD.getDisplayName(),data.path("payment").path("method").asText());

@@ -19,15 +19,16 @@
 <div class="ute-panel p-4 mb-3"><h2 class="h5">An toàn truy cập</h2><p class="small text-muted">Kiểm tra tài khoản nội bộ và thu hồi phiên/token khi nghi ngờ lộ thông tin truy cập.</p><a class="btn btn-outline-primary" th:href="@{/admin/an-toan-truy-cap}">Kiểm tra quyền truy cập</a></div>
 <details class="ute-panel p-4 sx-fold"><summary class="h5 mb-0">Phân quyền Manager và Admin</summary>
 <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Chức năng</th><th>Manager</th><th>Admin</th></tr></thead><tbody>
-<tr><td>Xem tổng quan và tra soát đơn toàn hệ thống</td><td>Có</td><td>Có</td></tr>
+<tr><td>Xem tổng quan, tra soát đơn, cảnh báo, khiếu nại, đối soát, báo cáo</td><td>Có, chỉ đơn gửi đi hoặc giao tới chi nhánh mình</td><td>Có, mọi chi nhánh và lọc theo chi nhánh</td></tr>
+<tr><td>Kho chi nhánh: nhận hàng tại quầy, xếp chuyến, xuất kho, nhận chuyến</td><td>Có, chỉ kho chi nhánh mình</td><td>Có, chọn kho</td></tr>
 <tr><td>Lọc đơn theo mã, trạng thái, khoảng ngày</td><td>Có</td><td>Có</td></tr>
 <tr><td>Đổi mật khẩu của chính mình</td><td>Có</td><td>Có</td></tr>
 <tr><td>Phân công/đổi shipper trước khi lấy hàng; quản lý khuyến mãi</td><td>Có</td><td>Có</td></tr>
 <tr><td>Báo cáo vận hành và CSV tổng hợp; xem bảng cước</td><td>Có</td><td>Có</td></tr>
 <tr><td>Đối soát cước thực nhận và xử lý khiếu nại</td><td>Có</td><td>Có</td></tr>
-<tr><td>Lập giao lại trong giới hạn và chuyển hoàn</td><td>Có, lập là có hiệu lực ngay</td><td>Có</td></tr>
-<tr><td>Nộp bổ sung cước thiếu, hoàn cước nộp thừa, bồi hoàn cước</td><td>Lập phiếu, chờ Admin duyệt</td><td>Có; không tự duyệt/chi hồ sơ mình lập</td></tr>
-<tr><td>Giao lại vượt giới hạn</td><td>Lập phiếu, chờ Admin duyệt</td><td>Duyệt hoặc từ chối</td></tr>
+<tr><td>Giao lại trong giới hạn, hoàn hàng về người gửi</td><td>Có, lập là có hiệu lực ngay</td><td>Có, lập là có hiệu lực ngay</td></tr>
+<tr><td>Giao lại vượt giới hạn</td><td>Lập, chờ Admin duyệt</td><td>Duyệt hoặc từ chối (không lập)</td></tr>
+<tr><td>Shipper nộp bù tiền thiếu, trả lại tiền Shipper nộp thừa, bồi hoàn cước</td><td>Lập phiếu, chờ Admin duyệt</td><td>Duyệt hoặc từ chối, ghi nhận chi trả (không lập)</td></tr>
 <tr><td>Đổi chính sách vận hành</td><td>Không</td><td>Có</td></tr>
 <tr><td>Cho giao đơn ví chưa trả trước; sửa/xóa phiếu nộp tiền gốc</td><td>Không</td><td>Không</td></tr>
 <tr><td>Đổi bảng cước toàn hệ thống; xem nhật ký thao tác</td><td>Không</td><td>Có</td></tr>

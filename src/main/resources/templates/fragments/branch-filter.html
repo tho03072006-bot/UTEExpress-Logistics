@@ -1,0 +1,11 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="vi"><body>
+<!-- Ô lọc chi nhánh: Admin thấy cả 3 chi nhánh để chọn; Manager chỉ có chi nhánh của mình nên không hiện ô chọn. -->
+<div th:fragment="select(branches, branchId)" class="col-md-3" th:if="${branches != null and branches.size() > 1}">
+<label for="branchId" class="form-label">Chi nhánh</label>
+<select id="branchId" name="branchId" class="form-select"><option value="">Tất cả chi nhánh</option>
+<option th:each="b : ${branches}" th:value="${b.id}" th:text="${b.name}" th:selected="${branchId != null and branchId == b.id}"></option></select></div>
+<th:block th:fragment="note(branches)">
+<p class="small text-muted" th:if="${branches != null and branches.size() == 1}" th:text="|Dữ liệu của ${branches[0].name}: đơn gửi đi hoặc giao tới chi nhánh này.|"></p>
+<p class="ute-field-error" th:if="${branches != null and branches.empty}">Tài khoản chưa được gán chi nhánh nên chưa xem được đơn của chi nhánh nào. Liên hệ Admin để được gán.</p>
+</th:block>
+</body></html>

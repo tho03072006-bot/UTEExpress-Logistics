@@ -6,6 +6,9 @@ import vn.edu.hcmute.uteexpress.entity.AppUser;
 import java.util.Optional;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long>, AppUserLookup {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select u from AppUser u where u.id = :id")
+    Optional<AppUser> lockById(Long id);
 
     org.springframework.data.domain.Page<AppUser> findByRoleAndEnabledTrue(
             AppUser.Role role, org.springframework.data.domain.Pageable pageable);

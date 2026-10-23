@@ -17,11 +17,25 @@ public class ManagerDashboardServiceImpl implements ManagerDashboardService {
 
     private final ManagerUserStatisticsRepository userStatisticsRepository;
     private final ManagerOrderStatisticsRepository orderStatisticsRepository;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
 
     public ManagerDashboardServiceImpl(ManagerUserStatisticsRepository userStatisticsRepository,
-                                       ManagerOrderStatisticsRepository orderStatisticsRepository) {
+                                       ManagerOrderStatisticsRepository orderStatisticsRepository,
+                                       vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
         this.userStatisticsRepository = userStatisticsRepository;
         this.orderStatisticsRepository = orderStatisticsRepository;
+        this.scope = scope;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ManagerDashboardResponse getSummary(String actor) {
+        Long branch = scope.of(actor, null);
+        if (branch == null) return getSummary();
+        // Người dùng không thuộc chi nhánh nào nên vẫn đếm toàn hệ thống.
+        return new ManagerDashboardResponse(userStatisticsRepository.count(), orderStatisticsRepository.countInScope(branch),
+                userStatisticsRepository.countShippersInScope(branch),
+                orderStatisticsRepository.countByStatusInScope(Order.OrderStatus.PENDING_PICKUP, branch));
     }
 
     @Override

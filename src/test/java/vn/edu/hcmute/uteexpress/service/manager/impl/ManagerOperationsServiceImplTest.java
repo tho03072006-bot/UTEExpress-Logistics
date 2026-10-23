@@ -21,7 +21,8 @@ import static org.mockito.ArgumentMatchers.*;
 
 class ManagerOperationsServiceImplTest {
     private final ManagerDispatchRepository orders = mock(ManagerDispatchRepository.class);
-    private final ManagerShipperRepository shippers = mock(ManagerShipperRepository.class);
+    private final AppUserRepository shippers = mock(AppUserRepository.class);
+    private final OrderRepository sharedOrders = mock(OrderRepository.class);
     private final PromoCodeRepository promotions = mock(PromoCodeRepository.class);
     private final StaffAccountRepository accounts = mock(StaffAccountRepository.class);
     private final AuditService audit = mock(AuditService.class);
@@ -39,9 +40,31 @@ class ManagerOperationsServiceImplTest {
         staff.setPasswordChangeRequired(false);
         when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(staff));
         var access = new StaffAccessPolicy(accounts, factory.getValidator());
-        dispatch = new ManagerDispatchServiceImpl(orders, shippers, access, audit, clock, mock(vn.edu.hcmute.uteexpress.service.OrderPaymentService.class));
+        var routeRepository = mock(vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.class);
+        var staffBranches = mock(vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.class);
+        var policyService = mock(OperationsPolicyService.class);
+        when(policyService.current()).thenReturn(new vn.edu.hcmute.uteexpress.entity.admin.OperationsPolicy());
+        var routing = new vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy(staffBranches,
+                mock(vn.edu.hcmute.uteexpress.repository.routing.ShipperZoneRepository.class),
+                mock(vn.edu.hcmute.uteexpress.repository.routing.AreaNeighborRepository.class), routeRepository, sharedOrders,
+                mock(vn.edu.hcmute.uteexpress.repository.routing.BranchRepository.class), policyService,
+                mock(vn.edu.hcmute.uteexpress.repository.admin.AuditEventRepository.class), clock);
+        var notificationRepository = mock(ShipperNotificationRepository.class);
+        when(notificationRepository.findByOrderAndRecipient(any(), any())).thenReturn(Optional.empty());
+        var shared = new vn.edu.hcmute.uteexpress.service.tracking.DispatchService(sharedOrders, shippers,
+                mock(OrderStatusHistoryRepository.class), notificationRepository,
+                new vn.edu.hcmute.uteexpress.service.tracking.LogisticsAccess(shippers, accounts, staffBranches, routeRepository), clock,
+                mock(org.springframework.context.ApplicationEventPublisher.class), audit,
+                mock(vn.edu.hcmute.uteexpress.service.OrderPaymentService.class), routing, access);
+        dispatch = new ManagerDispatchServiceImpl(shared);
+        user.setId(2L);
+        var branch = new vn.edu.hcmute.uteexpress.entity.routing.Branch("SGN", "Kho SGN", "79", "Thủ Đức", "SGN-THUDUC", LocalDateTime.now(clock));
+        org.springframework.test.util.ReflectionTestUtils.setField(branch, "id", 1L);
+        when(staffBranches.findByUser_Id(anyLong())).thenAnswer(inv -> Optional.of(new vn.edu.hcmute.uteexpress.entity.routing.StaffBranch(user, branch, user, LocalDateTime.now(clock))));
+        var area = new vn.edu.hcmute.uteexpress.entity.routing.ProvinceArea("79", "SGN-THUDUC", "Thủ Đức", branch, java.math.BigDecimal.TEN, java.math.BigDecimal.TEN);
+        when(routeRepository.findByOrder_Id(1L)).thenAnswer(inv -> Optional.of(new vn.edu.hcmute.uteexpress.entity.routing.OrderRoute(order, area, area)));
         promoService = new ManagerPromotionServiceImpl(promotions, access, audit, clock);
-        reports = new ManagerReportServiceImpl(orders, access, clock);
+        reports = new ManagerReportServiceImpl(orders, access, clock, org.mockito.Mockito.mock(vn.edu.hcmute.uteexpress.service.routing.BranchScope.class, invocation -> null));
         order = new Order(); order.setId(1L); order.setStatus(Order.OrderStatus.PENDING_PICKUP);
         shipper = new AppUser("shipper", "hash", "shipper@example.com"); shipper.setId(3L);
         shipper.setRole(AppUser.Role.SHIPPER); shipper.setEnabled(true);
@@ -52,31 +75,33 @@ class ManagerOperationsServiceImplTest {
         request.setReason("Điều phối tải đơn"); return request;
     }
     @Test void assigningPreservesStatusAndRecordsAudit() {
-        when(orders.lockOrder(1L)).thenReturn(Optional.of(order));
-        when(shippers.lockShipper(3L)).thenReturn(Optional.of(shipper));
+        when(sharedOrders.findLockedById(1L)).thenReturn(Optional.of(order));
+        when(shippers.lockById(3L)).thenReturn(Optional.of(shipper));
         dispatch.assignOrder("manager01", 1L, assignment());
         assertSame(shipper, order.getShipper()); assertEquals(Order.OrderStatus.PENDING_PICKUP, order.getStatus());
         assertEquals(LocalDateTime.now(clock), order.getUpdatedAt());
-        verify(orders).saveAndFlush(order); verify(audit).record(eq("manager01"), eq("ORDER_ASSIGN"), eq("order:1"), anyString());
+        verify(sharedOrders).save(order); verify(audit).record(eq("manager01"), eq("ORDER_ASSIGN"), eq("order:1"), anyString());
     }
     @Test void staleRevisionNeverAssigns() {
-        when(orders.lockOrder(1L)).thenReturn(Optional.of(order));
+        when(sharedOrders.findLockedById(1L)).thenReturn(Optional.of(order));
+        when(shippers.lockById(3L)).thenReturn(Optional.of(shipper));
         var form = assignment(); form.setRevision(1L);
         assertThrows(StaffConflictException.class, () -> dispatch.assignOrder("manager01", 1L, form));
-        verifyNoInteractions(shippers, audit); verify(orders, never()).saveAndFlush(any());
+        verifyNoInteractions(audit); verify(sharedOrders, never()).save(any());
     }
     @Test void everyNonPendingStatusRejectsAssignment() {
-        when(orders.lockOrder(1L)).thenReturn(Optional.of(order));
+        when(sharedOrders.findLockedById(1L)).thenReturn(Optional.of(order));
+        when(shippers.lockById(3L)).thenReturn(Optional.of(shipper));
         for (var status : Order.OrderStatus.values()) {
             if (status == Order.OrderStatus.PENDING_PICKUP) { continue; }
             order.setStatus(status);
-            assertThrows(StaffConflictException.class, () -> dispatch.assignOrder("manager01", 1L, assignment()));
+            assertThrows(IllegalArgumentException.class, () -> dispatch.assignOrder("manager01", 1L, assignment()));
         }
-        verifyNoInteractions(shippers, audit);
+        verifyNoInteractions(audit);
     }
     @Test void disabledOrWrongRoleAndSameShipperReject() {
-        when(orders.lockOrder(1L)).thenReturn(Optional.of(order));
-        when(shippers.lockShipper(3L)).thenReturn(Optional.of(shipper));
+        when(sharedOrders.findLockedById(1L)).thenReturn(Optional.of(order));
+        when(shippers.lockById(3L)).thenReturn(Optional.of(shipper));
         shipper.setEnabled(false);
         assertThrows(IllegalArgumentException.class, () -> dispatch.assignOrder("manager01", 1L, assignment()));
         shipper.setEnabled(true); shipper.setRole(AppUser.Role.ADMIN);
@@ -86,8 +111,8 @@ class ManagerOperationsServiceImplTest {
         verifyNoInteractions(audit);
     }
     @Test void adminLockedShipperIsRejectedEvenIfEnabledIsTrue() {
-        when(orders.lockOrder(1L)).thenReturn(Optional.of(order));
-        when(shippers.lockShipper(3L)).thenReturn(Optional.of(shipper));
+        when(sharedOrders.findLockedById(1L)).thenReturn(Optional.of(order));
+        when(shippers.lockById(3L)).thenReturn(Optional.of(shipper));
         shipper.setLockedByAdmin(true);
         assertThrows(IllegalArgumentException.class, () -> dispatch.assignOrder("manager01", 1L, assignment()));
         verifyNoInteractions(audit);
@@ -99,14 +124,14 @@ class ManagerOperationsServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> dispatch.assignOrder("manager01", 1L, form));
         form.setReason("abc\ndef");
         assertThrows(IllegalArgumentException.class, () -> dispatch.assignOrder("manager01", 1L, form));
-        verifyNoInteractions(orders, shippers, audit);
+        verifyNoInteractions(sharedOrders, shippers, audit);
     }
     @Test void revokedOrUnknownOperatorCannotWrite() {
         assertThrows(AccessDeniedException.class, () -> dispatch.assignOrder("unknown", 1L, assignment()));
         var account = accounts.findByUserUsername("manager01").orElseThrow();
         account.setActive(false);
         assertThrows(AccessDeniedException.class, () -> dispatch.assignOrder("manager01", 1L, assignment()));
-        verifyNoInteractions(orders, shippers, audit);
+        verifyNoInteractions(sharedOrders, shippers, audit);
     }
     private PromotionRequest promotion() {
         var form = new PromotionRequest(); form.setCode(" demo10 "); form.setDescription("Giảm cước demo");
@@ -168,7 +193,7 @@ class ManagerOperationsServiceImplTest {
         verifyNoInteractions(orders);
     }
     @Test void emptyReportIsZeroNotNaN() {
-        when(orders.countStatuses(any(), any())).thenReturn(List.of());
+        when(orders.countStatuses(any(), any(), any())).thenReturn(List.of());
         var report = reports.report("manager01", LocalDate.now(clock).minusDays(2), LocalDate.now(clock));
         assertEquals(0, report.totalOrders()); assertEquals(new BigDecimal("0.0"), report.completionRate());
         assertEquals(BigDecimal.ZERO, report.paidShippingFees()); assertEquals(7, report.counts().size());
@@ -180,7 +205,7 @@ class ManagerOperationsServiceImplTest {
         when(returned.getStatus()).thenReturn(Order.OrderStatus.RETURNED); when(returned.getTotal()).thenReturn(2L);
         var failed = mock(ManagerDispatchRepository.StatusCount.class);
         when(failed.getStatus()).thenReturn(Order.OrderStatus.FAILED); when(failed.getTotal()).thenReturn(10L);
-        when(orders.countStatuses(any(), any())).thenReturn(List.of(delivered, returned, failed));
+        when(orders.countStatuses(any(), any(), any())).thenReturn(List.of(delivered, returned, failed));
         var report = reports.report("manager01", LocalDate.now(clock), LocalDate.now(clock));
         assertEquals(20L, report.totalOrders()); assertEquals(new BigDecimal("80.0"), report.completionRate());
     }

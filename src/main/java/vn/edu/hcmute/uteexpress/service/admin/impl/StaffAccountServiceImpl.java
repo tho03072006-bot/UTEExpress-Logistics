@@ -25,14 +25,17 @@ public class StaffAccountServiceImpl implements StaffAccountService {
     private final PasswordEncoder encoder;
     private final Validator validator;
     private final vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
+    private final vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments;
 
     public StaffAccountServiceImpl(StaffAccountRepository accounts, AdminUserRepository users,
-            PasswordEncoder encoder, Validator validator, vn.edu.hcmute.uteexpress.service.admin.AuditService audit) {
+            PasswordEncoder encoder, Validator validator, vn.edu.hcmute.uteexpress.service.admin.AuditService audit,
+            vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments) {
         this.accounts = accounts;
         this.users = users;
         this.encoder = encoder;
         this.validator = validator;
         this.audit = audit;
+        this.branchAssignments = branchAssignments;
     }
 
     @Override @Transactional(readOnly = true)
@@ -75,6 +78,7 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         account.setUser(users.save(user));
         account.setIssuedBy(actor);
         accounts.saveAndFlush(account);
+        branchAssignments.assign(actor, user, request.getAssignment());
         audit.record(actor, "STAFF_CREATE", "staff:" + account.getId(), "Cấp tài khoản role=" + user.getRole());
         log.info("STAFF_CREATE actor={} staffId={} role={}", actor, account.getId(), user.getRole());
     }
@@ -96,13 +100,16 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         }
         if (target.isActive() == request.getActive()
                 && target.getUser().isEnabled() == request.getActive()
-                && target.getUser().getRole() == request.getRole()) {
+                && target.getUser().getRole() == request.getRole()
+                && !branchAssignments.hasChanges(actor, target.getUser().getId(), request.getAssignment())) {
             throw new IllegalArgumentException("Chưa có thay đổi trạng thái hoặc cấp quyền.");
         }
         target.setActive(request.getActive());
         target.getUser().setEnabled(request.getActive());
         target.getUser().setLockedByAdmin(!request.getActive());
         target.getUser().setRole(request.getRole());
+        branchAssignments.assign(actor, target.getUser(), request.getAssignment());
+        target.getUser().revokeSessions();
         clearOtp(target.getUser());
         target.revokeSessions();
         accounts.flush();

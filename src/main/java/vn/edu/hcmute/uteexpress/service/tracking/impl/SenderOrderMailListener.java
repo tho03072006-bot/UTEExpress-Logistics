@@ -78,6 +78,7 @@ public class SenderOrderMailListener {
         message.setSubject("[UTEExpress] Vận đơn " + oneLine(event.trackingCode()) + " " + event.kind().subject());
         var body = new StringBuilder("Chào ").append(oneLine(event.recipientName()).isEmpty() ? "bạn" : oneLine(event.recipientName()))
                 .append(",\n\nVận đơn ").append(oneLine(event.trackingCode())).append(": ").append(event.kind().headline()).append('\n');
+        if (event.location() != null) body.append("Vị trí hiện tại: ").append(oneLine(event.location())).append('\n');
         if (event.reason() != null) body.append("Lý do: ").append(oneLine(event.reason())).append('\n');
         if (event.nextAttemptAt() != null) body.append(event.kind() == SenderOrderUpdateEvent.Kind.PICKUP_FAILED
                 ? "Hẹn lấy hàng lại: " : "Hẹn giao lại: ").append(TIME.format(event.nextAttemptAt())).append(" (giờ Việt Nam)\n");

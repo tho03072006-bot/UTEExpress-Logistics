@@ -10,6 +10,7 @@
 <div class="mb-3"><label for="profile.phone" class="form-label">Số di động Việt Nam</label><input th:field="*{profile.phone}" type="tel" class="form-control" required maxlength="20"></div>
 <div class="mb-3"><label for="profile.role" class="form-label">Vai trò</label><select th:field="*{profile.role}" class="form-select" required><option th:each="role : ${allowedRoles}" th:value="${role}" th:text="${role}"></option></select></div>
 <div class="mb-3"><label for="active" class="form-label">Trạng thái</label><select th:field="*{active}" class="form-select" required><option value="true">Hoạt động — Admin xác nhận cấp/mở tài khoản</option><option value="false">Khóa bởi Admin — OTP không mở lại được</option></select></div>
+<div th:replace="~{admin/branch-fields :: fields('profile.assignment', 'profile.role')}"></div>
 <div th:replace="~{admin/account-form-fragments :: action}"></div>
 <button class="btn btn-primary" type="submit">Lưu thay đổi</button> <a class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan}">Hủy</a>
 </form></div></section></body></html>

@@ -52,6 +52,7 @@ class PublicValidationIntegrationTest {
     }
     @TestConfiguration static class TestTime { @Bean @Primary MutableClock testTime(){return new MutableClock();} }
     @Autowired MutableClock clock;
+    @Autowired org.springframework.context.ApplicationContext context;
     @Autowired MockMvc mvc;
     @Autowired AppUserRepository users;
     @Autowired EmailChangeRequestRepository changes;
@@ -71,9 +72,69 @@ class PublicValidationIntegrationTest {
     @Autowired OrderDraftService drafts;
     @Autowired OrderFormSubmissionRepository submissions;
     @MockBean JavaMailSender mail;
+    @Autowired vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
+    @Autowired vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routeRecords;
+    @Autowired vn.edu.hcmute.uteexpress.repository.routing.DraftOrderAreaRepository draftAreas;
+    @Autowired vn.edu.hcmute.uteexpress.repository.routing.SavedAddressAreaRepository addressAreas;
+    @Autowired DraftOrderRepository draftRecords;
     AppUser customer;
 
+    @Test void quoteApiAndCreatedOrderUseExactlyTheSameInterprovincialFee() throws Exception {
+        var form = form(); form.setDeliveryProvinceCode("01"); form.setDeliveryAreaCode("HAN-CAUGIAY");
+        var quote = routing.quote(form);
+        mvc.perform(get("/api/routing/quote").param("weightKg","1").param("serviceType","STANDARD")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                .param("deliveryProvinceCode","01").param("deliveryAreaCode","HAN-CAUGIAY"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].total").value(quote.total().intValue()))
+                .andExpect(jsonPath("$[0].distanceFee").value(0)).andExpect(jsonPath("$[0].routeFee").value(25000));
+        var order = orderService.createOrder(form, customer.getUsername());
+        assertEquals(0, quote.total().compareTo(order.getShippingFee()));
+        var route = routeRecords.findByOrder_Id(order.getId()).orElseThrow();
+        assertEquals(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP, route.getStage());
+        assertTrue(order.getSenderAddress().endsWith("TP. Hồ Chí Minh")); assertTrue(order.getReceiverAddress().endsWith("Hà Nội"));
+    }
+    @Test void mismatchedProvinceRollsBackReservedSubmissionAndDoesNotCreateAnyOrder() {
+        var form = form(); form.setPickupProvinceCode("01"); long before = orders.count(), routesBefore = routeRecords.count();
+        assertThrows(IllegalArgumentException.class, () -> orderService.createOrder(form, customer.getUsername()));
+        assertEquals(before, orders.count()); assertEquals(routesBefore, routeRecords.count());
+        assertTrue(submissions.findByToken(form.getSubmissionToken()).isEmpty());
+    }
+    @Test void changingOnlyAreaCannotReuseASubmittedToken() {
+        var form = form(); orderService.createOrder(form, customer.getUsername()); form.setDeliveryAreaCode("SGN-Q1");
+        assertThrows(IllegalStateException.class, () -> orderService.createOrder(form, customer.getUsername()));
+    }
+    @Test void legacyDraftRequiresOwnedAreaSelectionAndRejectsStaleSelection() {
+        var saved = drafts.addDraft(form(), customer.getUsername());
+        draftAreas.deleteAll(draftAreas.findByDraftOrder_Id(saved.getId()).stream().toList());
+        assertThrows(IllegalStateException.class, () -> drafts.confirmDraft(saved.getId(), customer.getUsername()));
+        var other = account(AppUser.Role.USER);
+        assertThrows(IllegalStateException.class, () -> drafts.prepareAreaForm(saved.getId(), other.getUsername()));
+        var selection = drafts.prepareAreaForm(saved.getId(), customer.getUsername());
+        selection.setPickupProvinceCode("79"); selection.setPickupAreaCode("SGN-THUDUC");
+        selection.setDeliveryProvinceCode("01"); selection.setDeliveryAreaCode("HAN-CAUGIAY");
+        drafts.selectAreas(saved.getId(), selection, customer.getUsername());
+        assertThrows(IllegalStateException.class, () -> drafts.selectAreas(saved.getId(), selection, customer.getUsername()));
+        var order = drafts.confirmDraft(saved.getId(), customer.getUsername());
+        assertEquals(new BigDecimal("43000"), order.getShippingFee());
+        assertTrue(draftRecords.findById(saved.getId()).isEmpty()); assertTrue(draftAreas.findByDraftOrder_Id(saved.getId()).isEmpty());
+    }
+    @Test void savedAddressAreaIsUpdatedAndDeletedWithOwnedAddress() {
+        var form = address("Địa chỉ khu vực", SavedAddress.AddressType.SENDER);
+        var address = addresses.create(form, customer.getUsername());
+        assertEquals("SGN-THUDUC", addressAreas.findBySavedAddress_Id(address.getId()).orElseThrow().getArea().getAreaCode());
+        form.setAreaCode("SGN-Q1"); addresses.update(address.getId(), form, customer.getUsername());
+        assertEquals("SGN-Q1", addressAreas.findBySavedAddress_Id(address.getId()).orElseThrow().getArea().getAreaCode());
+        addresses.delete(address.getId(), customer.getUsername()); assertTrue(addressAreas.findBySavedAddress_Id(address.getId()).isEmpty());
+    }
+    @Test void unknownAndInactiveAreaCannotSaveAnAddress() {
+        var form = address("Địa chỉ sai", SavedAddress.AddressType.SENDER); form.setAreaCode("UNKNOWN");
+        long before = addresses.countOfUser(customer.getUsername());
+        assertThrows(IllegalArgumentException.class, () -> addresses.create(form, customer.getUsername()));
+        assertEquals(before, addresses.countOfUser(customer.getUsername()));
+    }
+
     @BeforeEach void seed() {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         clock.value=Instant.parse("2026-10-21T03:00:00Z");
         customer=account(AppUser.Role.USER);
     }
@@ -86,6 +147,7 @@ class PublicValidationIntegrationTest {
     String wrong(String correct){return correct.equals("000000")?"000001":"000000";}
     OrderCreateRequest form(){
         var form=orderService.prepareCreateForm(customer.getUsername());
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(form);
         form.setSenderName("Người Gửi");form.setSenderAddress("Địa chỉ gửi kiểm thử");
         form.setReceiverName("Người Nhận");form.setReceiverPhone("0901234567");form.setReceiverAddress("Địa chỉ nhận kiểm thử");
         form.setWeightKg(1d);form.setServiceType(Order.ServiceType.STANDARD);form.setPaymentMethod(OrderPayment.PaymentMethod.COD);return form;
@@ -257,6 +319,7 @@ class PublicValidationIntegrationTest {
         for(int i=0;i<2;i++){
             var response=mvc.perform(post("/nguoi-dung/tao-don").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("submissionToken",form.getSubmissionToken()).param("senderName",form.getSenderName()).param("senderAddress",form.getSenderAddress())
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC").param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("receiverName",form.getReceiverName()).param("receiverAddress",form.getReceiverAddress()).param("receiverPhone",form.getReceiverPhone())
                 .param("weightKg","1").param("serviceType","STANDARD").param("paymentMethod","COD"))
                 .andExpect(status().is3xxRedirection()).andReturn().getResponse();
@@ -367,6 +430,7 @@ class PublicValidationIntegrationTest {
         for(int i=0;i<3;i++) {
             var post=post("/nguoi-dung/tao-don/them-vao-gio").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("senderName",request.getSenderName()).param("senderAddress",request.getSenderAddress()).param("receiverName",request.getReceiverName())
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC").param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("receiverAddress",request.getReceiverAddress()).param("receiverPhone",request.getReceiverPhone()).param("weightKg","1").param("serviceType","STANDARD").param("paymentMethod","COD");
             if(i==0)mvc.perform(post).andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form","submissionToken"));
             else mvc.perform(post.param("submissionToken",request.getSubmissionToken())).andExpect(redirectedUrl("/nguoi-dung/tao-don"));
@@ -401,6 +465,7 @@ class PublicValidationIntegrationTest {
     }
     SavedAddressRequest address(String label,SavedAddress.AddressType type){
         var form=new SavedAddressRequest();form.setLabel(label);form.setContactName("Người Liên Hệ");form.setContactPhone("0901234567");
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(form);
         form.setAddressLine("Địa chỉ liên hệ thử nghiệm");form.setAddressType(type);return form;
     }
     @Test void switchingAddressTypeCannotBypassTwentyAddressLimit(){

@@ -45,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BackendSafetyRegressionTest {
     static final AtomicInteger SEQUENCE=new AtomicInteger();
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.context.ApplicationContext context;
     @Autowired AppUserRepository users;
     @Autowired OrderRepository orders;
     @Autowired OrderFormSubmissionRepository submissions;
@@ -63,6 +64,7 @@ class BackendSafetyRegressionTest {
 
     @BeforeEach void seed() {
         assertTrue(dataSource.getJdbcUrl().startsWith("jdbc:h2:"));
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         customer=account(AppUser.Role.USER);
         when(geocoder.locate(anyString())).thenAnswer(call -> {
             assertFalse(TransactionSynchronizationManager.isActualTransactionActive(), "Không được gọi bản đồ trong transaction");
@@ -81,47 +83,40 @@ class BackendSafetyRegressionTest {
         request.setSenderName("Người Gửi"); request.setSenderAddress("Địa chỉ gửi kiểm thử");
         request.setReceiverName("Người Nhận"); request.setReceiverAddress("Địa chỉ nhận kiểm thử");
         request.setReceiverPhone("0901234567"); request.setWeightKg(1d);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(request);
         return request;
     }
 
-    @Test void fiveSlowMapsDoNotHoldAnyDatabaseConnectionsOrCreatePartialOrders() throws Exception {
-        var actors=new ArrayList<AppUser>(); var requests=new ArrayList<OrderCreateRequest>();
-        for(int i=0;i<5;i++){var actor=account(AppUser.Role.USER); actors.add(actor); requests.add(form(actor));}
+    @Test void concurrentRouteQuotesNeverCallExternalMapsOrWritePartialOrders() throws Exception {
         long before=orders.count(), tokens=submissions.count();
-        var waiting=new CountDownLatch(5); var release=new CountDownLatch(1);
-        when(geocoder.locate(anyString())).thenAnswer(call -> {
-            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
-            waiting.countDown(); assertTrue(release.await(15,TimeUnit.SECONDS));
-            throw new GeocodingUnavailableException();
-        });
+        when(geocoder.locate(anyString())).thenThrow(new GeocodingUnavailableException());
         var executor=Executors.newFixedThreadPool(5); var tasks=new ArrayList<Future<?>>();
         try {
-            for(int i=0;i<5;i++){final int n=i;tasks.add(executor.submit(()->orderService.createOrder(requests.get(n),actors.get(n).getUsername())));}
-            assertTrue(waiting.await(10,TimeUnit.SECONDS));
+            for(int i=0;i<5;i++)tasks.add(executor.submit(()->mvc.perform(get("/api/routing/quote")
+                    .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                    .param("deliveryProvinceCode","48").param("deliveryAreaCode","DAD-HAICHAU").param("weightKg","1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$[0].interprovincial").value(true))));
+            for(var task:tasks)task.get(10,TimeUnit.SECONDS);
             assertEquals(0,dataSource.getHikariPoolMXBean().getActiveConnections());
             try(var connection=dataSource.getConnection()){assertTrue(connection.isValid(1));}
-        } finally {
-            release.countDown();
-            for(var task:tasks)assertInstanceOf(GeocodingUnavailableException.class,assertThrows(ExecutionException.class,()->task.get(10,TimeUnit.SECONDS)).getCause());
-            executor.shutdownNow();
-        }
+        } finally {executor.shutdownNow();}
+        verifyNoInteractions(geocoder);
         assertEquals(before,orders.count()); assertEquals(tokens,submissions.count());
     }
-    @Test void httpRequestWithOsivAlsoReleasesConnectionBeforeMapCall() throws Exception {
-        var request=form();
-        when(geocoder.locate(anyString())).thenAnswer(call -> {
-            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
-            assertEquals(0,dataSource.getHikariPoolMXBean().getActiveConnections());
-            throw new GeocodingUnavailableException();
-        });
+    @Test void httpOrderCreatesRouteEvenWhenExternalMapIsUnavailable() throws Exception {
+        var request=form();long before=orders.count();
+        when(geocoder.locate(anyString())).thenThrow(new GeocodingUnavailableException());
         mvc.perform(post("/nguoi-dung/tao-don").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("submissionToken",request.getSubmissionToken()).param("senderName",request.getSenderName())
                 .param("senderAddress",request.getSenderAddress()).param("receiverName",request.getReceiverName())
                 .param("receiverAddress",request.getReceiverAddress()).param("receiverPhone",request.getReceiverPhone())
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                .param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("weightKg","1").param("serviceType","STANDARD").param("paymentMethod","COD"))
-            .andExpect(status().isOk()).andExpect(view().name("user/order-form"));
+            .andExpect(status().is3xxRedirection());
+        assertEquals(before+1,orders.count());verifyNoInteractions(geocoder);
     }
-    @Test void addConfirmOneAndConfirmAllResolveMapsOutsideTransaction() {
+    @Test void addConfirmOneAndConfirmAllNeverNeedExternalMaps() {
         var first=drafts.addDraft(form(),customer.getUsername());
         var order=drafts.confirmDraft(first.getId(),customer.getUsername());
         assertNotNull(payments.findByOrder(order).orElseThrow());
@@ -138,6 +133,8 @@ class BackendSafetyRegressionTest {
         });
         mvc.perform(post("/nguoi-dung/tao-don/bao-gia").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("senderAddress","Địa chỉ gửi thử").param("receiverAddress","Địa chỉ nhận thử")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                .param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("weightKg","1").param("serviceType","STANDARD"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ok").value(true));
         mvc.perform(post("/nguoi-dung/gio-don/"+first.getId()+"/xac-nhan").with(user(customer.getUsername()).roles("USER")).with(csrf()))
@@ -163,36 +160,31 @@ class BackendSafetyRegressionTest {
         verifyNoInteractions(geocoder);
     }
     @ParameterizedTest @ValueSource(booleans={false,true})
-    void accountLockedDuringMapCannotCreateDirectOrderOrDraft(boolean cart) {
+    void lockedAccountCannotCreateDirectOrderOrDraft(boolean cart) {
         var request=form(); long before=orders.count();
-        when(geocoder.locate(anyString())).thenAnswer(call -> {
-            assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
-            var owner=users.findById(customer.getId()).orElseThrow(); owner.setLockedByAdmin(true); users.saveAndFlush(owner);
-            return FixedAddressGeocoder.DEFAULT;
-        });
+        var owner=users.findById(customer.getId()).orElseThrow(); owner.setLockedByAdmin(true); users.saveAndFlush(owner);
         assertThrows(AccessDeniedException.class,()->{if(cart)drafts.addDraft(request,customer.getUsername());else orderService.createOrder(request,customer.getUsername());});
         assertEquals(before,orders.count()); assertEquals(0,drafts.countDrafts(customer.getUsername()));
         assertTrue(submissions.findByToken(request.getSubmissionToken()).isEmpty());
     }
-    @Test void currentTariffIsReadAfterMapAndNotFrozenInPreflight() {
+    @Test void currentTariffIsReReadWhenConfirmingCart() {
         var tariff=tariffs.findByServiceType(Order.ServiceType.STANDARD).orElseThrow(); var original=tariff.getBaseFee();
-        var changed=new AtomicBoolean();
-        when(geocoder.locate(anyString())).thenAnswer(call -> {
-            if(changed.compareAndSet(false,true)){tariff.setBaseFee(original.add(BigDecimal.valueOf(1000)));tariffs.saveAndFlush(tariff);}
-            return FixedAddressGeocoder.DEFAULT;
-        });
-        try {assertEquals(0,original.add(BigDecimal.valueOf(1000)).add(tariff.getFeePerKg()).compareTo(orderService.createOrder(form(),customer.getUsername()).getShippingFee()));}
+        var draft=drafts.addDraft(form(),customer.getUsername());
+        tariff.setBaseFee(original.add(BigDecimal.valueOf(1000)));tariffs.saveAndFlush(tariff);
+        try {assertEquals(0,draft.getEstimatedFee().add(BigDecimal.valueOf(1000))
+                .compareTo(drafts.confirmDraft(draft.getId(),customer.getUsername()).getShippingFee()));}
         finally {var latest=tariffs.findByServiceType(Order.ServiceType.STANDARD).orElseThrow();latest.setBaseFee(original);tariffs.saveAndFlush(latest);}
     }
-    @Test void removingDraftDuringMapRejectsWholeCartWithoutCreatingOrders() {
-        var first=drafts.addDraft(form(),customer.getUsername()); drafts.addDraft(form(),customer.getUsername());
-        long before=orders.count(); var removed=new AtomicBoolean();
-        when(geocoder.locate(anyString())).thenAnswer(call -> {
-            if(removed.compareAndSet(false,true))drafts.removeDraft(first.getId(),customer.getUsername());
-            return FixedAddressGeocoder.DEFAULT;
-        });
-        assertThrows(IllegalStateException.class,()->drafts.confirmAllDrafts(customer.getUsername()));
-        assertEquals(before,orders.count()); assertEquals(1,drafts.countDrafts(customer.getUsername()));
+    @Test void concurrentRemoveAndConfirmNeverDuplicateOrders() throws Exception {
+        var first=drafts.addDraft(form(),customer.getUsername());drafts.addDraft(form(),customer.getUsername());
+        long before=orders.count();var start=new CountDownLatch(1);var executor=Executors.newFixedThreadPool(2);
+        try {
+            var confirm=executor.submit(()->{start.await();return drafts.confirmAllDrafts(customer.getUsername()).size();});
+            var remove=executor.submit(()->{start.await();try{drafts.removeDraft(first.getId(),customer.getUsername());}catch(IllegalStateException alreadyConfirmed){}return true;});
+            start.countDown();int count=confirm.get(10,TimeUnit.SECONDS);remove.get(10,TimeUnit.SECONDS);
+            assertTrue(count==1||count==2);assertEquals(before+count,orders.count());
+            assertEquals(0,drafts.countDrafts(customer.getUsername()));verifyNoInteractions(geocoder);
+        } finally {executor.shutdownNow();}
     }
     @Test void oneInvalidPromoRollsBackEveryOrderAndKeepsWholeCart() {
         var invalid=form(); invalid.setPromoCode("NO_SUCH_PROMO");
@@ -226,6 +218,8 @@ class BackendSafetyRegressionTest {
     void invalidQuoteWeightsHaveJsonValidationResponseWithoutCallingMap(String weight) throws Exception {
         mvc.perform(post("/nguoi-dung/tao-don/bao-gia").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("senderAddress","Địa chỉ gửi thử").param("receiverAddress","Địa chỉ nhận thử")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                .param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("serviceType","STANDARD").param("weightKg",weight))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ok").value(false)).andExpect(header().string("Cache-Control","no-store"));
         verifyNoInteractions(geocoder);
@@ -235,6 +229,8 @@ class BackendSafetyRegressionTest {
         var request=form(); request.setWeightKg(Double.valueOf(weight));assertTrue(validator.validate(request).isEmpty());
         mvc.perform(post("/nguoi-dung/tao-don/bao-gia").with(user(customer.getUsername()).roles("USER")).with(csrf())
                 .param("senderAddress",request.getSenderAddress()).param("receiverAddress",request.getReceiverAddress())
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC")
+                .param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC")
                 .param("serviceType","STANDARD").param("weightKg",weight))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ok").value(true));
         assertNotNull(orderService.createOrder(request,customer.getUsername()).getId());

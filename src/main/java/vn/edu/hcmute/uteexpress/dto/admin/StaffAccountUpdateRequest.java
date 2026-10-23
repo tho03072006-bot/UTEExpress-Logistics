@@ -4,6 +4,10 @@ import jakarta.validation.constraints.*;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 
 public class StaffAccountUpdateRequest {
+    @jakarta.validation.Valid @NotNull(message = "Thiếu thông tin chi nhánh.")
+    private StaffBranchRequest assignment = new StaffBranchRequest();
+    public StaffBranchRequest getAssignment() { return assignment; }
+    public void setAssignment(StaffBranchRequest value) { assignment = value; }
     @NotNull(message = "Thiếu phiên bản tài khoản.")
     @PositiveOrZero(message = "Phiên bản tài khoản không hợp lệ.")
     private Long revision;

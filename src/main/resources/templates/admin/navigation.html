@@ -14,6 +14,7 @@
 <a th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
 <a th:href="@{/manager/tra-cuu-hang-loat}"><i class="bi bi-list-check"></i> Tra cứu nhiều vận đơn</a>
 <a th:href="@{/manager/phan-cong}"><i class="bi bi-truck"></i> Phân công Shipper</a>
+<a th:href="@{/manager/kho}"><i class="bi bi-buildings"></i> Kho và chuyến trung chuyển</a>
 <a th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-circle"></i> Cảnh báo cần xử lý</a>
 <a th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ vận hành</a>
 </div></details>
@@ -31,8 +32,10 @@
 <details sec:authorize="hasRole('ADMIN')"><summary>Quản trị · Chỉ Admin</summary><div>
 <a th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Tổng quan quản trị</a>
 <a th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people"></i> Tài khoản · 4 vai trò</a>
+<a th:href="@{/admin/chi-nhanh}"><i class="bi bi-building"></i> Chi nhánh và kho</a>
 <a th:href="@{/admin/chinh-sach-van-hanh}"><i class="bi bi-sliders"></i> Chính sách vận hành</a>
 <a th:href="@{/admin/bang-cuoc}"><i class="bi bi-gear"></i> Cấu hình cước</a>
+<a th:href="@{/admin/cuoc-tuyen}"><i class="bi bi-signpost"></i> Phụ phí tuyến</a>
 <a th:href="@{/admin/an-toan-truy-cap}"><i class="bi bi-shield-check"></i> An toàn truy cập</a>
 <a th:href="@{/admin/nhat-ky}"><i class="bi bi-journal-text"></i> Nhật ký quản trị</a>
 </div></details>

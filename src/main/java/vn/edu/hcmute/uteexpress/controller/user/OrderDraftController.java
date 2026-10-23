@@ -23,9 +23,28 @@ import java.util.List;
 public class OrderDraftController {
 
     private final OrderDraftService orderDraftService;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
 
-    public OrderDraftController(OrderDraftService orderDraftService) {
+    public OrderDraftController(OrderDraftService orderDraftService, vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog) {
         this.orderDraftService = orderDraftService;
+        this.catalog = catalog;
+    }
+    @GetMapping("/{id}/khu-vuc") public String areaForm(@PathVariable Long id, Authentication actor, Model model) {
+        model.addAttribute("form", orderDraftService.prepareAreaForm(id, actor.getName()));
+        areaOptions(id, model); return "user/draft-area";
+    }
+    @PostMapping("/{id}/khu-vuc") public String saveAreas(@PathVariable Long id, Authentication actor,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.ModelAttribute("form") vn.edu.hcmute.uteexpress.dto.DraftAreaRequest form,
+            org.springframework.validation.BindingResult errors, Model model, RedirectAttributes redirect) {
+        if (!errors.hasErrors()) {
+            try { orderDraftService.selectAreas(id, form, actor.getName());
+                redirect.addFlashAttribute("message", "Đã cập nhật khu vực và cước tạm tính."); return "redirect:/nguoi-dung/gio-don";
+            } catch (IllegalStateException | IllegalArgumentException ex) { errors.reject("invalid", ex.getMessage()); }
+        }
+        areaOptions(id, model); return "user/draft-area";
+    }
+    private void areaOptions(Long id, Model model) {
+        model.addAttribute("draftId", id); model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
     }
 
     @GetMapping

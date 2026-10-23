@@ -54,6 +54,12 @@
                 Trạng thái hiện tại:
                 <strong data-order-status th:attr="data-order-status=${order.status}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong>
             </p>
+            <dl class="small mb-4" th:if="${route != null}">
+                <dt>Tuyến</dt><dd th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh, ${route.originName}|">-</dd>
+                <th:block th:if="${route.location != null}"><dt>Vị trí hiện tại</dt><dd th:text="${route.location}">-</dd></th:block>
+                <th:block th:if="${route.leadTime != null}"><dt>Thời gian dự kiến</dt><dd th:text="${route.leadTime}">-</dd></th:block>
+                <th:block th:if="${route.dropOff and order.status.name() == 'PENDING_PICKUP'}"><dt>Quầy nhận hàng</dt><dd th:text="|${route.originName}: ${route.counterAddress}|">-</dd></th:block>
+            </dl>
 
             <ol class="ute-timeline">
                 <li th:each="step : ${timeline}"
@@ -161,6 +167,10 @@
                 </div>
             </div>
         </div>
+
+        <th:block th:if="${deliveryProof != null}">
+            <div th:replace="~{fragments/components :: deliveryProof(${deliveryProof}, ${'/nguoi-dung/don-hang/' + order.id})}"></div>
+        </th:block>
 
         <div class="ute-panel mb-3" th:if="${review != null}">
             <h5 class="mb-2">Đánh giá của bạn</h5>
