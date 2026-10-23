@@ -46,8 +46,9 @@ class AivenControlsIntegrationTest {
         Long id = cases.request(manager.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETURN, order.getId(),
                 order.getRevision(), null, null, "Kiểm thử hoàn hàng rollback trên MySQL", "", UUID.randomUUID().toString()), null);
         var record = cases.view(manager.getUsername(), id);
-        cases.review(manager.getUsername(), id, new OperationsReviewRequest(record.getRevision(), true, "Đủ điều kiện bàn giao hoàn"));
+        assertEquals(OperationsCase.Status.APPROVED, record.getStatus(), "Hoàn hàng có hiệu lực ngay theo B8, không qua bước duyệt.");
         cases.startReturn(manager.getUsername(), id, record.getRevision(), "Bắt đầu hoàn hàng kiểm thử");
+        assertEquals(OperationsCase.Status.IN_PROGRESS, record.getStatus());
         cases.complete(manager.getUsername(), id, record.getRevision(), "Người gửi kiểm thử nhận hoàn", image());
         assertEquals(Order.OrderStatus.RETURNED, order.getStatus());
         assertEquals(OperationsCase.Status.COMPLETED, record.getStatus());

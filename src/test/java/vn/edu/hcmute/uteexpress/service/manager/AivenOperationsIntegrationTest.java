@@ -12,6 +12,7 @@ import vn.edu.hcmute.uteexpress.dto.manager.*;
 import vn.edu.hcmute.uteexpress.dto.admin.ShippingTariffUpdateRequest;
 import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.entity.admin.StaffAccount;
+import vn.edu.hcmute.uteexpress.entity.routing.*;
 import vn.edu.hcmute.uteexpress.service.admin.*;
 import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
@@ -28,6 +29,7 @@ class AivenOperationsIntegrationTest {
     @Autowired ShippingTariffService tariffs;
     @Autowired AuditService audit;
     @Autowired OrderService orders;
+    @Autowired vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
     @Autowired Clock clock;
     private String operator(AppUser.Role role) {
         var user = new AppUser("qa_" + UUID.randomUUID().toString().replace("-", ""), "test-hash", UUID.randomUUID() + "@example.com");
@@ -46,11 +48,28 @@ class AivenOperationsIntegrationTest {
         order.setReceiverName("Kiểm thử"); order.setReceiverAddress("Địa chỉ kiểm thử"); order.setReceiverPhone("0901234567");
         order.setWeightKg(1.0); order.setServiceType(Order.ServiceType.STANDARD); order.setShippingFee(BigDecimal.valueOf(18000));
         em.persist(order); em.flush();
+        var area = em.createQuery("select a from ProvinceArea a where a.areaCode = :code", ProvinceArea.class)
+                .setParameter("code", "SGN-THUDUC").getSingleResult();
+        var operator = em.createQuery("select u from AppUser u where u.username = :name", AppUser.class)
+                .setParameter("name", admin).getSingleResult();
+        em.persist(new StaffBranch(shipper, area.getBranch(), operator, LocalDateTime.now(clock)));
+        em.persist(new ShipperZone(shipper, area, true));
+        var route = new OrderRoute(order, area, area); em.persist(route);
+        var payment = payments.createForOrder(order, OrderPayment.PaymentMethod.COD, null, BigDecimal.ZERO);
+        em.flush();
+        assertEquals(OrderPayment.PaymentStatus.UNPAID, payment.getStatus());
+        assertEquals(0, payment.getAmount().compareTo(order.getShippingFee()));
         var form = new OrderAssignmentRequest(); form.setShipperId(shipper.getId()); form.setRevision(order.getRevision());
         form.setReason("Phân công kiểm thử");
         dispatch.assignOrder(admin, order.getId(), form);
         em.flush();
         assertEquals(shipper.getId(), order.getShipper().getId()); assertTrue(order.getRevision() > form.getRevision());
+        assertEquals(shipper.getId(), route.getPickupShipper().getId());
+        assertEquals(shipper.getId(), route.getDeliveryShipper().getId());
+        assertEquals(1L, em.createQuery("select count(h) from OrderStatusHistory h where h.order = :order", Long.class)
+                .setParameter("order", order).getSingleResult());
+        assertEquals(1L, em.createQuery("select count(n) from ShipperNotification n where n.order = :order and n.recipient = :shipper", Long.class)
+                .setParameter("order", order).setParameter("shipper", shipper).getSingleResult());
         assertThrows(StaffConflictException.class, () -> dispatch.assignOrder(admin, order.getId(), form));
         assertNotNull(dispatch.findShippers(admin, 0)); assertNotNull(dispatch.findPendingOrders(admin, 0));
         var report = reports.report(admin, LocalDate.now(clock), LocalDate.now(clock));
