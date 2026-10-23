@@ -50,6 +50,7 @@ class BackendSafetyRegressionTest {
     @Autowired OrderRepository orders;
     @Autowired OrderFormSubmissionRepository submissions;
     @Autowired OrderPaymentRepository payments;
+    @Autowired PromoCodeRepository promoCodes;
     @Autowired ShippingTariffRepository tariffs;
     @Autowired OrderService orderService;
     @Autowired OrderDraftService drafts;
@@ -300,5 +301,37 @@ class BackendSafetyRegressionTest {
         assertThrows(IllegalStateException.class,()->drafts.confirmDraft(draft.getId(),other.getUsername()));
         assertThrows(IllegalStateException.class,()->drafts.confirmAllDrafts(other.getUsername()));
         assertEquals(1,drafts.countDrafts(customer.getUsername()));verifyNoInteractions(geocoder);
+    }
+
+    @Test void cartCannotAcceptAStreetThatCannotFitItsFullDeliveryAddress() {
+        var request=form();request.setReceiverAddress("Đ".repeat(250));
+        long before=drafts.countDrafts(customer.getUsername());
+        assertThrows(IllegalArgumentException.class,()->drafts.addDraft(request,customer.getUsername()));
+        assertEquals(before,drafts.countDrafts(customer.getUsername()));
+        assertTrue(submissions.findByToken(request.getSubmissionToken()).isEmpty());
+    }
+
+    @Test void selectingCheaperAreaMustRecheckPromoMinimumAndLeaveCartUnchangedOnFailure() {
+        var promo=new PromoCode();promo.setCode("AUDIT"+SEQUENCE.incrementAndGet());
+        promo.setDiscountType(PromoCode.DiscountType.FIXED_AMOUNT);promo.setDiscountValue(BigDecimal.valueOf(1000));
+        promo.setMinOrderAmount(BigDecimal.valueOf(18001));promoCodes.saveAndFlush(promo);
+        var request=form();request.setDeliveryProvinceCode("48");request.setDeliveryAreaCode("DAD-HAICHAU");request.setPromoCode(promo.getCode());
+        var draft=drafts.addDraft(request,customer.getUsername());
+        var change=drafts.prepareAreaForm(draft.getId(),customer.getUsername());
+        change.setDeliveryProvinceCode("79");change.setDeliveryAreaCode("SGN-THUDUC");
+        assertThrows(IllegalStateException.class,()->drafts.selectAreas(draft.getId(),change,customer.getUsername()));
+        assertEquals("DAD-HAICHAU",drafts.prepareAreaForm(draft.getId(),customer.getUsername()).getDeliveryAreaCode());
+        assertEquals(0,draft.getEstimatedFee().compareTo(drafts.findDrafts(customer.getUsername()).get(0).getEstimatedFee()));
+    }
+
+    @Test void requiresNewTransactionMustHaveItsOwnAccountCacheAndRestoreOuterCache() {
+        var outer=new TransactionTemplate(transactions);var inner=new TransactionTemplate(transactions);
+        inner.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        outer.executeWithoutResult(status -> {
+            assertEquals("outer",vn.edu.hcmute.uteexpress.service.tracking.TransactionCache.get("audit-isolation",()->"outer"));
+            inner.executeWithoutResult(nested -> assertEquals("inner",vn.edu.hcmute.uteexpress.service.tracking.TransactionCache.get("audit-isolation",()->"inner")));
+            assertEquals("outer",vn.edu.hcmute.uteexpress.service.tracking.TransactionCache.get("audit-isolation",()->"unexpected"));
+        });
+        outer.executeWithoutResult(status -> assertEquals("fresh",vn.edu.hcmute.uteexpress.service.tracking.TransactionCache.get("audit-isolation",()->"fresh")));
     }
 }
