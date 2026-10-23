@@ -71,6 +71,13 @@ class LogisticsIntegrationTest {
     @Autowired ShipmentQrService qr;
     @Autowired OrderJourneyService journey;
     @Autowired OrderService orderService;
+    @Autowired vn.edu.hcmute.uteexpress.service.impl.OrderCreationWriter orderWriter;
+    @Autowired vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
+    vn.edu.hcmute.uteexpress.service.OrderPricingService.ResolvedRoute preparedRoute;
+    @org.springframework.test.context.transaction.BeforeTransaction
+    void resolveRouteBeforeDatabaseTransaction() {
+        preparedRoute = pricing.resolveRoute("Địa chỉ gửi thử", "Địa chỉ nhận thử");
+    }
     @Autowired ShipperWorkspaceService workspace;
     @Autowired ShipperStatisticsService statistics;
     @Autowired OrderPaymentRepository payments;
@@ -213,7 +220,8 @@ class LogisticsIntegrationTest {
         request.setReceiverName("Người nhận thử"); request.setReceiverPhone("0901234567");
         request.setReceiverAddress("Địa chỉ nhận thử"); request.setWeightKg(1.0);
         request.setServiceType(Order.ServiceType.STANDARD); request.setPaymentMethod(OrderPayment.PaymentMethod.COD);
-        var created = orderService.createOrder(request, customer.getUsername());
+        // Test transaction ghi/lịch sử; tra bản đồ đã hoàn tất trước transaction của fixture.
+        var created = orderWriter.createResolved(request, customer.getUsername(), preparedRoute);
         assertEquals(NOW, created.getCreatedAt());
         var initial = journey.history(created.getId(), customer.getUsername(), 0);
         assertEquals(1, initial.getTotalElements());

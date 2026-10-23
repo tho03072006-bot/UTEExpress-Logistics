@@ -16,7 +16,7 @@
         <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="sx-hero-form">
             <label class="sx-hero-field" for="weightKg"><span>Khối lượng (kg)</span>
                 <span class="sx-hero-input"><i class="bi bi-box2" aria-hidden="true"></i>
-                    <input type="number" id="weightKg" th:field="*{weightKg}" step="0.1" min="0.1" max="100"
+                    <input type="number" id="weightKg" th:field="*{weightKg}" step="0.01" min="0.01" max="100"
                            placeholder="Ví dụ 2.5" required inputmode="decimal"></span></label>
             <label class="sx-hero-field" for="distanceKm"><span>Khoảng cách (km)</span>
                 <span class="sx-hero-input"><i class="bi bi-signpost-2" aria-hidden="true"></i>

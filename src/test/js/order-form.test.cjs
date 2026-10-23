@@ -66,3 +66,21 @@ test('Thiếu địa chỉ hoặc khối lượng thì không gọi server',()=>
  const q=quoteSetup({ok:true});q.fields['#receiverAddress'].value='';
  q.tasks.at(-1)();assert.equal(q.calls.length,0);assert.equal(q.panel.dataset.state,'idle');
 });
+
+test('Khối lượng ngoài 0,01–100 kg và địa chỉ có ký tự điều khiển không gọi báo giá',()=>{
+ for(const weight of ['0.001','0','100.01','NaN','Infinity','']){
+  const q=quoteSetup({ok:true});q.fields['#weightKg'].value=weight;
+  q.tasks.at(-1)();assert.equal(q.calls.length,0);assert.equal(q.parts['[data-quote-rows]'].hidden,true);
+ }
+ const q=quoteSetup({ok:true});q.fields['#senderAddress'].value='Địa\nchỉ thử';
+ q.tasks.at(-1)();assert.equal(q.calls.length,0);
+});
+
+test('Không hiện lại kết quả cũ khi người dùng đổi sang đầu vào chưa hợp lệ',async()=>{
+ const q=quoteSetup({ok:true,distanceKm:10,baseFee:18000,distanceFee:5000,total:23000});
+ q.tasks.at(-1)();assert.equal(q.calls.length,1);
+ q.fields['#weightKg'].value='0.001';q.fields['#weightKg'].listeners.input();q.tasks.at(-1)();
+ await q.answer();
+ assert.equal(q.panel.dataset.state,'idle');assert.equal(q.parts['[data-quote-rows]'].hidden,true);
+ assert.equal(q.calls.length,1);
+});

@@ -10,17 +10,13 @@ import vn.edu.hcmute.uteexpress.dto.OrderTimelineStep;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
-import vn.edu.hcmute.uteexpress.entity.PromoCode;
 import vn.edu.hcmute.uteexpress.entity.SavedAddress;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.OrderRepository;
-import vn.edu.hcmute.uteexpress.service.OrderPaymentService;
 import vn.edu.hcmute.uteexpress.service.OrderService;
-import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,43 +26,33 @@ import java.util.Optional;
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     private final OrderRepository orderRepository;
     private final AppUserRepository appUserRepository;
     private final SavedAddressService savedAddressService;
-    private final OrderPaymentService orderPaymentService;
-    private final PromoCodeService promoCodeService;
     private final vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history;
     private final java.time.Clock clock;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService;
-    private final jakarta.validation.Validator validator;
     private final org.springframework.context.ApplicationEventPublisher events;
-    private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
     private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService;
+    private final OrderCreationWriter creationWriter;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
-                            OrderPaymentService orderPaymentService,
-                            PromoCodeService promoCodeService,
                             vn.edu.hcmute.uteexpress.repository.OrderStatusHistoryRepository history,
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
-                            jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events,
-                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
-                            vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService) {
+                            org.springframework.context.ApplicationEventPublisher events,
+                            vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService,
+                            OrderCreationWriter creationWriter) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
-        this.orderPaymentService = orderPaymentService;
-        this.promoCodeService = promoCodeService;
         this.history = history;
         this.clock = clock;
         this.tariffService = tariffService;
-        this.validator = validator;
         this.events = events;
-        this.submissions = submissions;
         this.pricingService = pricingService;
+        this.creationWriter = creationWriter;
     }
 
     @Override
@@ -87,76 +73,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional
     public Order createOrder(OrderCreateRequest request, String senderUsername) {
-        if (request == null) { throw new IllegalArgumentException("Thiếu dữ liệu đơn hàng."); }
-        var errors = validator.validate(request);
-        if (!errors.isEmpty()) { throw new IllegalArgumentException(errors.iterator().next().getMessage()); }
-        // Khóa người gửi trước khi kiểm tra token: hai request đồng thời cùng tài khoản
-        // không thể cùng vượt qua bước "chưa có" rồi tạo hai đơn trên database chung.
-        AppUser sender = appUserRepository.findLockedByUsername(senderUsername)
-                .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + senderUsername));
-
-        if (!sender.isEnabled() || sender.isLockedByAdmin() || sender.getRole()!=AppUser.Role.USER)
-            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được tạo đơn.");
-        String requestHash = vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.fingerprint(request);
-        // HTTP bắt buộc có token; giữ tương thích lời gọi nội bộ cũ không truyền token.
-        var submission = request.getSubmissionToken() == null ? null
-            : submissions.reserve(request, sender, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DIRECT);
-        if (request.getSubmissionToken()!=null) {
-            var existing=orderRepository.findByCreationToken(request.getSubmissionToken());
-            if(existing.isPresent()) {
-                if(!existing.get().getSender().getId().equals(sender.getId()) || !requestHash.equals(existing.get().getCreationHash()))
-                    throw new IllegalStateException("Phiên biểu mẫu đã được sử dụng cho dữ liệu khác. Hãy mở lại trang tạo đơn.");
-                submission.bindResource(existing.get().getId());
-                return existing.get();
-            }
-            if (submission.getResourceId() != null) throw vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.reused();
-        }
-
-        Order order = new Order();
-        order.setCreationToken(request.getSubmissionToken()); order.setCreationHash(requestHash);
-        order.setTrackingCode(generateTrackingCode());
-        order.setSender(sender);
-        order.setSenderName(request.getSenderName());
-        order.setSenderAddress(request.getSenderAddress());
-        order.setReceiverName(request.getReceiverName());
-        order.setReceiverPhone(request.getReceiverPhone());
-        order.setReceiverAddress(request.getReceiverAddress());
-        order.setWeightKg(request.getWeightKg());
-        order.setServiceType(request.getServiceType());
-        // Cước = cước dịch vụ + phụ phí khoảng cách đường chim bay; địa chỉ không xác định được thì báo lại trên form.
-        var pricing = pricingService.price(request.getSenderAddress(), request.getReceiverAddress(),
-                request.getServiceType(), request.getWeightKg());
-        BigDecimal fee = pricing.total();
-        order.setShippingFee(fee);
-        order.setDistanceKm(pricing.distanceKm());
-        order.setDistanceFee(pricing.distanceFee());
-        order.setStatus(Order.OrderStatus.PENDING_PICKUP);
-        var now = java.time.LocalDateTime.now(clock);
-        order.setCreatedAt(now);
-        order.setUpdatedAt(now);
-
-        // Kiem tra ma giam gia TRUOC khi luu don: ma sai thi nem loi ngay, khong tao don do dang.
-        PromoCode promoCode = null;
-        BigDecimal discount = BigDecimal.ZERO;
-        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
-            promoCode = promoCodeService.requireUsableCode(request.getPromoCode(), fee);
-            discount = promoCodeService.calculateDiscount(promoCode, fee);
-        }
-
-        Order savedOrder = orderRepository.save(order);
-        // Moi van don deu co dung mot ban ghi thanh toan, tao ngay tai day de khong bao gio
-        // ton tai don "khong biet tra bang gi" trong CSDL.
-        orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod(), promoCode, discount);
-        if (promoCode != null) {
-            promoCodeService.markUsed(promoCode);
-        }
-        history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(savedOrder, sender,
-                Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PENDING_PICKUP, null,
-                "Người gửi tạo vận đơn.", null, now));
-        if (submission != null) submission.bindResource(savedOrder.getId());
-        return savedOrder;
+        // Hai transaction ngắn, tra bản đồ ở giữa khi không còn khóa/kết nối database.
+        var existing = creationWriter.findExisting(request, senderUsername);
+        if (existing != null) return existing;
+        var route = pricingService.resolveRoute(request.getSenderAddress(), request.getReceiverAddress());
+        return creationWriter.createResolved(request, senderUsername, route);
     }
 
     @Override
@@ -341,10 +263,4 @@ public class OrderServiceImpl implements OrderService {
         return tariffService.quote(serviceType, weightKg);
     }
 
-    /** Sinh ma tracking dang UTE + 4 so cuoi timestamp + 4 so ngau nhien, du dung cho demo. */
-    private String generateTrackingCode() {
-        long timestampPart = System.currentTimeMillis() % 10_000;
-        int randomPart = RANDOM.nextInt(10_000);
-        return String.format("UTE%04d%04d", timestampPart, randomPart);
-    }
 }

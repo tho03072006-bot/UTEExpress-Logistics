@@ -31,7 +31,7 @@ public class FeeEstimateService {
 
     /** Báo giá cho một dịch vụ hoặc cả ba (serviceType = null). distanceKm = null: không tính phụ phí. */
     public List<Quote> quotes(double weightKg, Double distanceKm, Order.ServiceType serviceType) {
-        if (!Double.isFinite(weightKg) || weightKg <= 0 || weightKg > 100) throw new IllegalArgumentException("Khối lượng phải trong khoảng 0 - 100 kg.");
+        vn.edu.hcmute.uteexpress.validation.ShippingInputValidation.requireWeight(weightKg);
         if (distanceKm != null && (!Double.isFinite(distanceKm) || distanceKm <= 0 || distanceKm > 2000))
             throw new IllegalArgumentException("Khoảng cách phải trong khoảng 0 - 2.000 km.");
         List<Quote> result = new ArrayList<>();

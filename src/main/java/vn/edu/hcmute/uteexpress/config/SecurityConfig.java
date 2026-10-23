@@ -62,8 +62,8 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/dang-nhap")
                 .successHandler((request, response, authentication) -> {
-                    authRateGuard.loginSucceeded(authentication.getName());
-                    authRateGuard.loginSucceeded(request.getParameter("username")); // gõ email thì xóa cả bộ đếm theo email
+                    var principal = (vn.edu.hcmute.uteexpress.security.admin.PublicAccountPrincipal) authentication.getPrincipal();
+                    authRateGuard.loginSucceeded(vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.accountIdentity(principal.getUserId()));
                     vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.forgetLoginFailures(request);
                     var handler = new org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler();
                     handler.setRequestCache(pageRequestCache);
@@ -72,10 +72,11 @@ public class SecurityConfig {
                     handler.onAuthenticationSuccess(request, response, authentication);
                 })
                 .failureHandler((request,response,exception) -> {
-                    authRateGuard.loginFailed(request.getParameter("username"));
+                    String identity=vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.loginIdentity(request);
+                    authRateGuard.loginFailed(identity);
                     vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter.rememberLoginFailure(request,authRateGuard,request.getParameter("username"));
                     response.sendRedirect(request.getContextPath()+"/dang-nhap?error"
-                            + (authRateGuard.loginBlocked(request.getParameter("username")) ? "&locked" : ""));
+                            + (authRateGuard.loginBlocked(identity) ? "&locked" : ""));
                 })
                 .permitAll()
             )
@@ -86,7 +87,7 @@ public class SecurityConfig {
             // Bảo vệ mọi POST, kể cả đăng nhập/đăng ký/OTP. SockJS chỉ vận chuyển sự kiện đọc,
             // kiểm tra cùng origin và chặn SEND vào topic; không phải API thay đổi nghiệp vụ.
             .csrf(csrf -> csrf.ignoringRequestMatchers("/ws-tracking/**"))
-            .addFilterBefore(new vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter(authRateGuard),
+            .addFilterBefore(new vn.edu.hcmute.uteexpress.security.PublicAuthRequestFilter(authRateGuard, users),
                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new vn.edu.hcmute.uteexpress.security.admin.PublicAccountSessionFilter(users),
                 org.springframework.security.web.access.intercept.AuthorizationFilter.class)

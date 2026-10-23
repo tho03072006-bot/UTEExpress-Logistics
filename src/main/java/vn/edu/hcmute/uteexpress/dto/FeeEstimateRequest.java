@@ -25,8 +25,12 @@ public class FeeEstimateRequest {
      * dùng gõ nhầm một số rất lớn và nhận về con số cước vô nghĩa.
      */
     @Positive(message = "Khối lượng phải lớn hơn 0")
+    @DecimalMin(value = vn.edu.hcmute.uteexpress.validation.ShippingInputValidation.MIN_WEIGHT, message = "Khối lượng tối thiểu 0,01 kg.")
     @DecimalMax(value = "100.0", message = "Đơn trên 100 kg vui lòng liên hệ tổng đài để được báo giá riêng")
     private Double weightKg;
+
+    @jakarta.validation.constraints.AssertTrue(message = "Khối lượng phải là số hữu hạn.")
+    public boolean isWeightFinite() { return weightKg == null || Double.isFinite(weightKg); }
 
     /**
      * Khoảng cách lấy - giao (km), không bắt buộc. Để trống thì chỉ tính cước gốc như khi tạo đơn;
