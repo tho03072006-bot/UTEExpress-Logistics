@@ -35,6 +35,7 @@ class HubServiceTest {
     @Mock AuditService audit;
     @Mock ApplicationEventPublisher events;
     @Mock vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
+    @Mock jakarta.persistence.EntityManager entityManager;
     HubService hub;
     AppUser manager;
     Branch sgn, han, dad;
@@ -42,6 +43,7 @@ class HubServiceTest {
     @BeforeEach void setup() {
         hub = new HubService(access, routing, branches, routes, trips, items, orders, history, audit, events,
                 Clock.fixed(Instant.parse("2026-10-23T05:00:00Z"), ZoneId.of("Asia/Ho_Chi_Minh")), payments);
+        ReflectionTestUtils.setField(hub,"entityManager",entityManager);
         manager = new AppUser("managerqa", "hash", "m@example.com"); manager.setId(7L); manager.setRole(AppUser.Role.MANAGER);
         sgn = branch(1L, "SGN"); han = branch(2L, "HAN"); dad = branch(3L, "DAD");
         lenient().when(access.internal("managerqa")).thenReturn(manager);
@@ -130,6 +132,69 @@ class HubServiceTest {
         assertThrows(IllegalArgumentException.class, () -> HubService.phone("12345"));
         assertThrows(IllegalArgumentException.class, () -> HubService.seal("ab"));
         assertThrows(IllegalArgumentException.class, () -> HubService.seal("SEAL 001"));
+    }
+
+    @Test void driverNameNeedsLettersRatherThanOnlyPunctuation() {
+        prepareCreate(order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB));
+        assertThrows(IllegalArgumentException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","---","0901234567",List.of(400L)));
+        verify(items,never()).save(any());
+    }
+    @Test void invalidIdsAreRejectedBeforeQueryingOrCreatingTrip() {
+        prepareCreate(order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB));
+        assertThrows(IllegalArgumentException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","0901234567",Arrays.asList((Long)null)));
+        verifyNoInteractions(orders);verify(trips,never()).save(any());
+    }
+    @Test void moreThanFiveHundredRawIdsCannotBypassLimitThroughDuplicates() {
+        prepareCreate(order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB));
+        assertThrows(IllegalArgumentException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","0901234567",Collections.nCopies(501,400L)));
+        verify(trips,never()).save(any());
+    }
+    @Test void terminalOrderCannotBeLoadedOntoTrip() {
+        var route=order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB);route.getOrder().setStatus(Order.OrderStatus.CANCELLED);
+        prepareCreate(route);
+        assertThrows(IllegalStateException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","0901234567",List.of(400L)));
+        verify(items,never()).save(any());
+    }
+    @Test void terminalOrderCannotBeDepartedOrReceived() {
+        var trip=trip(10L,sgn,han);var route=order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB);
+        route.getOrder().setStatus(Order.OrderStatus.CANCELLED);
+        when(trips.findLockedById(10L)).thenReturn(Optional.of(trip));when(routing.scope(manager,null)).thenReturn(1L);
+        when(items.findAllByTrip_Id(10L)).thenReturn(List.of(new LinehaulItem(trip,route.getOrder())));
+        when(orders.findLockedById(400L)).thenReturn(Optional.of(route.getOrder()));
+        assertThrows(IllegalStateException.class,()->hub.depart("managerqa",10L,0,"SEAL-001"));
+        assertEquals(OrderRoute.Stage.ORIGIN_HUB,route.getStage());verifyNoInteractions(history);
+    }
+    @Test void driverPhoneAndSealCannotBeInvalidButCorrectLength() {
+        assertThrows(IllegalArgumentException.class,()->HubService.phone("0101234567"));
+        assertThrows(IllegalArgumentException.class,()->HubService.seal("----"));
+    }
+    @Test void validUnicodeNameInternationalPhoneAndTripCodeArePreserved() {
+        prepareCreate(order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB));
+        var trip=hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","+84 901 234 567",List.of(400L));
+        assertEquals("Nguyễn Văn An",trip.getDriverName());assertEquals("0901234567",trip.getDriverPhone());
+        assertTrue(trip.getCode().startsWith("TC-SGNHAN-"));assertTrue(trip.getCode().length()<=40);
+    }
+    @Test void cancelledOrderCannotBeReceivedAtDestination() {
+        var trip=departed(10L,sgn,han,"SEAL-001");var route=order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.LINEHAUL);
+        route.getOrder().setStatus(Order.OrderStatus.CANCELLED);
+        when(trips.findLockedById(10L)).thenReturn(Optional.of(trip));when(routing.scope(manager,null)).thenReturn(2L);
+        when(items.findAllByTrip_Id(10L)).thenReturn(List.of(new LinehaulItem(trip,route.getOrder())));
+        when(orders.findLockedById(400L)).thenReturn(Optional.of(route.getOrder()));
+        assertThrows(IllegalStateException.class,()->hub.arrive("managerqa",10L,1,"SEAL-001",List.of(400L),""));
+        assertEquals(OrderRoute.Stage.LINEHAUL,route.getStage());assertEquals(LinehaulTrip.Status.DEPARTED,trip.getStatus());
+        verifyNoInteractions(history);
+    }
+    @Test void invalidLateReceiptIdIsRejectedWithoutRepositoryQuery() {
+        assertThrows(IllegalArgumentException.class,()->hub.receiveLate("managerqa",null,"Ghi chú nhận bổ sung."));
+        verifyNoInteractions(items,trips,orders,history);
+    }
+    private void prepareCreate(OrderRoute route) {
+        lenient().when(routing.scope(manager,1L)).thenReturn(1L);
+        lenient().when(branches.findById(1L)).thenReturn(Optional.of(sgn));
+        lenient().when(branches.findById(2L)).thenReturn(Optional.of(han));
+        lenient().when(trips.save(any())).thenAnswer(call->call.getArgument(0));
+        lenient().when(orders.findLockedById(route.getOrder().getId())).thenReturn(Optional.of(route.getOrder()));
+        lenient().when(routing.route(route.getOrder())).thenReturn(route);
     }
 
     private void stubRoute(OrderRoute route) {
