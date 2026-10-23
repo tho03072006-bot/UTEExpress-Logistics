@@ -20,6 +20,15 @@ public interface OrderRouteRepository extends JpaRepository<OrderRoute, Long> {
     @org.springframework.data.jpa.repository.Query("select r.order.trackingCode from OrderRoute r where r.order.shipper is null and " + DISPATCHABLE + " order by r.order.createdAt, r.order.id")
     List<String> unassignedCodes(Long branchId);
     Optional<OrderRoute> findByOrder_Id(Long orderId);
+    /** Đơn đang chạy shipper giữ mà chặng hiện tại thuộc chi nhánh khác (chờ lấy: chi nhánh gửi; còn lại: chi nhánh nhận). */
+    @org.springframework.data.jpa.repository.Query("""
+        select count(r) from OrderRoute r where r.order.shipper.id = :shipperId and r.order.status in :statuses
+          and ((r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP and r.originBranch.id <> :branchId)
+            or (r.stage <> vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP and r.destBranch.id <> :branchId))
+        """)
+    long countHeldOutsideBranch(@org.springframework.data.repository.query.Param("shipperId") Long shipperId,
+            @org.springframework.data.repository.query.Param("statuses") java.util.Collection<vn.edu.hcmute.uteexpress.entity.Order.OrderStatus> statuses,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId);
     /** Tuyến kèm khu vực lấy/giao của nhiều đơn một lần (sắp lộ trình shipper, không truy vấn từng đơn). */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.pickupArea join fetch r.deliveryArea where r.order.id in :ids")
     List<OrderRoute> findWithAreasByOrderIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);

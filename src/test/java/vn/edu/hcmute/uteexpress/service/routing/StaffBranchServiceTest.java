@@ -29,12 +29,13 @@ class StaffBranchServiceTest {
     @Mock AdminUserRepository users;
     @Mock StaffAccessPolicy access;
     @Mock AuditService audit;
+    @Mock vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
     StaffBranchService service;
     AppUser shipper, admin;
     Branch sgn, han;
     final LocalDateTime now = LocalDateTime.of(2026, 10, 23, 12, 0);
     @BeforeEach void setup() {
-        service = new StaffBranchService(staff, zones, branches, areas, users, access, audit, Clock.systemUTC());
+        service = new StaffBranchService(staff, zones, branches, areas, users, access, audit, Clock.systemUTC(), routes);
         shipper = new AppUser("shipperqa", "hash", "qa@example.com"); shipper.setId(5L); shipper.setRole(AppUser.Role.SHIPPER);
         admin = new AppUser("adminqa", "hash", "adminqa@example.com"); admin.setId(1L); admin.setRole(AppUser.Role.ADMIN);
         sgn = branch(10L, "SGN"); han = branch(20L, "HAN");
@@ -68,6 +69,24 @@ class StaffBranchServiceTest {
         when(users.countUnfinishedAssignments(eq(5L), any())).thenReturn(1L);
         var error = assertThrows(IllegalArgumentException.class, () -> service.assign("adminqa", shipper, form()));
         assertTrue(error.getMessage().contains("còn đơn")); verifyNoInteractions(areas, zones, audit);
+        verify(staff, never()).save(any());
+    }
+    @Test void firstAssignmentOfLegacyShipperIsAllowedWhenNoRoutedOrderBelongsToAnotherBranch() {
+        lock(); when(branches.findById(10L)).thenReturn(Optional.of(sgn));
+        when(routes.countHeldOutsideBranch(eq(5L), any(), eq(10L))).thenReturn(0L);
+        var form = form(); form.setPrimaryAreaCode("SGN-A");
+        when(areas.findByAreaCode("SGN-A")).thenReturn(Optional.of(area("SGN-A", sgn)));
+        when(users.findByUsername("adminqa")).thenReturn(Optional.of(admin));
+        assertDoesNotThrow(() -> service.assign("adminqa", shipper, form));
+        verify(staff).save(any());
+        verify(users, never()).countUnfinishedAssignments(any(), any());
+    }
+    @Test void firstAssignmentIsRejectedWhenShipperHoldsRoutedOrdersOfAnotherBranch() {
+        lock(); when(branches.findById(20L)).thenReturn(Optional.of(han));
+        when(routes.countHeldOutsideBranch(eq(5L), any(), eq(20L))).thenReturn(2L);
+        var form = form(); form.setBranchId(20L);
+        var error = assertThrows(IllegalArgumentException.class, () -> service.assign("adminqa", shipper, form));
+        assertTrue(error.getMessage().contains("chi nhánh khác")); verifyNoInteractions(areas, zones, audit);
         verify(staff, never()).save(any());
     }
     @Test void shipperRequiresOnePrimaryArea() {

@@ -22,10 +22,12 @@ public class StaffBranchService {
     private final StaffAccessPolicy access;
     private final AuditService audit;
     private final Clock clock;
+    private final OrderRouteRepository routes;
     public StaffBranchService(StaffBranchRepository staff, ShipperZoneRepository zones, BranchRepository branches,
-            ProvinceAreaRepository areas, AdminUserRepository users, StaffAccessPolicy access, AuditService audit, Clock clock) {
+            ProvinceAreaRepository areas, AdminUserRepository users, StaffAccessPolicy access, AuditService audit, Clock clock,
+            OrderRouteRepository routes) {
         this.staff = staff; this.zones = zones; this.branches = branches; this.areas = areas;
-        this.users = users; this.access = access; this.audit = audit; this.clock = clock;
+        this.users = users; this.access = access; this.audit = audit; this.clock = clock; this.routes = routes;
     }
     public StaffBranchRequest selection(String actor, Long userId) {
         access.requireAdmin(actor);
@@ -72,9 +74,16 @@ public class StaffBranchService {
         var branch = branches.findById(request.getBranchId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chi nhánh."));
         boolean changed = old.isEmpty() || !Objects.equals(old.get().getBranch().getId(), branch.getId());
         if (!branch.isActive() && changed) throw new IllegalArgumentException("Chi nhánh đã ngừng nhận nhân sự.");
-        if (changed && user.getRole() == AppUser.Role.SHIPPER && users.countUnfinishedAssignments(user.getId(),
-                List.of(Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.FAILED)) > 0)
-            throw new IllegalArgumentException("Shipper còn đơn đang chạy hoặc chờ xử lý; chưa được đổi chi nhánh.");
+        var running = List.of(Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PICKED_UP, Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.FAILED);
+        if (changed && user.getRole() == AppUser.Role.SHIPPER) {
+            // Đổi chi nhánh (B2): chỉ khi shipper không còn giữ đơn đang chạy.
+            if (old.isPresent() && users.countUnfinishedAssignments(user.getId(), running) > 0)
+                throw new IllegalArgumentException("Shipper còn đơn đang chạy hoặc chờ xử lý; chưa được đổi chi nhánh.");
+            // Gán lần đầu cho shipper có từ trước khi có chi nhánh (B10): được phép nếu không giữ đơn có tuyến của chi nhánh khác.
+            // Đơn cũ chưa có tuyến vẫn theo quy tắc chuyển tiếp (hiện cho mọi chi nhánh) nên không chặn.
+            if (old.isEmpty() && routes.countHeldOutsideBranch(user.getId(), running, branch.getId()) > 0)
+                throw new IllegalArgumentException("Shipper đang giữ đơn thuộc chi nhánh khác; hãy phân công lại các đơn đó trước khi gán chi nhánh " + branch.getCode() + ".");
+        }
         var selected = new LinkedHashMap<String, ProvinceArea>();
         if (user.getRole() == AppUser.Role.SHIPPER) {
             if (blank(request.getPrimaryAreaCode()) == null) throw new IllegalArgumentException("Shipper phải có một khu vực chính.");
