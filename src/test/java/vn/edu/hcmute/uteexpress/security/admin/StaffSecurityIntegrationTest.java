@@ -247,7 +247,8 @@ class StaffSecurityIntegrationTest {
         mvc.perform(get("/manager/bao-cao/csv").with(authentication(auth(manager)))
             .param("from", "2026-10-01").param("to", "2026-10-10"))
             .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
-            .andExpect(content().string(containsString("Cuoc_da_thanh_toan_VND,0")));
+            .andExpect(content().string(containsString("Cuoc_da_thanh_toan_VND,0")))
+            .andExpect(content().string(containsString("Chi_nhanh,")));
         mvc.perform(get("/manager/bao-cao").with(authentication(auth(manager))).param("from", "not-a-date"))
             .andExpect(status().isBadRequest());
     }
