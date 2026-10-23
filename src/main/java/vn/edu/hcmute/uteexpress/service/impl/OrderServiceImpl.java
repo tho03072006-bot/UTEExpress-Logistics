@@ -43,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
     private final jakarta.validation.Validator validator;
     private final org.springframework.context.ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
+    private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -52,7 +53,8 @@ public class OrderServiceImpl implements OrderService {
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
                             jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events,
-                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
+                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
+                            vn.edu.hcmute.uteexpress.service.OrderPricingService pricingService) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -64,6 +66,7 @@ public class OrderServiceImpl implements OrderService {
         this.validator = validator;
         this.events = events;
         this.submissions = submissions;
+        this.pricingService = pricingService;
     }
 
     @Override
@@ -122,8 +125,13 @@ public class OrderServiceImpl implements OrderService {
         order.setReceiverAddress(request.getReceiverAddress());
         order.setWeightKg(request.getWeightKg());
         order.setServiceType(request.getServiceType());
-        BigDecimal fee = calculateFee(request.getServiceType(), request.getWeightKg());
+        // Cước = cước dịch vụ + phụ phí khoảng cách đường chim bay; địa chỉ không xác định được thì báo lại trên form.
+        var pricing = pricingService.price(request.getSenderAddress(), request.getReceiverAddress(),
+                request.getServiceType(), request.getWeightKg());
+        BigDecimal fee = pricing.total();
         order.setShippingFee(fee);
+        order.setDistanceKm(pricing.distanceKm());
+        order.setDistanceFee(pricing.distanceFee());
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
         var now = java.time.LocalDateTime.now(clock);
         order.setCreatedAt(now);

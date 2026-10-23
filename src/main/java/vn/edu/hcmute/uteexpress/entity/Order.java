@@ -69,6 +69,14 @@ public class Order {
     @Column(name = "shipping_fee", precision = 12, scale = 0)
     private BigDecimal shippingFee;
 
+    /** Khoảng cách đường chim bay giữa hai địa chỉ lúc tạo đơn (km); null với đơn tạo trước khi tính theo khoảng cách. */
+    @Column(name = "distance_km", precision = 7, scale = 2)
+    private BigDecimal distanceKm;
+
+    /** Phần phụ phí khoảng cách đã cộng trong shippingFee; null với đơn cũ. */
+    @Column(name = "distance_fee", precision = 12, scale = 0)
+    private BigDecimal distanceFee;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderStatus status = OrderStatus.PENDING_PICKUP;
@@ -189,6 +197,17 @@ public class Order {
 
     public void setShippingFee(BigDecimal shippingFee) {
         this.shippingFee = shippingFee;
+    }
+
+    public BigDecimal getDistanceKm() { return distanceKm; }
+    public void setDistanceKm(BigDecimal distanceKm) { this.distanceKm = distanceKm; }
+    public BigDecimal getDistanceFee() { return distanceFee; }
+    public void setDistanceFee(BigDecimal distanceFee) { this.distanceFee = distanceFee; }
+
+    /** Cước dịch vụ (chưa gồm phụ phí khoảng cách); đơn cũ không có phụ phí thì bằng toàn bộ cước. */
+    public BigDecimal getServiceFee() {
+        if (shippingFee == null) return null;
+        return distanceFee == null ? shippingFee : shippingFee.subtract(distanceFee);
     }
 
     public OrderStatus getStatus() {

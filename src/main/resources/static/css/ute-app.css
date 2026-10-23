@@ -844,3 +844,18 @@ body.sx-app::before {
 .sx-momo-render[data-state="UNREACHABLE"] { color: #b91c1c; background: rgba(239, 68, 68, .12); }
 @keyframes sx-momo-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sx-momo-render[data-state="CHECKING"]::before { animation: none; } }
+/* Báo giá trực tiếp trên form tạo đơn (khoảng cách đường chim bay + cước) */
+.sx-fee-quote { margin: .25rem 0 1rem; padding: .85rem 1rem; border: 1px solid var(--app-border, rgba(100,116,139,.25)); border-radius: .75rem; background: var(--app-card); }
+.sx-fee-quote-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
+.sx-fee-quote-head i { color: var(--app-primary, #0072BC); }
+.sx-fee-quote-km { margin-left: auto; color: var(--app-muted); font-size: .85rem; }
+.sx-fee-quote-status { margin: .4rem 0 0; color: var(--app-muted); font-size: .88rem; }
+.sx-fee-quote[data-state="loading"] .sx-fee-quote-status::before { content: ""; display: inline-block; width: .8rem; height: .8rem; margin-right: .4rem; vertical-align: -.1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sx-momo-spin .8s linear infinite; }
+.sx-fee-quote[data-state="error"] { border-color: rgba(239, 68, 68, .45); }
+.sx-fee-quote[data-state="error"] .sx-fee-quote-status { color: #dc2626; }
+.sx-fee-quote-rows { margin: .5rem 0 0; }
+.sx-fee-quote-rows > div { display: flex; justify-content: space-between; gap: 1rem; padding: .2rem 0; font-size: .92rem; }
+.sx-fee-quote-rows dt { font-weight: 400; color: var(--app-muted); }
+.sx-fee-quote-rows dd { margin: 0; font-variant-numeric: tabular-nums; }
+.sx-fee-quote-rows .is-total { margin-top: .25rem; padding-top: .45rem; border-top: 1px dashed var(--app-border, rgba(100,116,139,.3)); font-weight: 700; }
+.sx-fee-quote-rows .is-total dt { color: inherit; font-weight: 700; }

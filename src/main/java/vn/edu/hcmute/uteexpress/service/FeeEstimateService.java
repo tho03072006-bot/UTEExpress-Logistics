@@ -10,7 +10,8 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 /**
  * Báo giá tham khảo ở trang Ước tính cước: cước gốc (đúng công thức khi tạo đơn) + phụ phí khoảng cách.
  *
- * Phụ phí khoảng cách CHỈ dùng để tham khảo, luồng tạo đơn vẫn tính cước theo dịch vụ + cân nặng.
+ * Trang này cho người dùng tự gõ số km để tham khảo. Khi tạo đơn thật, OrderPricingService tự đo khoảng cách
+ * đường chim bay giữa hai địa chỉ và dùng CHÍNH bảng bậc phụ phí dưới đây (distanceFee), nên hai nơi luôn khớp nhau.
  * Bậc phụ phí (đồng, làm tròn tới 100 đ):
  *   0 - 5 km      : miễn phí
  *   5 - 30 km     : 1.000 đ/km (tính từ km thứ 5)
@@ -51,7 +52,7 @@ public class FeeEstimateService {
         return new Quote(type, base, distanceFee, base.add(distanceFee), deliveryTime(type, distanceKm), true, null);
     }
 
-    static BigDecimal distanceFee(double km, Order.ServiceType type) {
+    public static BigDecimal distanceFee(double km, Order.ServiceType type) {
         double fee;
         if (km <= 5) fee = 0;
         else if (km <= 30) fee = (km - 5) * 1000;

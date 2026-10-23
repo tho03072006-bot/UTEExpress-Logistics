@@ -104,6 +104,18 @@
         </div>
     </div>
 
+    <!-- Báo giá trực tiếp: order-form.js gọi /tao-don/bao-gia khi đổi địa chỉ, khối lượng hoặc dịch vụ -->
+    <div class="sx-fee-quote" data-fee-quote th:attr="data-quote-url=@{/nguoi-dung/tao-don/bao-gia}" aria-live="polite">
+        <div class="sx-fee-quote-head"><i class="bi bi-geo-alt" aria-hidden="true"></i><strong>Cước dự kiến</strong>
+            <span class="sx-fee-quote-km" data-quote-km></span></div>
+        <p class="sx-fee-quote-status" data-quote-status>Nhập địa chỉ lấy hàng, địa chỉ giao hàng và khối lượng để xem cước.</p>
+        <dl class="sx-fee-quote-rows" data-quote-rows hidden>
+            <div><dt>Cước dịch vụ</dt><dd data-quote-base></dd></div>
+            <div><dt>Phụ phí khoảng cách</dt><dd data-quote-distance-fee></dd></div>
+            <div class="is-total"><dt>Tổng cước</dt><dd data-quote-total></dd></div>
+        </dl>
+    </div>
+
     <h5 class="mt-4">Mã giảm giá</h5>
     <div class="mb-4">
         <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
@@ -135,7 +147,7 @@
         <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
     </div>
 </form>
-<p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Cước tính theo bảng giá tại lúc tạo đơn.</p>
+<p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Cước = cước dịch vụ + phụ phí khoảng cách đường chim bay giữa hai địa chỉ (5 km đầu miễn phí), chốt lúc tạo đơn.</p>
 <script defer th:src="@{/js/order-form.js}"></script>
 </section>
 

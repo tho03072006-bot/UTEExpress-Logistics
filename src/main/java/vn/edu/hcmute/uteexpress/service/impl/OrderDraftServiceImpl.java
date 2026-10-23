@@ -29,18 +29,21 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     private final PromoCodeService promoCodeService;
     private final jakarta.validation.Validator validator;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
+    private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
                                  OrderService orderService,
                                  PromoCodeService promoCodeService, jakarta.validation.Validator validator,
-                                 vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
+                                 vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
+                                 vn.edu.hcmute.uteexpress.service.OrderPricingService pricing) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
         this.orderService = orderService;
         this.promoCodeService = promoCodeService;
         this.validator=validator;
         this.submissions=submissions;
+        this.pricing=pricing;
     }
 
     @Override
@@ -94,7 +97,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setServiceType(request.getServiceType());
         draft.setPaymentMethod(request.getPaymentMethod());
         draft.setPromoCode(request.getPromoCode());
-        BigDecimal fee = orderService.estimateFee(request.getServiceType(), request.getWeightKg());
+        // Giỏ đơn báo đúng cước sẽ thu (có phụ phí khoảng cách); lúc xác nhận tạo đơn vẫn tính lại ở OrderService.
+        BigDecimal fee = pricing.price(request.getSenderAddress(), request.getReceiverAddress(),
+                request.getServiceType(), request.getWeightKg()).total();
         draft.setEstimatedFee(fee);
 
         // Kiem tra ma ngay luc them vao gio de bao som, thay vi de nguoi dung gom xong

@@ -47,12 +47,17 @@ public class UserOrderController {
     private final OrderPaymentService orderPaymentService;
     private final ServiceReviewService serviceReviewService;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
+    private final vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
+    /** Báo giá gọi dịch vụ bản đồ: giới hạn mỗi tài khoản 40 lần/phút để không bị khóa quota. */
+    private final java.util.Map<String, long[]> quoteWindows = new java.util.concurrent.ConcurrentHashMap<>();
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
                                OrderDraftService orderDraftService,
                                OrderPaymentService orderPaymentService,
                                ServiceReviewService serviceReviewService,
-                               vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs) {
+                               vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs,
+                               vn.edu.hcmute.uteexpress.service.OrderPricingService pricing) {
+        this.pricing = pricing;
         this.orderService = orderService;
         this.savedAddressService = savedAddressService;
         this.orderDraftService = orderDraftService;
@@ -111,6 +116,40 @@ public class UserOrderController {
         }
 
         return "redirect:/nguoi-dung/don-hang/" + order.getId() + "/da-tao";
+    }
+
+    /**
+     * Báo giá trực tiếp trên form tạo đơn: khoảng cách đường chim bay + cước. Chỉ để hiển thị; lúc tạo đơn server
+     * tính lại từ đầu nên sửa số trên trình duyệt cũng không đổi được tiền.
+     */
+    @PostMapping(value = "/tao-don/bao-gia", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> quote(
+            @RequestParam String senderAddress, @RequestParam String receiverAddress,
+            @RequestParam Order.ServiceType serviceType, @RequestParam double weightKg, Authentication authentication) {
+        var noStore = org.springframework.http.CacheControl.noStore();
+        senderAddress = senderAddress.strip(); receiverAddress = receiverAddress.strip();
+        if (senderAddress.length() < 5 || receiverAddress.length() < 5 || senderAddress.length() > 255 || receiverAddress.length() > 255
+                || !Double.isFinite(weightKg) || weightKg <= 0 || weightKg > 100)
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore)
+                    .body(java.util.Map.of("ok", false, "message", "Nhập đủ hai địa chỉ và khối lượng để xem cước."));
+        if (!allowQuote(authentication.getName()))
+            return org.springframework.http.ResponseEntity.status(429).cacheControl(noStore)
+                    .body(java.util.Map.of("ok", false, "message", "Bạn xem báo giá quá nhanh. Đợi một chút rồi thử lại."));
+        try {
+            var price = pricing.price(senderAddress, receiverAddress, serviceType, weightKg);
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", true,
+                    "distanceKm", price.distanceKm(), "baseFee", price.baseFee(), "distanceFee", price.distanceFee(), "total", price.total()));
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", false, "message", ex.getMessage()));
+        }
+    }
+
+    private boolean allowQuote(String username) {
+        long now = System.currentTimeMillis();
+        long[] window = quoteWindows.compute(username, (key, value) ->
+                value == null || now - value[0] >= 60_000 ? new long[]{now, 1} : new long[]{value[0], value[1] + 1});
+        return window[1] <= 40;
     }
 
     @GetMapping("/don-hang/{id}/da-tao")

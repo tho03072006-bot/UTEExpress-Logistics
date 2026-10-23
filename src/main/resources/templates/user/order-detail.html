@@ -125,6 +125,14 @@
                         <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
                     </div>
                 </div>
+                <div class="col-12" th:if="${order.distanceKm != null}">
+                    <div class="ute-profile-label">Gồm</div>
+                    <div class="ute-profile-value small">
+                        Cước dịch vụ <span th:replace="~{fragments/components :: money(${order.serviceFee})}">0 đ</span>
+                        + phụ phí khoảng cách <span th:replace="~{fragments/components :: money(${order.distanceFee})}">0 đ</span>
+                        <span class="text-muted" th:text="|(≈ ${#numbers.formatDecimal(order.distanceKm,1,'POINT',1,'COMMA')} km đường chim bay)|"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
