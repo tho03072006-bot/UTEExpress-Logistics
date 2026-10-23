@@ -9,18 +9,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public final class PublicAuthRequestFilter extends OncePerRequestFilter {
     private static final Set<String> PATHS=Set.of("/dang-nhap","/dang-ky","/quen-mat-khau","/dat-lai-mat-khau","/xac-thuc-otp","/xac-thuc-otp/gui-lai");
     private final PublicAuthRateGuard guard;
-    public PublicAuthRequestFilter(PublicAuthRateGuard guard) { this.guard=guard; }
+    private final vn.edu.hcmute.uteexpress.repository.AppUserRepository users;
+    private static final String IDENTITY_ATTRIBUTE = PublicAuthRequestFilter.class.getName()+".identity";
+    public PublicAuthRequestFilter(PublicAuthRateGuard guard, vn.edu.hcmute.uteexpress.repository.AppUserRepository users) {
+        this.guard=guard; this.users=users;
+    }
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
         String path=request.getRequestURI().substring(request.getContextPath().length());
         if(!request.getMethod().equals("POST") || !PATHS.contains(path)) { chain.doFilter(request,response); return; }
         long retry=guard.checkRequest(path,request.getRemoteAddr());
-        // Tên đăng nhập đang bị khóa vì sai nhiều lần: quay lại trang đăng nhập với thông báo rõ thay vì trang 429 trơn.
-        // (Giới hạn theo IP bên dưới vẫn trả 429 như cũ.)
-        if(retry==0 && path.equals("/dang-nhap") && guard.loginBlocked(request.getParameter("username"))) {
-            rememberLoginFailure(request,guard,request.getParameter("username"));
-            response.setHeader("Cache-Control","no-store");
-            response.sendRedirect(request.getContextPath()+"/dang-nhap?error&locked"); return;
-        }
         if(retry>0) {
             response.setStatus(429); response.setHeader("Retry-After",Long.toString(retry)); response.setHeader("Cache-Control","no-store");
             response.setContentType("text/html;charset=UTF-8");
@@ -28,8 +25,27 @@ public final class PublicAuthRequestFilter extends OncePerRequestFilter {
         }
         if(path.equals("/dang-nhap")) {
             String username=request.getParameter("username"),password=request.getParameter("password");
+            String typed=username==null?"":username.strip();
+            String identity="unknown:"+typed;
+            if (!typed.isBlank() && typed.length()<=100) {
+                try {
+                    var account=typed.contains("@") ? users.findByEmailIgnoreCase(typed) : users.findByUsername(typed);
+                    if (account.isPresent()) identity=accountIdentity(account.get().getId());
+                } catch (org.springframework.dao.DataAccessException ex) {
+                    // Database lỗi: không bỏ qua khóa, không ghi nhận thành một lần sai mật khẩu.
+                    response.setStatus(503); response.setHeader("Retry-After","5");
+                    response.setHeader("Cache-Control","no-store"); response.setContentType("text/plain;charset=UTF-8");
+                    response.getWriter().write("Tạm thời chưa thể đăng nhập. Vui lòng thử lại sau."); return;
+                }
+            }
+            request.setAttribute(IDENTITY_ATTRIBUTE, identity);
+            if (guard.loginBlocked(identity)) {
+                rememberLoginFailure(request,guard,username);
+                response.setHeader("Cache-Control","no-store");
+                response.sendRedirect(request.getContextPath()+"/dang-nhap?error&locked"); return;
+            }
             if(username==null || username.length()>100 || password==null || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72) {
-                guard.loginFailed(username); rememberLoginFailure(request,guard,username);
+                guard.loginFailed(identity); rememberLoginFailure(request,guard,username);
                 response.sendRedirect(request.getContextPath()+"/dang-nhap?error"); return;
             }
         }
@@ -41,11 +57,18 @@ public final class PublicAuthRequestFilter extends OncePerRequestFilter {
     public static final String LIMIT_ATTRIBUTE="loginFailureLimit";
     public static final String USERNAME_ATTRIBUTE="loginLastUsername";
 
+    public static String accountIdentity(Long id) { return "account:"+id; }
+    public static String loginIdentity(HttpServletRequest request) {
+        Object identity=request.getAttribute(IDENTITY_ATTRIBUTE);
+        if (!(identity instanceof String value)) throw new IllegalStateException("Thiếu định danh kiểm soát đăng nhập.");
+        return value;
+    }
+
     public static void rememberLoginFailure(HttpServletRequest request,PublicAuthRateGuard guard,String username) {
         var session=request.getSession(false);
         if(session==null) return;
         String typed=username==null?"":username.strip();
-        session.setAttribute(FAILURES_ATTRIBUTE,guard.loginFailures(typed));
+        session.setAttribute(FAILURES_ATTRIBUTE,guard.loginFailures(loginIdentity(request)));
         session.setAttribute(LIMIT_ATTRIBUTE,PublicAuthRateGuard.MAX_LOGIN_FAILURES);
         session.setAttribute(USERNAME_ATTRIBUTE,typed.substring(0,Math.min(100,typed.length())));
     }

@@ -124,6 +124,16 @@ class DropOffIntegrationTest {
         assertEquals(OrderRoute.Stage.PICKUP, routes.findByOrder_Id(order.getId()).orElseThrow().getStage());
     }
 
+    @Test void manualAssignmentCannotBypassCounterOnlyPickupMode() {
+        var dropOff=order("SGN-Q1",OrderRoute.PickupMode.DROP_OFF);
+        var shipper=account("drop-shipper",AppUser.Role.SHIPPER);
+        staffBranches.save(new StaffBranch(shipper,branches.findByCode("SGN").orElseThrow(),admin,NOW));
+        var form=new vn.edu.hcmute.uteexpress.dto.manager.OrderAssignmentRequest();
+        form.setShipperId(shipper.getId());form.setRevision(dropOff.getRevision());form.setReason("Phân công thử bằng yêu cầu thủ công.");
+        assertThrows(IllegalArgumentException.class,()->dispatch.assignById(managerSgn.getUsername(),dropOff.getId(),form));
+        assertNull(dropOff.getShipper());
+    }
+
     private Order order(String deliveryArea, OrderRoute.PickupMode mode) {
         return orderService.createOrder(request(deliveryArea, mode), customer.getUsername());
     }

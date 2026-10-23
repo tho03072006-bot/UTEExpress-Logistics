@@ -588,7 +588,8 @@ class LogisticsIntegrationTest {
     }
     private void payment(Order value, OrderPayment.PaymentMethod method, OrderPayment.PaymentStatus status, int amount, LocalDateTime paidAt) {
         var payment = payments.findByOrder(value).orElseGet(OrderPayment::new); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
-        payment.setAmount(BigDecimal.valueOf(amount)); payment.setDiscountAmount(new BigDecimal("6000")); payment.setPaidAt(paidAt);
+        payment.setAmount(BigDecimal.valueOf(amount)); payment.setDiscountAmount(value.getShippingFee().subtract(payment.getAmount()).max(BigDecimal.ZERO)); payment.setPaidAt(paidAt);
+        if (method == OrderPayment.PaymentMethod.MOMO && status == OrderPayment.PaymentStatus.PAID) payment.setTransactionRef("SIM-MOMO-TEST-RECEIPT");
         payments.saveAndFlush(payment);
     }
 

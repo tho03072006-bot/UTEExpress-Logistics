@@ -76,4 +76,3 @@ class ControlsValidationTest {
             LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), "Lý do hợp lệ")).isEmpty());
     }
 }
-

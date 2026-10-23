@@ -60,7 +60,12 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute interprovincialRoute(Order order) {
         return routes.findByOrder_Id(order.getId()).filter(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute::isInterprovincial).orElse(null);
     }
-    /** Hai đầu tuyến được xem hồ sơ; chỉ kho nhận phụ trách lập yêu cầu xử lý chặng giao thất bại. */
+    private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute lockedInterprovincialRoute(Order order) {
+        var route = interprovincialRoute(order);
+        if (route != null) entityManager.refresh(route, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return route;
+    }
+    /** Hai đầu tuyến được xem hồ sơ; chỉ kho nhận (kho đang giao hàng) lập yêu cầu giao lại/hoàn cho chặng giao thất bại. */
     private void requireDeliveryHub(String actor, Order order) {
         var route = interprovincialRoute(order);
         if (route != null) requireHub(actor, route.getDestBranch(), "Lập yêu cầu giao lại/hoàn hàng liên tỉnh");
@@ -184,7 +189,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             }
             case CASH_SUPPLEMENT, CASH_REFUND -> {
                 requireMoney(form.amount());
-                settlement = settlements.lockById(form.targetId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp."));
+                settlement = lockedSettlement(form.targetId());
                 requireBranch(actor, null, settlement);
                 checkRevision(settlement.getRevision(), form.revision());
                 if (settlement.getStatus() != CodSettlement.Status.CONFIRMED)
@@ -281,11 +286,11 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             throw new StaffConflictException("Chỉ bắt đầu hoàn sau khi yêu cầu hoàn được duyệt.");
         requireFailed(record.getOrder());
         var now = LocalDateTime.now(clock);
-        var route = interprovincialRoute(record.getOrder());
+        var route = lockedInterprovincialRoute(record.getOrder());
         if (route != null) {
             // B9: kho chi nhánh nhận bắt đầu hoàn; hàng về kho nhận, shipper giao hết giữ đơn, chờ chuyến về chi nhánh gửi.
             requireHub(actor, route.getDestBranch(), "Bắt đầu hoàn hàng liên tỉnh");
-            var order = lockedOrder(record.getOrder().getId());
+            var order = record.getOrder();
             route.beginReturn();
             order.setShipper(null); order.setUpdatedAt(now); orders.saveAndFlush(order);
             history.save(new OrderStatusHistory(order, logistics.internal(actor), Order.OrderStatus.FAILED, Order.OrderStatus.FAILED, null,
@@ -306,7 +311,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var now = LocalDateTime.now(clock);
         if (record.getKind() == OperationsCase.Kind.RETURN && record.getStatus() == OperationsCase.Status.IN_PROGRESS) {
             var order = record.getOrder(); requireFailed(order);
-            var route = interprovincialRoute(order);
+            var route = lockedInterprovincialRoute(order);
             if (route != null) {
                 // B9: chỉ hoàn tất khi hàng hoàn đã về kho chi nhánh gửi; kho gửi ghi nhận bàn giao trả người gửi.
                 if (!route.isReturnLeg() || route.getStage() != vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB)
@@ -356,7 +361,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         if (order.getStatus() != Order.OrderStatus.FAILED || cases.existsByOrderAndKindAndStatusIn(order, OperationsCase.Kind.RETURN, ACTIVE)) return false;
         var approved = cases.findByOrderAndKindAndStatus(order, OperationsCase.Kind.RETRY, OperationsCase.Status.APPROVED);
         if (!approved.isEmpty()) return !approved.get(0).getNextAttemptAt().isAfter(LocalDateTime.now(clock));
-        var latest = history.findFirstByOrderAndStatusOrderByOccurredAtDescIdDesc(order, Order.OrderStatus.FAILED);
+        var latest = history.findFirstByOrderAndStatusAndPreviousStatusNotOrderByOccurredAtDescIdDesc(order, Order.OrderStatus.FAILED, Order.OrderStatus.FAILED);
         if (latest.isEmpty() || latest.get().getNextAttemptAt() == null
                 || latest.get().getNextAttemptAt().isAfter(LocalDateTime.now(clock))) return false;
         return !cases.existsByOrderAndKindAndStatusIn(order, OperationsCase.Kind.RETRY, List.of(OperationsCase.Status.REQUESTED))
@@ -384,19 +389,30 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private OperationsCase lock(String actor, Long id, long revision) {
         var existing = view(actor, id);
         if (existing.getOrder() != null) lockedOrder(existing.getOrder().getId());
-        if (existing.getSettlement() != null) settlements.lockById(existing.getSettlement().getId()).orElseThrow();
+        if (existing.getSettlement() != null) lockedSettlement(existing.getSettlement().getId());
         if (existing.getComplaint() != null)
             entityManager.refresh(existing.getComplaint(), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-        var record = cases.lockCase(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ."));
         // view() đã nạp hồ sơ trước lúc chờ khóa cha: đọc lại để không duyệt trạng thái cũ trong persistence context.
-        entityManager.refresh(record, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-        checkRevision(record.getRevision(), revision); return record;
+        entityManager.refresh(existing, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        requireBranch(actor, existing.getOrder(), existing.getSettlement());
+        checkRevision(existing.getRevision(), revision); return existing;
     }
     /** Đơn đã thất bại đủ số lần tối đa trong chính sách: giao lại thêm cần Admin duyệt. */
     private boolean overLimit(Order order) {
         return history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) >= policies.current().getMaxDeliveryAttempts();
     }
-    private Order lockedOrder(Long id) { return orders.findLockedById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn.")); }
+    private Order lockedOrder(Long id) {
+        access.validateId(id);
+        var order = orders.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        entityManager.refresh(order, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return order;
+    }
+    private CodSettlement lockedSettlement(Long id) {
+        access.validateId(id);
+        var settlement = settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp."));
+        entityManager.refresh(settlement, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return settlement;
+    }
     private void requireFailed(Order order) {
         if (order.getStatus() != Order.OrderStatus.FAILED) throw new StaffConflictException("Chỉ xử lý giao lại/hoàn cho đơn đang giao thất bại.");
     }

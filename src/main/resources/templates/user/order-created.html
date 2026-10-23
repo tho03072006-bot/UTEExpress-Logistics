@@ -22,7 +22,9 @@
         <p>Dịch vụ:
             <span><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span>
         </p>
-        <p>Cước phí: <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span></p>
+        <p>Cước phí: <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
+            <span class="text-muted small" th:if="${order.distanceKm != null}"
+                  th:text="|(≈ ${#numbers.formatDecimal(order.distanceKm,1,'POINT',1,'COMMA')} km, phụ phí khoảng cách ${#numbers.formatDecimal(order.distanceFee,1,'POINT',0,'COMMA')} đ)|"></span></p>
         <p>Trạng thái:
             <span class="badge bg-secondary"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></span>
         </p>

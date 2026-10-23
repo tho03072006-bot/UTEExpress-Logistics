@@ -299,9 +299,14 @@ class StaffSecurityIntegrationTest {
                     .andExpect(status().isOk()).andExpect(content().string(containsString("Trạng thái đơn hàng")))
                     .andExpect(content().string(containsString("Đơn mới trong 14 ngày")))
                     .andExpect(content().string(containsString("không phải tỷ lệ giao thành công")))
-                    .andExpect(content().string(not(containsString("NaN"))))
-                    .andExpect(content().string(not(containsString("Infinity"))))
                     .andReturn().getResponse().getContentAsString();
+            // Chỉ kiểm tra dữ liệu biểu đồ; token CSRF ngẫu nhiên ở phần khác có thể chứa các chuỗi này.
+            int chartStart = html.indexOf("class=\"staff-dashboard-charts\"");
+            int chartEnd = html.indexOf("class=\"staff-charts-snapshot\"", chartStart);
+            org.junit.jupiter.api.Assertions.assertTrue(chartStart >= 0 && chartEnd > chartStart);
+            String chartHtml = html.substring(chartStart, chartEnd);
+            org.junit.jupiter.api.Assertions.assertFalse(chartHtml.contains("NaN"));
+            org.junit.jupiter.api.Assertions.assertFalse(chartHtml.contains("Infinity"));
             org.junit.jupiter.api.Assertions.assertEquals(2, html.split("staff-chart-card",-1).length - 1);
         }
         verify(dashboardCharts).getAdminCharts("admin01"); verify(dashboardCharts).getOperationsCharts("admin01");

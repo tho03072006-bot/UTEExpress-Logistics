@@ -38,22 +38,27 @@ public interface OrderRouteRepository extends JpaRepository<OrderRoute, Long> {
     /** Đơn đã nhập kho gửi, chưa được xếp lên chuyến nào đang xếp hàng. */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"
             + " where r.originBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB and r.returnLeg = false"
+            + " and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP"
             + " and not exists (select i.id from LinehaulItem i where i.order = o and i.trip.status = vn.edu.hcmute.uteexpress.entity.routing.LinehaulTrip.Status.LOADING)"
             + " order by o.createdAt, o.id")
     List<OrderRoute> waitingAtOriginHub(Long branchId);
     /** B9: hàng hoàn đang ở kho nhận (chi nhánh này), chưa xếp lên chuyến về chi nhánh gửi. */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.originBranch"
             + " where r.destBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.DEST_HUB and r.returnLeg = true"
+            + " and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED"
             + " and not exists (select i.id from LinehaulItem i where i.order = o and i.trip.status = vn.edu.hcmute.uteexpress.entity.routing.LinehaulTrip.Status.LOADING)"
             + " order by o.updatedAt, o.id")
     List<OrderRoute> waitingReturnAtDestHub(Long branchId);
     /** B9: hàng hoàn đã về kho gửi (chi nhánh này), chờ ghi nhận trả người gửi. */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"
             + " where r.originBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB and r.returnLeg = true"
+            + " and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED"
             + " order by o.updatedAt, o.id")
     List<OrderRoute> returnedAtOriginHub(Long branchId);
     long countByDestBranch_IdAndStage(Long branchId, OrderRoute.Stage stage);
     /** Đơn tới kho nhận chờ phân công giao (không tính hàng hoàn đang chờ chuyến về). */
+    @org.springframework.data.jpa.repository.Query("select count(r) from OrderRoute r where r.destBranch.id = :branchId"
+            + " and r.stage = :stage and r.returnLeg = false and r.order.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP")
     long countByDestBranch_IdAndStageAndReturnLegFalse(Long branchId, OrderRoute.Stage stage);
     /** Đơn khách đã chọn tự mang tới quầy chi nhánh gửi nhưng quầy chưa nhận. */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"

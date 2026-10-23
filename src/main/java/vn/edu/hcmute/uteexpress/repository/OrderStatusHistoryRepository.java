@@ -41,7 +41,7 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
      */
     @org.springframework.data.jpa.repository.Query("""
             select h from OrderStatusHistory h where h.order.id in :ids
-              and (h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+              and ((h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and h.previousStatus <> h.status)
                 or (h.failureReason is not null
                   and h.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
                   and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP))
@@ -67,7 +67,11 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
             @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from);
 
     Page<OrderStatusHistory> findByOrder(Order order, Pageable pageable);
+    /** Chỉ đếm lần chuyển vào trạng thái; nhật ký di chuyển/ghi chú giữ nguyên trạng thái không phải một lượt giao. */
+    @org.springframework.data.jpa.repository.Query("select count(h) from OrderStatusHistory h where h.order = :order and h.status = :status and h.previousStatus <> h.status")
     long countByOrderAndStatus(Order order, Order.OrderStatus status);
+    Optional<OrderStatusHistory> findFirstByOrderAndStatusAndPreviousStatusNotOrderByOccurredAtDescIdDesc(
+            Order order, Order.OrderStatus status, Order.OrderStatus previousStatus);
     Optional<OrderStatusHistory> findFirstByOrderAndStatusOrderByOccurredAtDescIdDesc(Order order, Order.OrderStatus status);
     Optional<OrderStatusHistory> findFirstByOrderAndPreviousStatusAndStatusOrderByOccurredAtDescIdDesc(
             Order order, Order.OrderStatus previousStatus, Order.OrderStatus status);

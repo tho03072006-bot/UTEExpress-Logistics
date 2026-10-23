@@ -27,9 +27,8 @@ public class ShippingTariffServiceImpl implements ShippingTariffService {
     }
     @Override @Transactional(readOnly = true)
     public BigDecimal quote(Order.ServiceType serviceType, double weightKg) {
-        if (serviceType == null || !Double.isFinite(weightKg) || weightKg <= 0 || weightKg > 100) {
-            throw new IllegalArgumentException("Chọn dịch vụ và khối lượng lớn hơn 0, không quá 100 kg.");
-        }
+        if (serviceType == null) throw new IllegalArgumentException("Vui lòng chọn dịch vụ.");
+        vn.edu.hcmute.uteexpress.validation.ShippingInputValidation.requireWeight(weightKg);
         var tariff = currentTariff(serviceType);
         return tariff.baseFee().add(tariff.feePerKg().multiply(BigDecimal.valueOf(weightKg)))
             .setScale(0, RoundingMode.HALF_UP);

@@ -48,8 +48,13 @@ public class LogisticsAccess {
      */
     private void requireBranch(AppUser manager, Order order) {
         if (order.getId() == null) return;
+        requireBranches(manager, java.util.List.of(order));
+    }
+    private void requireBranches(AppUser manager, java.util.Collection<Order> orders) {
+        var ids = orders.stream().map(Order::getId).toList();
+        if (ids.stream().anyMatch(java.util.Objects::isNull)) throw denied();
         Long branch = staffBranches.findByUser_Id(manager.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
-        if (routes.idsInScope(java.util.List.of(order.getId()), branch).isEmpty())
+        if (!new java.util.HashSet<>(routes.idsInScope(ids, branch)).containsAll(ids))
             throw new AccessDeniedException("Đơn này không gửi đi hay giao tới chi nhánh của bạn.");
     }
     /** Kiểm tra cả danh sách với một lần đọc tài khoản (trang danh sách có tới 10 đơn). */
@@ -57,7 +62,8 @@ public class LogisticsAccess {
         if (orders.isEmpty()) return;
         AppUser user = findUser(users, username).orElseThrow(LogisticsAccess::denied);
         if (!user.isEnabled() || user.isLockedByAdmin()) throw denied();
-        if (user.getRole() == AppUser.Role.ADMIN || user.getRole() == AppUser.Role.MANAGER) { internal(username); return; }
+        if (user.getRole() == AppUser.Role.ADMIN) { internal(username); return; }
+        if (user.getRole() == AppUser.Role.MANAGER) { internal(username); requireBranches(user, orders); return; }
         for (Order order : orders) {
             boolean allowed = user.getRole() == AppUser.Role.USER ? user.getId().equals(order.getSender().getId())
                     : user.getRole() == AppUser.Role.SHIPPER && order.getShipper() != null

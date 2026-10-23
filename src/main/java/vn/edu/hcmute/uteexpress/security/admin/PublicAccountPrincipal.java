@@ -25,6 +25,7 @@ public class PublicAccountPrincipal extends User {
             && (user.getRole() == AppUser.Role.USER || user.getRole() == AppUser.Role.SHIPPER)
             && getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
+    public Long getUserId() { return userId; }
     private static byte[] fingerprint(String hash) {
         try { return MessageDigest.getInstance("SHA-256").digest(hash.getBytes(StandardCharsets.UTF_8)); }
         catch (NoSuchAlgorithmException ex) { throw new IllegalStateException("Không hỗ trợ SHA-256.", ex); }

@@ -23,7 +23,8 @@ public class RouteQuoteController {
         }
     }
     @GetMapping("/api/routing/quote")
-    public List<QuoteView> quote(@Valid @ModelAttribute FeeEstimateRequest form) {
-        return service.quotes(form).stream().map(QuoteView::from).toList();
+    public org.springframework.http.ResponseEntity<List<QuoteView>> quote(@Valid @ModelAttribute FeeEstimateRequest form) {
+        return org.springframework.http.ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(service.quotes(form).stream().map(QuoteView::from).toList());
     }
 }

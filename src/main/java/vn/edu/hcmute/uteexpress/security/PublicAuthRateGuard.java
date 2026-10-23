@@ -22,7 +22,7 @@ public final class PublicAuthRateGuard {
         if(value!=null && value.count()>=limit) return Math.max(1,Duration.between(now,value.until()).toSeconds());
         windows.put(key,new Window(value==null?now.plus(duration):value.until(),value==null?1:value.count()+1)); return 0;
     }
-    /** Sai liên tiếp từng này lần thì khóa tên đăng nhập 15 phút. */
+    /** Sai liên tiếp từng này lần thì khóa định danh tài khoản 15 phút (username/email dùng chung ID). */
     public static final int MAX_LOGIN_FAILURES = 10;
     public synchronized boolean loginBlocked(String username) {
         prune(); var value=windows.get(loginKey(username)); return value!=null && value.count()>=MAX_LOGIN_FAILURES;

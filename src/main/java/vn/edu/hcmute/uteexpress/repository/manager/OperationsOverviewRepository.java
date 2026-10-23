@@ -47,7 +47,7 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         ))
         or (:kind = 'MANY_FAILURES' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
             and (select count(h3.id) from OrderStatusHistory h3 where h3.order = o
-            and h3.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) >= :maxAttempts)
+            and h3.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and h3.previousStatus <> h3.status) >= :maxAttempts)
         ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
     Page<Order> alerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
             @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,

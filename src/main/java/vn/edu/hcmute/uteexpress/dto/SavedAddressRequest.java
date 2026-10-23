@@ -34,7 +34,7 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ chi tiết")
     @Size(min=5,max = 255, message = "Địa chỉ từ 5–255 ký tự")
-    @Pattern(regexp="[^\\p{Cntrl}]+",message="Địa chỉ không chứa ký tự điều khiển.")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.ShippingInputValidation.ADDRESS,message="Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String addressLine;
 
     @NotNull(message = "Vui lòng chọn loại địa chỉ")

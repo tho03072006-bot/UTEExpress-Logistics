@@ -9,7 +9,6 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.DraftOrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderDraftService;
-import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 
 import java.math.BigDecimal;
@@ -25,7 +24,8 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     private final DraftOrderRepository draftOrderRepository;
     private final AppUserRepository appUserRepository;
-    private final OrderService orderService;
+    private final OrderCreationWriter creationWriter;
+    private final jakarta.persistence.EntityManager em;
     private final PromoCodeService promoCodeService;
     private final jakarta.validation.Validator validator;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
@@ -34,14 +34,14 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
-                                 OrderService orderService,
+                                 OrderCreationWriter creationWriter,
                                  PromoCodeService promoCodeService, jakarta.validation.Validator validator,
                                  vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
                                  vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing,
-                                 vn.edu.hcmute.uteexpress.repository.routing.DraftOrderAreaRepository draftAreas) {
+                                 vn.edu.hcmute.uteexpress.repository.routing.DraftOrderAreaRepository draftAreas, jakarta.persistence.EntityManager em) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
-        this.orderService = orderService;
+        this.creationWriter = creationWriter; this.em = em;
         this.promoCodeService = promoCodeService;
         this.validator=validator;
         this.submissions=submissions;
@@ -103,14 +103,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setPaymentMethod(request.getPaymentMethod());
         draft.setPromoCode(request.getPromoCode());
         var quote = routing.quote(request);
+        validateQuotedDraft(request, quote);
         BigDecimal fee = quote.total();
         draft.setEstimatedFee(fee);
-
-        // Kiem tra ma ngay luc them vao gio de bao som, thay vi de nguoi dung gom xong
-        // ca gio roi bam xac nhan moi biet ma sai. Luc xac nhan van kiem tra lai lan nua.
-        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
-            promoCodeService.requireUsableCode(request.getPromoCode(), fee);
-        }
 
         DraftOrder saved = draftOrderRepository.save(draft);
         draftAreas.save(new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(saved, quote.pickupArea(), quote.deliveryArea()));
@@ -131,7 +126,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     @Override
     public Order confirmDraft(Long draftId, String username) {
         DraftOrder draft = requireOwnedDraft(draftId, username);
-        Order order = orderService.createOrder(toCreateRequest(draft), username);
+        Order order = creationWriter.createRouted(toCreateRequest(draft), username);
         draftOrderRepository.delete(draft);
         return order;
     }
@@ -146,7 +141,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
         List<Order> created = new ArrayList<>();
         for (DraftOrder draft : drafts) {
-            created.add(orderService.createOrder(toCreateRequest(draft), username));
+            created.add(creationWriter.createRouted(toCreateRequest(draft), username));
         }
         // Ca vong lap nam trong cung mot transaction: neu mot don loi thi khong don nao duoc tao,
         // gio van con nguyen de nguoi dung sua lai roi xac nhan lai.
@@ -169,6 +164,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     private AppUser requireLockedUser(String username) {
         var owner=appUserRepository.findLockedByUsername(username).orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        em.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if(!owner.isEnabled() || owner.isLockedByAdmin() || owner.getRole()!=AppUser.Role.USER)
             throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được thay đổi giỏ đơn.");
         return owner;
@@ -227,8 +223,17 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         request.setPickupProvinceCode(form.getPickupProvinceCode()); request.setPickupAreaCode(form.getPickupAreaCode());
         request.setDeliveryProvinceCode(form.getDeliveryProvinceCode()); request.setDeliveryAreaCode(form.getDeliveryAreaCode());
         var quote = routing.quote(request);
+        validateQuotedDraft(request, quote);
         var record = draftAreas.findByDraftOrder_Id(id).orElseGet(() -> new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(draft, quote.pickupArea(), quote.deliveryArea()));
         record.configure(quote.pickupArea(), quote.deliveryArea()); draftAreas.save(record);
         draft.setEstimatedFee(quote.total()); draft.setUpdatedAt(java.time.LocalDateTime.now());
+    }
+
+    private void validateQuotedDraft(OrderCreateRequest request,
+            vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService.Quote quote) {
+        routing.fullAddress(request.getSenderAddress(), quote.pickupArea());
+        routing.fullAddress(request.getReceiverAddress(), quote.deliveryArea());
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank())
+            promoCodeService.requireUsableCode(request.getPromoCode(), quote.total());
     }
 }

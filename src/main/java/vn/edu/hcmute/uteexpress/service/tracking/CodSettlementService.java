@@ -114,14 +114,14 @@ public class CodSettlementService {
         return new BigDecimal(value);
     }
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public CodSettlement submit(String username, List<Long> orderIds, BigDecimal declared, String note) {
         var shipper = access.shipper(username);
-        if (orderIds == null || orderIds.stream().noneMatch(Objects::nonNull))
+        if (orderIds == null || orderIds.isEmpty())
             throw new IllegalArgumentException("Hãy chọn ít nhất một đơn COD để nộp tiền.");
-        var ids = new LinkedHashSet<>(orderIds.stream().filter(Objects::nonNull).toList());
-        if (ids.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi phiếu tối đa " + MAX_ORDERS + " đơn.");
-        if (ids.stream().anyMatch(id -> id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        if (orderIds.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi phiếu tối đa " + MAX_ORDERS + " đơn.");
+        if (orderIds.stream().anyMatch(id -> id == null || id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        var ids = new TreeSet<>(orderIds);
         String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
         settlements.lockShipper(shipper.getId());
         if (settlements.existsByShipperAndStatus(shipper, CodSettlement.Status.SUBMITTED))

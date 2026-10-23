@@ -14,7 +14,6 @@ import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.entity.admin.StaffAccount;
 import vn.edu.hcmute.uteexpress.entity.routing.*;
 import vn.edu.hcmute.uteexpress.service.admin.*;
-import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.exception.StaffConflictException;
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +27,7 @@ class AivenOperationsIntegrationTest {
     @Autowired ManagerReportService reports;
     @Autowired ShippingTariffService tariffs;
     @Autowired AuditService audit;
-    @Autowired OrderService orders;
+    @Autowired vn.edu.hcmute.uteexpress.service.impl.OrderCreationWriter orders;
     @Autowired vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
     @Autowired Clock clock;
     private String operator(AppUser.Role role) {
@@ -101,7 +100,7 @@ class AivenOperationsIntegrationTest {
         request.setReceiverName("Người nhận kiểm thử"); request.setReceiverAddress("Địa chỉ kiểm thử");
         request.setReceiverPhone("+84 901 234 567"); request.setWeightKg(1.0);
         request.setServiceType(Order.ServiceType.STANDARD); request.setPromoCode(form.getCode());
-        var order = orders.createOrder(request, sender.getUsername()); em.flush();
+        var order = orders.createRouted(request, sender.getUsername()); em.flush();
         assertNotNull(order.getId());
         var payment = em.createQuery("select p from OrderPayment p where p.order = :order", OrderPayment.class)
             .setParameter("order", order).getSingleResult();
@@ -109,7 +108,7 @@ class AivenOperationsIntegrationTest {
         var promo = em.createQuery("select p from PromoCode p where p.code = :code", PromoCode.class)
             .setParameter("code", form.getCode()).getSingleResult();
         assertEquals(1, promo.getUsedCount()); assertFalse(promo.hasRemainingUsage());
-        assertThrows(IllegalStateException.class, () -> orders.createOrder(request, sender.getUsername()));
+        assertThrows(IllegalStateException.class, () -> orders.createRouted(request, sender.getUsername()));
     }
 }
 

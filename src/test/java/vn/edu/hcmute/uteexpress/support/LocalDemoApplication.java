@@ -40,6 +40,8 @@ public final class LocalDemoApplication {
         props.put("spring.sql.init.encoding", "UTF-8");
         props.put("spring.sql.init.data-locations", "classpath:local-demo/seed.sql");
         props.put("app.mail.order-updates.enabled", "false");
+        // Chạy thử thì tính khoảng cách thật bằng ArcGIS (test tự động mới dùng tọa độ giả).
+        props.put("app.geocoding.fake", "false");
         props.put("app.upload.dir", Path.of("target", "local-demo-uploads").toAbsolutePath().toString());
         // Đặt như cờ -D để được ưu tiên hơn application.properties (vốn trỏ tới Aiven); cờ -D người dùng tự thêm vẫn thắng.
         props.forEach((key, value) -> { if (System.getProperty(key) == null) System.setProperty(key, value.toString()); });

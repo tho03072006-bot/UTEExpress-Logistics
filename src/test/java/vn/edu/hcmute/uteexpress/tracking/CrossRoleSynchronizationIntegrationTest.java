@@ -53,6 +53,7 @@ class CrossRoleSynchronizationIntegrationTest {
         }
     }
     @Autowired MockMvc mvc;
+    @Autowired jakarta.persistence.EntityManager em;
     @Autowired ApplicationEvents events;
     @Autowired AppUserRepository users;
     @Autowired StaffAccountRepository staff;
@@ -251,6 +252,8 @@ class CrossRoleSynchronizationIntegrationTest {
                 "Giao không thành công", null, NOW.minusHours(4 - index)));
         history.flush();
         for (int index = 0; index < 21; index++) {
+            // Mỗi biểu mẫu thật được tải từ một request mới, không tái dùng ảnh chụp của giao dịch trước.
+            em.flush(); em.clear(); order = orders.findById(order.getId()).orElseThrow();
             long id = cases.request(manager.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETRY, order.getId(),
                     order.getRevision(), null, NOW.plusHours(1), "Đề nghị giao vượt giới hạn", "", UUID.randomUUID().toString()), null);
             var record = cases.view(admin.getUsername(), id);

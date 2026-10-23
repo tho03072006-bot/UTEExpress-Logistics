@@ -19,14 +19,23 @@ public final class TransactionCache {
 
     @SuppressWarnings("unchecked")
     public static <T> T get(String key, Supplier<T> loader) {
-        if (!TransactionSynchronizationManager.isActualTransactionActive()) return loader.get();
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !TransactionSynchronizationManager.isSynchronizationActive()) return loader.get();
         var cache = (Map<String, Object>) TransactionSynchronizationManager.getResource(RESOURCE);
         if (cache == null) {
             var created = new HashMap<String, Object>();
             TransactionSynchronizationManager.bindResource(RESOURCE, created);
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void suspend() {
+                    if (TransactionSynchronizationManager.getResource(RESOURCE) == created)
+                        TransactionSynchronizationManager.unbindResource(RESOURCE);
+                }
+                @Override public void resume() {
+                    TransactionSynchronizationManager.bindResource(RESOURCE, created);
+                }
                 @Override public void afterCompletion(int status) {
-                    TransactionSynchronizationManager.unbindResourceIfPossible(RESOURCE);
+                    if (TransactionSynchronizationManager.getResource(RESOURCE) == created)
+                        TransactionSynchronizationManager.unbindResource(RESOURCE);
                 }
             });
             cache = created;

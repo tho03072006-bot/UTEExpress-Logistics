@@ -62,7 +62,8 @@ public class DispatchRoutingPolicy {
     public Branch branch(OrderRoute route) { return route.getStage() == OrderRoute.Stage.PICKUP ? route.getOriginBranch() : route.getDestBranch(); }
     public void requireStage(OrderRoute route) {
         Order order = route.getOrder();
-        boolean pickup = route.getStage() == OrderRoute.Stage.PICKUP && order.getStatus() == Order.OrderStatus.PENDING_PICKUP;
+        boolean pickup = route.getStage() == OrderRoute.Stage.PICKUP && !route.isDropOff()
+                && order.getStatus() == Order.OrderStatus.PENDING_PICKUP;
         boolean delivery = route.getStage() == OrderRoute.Stage.DEST_HUB && order.getStatus() == Order.OrderStatus.PICKED_UP;
         if (!pickup && !delivery) throw new IllegalArgumentException("Chỉ phân công đơn chờ lấy hoặc chờ giao tại kho nhận.");
     }

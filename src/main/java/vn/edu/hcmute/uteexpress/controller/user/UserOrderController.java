@@ -52,6 +52,7 @@ public class UserOrderController {
     private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
     private final vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService savedRoutes;
     private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
+    private final java.util.Map<String, long[]> quoteWindows = new java.util.concurrent.ConcurrentHashMap<>();
 
     public UserOrderController(OrderService orderService, SavedAddressService savedAddressService,
                                OrderDraftService orderDraftService,
@@ -127,6 +128,39 @@ public class UserOrderController {
         }
 
         return "redirect:/nguoi-dung/don-hang/" + order.getId() + "/da-tao";
+    }
+
+    /**
+     * Báo giá theo cùng tuyến/khu vực với form mới. Chỉ để hiển thị; lúc tạo đơn server
+     * tính lại từ đầu nên sửa số trên trình duyệt cũng không đổi được tiền.
+     */
+    @PostMapping(value = "/tao-don/bao-gia", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> quote(
+            @Valid @ModelAttribute vn.edu.hcmute.uteexpress.dto.OrderQuoteRequest form,
+            BindingResult errors, Authentication authentication) {
+        var noStore = org.springframework.http.CacheControl.noStore();
+        if (errors.hasErrors())
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore)
+                    .body(java.util.Map.of("ok", false, "message", "Nhập hai địa chỉ hợp lệ, dịch vụ và khối lượng từ 0,01–100 kg để xem cước."));
+        if (!allowQuote(authentication.getName()))
+            return org.springframework.http.ResponseEntity.status(429).cacheControl(noStore)
+                    .body(java.util.Map.of("ok", false, "message", "Bạn xem báo giá quá nhanh. Đợi một chút rồi thử lại."));
+        try {
+            var price = routing.quote(form.toRoutingRequest());
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", true,
+                    "distanceKm", price.distanceKm(), "baseFee", price.baseFee(), "distanceFee", price.distanceFee(),
+                    "routeFee", price.routeFee(), "dropOffDiscount", price.dropOffDiscount(), "total", price.total()));
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", false, "message", ex.getMessage()));
+        }
+    }
+
+    private boolean allowQuote(String username) {
+        long now = System.currentTimeMillis();
+        long[] window = quoteWindows.compute(username, (key, value) ->
+                value == null || now - value[0] >= 60_000 ? new long[]{now, 1} : new long[]{value[0], value[1] + 1});
+        return window[1] <= 40;
     }
 
     @GetMapping("/don-hang/{id}/da-tao")

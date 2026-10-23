@@ -239,7 +239,7 @@ class ShipperOperationsIntegrationTest {
         payment(second, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000);
         var picked = order("UTE-OPS-03", shipper, Order.OrderStatus.PICKED_UP);
         var foreign = order("UTE-OPS-FOREIGN", anotherShipper, Order.OrderStatus.PENDING_PICKUP);
-        var result = bulk.update(shipper.getUsername(), Arrays.asList(order.getId(), second.getId(), second.getId(), null,
+        var result = bulk.update(shipper.getUsername(), Arrays.asList(order.getId(), second.getId(), second.getId(),
                 picked.getId(), foreign.getId()), Order.OrderStatus.PICKED_UP);
         assertEquals(List.of("UTE-OPS-01", "UTE-OPS-02"), result.updated());
         assertEquals(2, result.failed().size());

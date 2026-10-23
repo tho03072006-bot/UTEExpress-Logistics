@@ -28,6 +28,11 @@ public class IsolatedLogisticsTestConfiguration {
         }
         return new InMemoryCloudMediaGateway();
     }
+    /** Không gọi dịch vụ bản đồ thật trong test; LocalDemoApplication đặt app.geocoding.fake=false để dùng ArcGIS thật. */
+    @Bean @Primary
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.geocoding.fake", havingValue = "true", matchIfMissing = true)
+    FixedAddressGeocoder isolatedGeocoder() { return new FixedAddressGeocoder(); }
+
     @Bean ApplicationRunner seedIsolatedPolicy(JdbcTemplate jdbc, org.springframework.transaction.PlatformTransactionManager manager) {
         return args -> {
             try (var connection = jdbc.getDataSource().getConnection()) {

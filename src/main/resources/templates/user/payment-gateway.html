@@ -10,6 +10,7 @@
 <dt class="col-5 text-muted">Dịch vụ</dt><dd class="col-7" th:text="${order.serviceType == null ? '—' : order.serviceType.displayName}"></dd>
 <dt class="col-5 text-muted">Phương thức</dt><dd class="col-7" th:text="${payment.method.displayName}"></dd></dl>
 <div class="d-flex justify-content-between small mb-2"><span>Cước gốc</span><span th:replace="~{fragments/components :: money(${payment.originalAmount})}"></span></div>
+<div class="d-flex justify-content-between small mb-2 text-muted" th:if="${order.distanceKm != null}"><span th:text="|Gồm phụ phí khoảng cách (≈ ${#numbers.formatDecimal(order.distanceKm,1,'POINT',1,'COMMA')} km)|">Gồm phụ phí khoảng cách</span><span th:replace="~{fragments/components :: money(${order.distanceFee})}"></span></div>
 <div class="d-flex justify-content-between small mb-2" th:if="${payment.hasDiscount()}"><span>Giảm giá</span><span>− <span th:replace="~{fragments/components :: money(${payment.discountAmount})}"></span></span></div>
 <hr><div class="d-flex justify-content-between align-items-center gap-3"><span>Tổng thanh toán</span><strong class="fs-4 text-nowrap"><span th:replace="~{fragments/components :: money(${payment.amount})}"></span></strong></div>
 <p class="small text-muted mt-4 mb-0">Đơn MoMo phải thanh toán trước khi điều phối/giao hàng. Đơn COD được thu cước khi giao thành công.</p></div></div></div>
