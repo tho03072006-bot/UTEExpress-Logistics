@@ -15,6 +15,10 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 public interface ShipperStatisticsRepository
         extends Repository<Order, Long> {
 
+    /** Đơn trong danh sách mà shipper vẫn đang giữ (đơn liên tỉnh đã bàn giao vào kho thì không còn). */
+    @Query("select o.id from Order o where o.id in :ids and o.shipper = :shipper")
+    List<Long> heldBy(@Param("ids") java.util.Collection<Long> ids, @Param("shipper") AppUser shipper);
+
     @Query("""
             select o from Order o where o.shipper = :shipper and o.updatedAt >= :fromInclusive and o.updatedAt < :toExclusive
               and not exists (select h.id from OrderStatusHistory h where h.order = o and h.previousStatus <> h.status)

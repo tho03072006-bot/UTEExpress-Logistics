@@ -505,8 +505,8 @@ class LogisticsIntegrationTest {
         mvc.perform(get("/shipper/thong-ke/xuat.csv").param("from", "2026-10-10").param("to", "2026-10-11")
                 .with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(header().string("Content-Disposition", containsString("attachment")))
-            .andExpect(content().string(containsString("Ngày,Giao thành công")))
-            .andExpect(content().string(containsString("2026-10-11,0,0,0,0")))
+            .andExpect(content().string(containsString("Ngày,Đã lấy hàng,Giao thành công")))
+            .andExpect(content().string(containsString("2026-10-11,0,0,0,0,0")))
             .andExpect(content().string(not(containsString(order.getReceiverPhone()))));
         mvc.perform(get("/shipper/thong-ke/xuat.csv").with(user(customer.getUsername()).roles("USER")))
             .andExpect(status().isForbidden());

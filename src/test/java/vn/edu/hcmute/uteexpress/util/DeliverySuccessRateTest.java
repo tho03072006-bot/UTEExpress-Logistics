@@ -12,7 +12,7 @@ class DeliverySuccessRateTest {
     void allRolesShareTheSameFormulaAndRounding(long delivered, long returned, String expected) {
         var percentage = new BigDecimal(expected);
         assertEquals(percentage, DeliverySuccessRate.calculate(delivered, returned));
-        assertEquals(percentage, new ShipperPerformanceResponse(1L, "test", "Kiểm thử", 20, 20, delivered, 20, returned).getSuccessRate());
+        assertEquals(percentage, new ShipperPerformanceResponse(1L, "test", "Kiểm thử", 20, 20, delivered, 20, returned, 0).getSuccessRate());
     }
 
     @Test void countsCannotBeNegativeAndLargeCountsDoNotOverflow() {

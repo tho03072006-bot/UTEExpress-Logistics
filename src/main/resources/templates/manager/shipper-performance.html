@@ -5,7 +5,7 @@
 <form method="get" th:action="@{/manager/hieu-suat-shipper}" class="row g-2 align-items-end mb-3" th:if="${branches.size() > 1}">
 <div th:replace="~{fragments/branch-filter :: select(${branches}, ${branchId})}"></div>
 <div class="col-auto"><button class="btn btn-outline-primary">Lọc</button></div></form>
-<div class="table-responsive"><table class="table"><thead><tr><th>Shipper</th><th>Chờ lấy</th><th>Đang vận chuyển</th><th>Đã giao</th><th>Thất bại đang xử lý</th><th>Đã hoàn</th><th>Tỷ lệ</th></tr></thead><tbody>
-<tr th:each="s : ${performance}"><td th:text="|${s.username} · ${s.fullName ?: ''}|"></td><td th:text="${s.pending}"></td><td th:text="${s.inTransit}"></td><td th:text="${s.delivered}"></td><td th:text="${s.failed}"></td><td th:text="${s.returned}"></td><td th:text="|${s.successRate}%|"></td></tr></tbody></table></div>
+<div class="table-responsive"><table class="table"><thead><tr><th>Shipper</th><th title="Đơn đã lấy hàng, kể cả đơn liên tỉnh đã bàn giao vào kho">Đã lấy</th><th>Chờ lấy</th><th>Đang vận chuyển</th><th>Đã giao</th><th>Thất bại đang xử lý</th><th>Đã hoàn</th><th>Tỷ lệ</th></tr></thead><tbody>
+<tr th:each="s : ${performance}"><td th:text="|${s.username} · ${s.fullName ?: ''}|"></td><td th:text="${s.pickedUp}"></td><td th:text="${s.pending}"></td><td th:text="${s.inTransit}"></td><td th:text="${s.delivered}"></td><td th:text="${s.failed}"></td><td th:text="${s.returned}"></td><td th:text="|${s.successRate}%|"></td></tr></tbody></table></div>
 <a th:if="${performance.hasPrevious()}" th:href="@{/manager/hieu-suat-shipper(page=${performance.number-1},branchId=${branchId})}">Trang trước</a> <a th:if="${performance.hasNext()}" th:href="@{/manager/hieu-suat-shipper(page=${performance.number+1},branchId=${branchId})}">Trang sau</a>
 <p class="mt-3"><a th:href="@{/manager/doi-soat-cod}">Xem tiền cước chưa xác nhận và phiếu nộp</a></p></section></body></html>

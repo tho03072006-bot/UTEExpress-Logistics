@@ -60,7 +60,11 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
                vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT) then 1 else 0 end),
           sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED then 1 else 0 end),
           sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED then 1 else 0 end),
-          sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.RETURNED then 1 else 0 end))
+          sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.RETURNED then 1 else 0 end),
+          (select count(p) from Order p where p.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP,
+               vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED)
+             and (exists (select r.id from vn.edu.hcmute.uteexpress.entity.routing.OrderRoute r where r.order = p and r.pickupShipper = u)
+               or (p.shipper = u and not exists (select r2.id from vn.edu.hcmute.uteexpress.entity.routing.OrderRoute r2 where r2.order = p)))))
         from AppUser u left join Order o on o.shipper = u where u.role = vn.edu.hcmute.uteexpress.entity.AppUser.Role.SHIPPER
           and """ + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE + """
         group by u.id, u.username, u.fullName order by u.username, u.id
