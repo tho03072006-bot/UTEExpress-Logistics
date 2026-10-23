@@ -160,7 +160,7 @@ class HubServiceTest {
         route.getOrder().setStatus(Order.OrderStatus.CANCELLED);
         when(trips.findLockedById(10L)).thenReturn(Optional.of(trip));when(routing.scope(manager,null)).thenReturn(1L);
         when(items.findAllByTrip_Id(10L)).thenReturn(List.of(new LinehaulItem(trip,route.getOrder())));
-        when(orders.findLockedById(400L)).thenReturn(Optional.of(route.getOrder()));
+        stubRoute(route);
         assertThrows(IllegalStateException.class,()->hub.depart("managerqa",10L,0,"SEAL-001"));
         assertEquals(OrderRoute.Stage.ORIGIN_HUB,route.getStage());verifyNoInteractions(history);
     }
@@ -179,7 +179,7 @@ class HubServiceTest {
         route.getOrder().setStatus(Order.OrderStatus.CANCELLED);
         when(trips.findLockedById(10L)).thenReturn(Optional.of(trip));when(routing.scope(manager,null)).thenReturn(2L);
         when(items.findAllByTrip_Id(10L)).thenReturn(List.of(new LinehaulItem(trip,route.getOrder())));
-        when(orders.findLockedById(400L)).thenReturn(Optional.of(route.getOrder()));
+        stubRoute(route);
         assertThrows(IllegalStateException.class,()->hub.arrive("managerqa",10L,1,"SEAL-001",List.of(400L),""));
         assertEquals(OrderRoute.Stage.LINEHAUL,route.getStage());assertEquals(LinehaulTrip.Status.DEPARTED,trip.getStatus());
         verifyNoInteractions(history);
@@ -187,6 +187,20 @@ class HubServiceTest {
     @Test void invalidLateReceiptIdIsRejectedWithoutRepositoryQuery() {
         assertThrows(IllegalArgumentException.class,()->hub.receiveLate("managerqa",null,"Ghi chú nhận bổ sung."));
         verifyNoInteractions(items,trips,orders,history);
+    }
+    @Test void failedOrderWithoutReturnLegCannotBeLoadedOntoTrip() {
+        var route=order(400L,"UTE00000400",sgn,han,OrderRoute.Stage.ORIGIN_HUB);
+        route.getOrder().setStatus(Order.OrderStatus.FAILED);
+        prepareCreate(route);
+        assertThrows(IllegalStateException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","0901234567",List.of(400L)));
+        verify(items,never()).save(any());
+    }
+    @Test void returnLegWithNonFailedStatusCannotBeLoadedOntoTrip() {
+        var route=order(400L,"UTE00000400",han,sgn,OrderRoute.Stage.LAST_MILE);
+        route.beginReturn();
+        prepareCreate(route);
+        assertThrows(IllegalStateException.class,()->hub.createTrip("managerqa",1L,2L,"51C-123.45","Nguyễn Văn An","0901234567",List.of(400L)));
+        verify(items,never()).save(any());
     }
     private void prepareCreate(OrderRoute route) {
         lenient().when(routing.scope(manager,1L)).thenReturn(1L);

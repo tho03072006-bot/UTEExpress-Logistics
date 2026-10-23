@@ -189,10 +189,23 @@ public class OrderServiceImpl implements OrderService {
                 "Hàng đang trên đường tới người nhận.",
                 rank >= 2, current == Order.OrderStatus.IN_TRANSIT, timeOf(order, current, Order.OrderStatus.IN_TRANSIT)));
 
-        if (failed) {
+        boolean returnLeg = route != null && route.isReturnLeg();
+        if (failed || (returned && returnLeg)) {
             steps.add(new OrderTimelineStep("Giao thất bại",
                     "Không giao được cho người nhận. Shipper sẽ liên hệ để xử lý tiếp.",
-                    true, true, order.getUpdatedAt()));
+                    true, failed && !returnLeg, failed && !returnLeg ? order.getUpdatedAt() : null));
+            if (returnLeg) {
+                // B9: hàng hoàn đi chuyến trung chuyển ngược về chi nhánh gửi.
+                var dest = route.getDestBranch();
+                int back = returned ? 4 : switch (route.getStage()) { case DEST_HUB -> 1; case LINEHAUL -> 2; default -> 3; };
+                steps.add(hubStep("Hàng hoàn về kho " + dest.getName(), "Hàng không giao được đã về kho " + dest.getName()
+                        + ", chờ chuyến về " + origin.getName() + ".", back >= 1, !returned && back == 1, order));
+                steps.add(hubStep("Hàng hoàn đang trung chuyển", "Hàng hoàn đang trên chuyến từ " + dest.getName() + " về " + origin.getName() + ".",
+                        back >= 2, !returned && back == 2, order));
+                steps.add(hubStep("Hàng hoàn về kho " + origin.getName(), "Hàng hoàn đã về kho " + origin.getName() + ", chi nhánh sẽ trả hàng cho bạn.",
+                        back >= 3, !returned && back == 3, order));
+                if (returned) steps.add(new OrderTimelineStep("Đã hoàn trả", "Hàng đã được chuyển trả về cho người gửi.", true, true, order.getUpdatedAt()));
+            }
         } else if (returned) {
             steps.add(new OrderTimelineStep("Đã hoàn trả",
                     "Hàng đã được chuyển trả về cho người gửi.",

@@ -56,12 +56,13 @@ public class HubService {
     }
 
     public record TripView(LinehaulTrip trip, List<LinehaulItem> items) { }
+    /** waiting gồm đơn chiều đi đã nhập kho gửi và hàng hoàn (B9) đang ở kho nhận chờ chuyến về; returned: hàng hoàn đã về kho này. */
     public record Overview(Branch branch, List<Branch> branches, List<Branch> destinations, List<OrderRoute> waiting,
             List<TripView> loading, List<TripView> outgoing, List<TripView> incoming, List<TripView> arrived,
-            List<LinehaulItem> missing, long waitingDelivery, List<OrderRoute> dropOffs) {
+            List<LinehaulItem> missing, long waitingDelivery, List<OrderRoute> dropOffs, List<OrderRoute> returned) {
         /** Đơn đang chờ xếp chuyến tới một chi nhánh, để mỗi chi nhánh đến có một form tạo chuyến riêng. */
         public List<OrderRoute> waitingFor(Long destBranchId) {
-            return waiting.stream().filter(r -> r.getDestBranch().getId().equals(destBranchId)).toList();
+            return waiting.stream().filter(r -> r.nextHub().getId().equals(destBranchId)).toList();
         }
     }
 
@@ -71,15 +72,17 @@ public class HubService {
         Branch branch = hubBranch(user, branchId);
         List<Branch> all = branches.findAll(org.springframework.data.domain.Sort.by("code"));
         List<Branch> destinations = all.stream().filter(b -> !b.getId().equals(branch.getId())).toList();
+        var waiting = new ArrayList<OrderRoute>(routes.waitingAtOriginHub(branch.getId()));
+        waiting.addAll(routes.waitingReturnAtDestHub(branch.getId()));
         return new Overview(branch, user.getRole() == AppUser.Role.ADMIN ? all : List.of(branch), destinations,
-                routes.waitingAtOriginHub(branch.getId()),
+                List.copyOf(waiting),
                 views(trips.findAllByFromBranch_IdAndStatusOrderByIdDesc(branch.getId(), LinehaulTrip.Status.LOADING)),
                 views(trips.findAllByFromBranch_IdAndStatusOrderByIdDesc(branch.getId(), LinehaulTrip.Status.DEPARTED)),
                 views(trips.findAllByToBranch_IdAndStatusOrderByIdDesc(branch.getId(), LinehaulTrip.Status.DEPARTED)),
                 views(trips.findTop10ByToBranch_IdAndStatusOrderByArrivedAtDesc(branch.getId(), LinehaulTrip.Status.ARRIVED)),
                 items.findAllByTrip_ToBranch_IdAndTrip_StatusAndReceivedFalseOrderByIdDesc(branch.getId(), LinehaulTrip.Status.ARRIVED),
-                routes.countByDestBranch_IdAndStage(branch.getId(), OrderRoute.Stage.DEST_HUB),
-                routes.waitingDropOff(branch.getId()));
+                routes.countByDestBranch_IdAndStageAndReturnLegFalse(branch.getId(), OrderRoute.Stage.DEST_HUB),
+                routes.waitingDropOff(branch.getId()), routes.returnedAtOriginHub(branch.getId()));
     }
 
     /**
@@ -132,11 +135,13 @@ public class HubService {
         LinehaulTrip trip = trips.save(new LinehaulTrip(newCode(from, to, now), from, to, normalizedPlate, name, phone));
         for (Long id : ids) {
             Order order = lockedOrder(id);
-            requireInHub(order);
             OrderRoute route = currentRoute(order);
-            if (route.getStage() != OrderRoute.Stage.ORIGIN_HUB || !route.getOriginBranch().getId().equals(from.getId()))
+            requireInHub(order, route);
+            // Chiều đi: đơn ở kho gửi; chiều ngược (B9): hàng hoàn ở kho nhận, chuyến về kho gửi.
+            var waitingStage = route.isReturnLeg() ? OrderRoute.Stage.DEST_HUB : OrderRoute.Stage.ORIGIN_HUB;
+            if (route.getStage() != waitingStage || !route.currentBranch().getId().equals(from.getId()))
                 throw new IllegalArgumentException("Vận đơn " + order.getTrackingCode() + " chưa nằm trong kho " + from.getName() + ".");
-            if (!route.getDestBranch().getId().equals(to.getId()))
+            if (!route.nextHub().getId().equals(to.getId()))
                 throw new IllegalArgumentException("Vận đơn " + order.getTrackingCode() + " không đi tới " + to.getName() + ".");
             if (items.existsByOrder_IdAndTrip_Status(order.getId(), LinehaulTrip.Status.LOADING))
                 throw new IllegalArgumentException("Vận đơn " + order.getTrackingCode() + " đã nằm trên một chuyến đang xếp hàng.");
@@ -173,12 +178,13 @@ public class HubService {
         LocalDateTime now = LocalDateTime.now(clock);
         for (LinehaulItem item : tripItems) {
             Order order = lockedOrder(item.getOrder().getId());
-            requireInHub(order);
             OrderRoute route = currentRoute(order);
+            requireInHub(order, route);
             requireTripRoute(route, trip);
             route.departLinehaul();
-            touch(order, user, now, "Xuất kho " + trip.getFromBranch().getName() + " trên chuyến " + trip.getCode()
-                    + " (xe " + trip.getVehiclePlate() + ") tới " + trip.getToBranch().getName() + ".", SenderOrderUpdateEvent.Kind.IN_LINEHAUL);
+            touch(order, user, now, (route.isReturnLeg() ? "Hàng hoàn xuất kho " : "Xuất kho ") + trip.getFromBranch().getName() + " trên chuyến " + trip.getCode()
+                    + " (xe " + trip.getVehiclePlate() + ") tới " + trip.getToBranch().getName() + ".",
+                    route.isReturnLeg() ? SenderOrderUpdateEvent.Kind.RETURN_IN_LINEHAUL : SenderOrderUpdateEvent.Kind.IN_LINEHAUL);
         }
         trip.depart(seal, tripItems.size(), user, now);
         audit.record(actor, "TRIP_DEPART", "trip:" + trip.getId(), trip.getCode() + "; niêm phong " + seal + "; " + tripItems.size() + " kiện");
@@ -240,12 +246,15 @@ public class HubService {
 
     private void receive(LinehaulItem item, AppUser user, LocalDateTime now, LinehaulTrip trip) {
         Order order = lockedOrder(item.getOrder().getId());
-        requireInHub(order);
         OrderRoute route = currentRoute(order);
+        requireInHub(order, route);
         requireTripRoute(route, trip);
-        route.arriveDestHub();
+        route.arriveFromLinehaul();
         item.markReceived();
-        touch(order, user, now, "Nhập kho " + trip.getToBranch().getName() + " từ chuyến " + trip.getCode() + ", chờ phân công giao.",
+        if (route.isReturnLeg())
+            touch(order, user, now, "Hàng hoàn nhập kho " + trip.getToBranch().getName() + " từ chuyến " + trip.getCode() + ", chờ trả người gửi.",
+                    SenderOrderUpdateEvent.Kind.RETURN_AT_ORIGIN_HUB);
+        else touch(order, user, now, "Nhập kho " + trip.getToBranch().getName() + " từ chuyến " + trip.getCode() + ", chờ phân công giao.",
                 SenderOrderUpdateEvent.Kind.AT_DEST_HUB);
     }
 
@@ -305,14 +314,17 @@ public class HubService {
         entityManager.refresh(route, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         return route;
     }
-    private void requireInHub(Order order) {
-        if (order.getStatus() != Order.OrderStatus.PICKED_UP)
-            throw new IllegalStateException("Vận đơn " + order.getTrackingCode() + " không còn ở trạng thái đã nhận hàng để trung chuyển.");
+    private void requireInHub(Order order, OrderRoute route) {
+        var expected = route.isReturnLeg() ? Order.OrderStatus.FAILED : Order.OrderStatus.PICKED_UP;
+        if (order.getStatus() != expected)
+            throw new IllegalStateException("Vận đơn " + order.getTrackingCode() + " không còn ở trạng thái phù hợp để trung chuyển"
+                    + (route.isReturnLeg() ? " hoàn hàng." : "."));
         payments.requireReadyForFulfillment(order);
     }
     private static void requireTripRoute(OrderRoute route, LinehaulTrip trip) {
-        if (!route.isInterprovincial() || !route.getOriginBranch().getId().equals(trip.getFromBranch().getId())
-                || !route.getDestBranch().getId().equals(trip.getToBranch().getId()))
+        Branch from = route.isReturnLeg() ? route.getDestBranch() : route.getOriginBranch();
+        if (!route.isInterprovincial() || !from.getId().equals(trip.getFromBranch().getId())
+                || !route.nextHub().getId().equals(trip.getToBranch().getId()))
             throw new IllegalStateException("Tuyến của kiện không khớp chuyến trung chuyển.");
     }
     private List<LinehaulItem> sortedItems(LinehaulTrip trip) {

@@ -66,6 +66,17 @@
             <input class="form-control form-control-sm" th:id="|late-${item.id}|" name="note" required minlength="10" maxlength="400" placeholder="Tìm thấy ở đâu, ai bàn giao">
             <button class="btn btn-sm btn-outline-primary text-nowrap">Nhận vào kho</button></form></td></tr></tbody></table></div></div>
 
+<h3 class="h5 mt-4">Hàng hoàn đã về kho, chờ trả người gửi</h3>
+<p class="text-muted" th:if="${hub.returned.empty}">Không có hàng hoàn nào chờ trả người gửi.</p>
+<div class="ute-panel mb-4" th:unless="${hub.returned.empty}">
+    <p class="small text-muted">Trả hàng cho người gửi rồi ghi nhận ở hồ sơ hoàn hàng (bước Hoàn tất, kèm ảnh biên nhận).</p>
+    <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Vận đơn</th><th>Người gửi</th><th>Khu vực lấy</th><th>Hoàn từ</th><th></th></tr></thead><tbody>
+        <tr th:each="r : ${hub.returned}"><td th:text="${r.order.trackingCode}"></td><td th:text="${r.order.senderName}"></td>
+            <td th:text="${r.pickupArea.areaName}"></td><td th:text="${r.destBranch.name}"></td>
+            <td><a class="btn btn-sm btn-outline-primary" th:href="@{/manager/ho-so-van-hanh(kind='RETURN',status='IN_PROGRESS')}">Mở hồ sơ hoàn hàng</a></td></tr>
+        </tbody></table></div></div>
+
 <h3 class="h5 mt-4">Đơn đã nhập kho, chờ xếp chuyến</h3>
 <p class="text-muted" th:if="${hub.waiting.empty}">Chưa có đơn liên tỉnh nào trong kho.</p>
 <th:block th:each="dest : ${hub.destinations}" th:with="list=${hub.waitingFor(dest.id)}">
@@ -77,8 +88,9 @@
             <thead><tr><th scope="col"><span class="visually-hidden">Chọn</span></th><th>Vận đơn</th><th>Người nhận</th><th>Khu vực giao</th><th>Khối lượng</th></tr></thead><tbody>
             <tr th:each="r : ${list}"><td><input class="form-check-input" type="checkbox" name="orderIds" th:value="${r.order.id}" th:id="|pick-${r.order.id}|" checked
                         th:attr="aria-label=|Xếp ${r.order.trackingCode} lên chuyến|"></td>
-                <td th:text="${r.order.trackingCode}"></td><td th:text="${r.order.receiverName}"></td>
-                <td th:text="${r.deliveryArea.areaName}"></td><td th:text="|${r.order.weightKg} kg|"></td></tr></tbody></table></div>
+                <td><span th:text="${r.order.trackingCode}"></span> <span class="badge text-bg-light border" th:if="${r.returnLeg}">Hàng hoàn</span></td>
+                <td th:text="${r.returnLeg} ? |${r.order.senderName} (người gửi)| : ${r.order.receiverName}"></td>
+                <td th:text="${r.returnLeg} ? ${r.pickupArea.areaName} : ${r.deliveryArea.areaName}"></td><td th:text="|${r.order.weightKg} kg|"></td></tr></tbody></table></div>
         <div class="row g-2">
             <div class="col-md-4"><label class="form-label" th:for="|plate-${dest.id}|">Biển số xe</label>
                 <input class="form-control" th:id="|plate-${dest.id}|" name="vehiclePlate" required maxlength="20" placeholder="51C-123.45"></div>

@@ -38,13 +38,15 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private final org.springframework.context.ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
+    private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
     public OperationsCaseServiceImpl(OperationsCaseRepository cases, OrderRepository orders,
             CodSettlementRepository settlements, OrderComplaintRepository complaints, OrderPaymentRepository payments,
             OrderStatusHistoryRepository history, OperationsPolicyService policies, StaffAccessPolicy access,
             LogisticsAccess logistics, ShipmentImageService images, AuditService audit, Clock clock,
             jakarta.persistence.EntityManager entityManager, org.springframework.context.ApplicationEventPublisher events,
             vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud,
-            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
+            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope,
+            vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
         this.cases = cases; this.orders = orders; this.settlements = settlements; this.complaints = complaints;
         this.payments = payments; this.history = history; this.policies = policies; this.access = access;
         this.logistics = logistics; this.images = images; this.audit = audit; this.clock = clock;
@@ -52,6 +54,17 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         this.events = events;
         this.cloud = cloud;
         this.scope = scope;
+        this.routes = routes;
+    }
+    /** Tuyến liên tỉnh của đơn (null với đơn nội tỉnh hoặc đơn cũ chưa có tuyến): hoàn hàng phải đi chuyến trung chuyển ngược (B9). */
+    private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute interprovincialRoute(Order order) {
+        return routes.findByOrder_Id(order.getId()).filter(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute::isInterprovincial).orElse(null);
+    }
+    /** Chỉ Manager của đúng kho (hoặc Admin) thao tác bước hoàn ở kho đó. */
+    private void requireHub(String actor, vn.edu.hcmute.uteexpress.entity.routing.Branch branch, String step) {
+        Long mine = scope.of(actor, null);
+        if (mine != null && !mine.equals(branch.getId()))
+            throw new org.springframework.security.access.AccessDeniedException(step + " do kho " + branch.getName() + " thực hiện.");
     }
     public Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, OperationsCase.Status status, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
@@ -243,7 +256,20 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var record = lock(actor, id, revision);
         if (record.getKind() != OperationsCase.Kind.RETURN || record.getStatus() != OperationsCase.Status.APPROVED)
             throw new StaffConflictException("Chỉ bắt đầu hoàn sau khi yêu cầu hoàn được duyệt.");
-        requireFailed(record.getOrder()); record.start(LocalDateTime.now(clock)); cases.saveAndFlush(record);
+        requireFailed(record.getOrder());
+        var now = LocalDateTime.now(clock);
+        var route = interprovincialRoute(record.getOrder());
+        if (route != null) {
+            // B9: kho chi nhánh nhận bắt đầu hoàn; hàng về kho nhận, shipper giao hết giữ đơn, chờ chuyến về chi nhánh gửi.
+            requireHub(actor, route.getDestBranch(), "Bắt đầu hoàn hàng liên tỉnh");
+            var order = lockedOrder(record.getOrder().getId());
+            route.beginReturn();
+            order.setShipper(null); order.setUpdatedAt(now); orders.saveAndFlush(order);
+            history.save(new OrderStatusHistory(order, logistics.internal(actor), Order.OrderStatus.FAILED, Order.OrderStatus.FAILED, null,
+                    "Chuyển hoàn liên tỉnh theo hồ sơ " + id + ": hàng về kho " + route.getDestBranch().getName()
+                            + ", chờ chuyến về " + route.getOriginBranch().getName() + ".", null, now));
+        }
+        record.start(now); cases.saveAndFlush(record);
         audit.record(actor, "RETURN_START", "operations-case:" + id, note);
         publishProgress(record, vn.edu.hcmute.uteexpress.dto.tracking.SenderOrderUpdateEvent.Kind.RETURN_STARTED);
     }
@@ -257,6 +283,13 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var now = LocalDateTime.now(clock);
         if (record.getKind() == OperationsCase.Kind.RETURN && record.getStatus() == OperationsCase.Status.IN_PROGRESS) {
             var order = record.getOrder(); requireFailed(order);
+            var route = interprovincialRoute(order);
+            if (route != null) {
+                // B9: chỉ hoàn tất khi hàng hoàn đã về kho chi nhánh gửi; kho gửi ghi nhận bàn giao trả người gửi.
+                if (!route.isReturnLeg() || route.getStage() != vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB)
+                    throw new StaffConflictException("Hàng hoàn chưa về tới kho " + route.getOriginBranch().getName() + ".");
+                requireHub(actor, route.getOriginBranch(), "Trả hàng hoàn cho người gửi");
+            }
             order.setStatus(Order.OrderStatus.RETURNED); order.setUpdatedAt(now); orders.saveAndFlush(order);
             history.save(new OrderStatusHistory(order, logistics.internal(actor), Order.OrderStatus.FAILED,
                     Order.OrderStatus.RETURNED, null, "Bàn giao hoàn theo hồ sơ " + id + ": " + receipt, null, now));

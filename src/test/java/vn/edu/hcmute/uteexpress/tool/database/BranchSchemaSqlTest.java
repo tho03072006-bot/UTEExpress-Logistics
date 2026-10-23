@@ -23,6 +23,8 @@ class BranchSchemaSqlTest {
             for (var table : BranchSchema.TABLES) statement.execute(h2(table.ddl()));
             // operations_policy sinh từ entity nên đã có drop_off_discount; order_route lấy từ BranchSchema nên thêm cột của migration tự mang ra chi nhánh.
             statement.execute(h2(UpgradeAivenDropOff.CHANGES.get(0).ddl()));
+            statement.execute(h2(UpgradeAivenReturnLeg.DDL)); // cột chiều hoàn B9
+
             var registry = new StandardServiceRegistryBuilder()
                     .applySetting("hibernate.connection.url", url)
                     .applySetting("hibernate.connection.username", "sa")
