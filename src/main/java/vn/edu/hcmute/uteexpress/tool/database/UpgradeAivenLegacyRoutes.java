@@ -334,9 +334,10 @@ public final class UpgradeAivenLegacyRoutes {
             statement.setQueryTimeout(120);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
-                    long shipper = rows.getLong(6);
-                    result.add(new LegacyOrder(rows.getLong(1), rows.getString(2), rows.getString(3), rows.getString(4), rows.getString(5),
-                            rows.wasNull() ? null : shipper));
+                    // wasNull() phải gọi ngay sau cột shipper_id: đơn chưa có shipper thì để NULL, không thành id 0.
+                    long shipperValue = rows.getLong(6);
+                    Long shipper = rows.wasNull() ? null : shipperValue;
+                    result.add(new LegacyOrder(rows.getLong(1), rows.getString(2), rows.getString(3), rows.getString(4), rows.getString(5), shipper));
                 }
             }
         }

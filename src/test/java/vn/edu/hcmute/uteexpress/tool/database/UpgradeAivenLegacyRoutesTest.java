@@ -83,12 +83,25 @@ class UpgradeAivenLegacyRoutesTest {
         assertTrue(UpgradeAivenLegacyRoutes.INSERT_SQL.contains("WHERE NOT EXISTS"));
     }
 
+    @Test void orderWithoutShipperIsInsertedWithNullShipperNotZero() throws Exception {
+        var connection = fakeDatabase(new HashSet<>(), new ArrayList<Object[]>(List.<Object[]>of(
+                new Object[]{13L, "UTE13", "PENDING_PICKUP", "Thủ Đức, TP.HCM", "Bình Thạnh, TP.HCM", null})));
+        var orders = UpgradeAivenLegacyRoutes.loadLegacy(connection);
+        assertNull(orders.get(0).shipperId(), "shipper_id NULL không được đọc thành 0 (lỗi khóa ngoại khi apply)");
+        assertEquals(1, UpgradeAivenLegacyRoutes.upgrade(connection));
+        verify(lastInsert, times(1)).setNull(7, Types.BIGINT);
+        verify(lastInsert, times(1)).setNull(8, Types.BIGINT);
+        verify(lastInsert, never()).setLong(eq(7), anyLong());
+    }
+
     @Test void wrongDatabaseFailsBeforeAnyWrite() throws Exception {
         var connection = fakeDatabase(new HashSet<>(), List.of());
         when(connection.getMetaData().getDatabaseProductName()).thenReturn("PostgreSQL");
         assertThrows(IllegalArgumentException.class, () -> UpgradeAivenLegacyRoutes.upgrade(connection));
         verify(connection, never()).prepareStatement(UpgradeAivenLegacyRoutes.INSERT_SQL);
     }
+
+    static PreparedStatement lastInsert;
 
     /** JDBC giả: bảng đơn cũ, chi nhánh, khu vực; câu INSERT ghi nhận order_id vào tập "đã có tuyến". */
     private static Connection fakeDatabase(Set<Long> routed, List<Object[]> legacy) throws Exception {
@@ -112,6 +125,7 @@ class UpgradeAivenLegacyRoutesTest {
             else if (sql.equals(UpgradeAivenLegacyRoutes.LEGACY_QUERY)) when(prepared.executeQuery()).thenAnswer(q ->
                     rows(legacy.stream().filter(r -> !routed.contains((Long) r[0])).toList()));
             else if (sql.equals(UpgradeAivenLegacyRoutes.INSERT_SQL)) {
+                lastInsert = prepared;
                 var orderId = new long[1];
                 doAnswer(a -> { if ((int) a.getArgument(0) == 1) orderId[0] = a.getArgument(1); return null; }).when(prepared).setLong(anyInt(), anyLong());
                 when(prepared.executeUpdate()).thenAnswer(u -> routed.add(orderId[0]) ? 1 : 0);
@@ -124,6 +138,7 @@ class UpgradeAivenLegacyRoutesTest {
     private static ResultSet rows(List<Object[]> data) throws SQLException {
         var rows = mock(ResultSet.class); var cursor = new int[]{-1}; var lastNull = new boolean[1];
         when(rows.next()).thenAnswer(a -> ++cursor[0] < data.size());
+        // Giống JDBC thật: wasNull() chỉ phản ánh cột đọc gần nhất.
         when(rows.getString(anyInt())).thenAnswer(a -> { Object v = data.get(cursor[0])[(int) a.getArgument(0) - 1]; lastNull[0] = v == null; return v == null ? null : v.toString(); });
         when(rows.getLong(anyInt())).thenAnswer(a -> { Object v = data.get(cursor[0])[(int) a.getArgument(0) - 1]; lastNull[0] = v == null; return v == null ? 0L : ((Number) v).longValue(); });
         when(rows.getDouble(anyInt())).thenAnswer(a -> { Object v = data.get(cursor[0])[(int) a.getArgument(0) - 1]; lastNull[0] = v == null; return v == null ? 0d : ((Number) v).doubleValue(); });
