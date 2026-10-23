@@ -15,11 +15,24 @@ import vn.edu.hcmute.uteexpress.service.admin.StaffAccountService;
 @RequestMapping("/admin/tai-khoan")
 public class StaffAccountController {
     private final StaffAccountService service;
-    public StaffAccountController(StaffAccountService service) { this.service = service; }
+    private final vn.edu.hcmute.uteexpress.service.routing.StaffBranchService assignments;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
+    public StaffAccountController(StaffAccountService service,
+            vn.edu.hcmute.uteexpress.service.routing.StaffBranchService assignments,
+            vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog) {
+        this.service = service; this.assignments = assignments; this.catalog = catalog;
+    }
+    @ModelAttribute public void routingOptions(Model model) {
+        model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
+    }
 
     @GetMapping
     public String listAccounts(@RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
-        model.addAttribute("accounts", service.findAccounts(principal.getName(), page));
+        var accounts = service.findAccounts(principal.getName(), page);
+        model.addAttribute("accounts", accounts);
+        var selections = new java.util.HashMap<Long, StaffBranchRequest>();
+        accounts.forEach(a -> selections.put(a.id(), assignments.selectionByUsername(principal.getName(), a.username())));
+        model.addAttribute("assignments", selections);
         return "admin/accounts";
     }
 

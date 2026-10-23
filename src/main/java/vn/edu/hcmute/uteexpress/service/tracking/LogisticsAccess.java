@@ -11,8 +11,12 @@ import vn.edu.hcmute.uteexpress.repository.admin.StaffAccountRepository;
 public class LogisticsAccess {
     private final AppUserRepository users;
     private final StaffAccountRepository staff;
-    public LogisticsAccess(AppUserRepository users, StaffAccountRepository staff) {
-        this.users = users; this.staff = staff;
+    private final vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository staffBranches;
+    private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
+    public LogisticsAccess(AppUserRepository users, StaffAccountRepository staff,
+            vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository staffBranches,
+            vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
+        this.users = users; this.staff = staff; this.staffBranches = staffBranches; this.routes = routes;
     }
     /** Đọc tài khoản theo tên đăng nhập, chỉ một lần trong mỗi giao dịch (xem {@link TransactionCache}). */
     public static java.util.Optional<AppUser> findUser(AppUserRepository users, String username) {
@@ -34,8 +38,19 @@ public class LogisticsAccess {
         if (user.getRole() == AppUser.Role.USER && user.getId().equals(order.getSender().getId())) return;
         if (user.getRole() == AppUser.Role.SHIPPER && order.getShipper() != null
                 && user.getId().equals(order.getShipper().getId())) return;
-        if (user.getRole() == AppUser.Role.ADMIN || user.getRole() == AppUser.Role.MANAGER) { internal(username); return; }
+        if (user.getRole() == AppUser.Role.ADMIN) { internal(username); return; }
+        if (user.getRole() == AppUser.Role.MANAGER) { internal(username); requireBranch(user, order); return; }
         throw denied();
+    }
+    /**
+     * Manager chỉ mở đơn gửi đi hoặc giao tới chi nhánh được giao; Manager chưa được gán chi nhánh không mở được đơn đã có tuyến.
+     * Đơn cũ chưa có tuyến vẫn mở được tới khi chuyển dữ liệu (cùng quy tắc với OrderRouteRepository.BRANCH_SCOPE).
+     */
+    private void requireBranch(AppUser manager, Order order) {
+        if (order.getId() == null) return;
+        Long branch = staffBranches.findByUser_Id(manager.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
+        if (routes.idsInScope(java.util.List.of(order.getId()), branch).isEmpty())
+            throw new AccessDeniedException("Đơn này không gửi đi hay giao tới chi nhánh của bạn.");
     }
     /** Kiểm tra cả danh sách với một lần đọc tài khoản (trang danh sách có tới 10 đơn). */
     public void checkOrders(java.util.Collection<Order> orders, String username) {

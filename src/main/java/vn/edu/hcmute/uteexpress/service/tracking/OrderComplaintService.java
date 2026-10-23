@@ -21,14 +21,16 @@ public class OrderComplaintService {
     private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     private final vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities;
     private final vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
     public OrderComplaintService(OrderRepository orders, OrderComplaintRepository complaints,
             LogisticsAccess access, ShipmentImageService images, Clock clock,
             vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities,
             vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases,
-            vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud) {
+            vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud,
+            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
         this.orders = orders; this.complaints = complaints; this.access = access; this.images = images; this.clock = clock;
         this.activities = activities; this.cases = cases;
-        this.cloud = cloud;
+        this.cloud = cloud; this.scope = scope;
     }
     public Optional<OrderComplaint> forOrder(Order order, String username) {
         access.checkOrder(order, username);
@@ -39,9 +41,14 @@ public class OrderComplaintService {
         access.checkOrder(complaint.getOrder(), username);
         return complaint;
     }
-    public Page<ComplaintSummary> list(String actor, OrderComplaint.Status status, int page) {
+    public Page<ComplaintSummary> list(String actor, OrderComplaint.Status status, int page) { return list(actor, status, null, page); }
+    /** Manager chỉ thấy khiếu nại của đơn gửi đi hoặc giao tới chi nhánh mình; Admin lọc được theo chi nhánh. */
+    public Page<ComplaintSummary> list(String actor, OrderComplaint.Status status, Long branchId, int page) {
         access.internal(actor);
-        return complaints.search(status, PageRequest.of(LogisticsInput.page(page), 10, Sort.by("createdAt", "id").descending()));
+        return complaints.search(status, scope.of(actor, branchId),
+                PageRequest.of(LogisticsInput.page(page), 10, Sort.by("createdAt", "id").descending()));
+    }
+    public java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return scope.branches(actor);
     }
     @Transactional
     public void create(Long orderId, String username, String subject, String description, MultipartFile image) {

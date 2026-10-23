@@ -25,12 +25,15 @@ public class SavedAddressServiceImpl implements SavedAddressService {
     private final SavedAddressRepository savedAddressRepository;
     private final AppUserRepository appUserRepository;
     private final jakarta.validation.Validator validator;
+    private final vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing;
 
     public SavedAddressServiceImpl(SavedAddressRepository savedAddressRepository,
-                                   AppUserRepository appUserRepository,jakarta.validation.Validator validator) {
+                                   AppUserRepository appUserRepository,jakarta.validation.Validator validator,
+                                   vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing) {
         this.savedAddressRepository = savedAddressRepository;
         this.appUserRepository = appUserRepository;
         this.validator=validator;
+        this.routing=routing;
     }
 
     @Override
@@ -93,6 +96,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
         address.setDefaultAddress(currentCount == 0 || request.isDefaultAddress());
 
         SavedAddress saved = savedAddressRepository.save(address);
+        routing.save(saved, request);
         normalizeDefault(owner, type, saved);
         return saved;
     }
@@ -118,6 +122,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
         address.setDefaultAddress(request.isDefaultAddress());
         address.setUpdatedAt(LocalDateTime.now());
         SavedAddress saved = savedAddressRepository.save(address);
+        routing.save(saved, request);
 
         // Đổi loại địa chỉ thì nhóm cũ có thể mất địa chỉ mặc định, nên chuẩn hoá lại cả hai nhóm.
         normalizeDefault(owner, newType, saved);

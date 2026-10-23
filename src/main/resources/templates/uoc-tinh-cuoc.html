@@ -1,87 +1,36 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
-      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
-<head>
-    <title>Ước tính cước phí - UTEExpress</title>
-</head>
-<body>
-
-<section class="shipper-workspace sx-public sx-page-narrow">
-<header class="shipper-hero">
-    <div class="sx-hero-main">
-        <span class="shipper-eyebrow"><i class="bi bi-calculator"></i> BẢNG GIÁ THAM KHẢO</span>
-        <h2>Ước tính cước phí</h2>
-        <p>Xem cước dự kiến, không cần đăng nhập.</p>
-        <!-- Dùng GET để kết quả nằm trên đường dẫn: lưu lại hay gửi cho người khác đều xem được -->
-        <form method="get" th:object="${form}" th:action="@{/uoc-tinh-cuoc}" class="sx-hero-form">
-            <label class="sx-hero-field" for="weightKg"><span>Khối lượng (kg)</span>
-                <span class="sx-hero-input"><i class="bi bi-box2" aria-hidden="true"></i>
-                    <input type="number" id="weightKg" th:field="*{weightKg}" step="0.1" min="0.1" max="100"
-                           placeholder="Ví dụ 2.5" required inputmode="decimal"></span></label>
-            <label class="sx-hero-field" for="distanceKm"><span>Khoảng cách (km)</span>
-                <span class="sx-hero-input"><i class="bi bi-signpost-2" aria-hidden="true"></i>
-                    <input type="number" id="distanceKm" th:field="*{distanceKm}" step="0.1" min="0.1" max="2000"
-                           placeholder="Tùy chọn" inputmode="decimal"></span></label>
-            <label class="sx-hero-field" for="serviceType"><span>Loại dịch vụ</span>
-                <span class="sx-hero-input"><i class="bi bi-truck" aria-hidden="true"></i>
-                    <select id="serviceType" th:field="*{serviceType}">
-                        <option value="">Cả 3 loại</option>
-                        <option value="STANDARD">Tiêu chuẩn</option>
-                        <option value="EXPRESS">Nhanh</option>
-                        <option value="SUPER_EXPRESS">Hỏa tốc (trong 30 km)</option>
-                    </select></span></label>
-            <button type="submit" class="btn btn-light"><i class="bi bi-calculator"></i> Tính cước</button>
-        </form>
-        <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.weightKg}')}"><i class="bi bi-exclamation-circle"></i>
-            <span class="ute-field-error" th:errors="${form.weightKg}"></span></div>
-        <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.distanceKm}')}"><i class="bi bi-exclamation-circle"></i>
-            <span class="ute-field-error" th:errors="${form.distanceKm}"></span></div>
-        <div class="sx-hero-error" th:if="${#fields.hasErrors('${form.serviceType}')}"><i class="bi bi-exclamation-circle"></i>
-            <span class="ute-field-error">Loại dịch vụ không hợp lệ. Hãy chọn lại trong danh sách.</span></div>
-        <a class="sx-hero-link" href="https://www.google.com/maps/dir/" target="_blank" rel="noopener noreferrer"><i class="bi bi-map"></i> Chưa biết khoảng cách? Đo trên Google Maps</a>
-    </div>
-    <img class="sx-hero-art" th:src="@{/images/shipper/fee-scale.svg}" alt="" aria-hidden="true" width="320" height="213">
-</header>
-
-<!-- Chỉ hiện kết quả sau khi người dùng đã nhập, lần đầu mở trang thì không có gì -->
-<div th:if="${quotes != null}">
-    <div class="sx-section-title"><span class="shipper-eyebrow">KẾT QUẢ</span>
-        <h2><th:block th:text="|Cước cho kiện ${form.weightKg} kg|">Cước</th:block><th:block th:if="${form.distanceKm != null}" th:text="| · ${form.distanceKm} km|"></th:block></h2></div>
-    <div class="sx-price-grid" th:classappend="${#lists.size(quotes) == 1} ? 'sx-price-single'">
-        <article class="sx-price" th:each="q : ${quotes}"
-                 th:classappend="${!q.available} ? 'sx-price-off sx-tone-slate' : (${q.serviceType.name() == 'SUPER_EXPRESS'} ? 'sx-tone-rose' : (${q.serviceType.name() == 'EXPRESS'} ? 'sx-tone-amber' : 'sx-tone-teal'))">
-            <span class="sx-price-icon"><i class="bi" th:classappend="${q.serviceType.name() == 'SUPER_EXPRESS'} ? 'bi-lightning-charge-fill' : (${q.serviceType.name() == 'EXPRESS'} ? 'bi-lightning' : 'bi-box-seam')"></i></span>
-            <h3><th:block th:replace="~{fragments/components :: serviceTypeText(${q.serviceType})}"></th:block></h3>
-            <p class="sx-price-time"><i class="bi bi-clock"></i> <span th:text="${q.deliveryTime}">3 - 5 ngày</span></p>
-            <strong class="sx-price-value" th:if="${q.available}"><span th:replace="~{fragments/components :: money(${q.total})}">0 đ</span></strong>
-            <strong class="sx-price-value" th:unless="${q.available}">Không hỗ trợ</strong>
-            <div class="sx-price-rows" th:if="${q.available}">
-                <div><span>Cước gốc</span><strong><span th:replace="~{fragments/components :: money(${q.baseFee})}">0 đ</span></strong></div>
-                <div><span>Phụ phí khoảng cách</span><strong><span th:replace="~{fragments/components :: money(${q.distanceFee})}">0 đ</span></strong></div>
-            </div>
-            <p class="sx-price-note" th:if="${q.note != null}" th:text="${q.note}"></p>
-        </article>
-    </div>
-    <div class="d-flex flex-wrap gap-2 mt-4">
-        <a sec:authorize="!hasAnyRole('SHIPPER','MANAGER','ADMIN')" th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng</a>
-        <a th:href="@{/tra-cuu}" class="btn btn-outline-secondary"><i class="bi bi-search"></i> Tra cứu vận đơn</a>
-    </div>
-</div>
-
-<!-- Lần đầu mở trang: thẻ dịch vụ có hình; giá lấy từ bảng giá đang hiệu lực trên Aiven (currentTariffs) -->
-<div class="sx-service-cards" th:if="${quotes == null}">
-    <article class="sx-service-card" th:each="tariff : ${currentTariffs}" th:with="type=${tariff.serviceType.name()}"
-             th:classappend="${type == 'SUPER_EXPRESS'} ? 'sx-tone-rose' : (${type == 'EXPRESS'} ? 'sx-tone-amber' : 'sx-tone-teal')">
-        <img th:src="@{${type == 'SUPER_EXPRESS' ? '/images/shipper/route-map.svg' : (type == 'EXPRESS' ? '/images/shipper/hero-delivery.svg' : '/images/shipper/shipper-van.svg')}}"
-             alt="" aria-hidden="true" width="180" height="120">
-        <h3 th:text="${tariff.serviceType.displayName}">Tiêu chuẩn</h3>
-        <p><i class="bi bi-clock"></i> <th:block th:text="${type == 'SUPER_EXPRESS'} ? 'Trong ngày · ≤ 30 km' : (${type == 'EXPRESS'} ? '1 - 2 ngày' : '3 - 5 ngày')">3 - 5 ngày</th:block></p>
-        <strong>từ <span th:replace="~{fragments/components :: money(${tariff.baseFee})}">15.000 đ</span></strong>
-        <p class="sx-service-extra">+ <span th:replace="~{fragments/components :: money(${tariff.feePerKg})}">3.000 đ</span> mỗi kg</p>
-    </article>
-</div>
-<p class="sx-fee-foot"><i class="bi bi-info-circle"></i> Giá theo bảng giá hiện hành · 5 km đầu miễn phụ phí · Trên 100 kg: gọi tổng đài.</p>
-</section>
-
-</body>
-</html>
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+ th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Ước tính cước phí - UTEExpress</title></head><body><section class="ute-narrow">
+<h1 class="h3">Ước tính cước theo tuyến</h1><p>Cùng cách tính với tạo đơn. Khoảng cách tính từ tâm khu vực xấp xỉ, không phải số km đường bộ.</p>
+<form method="get" th:action="@{/uoc-tinh-cuoc}" th:object="${form}" class="ute-panel p-4 mb-4" data-route-quote-form>
+<div th:if="${#fields.hasAnyErrors()}" class="ute-field-error" role="alert"><p th:each="e : ${#fields.allErrors()}" th:text="${e}"></p></div>
+<h2 class="h5">Gửi từ</h2><div th:replace="~{fragments/area-fields :: fields('pickupProvinceCode', 'pickupAreaCode')}"></div>
+<h2 class="h5">Giao đến</h2><div th:replace="~{fragments/area-fields :: fields('deliveryProvinceCode', 'deliveryAreaCode')}"></div>
+<div class="row g-3"><div class="col-md-6"><label for="weightKg" class="form-label">Khối lượng (kg)</label>
+<input class="form-control" th:field="*{weightKg}" type="number" min="0.01" max="100" step="0.01" required></div>
+<div class="col-md-6"><label for="serviceType" class="form-label">Dịch vụ</label><select class="form-select" th:field="*{serviceType}">
+<option value="">So sánh dịch vụ phù hợp</option><option value="STANDARD">Tiêu chuẩn</option><option value="EXPRESS">Giao nhanh</option><option value="SUPER_EXPRESS">Hỏa tốc</option></select></div></div>
+<fieldset class="mt-3"><legend class="form-label fs-6 mb-1">Hình thức gửi hàng</legend>
+<div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pickupMode" id="pickupModeCourier" value="COURIER" th:checked="${form.pickupMode == null or form.pickupMode.name() == 'COURIER'}">
+<label class="form-check-label" for="pickupModeCourier">Shipper đến lấy</label></div>
+<div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="pickupMode" id="pickupModeDropOff" value="DROP_OFF" th:checked="${form.pickupMode != null and form.pickupMode.name() == 'DROP_OFF'}">
+<label class="form-check-label" for="pickupModeDropOff">Tự mang ra chi nhánh<span class="text-muted small" th:if="${dropOffDiscount != null and dropOffDiscount > 0}" th:text="| (giảm ${#numbers.formatDecimal(dropOffDiscount,0,'POINT',0,'COMMA')} đ)|"></span></label></div>
+</fieldset>
+<p class="small text-muted mt-3">Hỏa tốc chỉ cùng chi nhánh và không quá 30 km. Nội tỉnh tính phụ phí khoảng cách; liên tỉnh tính phụ phí tuyến.</p>
+<button class="btn btn-primary" type="submit">Tính cước</button></form>
+<div th:if="${quotes != null}" class="row g-3"><article class="col-md-6" th:each="q : ${quotes}"><div class="ute-panel p-4 h-100">
+<h2 class="h5" th:text="${q.serviceType.displayName}"></h2><p th:text="|${q.pickupArea.branch.code} → ${q.deliveryArea.branch.code} · ${q.leadTimeText}|"></p>
+<p>Khoảng cách tâm khu vực: <strong th:text="${#numbers.formatDecimal(q.distanceKm,1,'POINT',1,'COMMA')} + ' km'"></strong></p>
+<dl><dt>Cước gốc</dt><dd th:insert="~{fragments/components :: money(${q.baseFee})}"></dd>
+<dt>Phụ phí khoảng cách</dt><dd th:insert="~{fragments/components :: money(${q.distanceFee})}"></dd>
+<dt>Phụ phí tuyến</dt><dd th:insert="~{fragments/components :: money(${q.routeFee})}"></dd>
+<th:block th:if="${q.pickupMode.name() == 'DROP_OFF'}"><dt>Giảm khi tự mang ra chi nhánh</dt><dd>- <span th:replace="~{fragments/components :: money(${q.dropOffDiscount})}"></span></dd></th:block></dl>
+<p class="small" th:if="${q.pickupMode.name() == 'DROP_OFF'}" th:text="|Mang hàng tới quầy ${q.pickupArea.branch.name}: ${q.pickupArea.branch.hubAddress}|"></p>
+<p class="h4">Tổng: <span th:replace="~{fragments/components :: money(${q.total})}"></span></p>
+</div></article></div>
+<div th:if="${quotes == null}" class="row g-3"><article class="col-md-4" th:each="t : ${currentTariffs}"><div class="ute-panel p-3">
+<h2 class="h5" th:text="${t.serviceType.displayName}"></h2><p>Cước gốc từ <span th:replace="~{fragments/components :: money(${t.baseFee})}"></span></p>
+<p>+ <span th:replace="~{fragments/components :: money(${t.feePerKg})}"></span>/kg</p></div></article></div>
+<a class="btn btn-outline-primary mt-3" sec:authorize="!hasAnyRole('SHIPPER','MANAGER','ADMIN')" th:href="@{/nguoi-dung/tao-don}">Tạo đơn gửi hàng</a>
+<script defer th:src="@{/js/route-quote.js}"></script>
+</section></body></html>

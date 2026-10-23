@@ -43,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
     private final jakarta.validation.Validator validator;
     private final org.springframework.context.ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -52,7 +53,8 @@ public class OrderServiceImpl implements OrderService {
                             java.time.Clock clock,
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
                             jakarta.validation.Validator validator, org.springframework.context.ApplicationEventPublisher events,
-                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
+                            vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
+                            vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) {
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -64,6 +66,7 @@ public class OrderServiceImpl implements OrderService {
         this.validator = validator;
         this.events = events;
         this.submissions = submissions;
+        this.routing = routing;
     }
 
     @Override
@@ -111,18 +114,19 @@ public class OrderServiceImpl implements OrderService {
             if (submission.getResourceId() != null) throw vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.reused();
         }
 
+        var routeQuote = routing.quote(request);
         Order order = new Order();
         order.setCreationToken(request.getSubmissionToken()); order.setCreationHash(requestHash);
         order.setTrackingCode(generateTrackingCode());
         order.setSender(sender);
         order.setSenderName(request.getSenderName());
-        order.setSenderAddress(request.getSenderAddress());
+        order.setSenderAddress(routing.fullAddress(request.getSenderAddress(), routeQuote.pickupArea()));
         order.setReceiverName(request.getReceiverName());
         order.setReceiverPhone(request.getReceiverPhone());
-        order.setReceiverAddress(request.getReceiverAddress());
+        order.setReceiverAddress(routing.fullAddress(request.getReceiverAddress(), routeQuote.deliveryArea()));
         order.setWeightKg(request.getWeightKg());
         order.setServiceType(request.getServiceType());
-        BigDecimal fee = calculateFee(request.getServiceType(), request.getWeightKg());
+        BigDecimal fee = routeQuote.total();
         order.setShippingFee(fee);
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
         var now = java.time.LocalDateTime.now(clock);
@@ -138,6 +142,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+        routing.attach(savedOrder, routeQuote);
         // Moi van don deu co dung mot ban ghi thanh toan, tao ngay tai day de khong bao gio
         // ton tai don "khong biet tra bang gi" trong CSDL.
         orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod(), promoCode, discount);
@@ -205,31 +210,58 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderTimelineStep> buildTimeline(Order order) {
         Order.OrderStatus current = order.getStatus();
 
-        // Ba trang thai ket thuc bat thuong: don dung lai giua duong, khong di het 4 moc.
+        // Ba trang thai ket thuc bat thuong: don dung lai giua duong, khong di het cac moc.
         boolean cancelled = current == Order.OrderStatus.CANCELLED;
         boolean failed = current == Order.OrderStatus.FAILED;
         boolean returned = current == Order.OrderStatus.RETURNED;
+        // Don cu chua co tuyen thi giu dung 4 moc nhu truoc.
+        var route = routing.routeOf(order.getId()).orElse(null);
+        boolean dropOff = route != null && route.isDropOff();
+        var origin = route == null ? null : route.getOriginBranch();
 
         List<OrderTimelineStep> steps = new ArrayList<>();
 
         // Moc 1 luon da xong - co don nghia la da tao don.
-        steps.add(new OrderTimelineStep("Chờ lấy hàng",
-                "Đơn đã được tạo, đang chờ shipper tới lấy hàng.",
-                true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt()));
+        steps.add(dropOff
+                ? new OrderTimelineStep("Chờ bạn mang hàng tới chi nhánh",
+                        "Mang hàng tới quầy " + origin.getName() + ": " + origin.getHubAddress() + ".",
+                        true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt())
+                : new OrderTimelineStep("Chờ lấy hàng",
+                        "Đơn đã được tạo, đang chờ shipper tới lấy hàng.",
+                        true, current == Order.OrderStatus.PENDING_PICKUP, order.getCreatedAt()));
 
         if (cancelled) {
             // Don bi huy khi con dang cho lay hang nen khong co moc nao khac nua.
             steps.add(new OrderTimelineStep("Đã hủy",
-                    "Đơn đã được hủy, shipper sẽ không tới lấy hàng.",
+                    dropOff ? "Đơn đã được hủy, chi nhánh sẽ không nhận hàng." : "Đơn đã được hủy, shipper sẽ không tới lấy hàng.",
                     true, true, order.getUpdatedAt()));
             return steps;
         }
 
         int rank = statusRank(current);
+        int stage = route == null ? -1 : stageRank(route.getStage());
+        boolean hubs = route != null && route.isInterprovincial();
+        boolean pickedUpHere = current == Order.OrderStatus.PICKED_UP && (!hubs || stage == 0);
 
-        steps.add(new OrderTimelineStep("Đã lấy hàng",
-                "Shipper đã nhận hàng từ người gửi.",
-                rank >= 1, current == Order.OrderStatus.PICKED_UP, timeOf(order, current, Order.OrderStatus.PICKED_UP)));
+        steps.add(dropOff
+                ? new OrderTimelineStep("Đã nhận tại quầy " + origin.getName(),
+                        origin.getName() + " đã nhận hàng bạn mang tới.",
+                        rank >= 1, pickedUpHere, pickedUpHere ? order.getUpdatedAt() : null)
+                : new OrderTimelineStep("Đã lấy hàng",
+                        "Shipper đã nhận hàng từ người gửi.",
+                        rank >= 1, pickedUpHere, pickedUpHere ? order.getUpdatedAt() : null));
+
+        if (hubs) {
+            // Lien tinh: hang qua kho gui, chuyen trung chuyen roi kho nhan truoc khi giao.
+            var dest = route.getDestBranch();
+            boolean active = current == Order.OrderStatus.PICKED_UP;
+            steps.add(hubStep("Tại kho gửi", "Hàng nằm trong kho " + origin.getName() + ", chờ xếp chuyến.",
+                    rank >= 2 || stage >= 1, active && stage == 1, order));
+            steps.add(hubStep("Đang trung chuyển", "Hàng đang trên chuyến từ " + origin.getName() + " tới " + dest.getName() + ".",
+                    rank >= 2 || stage >= 2, active && stage == 2, order));
+            steps.add(hubStep("Tới kho nhận", "Hàng đã tới kho " + dest.getName() + ", chờ shipper giao.",
+                    rank >= 2 || stage >= 3, active && stage >= 3, order));
+        }
 
         steps.add(new OrderTimelineStep("Đang giao",
                 "Hàng đang trên đường tới người nhận.",
@@ -250,6 +282,21 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return steps;
+    }
+
+    private static OrderTimelineStep hubStep(String label, String description, boolean done, boolean current, Order order) {
+        return new OrderTimelineStep(label, description, done, current, current ? order.getUpdatedAt() : null);
+    }
+
+    /** Thu tu chang tren tuyen; LAST_MILE xep sau kho nhan. */
+    private static int stageRank(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage stage) {
+        return switch (stage) {
+            case PICKUP -> 0;
+            case ORIGIN_HUB -> 1;
+            case LINEHAUL -> 2;
+            case DEST_HUB -> 3;
+            case LAST_MILE -> 4;
+        };
     }
 
     /**

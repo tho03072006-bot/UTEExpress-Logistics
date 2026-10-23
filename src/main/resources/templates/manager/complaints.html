@@ -2,7 +2,9 @@
 <head><title>Quản lý khiếu nại - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="ute-page-head sx-art-complaint"><div><h2>Khiếu nại vận đơn</h2><p>Phản hồi khiếu nại của người gửi.</p></div></div>
+<th:block th:replace="~{fragments/branch-filter :: note(${branches})}"></th:block>
 <form class="ute-panel d-flex flex-wrap gap-3 align-items-end mb-4" method="get" th:action="@{/manager/khieu-nai}">
+    <div th:replace="~{fragments/branch-filter :: select(${branches}, ${branchId})}"></div>
     <div><label for="complaintStatus" class="form-label">Trạng thái xử lý</label>
         <select name="status" id="complaintStatus" class="form-select"><option value="">Tất cả</option>
             <option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == selectedStatus}" th:text="${s.label}"></option></select></div>
@@ -17,8 +19,8 @@
         <td><a class="btn btn-outline-primary btn-sm" th:href="@{/manager/khieu-nai/{id}(id=${complaint.id})}">Xử lý</a></td></tr></tbody>
 </table></div></div>
 <nav th:if="${complaints.totalPages > 1}" class="d-flex gap-3 align-items-center mt-4" aria-label="Phân trang khiếu nại">
-    <a th:if="${complaints.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/khieu-nai(page=${complaints.number - 1},status=${selectedStatus})}">Trang trước</a>
+    <a th:if="${complaints.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/manager/khieu-nai(page=${complaints.number - 1},status=${selectedStatus},branchId=${branchId})}">Trang trước</a>
     <span th:text="|Trang ${complaints.number + 1}/${complaints.totalPages}|"></span>
-    <a th:if="${complaints.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/khieu-nai(page=${complaints.number + 1},status=${selectedStatus})}">Trang sau</a>
+    <a th:if="${complaints.hasNext()}" class="btn btn-outline-secondary" th:href="@{/manager/khieu-nai(page=${complaints.number + 1},status=${selectedStatus},branchId=${branchId})}">Trang sau</a>
 </nav>
 </section></body></html>

@@ -1,5 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
-<head><title>Hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Giao lại · Hoàn hàng · Tiền thiếu · Bồi hoàn cước</h1>
+<head><title>Hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Hồ sơ vận hành</h1>
+<p class="text-muted">Giao lại trong giới hạn và hoàn hàng về người gửi: lập là có hiệu lực. Giao lại vượt giới hạn và phiếu tiền: Manager lập, Admin duyệt.</p>
+<th:block th:replace="~{fragments/branch-filter :: note(${branches})}"></th:block>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 <form th:if="${submitted != null}" class="ute-panel p-3 mb-4" method="post" enctype="multipart/form-data" th:action="@{/manager/ho-so-van-hanh}">
 <h2 class="h5" th:text="${submitted.kind.label}"></h2><p th:text="|Mã đối tượng: ${submitted.targetId}|"></p>
@@ -11,7 +13,14 @@
 <div class="mb-3" th:if="${submitted.kind.name() == 'CASH_SUPPLEMENT' or submitted.kind.name() == 'CASH_REFUND'}"><label for="receiptReference">Mã biên nhận nộp/hoàn cước</label><input id="receiptReference" class="form-control" name="receiptReference" minlength="5" maxlength="100" th:value="${submitted.receiptReference}" required></div>
 <label for="evidence">Ảnh chứng từ JPG/PNG, tối đa 5 MB (bắt buộc với phiếu tiền thiếu/thừa)</label><input id="evidence" class="form-control mb-3" type="file" name="evidence" accept="image/jpeg,image/png" th:required="${submitted.kind.name() == 'CASH_SUPPLEMENT' or submitted.kind.name() == 'CASH_REFUND'}">
 <button class="btn btn-primary">Gửi đề nghị</button></form>
-<form method="get" class="d-flex gap-2 mb-3"><select class="form-select" name="kind"><option value="">Tất cả loại</option><option th:each="k : ${kinds}" th:value="${k}" th:text="${k.label}" th:selected="${k == selectedKind}"></option></select><button class="btn btn-outline-primary">Lọc</button></form>
-<div class="table-responsive"><table class="table"><thead><tr><th>Hồ sơ</th><th>Loại</th><th>Trạng thái</th><th>Người lập</th><th>Ngày tạo</th></tr></thead><tbody><tr th:each="c : ${cases}"><td><a th:href="@{/manager/ho-so-van-hanh/{id}(id=${c.id})}" th:text="|#${c.id}|"></a></td><td th:text="${c.kind.label}"></td><td th:text="${c.status.label}"></td><td th:text="${c.createdBy}"></td><td th:text="${#temporals.format(c.createdAt,'dd/MM/yyyy HH:mm')}"></td></tr></tbody></table></div>
-<a th:if="${cases.hasPrevious()}" th:href="@{/manager/ho-so-van-hanh(kind=${selectedKind},page=${cases.number-1})}">Trang trước</a> <a th:if="${cases.hasNext()}" th:href="@{/manager/ho-so-van-hanh(kind=${selectedKind},page=${cases.number+1})}">Trang sau</a>
+<form method="get" th:action="@{/manager/ho-so-van-hanh}" class="row g-2 align-items-end mb-3">
+<div class="col-md-4"><label for="kind" class="form-label">Loại hồ sơ</label><select class="form-select" id="kind" name="kind"><option value="">Tất cả loại</option>
+<optgroup th:each="g : ${kindGroups}" th:label="${g.key}"><option th:each="k : ${g.value}" th:value="${k}" th:text="${k.label}" th:selected="${k == selectedKind}"></option></optgroup></select></div>
+<div class="col-md-3"><label for="status" class="form-label">Trạng thái</label><select class="form-select" id="status" name="status"><option value="">Tất cả trạng thái</option>
+<option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == selectedStatus}"></option></select></div>
+<div th:replace="~{fragments/branch-filter :: select(${branches}, ${branchId})}"></div>
+<div class="col-auto"><button class="btn btn-outline-primary">Lọc</button></div></form>
+<div class="table-responsive"><table class="table"><thead><tr><th>Hồ sơ</th><th>Loại</th><th>Trạng thái</th><th>Người lập</th><th>Ngày tạo</th></tr></thead><tbody><tr th:each="c : ${cases}"><td><a th:href="@{/manager/ho-so-van-hanh/{id}(id=${c.id})}" th:text="|#${c.id}|"></a></td><td th:text="${c.kind.label}"></td><td><span th:text="${c.status.label}" th:classappend="${c.status.name() == 'REQUESTED'} ? 'fw-semibold text-primary'"></span></td><td th:text="${c.createdBy}"></td><td th:text="${#temporals.format(c.createdAt,'dd/MM/yyyy HH:mm')}"></td></tr><tr th:if="${cases.empty}"><td colspan="5">Không có hồ sơ phù hợp.</td></tr></tbody></table></div>
+<a th:if="${cases.hasPrevious()}" th:href="@{/manager/ho-so-van-hanh(kind=${selectedKind},status=${selectedStatus == null ? '' : selectedStatus},branchId=${branchId},page=${cases.number-1})}">Trang trước</a>
+<a th:if="${cases.hasNext()}" th:href="@{/manager/ho-so-van-hanh(kind=${selectedKind},status=${selectedStatus == null ? '' : selectedStatus},branchId=${branchId},page=${cases.number+1})}">Trang sau</a>
 </section></body></html>

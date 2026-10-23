@@ -50,10 +50,11 @@
     <div class="mb-3">
         <label class="form-label" for="addressLine">Địa chỉ chi tiết</label>
         <textarea th:field="*{addressLine}" class="form-control" rows="2" required minlength="5" maxlength="255"
-                  placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
+                  placeholder="Số nhà, đường, phường/xã"></textarea>
         <div class="text-danger small" th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}"></div>
     </div>
 
+    <div th:replace="~{fragments/area-fields :: fields('provinceCode', 'areaCode')}"></div>
     <div class="form-check mb-4">
         <input type="checkbox" th:field="*{defaultAddress}" class="form-check-input" id="defaultAddress">
         <label class="form-check-label" for="defaultAddress">Đặt làm địa chỉ mặc định của loại này</label>

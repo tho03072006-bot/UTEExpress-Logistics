@@ -25,9 +25,17 @@ import vn.edu.hcmute.uteexpress.service.SavedAddressService;
 public class SavedAddressController {
 
     private final SavedAddressService savedAddressService;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
+    private final vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing;
 
-    public SavedAddressController(SavedAddressService savedAddressService) {
+    public SavedAddressController(SavedAddressService savedAddressService,
+            vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog,
+            vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing) {
         this.savedAddressService = savedAddressService;
+        this.catalog = catalog; this.routing = routing;
+    }
+    @ModelAttribute public void areaOptions(Model model) {
+        model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
     }
 
     /** Danh sách loại địa chỉ dùng chung cho các ô select trên form. */
@@ -59,7 +67,7 @@ public class SavedAddressController {
         }
         try {
             savedAddressService.create(form, authentication.getName());
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             model.addAttribute("editingId", null);
             model.addAttribute("error", ex.getMessage());
             return "user/address-form";
@@ -73,10 +81,13 @@ public class SavedAddressController {
                            Model model, RedirectAttributes redirectAttributes) {
         try {
             SavedAddress address = savedAddressService.findOwned(id, authentication.getName());
-            model.addAttribute("form", SavedAddressRequest.from(address));
+            var form = SavedAddressRequest.from(address);
+            var selection = routing.selections(authentication.getName()).get(id);
+            if (selection != null) { form.setProvinceCode(selection.provinceCode()); form.setAreaCode(selection.areaCode()); }
+            model.addAttribute("form", form);
             model.addAttribute("editingId", id);
             return "user/address-form";
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
             return "redirect:/nguoi-dung/dia-chi";
         }
@@ -93,7 +104,7 @@ public class SavedAddressController {
         }
         try {
             savedAddressService.update(id, form, authentication.getName());
-        } catch (IllegalStateException ex) {
+        } catch (IllegalStateException | IllegalArgumentException ex) {
             model.addAttribute("editingId", id);
             model.addAttribute("error", ex.getMessage());
             return "user/address-form";

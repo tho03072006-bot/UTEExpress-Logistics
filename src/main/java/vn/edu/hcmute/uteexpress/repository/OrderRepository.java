@@ -39,6 +39,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         """;
 
     long countByShipperAndStatus(AppUser shipper, Order.OrderStatus status);
+    long countByShipper_IdAndStatusIn(Long shipperId, java.util.Collection<Order.OrderStatus> statuses);
 
     /** Đếm đơn của Shipper theo nhiều trạng thái trong một truy vấn (thay vì mỗi trạng thái một câu). */
     @Query("""

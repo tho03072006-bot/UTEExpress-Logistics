@@ -40,6 +40,7 @@ public class ShipperController {
     private final ShipmentQrService qr;
     private final vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace;
     private final vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService codSettlements;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
 
     public ShipperController(
             TrackingService trackingService,
@@ -47,7 +48,8 @@ public class ShipperController {
             ShipperStatisticsService shipperStatisticsService,
             OrderJourneyService journey, OrderComplaintService complaints, ShipmentQrService qr,
             vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace,
-            vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService codSettlements) {
+            vn.edu.hcmute.uteexpress.service.tracking.CodSettlementService codSettlements,
+            vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) {
         this.trackingService = trackingService;
         this.deliveryProofService = deliveryProofService;
         this.shipperStatisticsService = shipperStatisticsService;
@@ -56,6 +58,7 @@ public class ShipperController {
         this.qr = qr;
         this.workspace = workspace;
         this.codSettlements = codSettlements;
+        this.routing = routing;
     }
 
     /*
@@ -196,6 +199,8 @@ public class ShipperController {
         model.addAttribute("canReportPickupFailure", failures.canReportPickupFailure(assignedOrder));
         model.addAttribute("maxPickupFailures", TrackingService.MAX_PICKUP_FAILURES);
         model.addAttribute("currentProof", trackingService.hasCurrentProof(assignedOrder));
+        model.addAttribute("canHandover", trackingService.canHandoverToHub(assignedOrder));
+        model.addAttribute("route", routing.routeOf(assignedOrder.getId()).orElse(null));
         model.addAttribute("cloudProofAvailable",deliveryProofService.hasCompleteProof(assignedOrder));
         model.addAttribute("failureReasons", DeliveryFailureReason.values());
         model.addAttribute("complaint", complaints.forOrder(assignedOrder, authentication.getName()).orElse(null));
@@ -239,6 +244,22 @@ public class ShipperController {
         }
 
         return "redirect:/shipper/don/" + id;
+    }
+
+    @PostMapping("/don/{id}/ban-giao-kho")
+    public String handoverToHub(@PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
+        if (isAnonymous(authentication)) {
+            return "redirect:/dang-nhap";
+        }
+        try {
+            var order = trackingService.handoverToHub(id, authentication.getName());
+            redirectAttributes.addFlashAttribute("message",
+                    "Đã bàn giao " + order.getTrackingCode() + " vào kho. Đơn không còn nằm trong danh sách việc của bạn.");
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("error", exception.getMessage());
+            return "redirect:/shipper/don/" + id;
+        }
+        return "redirect:/shipper/trang-chu";
     }
 
     @PostMapping("/don/{id}/trang-thai")

@@ -48,6 +48,10 @@ public interface AdminUserRepository extends Repository<AppUser, Long> {
     long countHandledComplaints(Long id);
     @Query("select count(s) from CodSettlement s where s.shipper.id = :id or s.reviewedBy.id = :id")
     long countCashRecords(Long id);
+    @Query("select count(r) from OrderRoute r where r.pickupShipper.id = :id or r.deliveryShipper.id = :id")
+    long countRouteResponsibilities(Long id);
+    @Query("select count(t) from LinehaulTrip t where t.departedBy.id = :id or t.arrivedBy.id = :id")
+    long countLinehaulActions(Long id);
     @Query("select count(o) from Order o where o.shipper.id = :id and o.status in :statuses")
     long countUnfinishedAssignments(Long id, java.util.Collection<vn.edu.hcmute.uteexpress.entity.Order.OrderStatus> statuses);
 }

@@ -58,6 +58,7 @@ class LogisticsIntegrationTest {
         }
     }
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.context.ApplicationContext context;
     @Autowired AppUserRepository users;
     @Autowired OrderRepository orders;
     @Autowired OrderStatusHistoryRepository history;
@@ -84,6 +85,7 @@ class LogisticsIntegrationTest {
     Authentication managerAuth;
 
     @BeforeEach void seed() {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         customer = userAccount("customer-test", AppUser.Role.USER);
         anotherCustomer = userAccount("another-customer", AppUser.Role.USER);
         shipper = userAccount("shipper-test", AppUser.Role.SHIPPER);
@@ -94,6 +96,8 @@ class LogisticsIntegrationTest {
         var principal = new StaffPrincipal(account);
         managerAuth = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
         order = order("UTE-TEST-01", shipper);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.assignStaff(context, manager, manager, shipper, anotherShipper);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.route(context, order);
         payment(order, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000, null);
     }
 
@@ -209,6 +213,7 @@ class LogisticsIntegrationTest {
 
     @Test void creatingAndCancellingAnOrderRecordsItsRealJourney() {
         var request = new OrderCreateRequest();
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(request);
         request.setSenderName("Người gửi thử"); request.setSenderAddress("Địa chỉ gửi thử");
         request.setReceiverName("Người nhận thử"); request.setReceiverPhone("0901234567");
         request.setReceiverAddress("Địa chỉ nhận thử"); request.setWeightKg(1.0);

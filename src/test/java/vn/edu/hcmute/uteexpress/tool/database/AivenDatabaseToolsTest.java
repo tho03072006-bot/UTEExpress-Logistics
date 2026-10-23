@@ -19,14 +19,20 @@ class AivenDatabaseToolsTest {
         assertEquals(Set.of("app_user", "shipment_order", "saved_address", "draft_order", "promo_code",
                 "order_payment", "service_review", "email_change_request", "delivery_proof", "staff_account",
                 "order_status_history", "shipper_notification", "order_complaint", "cod_settlement", "cod_settlement_item", "user_profile_detail",
-                "shipping_tariff", "audit_event", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version", "order_form_submission"), tables);
-        assertEquals(28, schema.stream().filter(sql -> sql.contains("foreign key")).count());
-        assertEquals(17, schema.stream().filter(sql -> sql.contains(" unique ")).count());
+                "shipping_tariff", "audit_event", "operations_policy", "operations_case", "complaint_activity", "shipping_tariff_version", "order_form_submission",
+                "branch", "province_area", "area_neighbor", "staff_branch", "shipper_zone", "order_route", "linehaul_trip", "linehaul_item",
+                "route_tariff", "saved_address_area", "draft_order_area"), tables);
+        assertEquals(56, schema.stream().filter(sql -> sql.contains("foreign key")).count());
+        assertEquals(27, schema.stream().filter(sql -> sql.contains(" unique ")).count());
         assertTrue(schema.stream().anyMatch(sql -> sql.contains("unique (creation_token)")));
         assertTrue(schema.stream().filter(sql -> sql.startsWith("create table "))
-                .allMatch(sql -> sql.contains("auto_increment") && sql.contains("charset=utf8mb4")));
+                .allMatch(sql -> (sql.startsWith("create table area_neighbor ") || sql.contains("auto_increment")) && sql.contains("charset=utf8mb4")));
+        assertTrue(schema.stream().anyMatch(sql -> sql.startsWith("create table area_neighbor ") && sql.contains("primary key (area_code, neighbor_code)")));
+        assertTrue(schema.stream().anyMatch(sql -> sql.startsWith("create table operations_policy ") && sql.contains("max_active_orders integer default 15 not null")));
         assertFalse(String.join("\n", schema).contains("character set utf8 "));
-        assertTrue(schema.stream().noneMatch(sql -> sql.toLowerCase().matches(".*\\b(drop|delete|truncate)\\b.*")));
+        // ON DELETE CASCADE là định nghĩa khóa ngoại, không phải lệnh DELETE dữ liệu.
+        assertTrue(schema.stream().noneMatch(sql -> sql.stripLeading().matches("(?is)^(drop|delete|truncate|update)\\b.*")));
+        assertEquals(4, schema.stream().filter(sql -> sql.toLowerCase(Locale.ROOT).contains("on delete cascade")).count());
     }
 
     @Test void defaultConfigUsesAivenWithoutOpeningConnection() {

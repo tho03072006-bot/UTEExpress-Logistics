@@ -30,14 +30,16 @@ public interface CodSettlementRepository extends JpaRepository<CodSettlement, Lo
 
     Page<CodSettlement> findByShipper(AppUser shipper, Pageable pageable);
 
-    @Query(value = "select s from CodSettlement s join fetch s.shipper where (:status is null or s.status = :status)",
-            countQuery = "select count(s) from CodSettlement s where (:status is null or s.status = :status)")
-    Page<CodSettlement> search(@Param("status") CodSettlement.Status status, Pageable pageable);
+    /** Phiếu của Shipper thuộc chi nhánh (xem StaffBranchRepository.USER_SCOPE); branchId null là mọi chi nhánh. */
+    @Query(value = "select s from CodSettlement s join fetch s.shipper u where (:status is null or s.status = :status) and" + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE,
+            countQuery = "select count(s) from CodSettlement s join s.shipper u where (:status is null or s.status = :status) and" + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
+    Page<CodSettlement> search(@Param("status") CodSettlement.Status status, @Param("branchId") Long branchId, Pageable pageable);
 
-    long countByStatus(CodSettlement.Status status);
+    @Query("select count(s) from CodSettlement s join s.shipper u where s.status = :status and" + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
+    long countByStatus(@Param("status") CodSettlement.Status status, @Param("branchId") Long branchId);
 
-    @Query("select sum(s.declaredAmount) from CodSettlement s where s.status = :status")
-    BigDecimal sumDeclared(@Param("status") CodSettlement.Status status);
+    @Query("select sum(s.declaredAmount) from CodSettlement s join s.shipper u where s.status = :status and" + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
+    BigDecimal sumDeclared(@Param("status") CodSettlement.Status status, @Param("branchId") Long branchId);
 
     /** Khóa dòng tài khoản Shipper trong lúc tạo phiếu để hai yêu cầu song song không cùng tạo phiếu chờ duyệt. */
     @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

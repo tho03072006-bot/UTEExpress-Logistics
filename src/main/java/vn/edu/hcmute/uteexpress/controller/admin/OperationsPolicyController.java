@@ -15,7 +15,7 @@ public class OperationsPolicyController {
     @GetMapping public String edit(Model model) {
         var p = service.current();
         model.addAttribute("form", new OperationsPolicyRequest(p.getRevision(), p.getPickupHours(), p.getStandardHours(),
-                p.getExpressHours(), p.getSuperExpressHours(), p.getMaxDeliveryAttempts(), p.getComplaintResponseHours(), p.getComplaintResolveHours(), ""));
+                p.getExpressHours(), p.getSuperExpressHours(), p.getMaxDeliveryAttempts(), p.getComplaintResponseHours(), p.getComplaintResolveHours(), p.getMaxActiveOrders(), p.getDropOffDiscount().intValueExact(), ""));
         return "admin/operations-policy";
     }
     @PostMapping public String save(@Valid @ModelAttribute("form") OperationsPolicyRequest form, BindingResult errors,

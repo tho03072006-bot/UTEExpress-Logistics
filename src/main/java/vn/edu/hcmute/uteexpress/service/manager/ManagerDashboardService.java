@@ -9,4 +9,6 @@ import vn.edu.hcmute.uteexpress.dto.manager.ManagerDashboardResponse;
 public interface ManagerDashboardService {
 
     ManagerDashboardResponse getSummary();
+    /** Manager: đơn và Shipper của chi nhánh mình; Admin: toàn hệ thống như getSummary(). */
+    default ManagerDashboardResponse getSummary(String actor) { return getSummary(); }
 }

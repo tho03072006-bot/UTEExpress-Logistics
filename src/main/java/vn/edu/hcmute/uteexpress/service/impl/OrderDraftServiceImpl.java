@@ -29,18 +29,23 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     private final PromoCodeService promoCodeService;
     private final jakarta.validation.Validator validator;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
+    private final vn.edu.hcmute.uteexpress.repository.routing.DraftOrderAreaRepository draftAreas;
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
                                  OrderService orderService,
                                  PromoCodeService promoCodeService, jakarta.validation.Validator validator,
-                                 vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions) {
+                                 vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
+                                 vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing,
+                                 vn.edu.hcmute.uteexpress.repository.routing.DraftOrderAreaRepository draftAreas) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
         this.orderService = orderService;
         this.promoCodeService = promoCodeService;
         this.validator=validator;
         this.submissions=submissions;
+        this.routing=routing; this.draftAreas=draftAreas;
     }
 
     @Override
@@ -71,6 +76,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         }
         var errors=validator.validate(request);
         if(!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
+        // Giỏ đơn chưa lưu hình thức gửi; đơn tự mang ra chi nhánh phải gửi ngay để giữ đúng mức giảm.
+        if (request.getPickupMode() == vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF)
+            throw new IllegalStateException("Giỏ đơn chỉ nhận đơn Shipper đến lấy. Đơn tự mang ra chi nhánh hãy bấm Gửi đơn ngay.");
         AppUser owner = requireLockedUser(username);
         var submission = submissions.reserve(request, owner, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DRAFT);
         if (submission.getResourceId() != null) {
@@ -94,7 +102,8 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setServiceType(request.getServiceType());
         draft.setPaymentMethod(request.getPaymentMethod());
         draft.setPromoCode(request.getPromoCode());
-        BigDecimal fee = orderService.estimateFee(request.getServiceType(), request.getWeightKg());
+        var quote = routing.quote(request);
+        BigDecimal fee = quote.total();
         draft.setEstimatedFee(fee);
 
         // Kiem tra ma ngay luc them vao gio de bao som, thay vi de nguoi dung gom xong
@@ -104,6 +113,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         }
 
         DraftOrder saved = draftOrderRepository.save(draft);
+        draftAreas.save(new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(saved, quote.pickupArea(), quote.deliveryArea()));
         submission.bindResource(saved.getId());
         return saved;
     }
@@ -170,6 +180,14 @@ public class OrderDraftServiceImpl implements OrderDraftService {
      * (sinh mã vận đơn, tính cước, đặt trạng thái PENDING_PICKUP).
      */
     private OrderCreateRequest toCreateRequest(DraftOrder draft) {
+        var request = draftFields(draft);
+        var area = draftAreas.findByDraftOrder_Id(draft.getId())
+                .orElseThrow(() -> new IllegalStateException("Đơn nháp cũ thiếu khu vực giao nhận. Hãy chọn lại khu vực trước khi xác nhận."));
+        request.setPickupProvinceCode(area.getPickupProvinceCode()); request.setPickupAreaCode(area.getPickupArea().getAreaCode());
+        request.setDeliveryProvinceCode(area.getDeliveryProvinceCode()); request.setDeliveryAreaCode(area.getDeliveryArea().getAreaCode());
+        return request;
+    }
+    private OrderCreateRequest draftFields(DraftOrder draft) {
         if (draft.getPaymentMethod() == vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.VNPAY) {
             throw new IllegalStateException("Đơn nháp VNPay cũ không còn được hỗ trợ. Hãy tạo lại đơn nháp và chọn COD hoặc MoMo.");
         }
@@ -186,5 +204,31 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         request.setPaymentMethod(draft.getPaymentMethod());
         request.setPromoCode(draft.getPromoCode());
         return request;
+    }
+    @Override @Transactional(readOnly = true)
+    public vn.edu.hcmute.uteexpress.dto.DraftAreaRequest prepareAreaForm(Long id, String username) {
+        var draft = draftOrderRepository.findByIdAndUser(id, requireUser(username))
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy đơn nháp của bạn."));
+        var form = new vn.edu.hcmute.uteexpress.dto.DraftAreaRequest(); form.setExpectedUpdatedAt(draft.getUpdatedAt());
+        draftAreas.findByDraftOrder_Id(id).ifPresent(a -> {
+            form.setPickupProvinceCode(a.getPickupProvinceCode()); form.setPickupAreaCode(a.getPickupArea().getAreaCode());
+            form.setDeliveryProvinceCode(a.getDeliveryProvinceCode()); form.setDeliveryAreaCode(a.getDeliveryArea().getAreaCode());
+        });
+        return form;
+    }
+    @Override public void selectAreas(Long id, vn.edu.hcmute.uteexpress.dto.DraftAreaRequest form, String username) {
+        if (form == null) throw new IllegalStateException("Thiếu thông tin khu vực.");
+        var errors = validator.validate(form);
+        if (!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
+        var draft = requireOwnedDraft(id, username);
+        if (!java.util.Objects.equals(draft.getUpdatedAt(), form.getExpectedUpdatedAt()))
+            throw new IllegalStateException("Đơn nháp đã thay đổi. Hãy tải lại trước khi chọn khu vực.");
+        var request = draftFields(draft);
+        request.setPickupProvinceCode(form.getPickupProvinceCode()); request.setPickupAreaCode(form.getPickupAreaCode());
+        request.setDeliveryProvinceCode(form.getDeliveryProvinceCode()); request.setDeliveryAreaCode(form.getDeliveryAreaCode());
+        var quote = routing.quote(request);
+        var record = draftAreas.findByDraftOrder_Id(id).orElseGet(() -> new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(draft, quote.pickupArea(), quote.deliveryArea()));
+        record.configure(quote.pickupArea(), quote.deliveryArea()); draftAreas.save(record);
+        draft.setEstimatedFee(quote.total()); draft.setUpdatedAt(java.time.LocalDateTime.now());
     }
 }

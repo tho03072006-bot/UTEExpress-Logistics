@@ -22,28 +22,30 @@ public class StaffDashboardChartServiceImpl implements StaffDashboardChartServic
     private final ManagerOrderStatisticsRepository orders;
     private final StaffAccessPolicy access;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
 
     public StaffDashboardChartServiceImpl(ManagerOrderStatisticsRepository orders,
-            StaffAccessPolicy access, Clock clock) {
-        this.orders = orders; this.access = access; this.clock = clock;
+            StaffAccessPolicy access, Clock clock, vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
+        this.orders = orders; this.access = access; this.clock = clock; this.scope = scope;
     }
 
+    /** Manager: biểu đồ đơn của chi nhánh mình; Admin: toàn hệ thống. */
     @Override public DashboardChartsResponse getOperationsCharts(String actor) {
         access.requireOperator(actor);
-        return buildCharts();
+        return buildCharts(scope.of(actor, null));
     }
 
     @Override public DashboardChartsResponse getAdminCharts(String actor) {
         access.requireAdmin(actor);
-        return buildCharts();
+        return buildCharts(null);
     }
 
-    private DashboardChartsResponse buildCharts() {
+    private DashboardChartsResponse buildCharts(Long branch) {
         var generatedAt = LocalDateTime.now(clock);
         var to = generatedAt.toLocalDate();
         var from = to.minusDays(WINDOW_DAYS - 1);
         var statuses = new EnumMap<Order.OrderStatus, Long>(Order.OrderStatus.class);
-        for (var row : orders.countGroupedStatuses()) {
+        for (var row : branch == null ? orders.countGroupedStatuses() : orders.countGroupedStatuses(branch)) {
             if (row.getStatus() == null || statuses.put(row.getStatus(), validCount(row.getTotal())) != null)
                 throw new IllegalStateException("Số liệu trạng thái đơn không nhất quán.");
         }
@@ -54,7 +56,9 @@ public class StaffDashboardChartServiceImpl implements StaffDashboardChartServic
         var days = new TreeMap<LocalDate, Long>();
         for (int i = 0; i < WINDOW_DAYS; i++) days.put(from.plusDays(i), 0L);
         var seen = new HashSet<LocalDate>();
-        for (var row : orders.countCreatedByDay(from.atStartOfDay(), to.plusDays(1).atStartOfDay())) {
+        var byDay = branch == null ? orders.countCreatedByDay(from.atStartOfDay(), to.plusDays(1).atStartOfDay())
+                : orders.countCreatedByDay(from.atStartOfDay(), to.plusDays(1).atStartOfDay(), branch);
+        for (var row : byDay) {
             var date = LocalDate.of(row.getYear(), row.getMonth(), row.getDay());
             if (!days.containsKey(date) || !seen.add(date))
                 throw new IllegalStateException("Số liệu ngày nằm ngoài kỳ hoặc bị trùng.");

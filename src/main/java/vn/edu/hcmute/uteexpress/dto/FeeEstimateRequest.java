@@ -13,6 +13,29 @@ import vn.edu.hcmute.uteexpress.entity.Order;
  * bấm lại ba lần.
  */
 public class FeeEstimateRequest {
+    @jakarta.validation.constraints.Size(max = 10) private String pickupProvinceCode;
+    @jakarta.validation.constraints.Size(max = 40) private String pickupAreaCode;
+    @jakarta.validation.constraints.Size(max = 10) private String deliveryProvinceCode;
+    @jakarta.validation.constraints.Size(max = 40) private String deliveryAreaCode;
+    public String getPickupProvinceCode() { return pickupProvinceCode; }
+    public void setPickupProvinceCode(String value) { pickupProvinceCode = value; }
+    public String getPickupAreaCode() { return pickupAreaCode; }
+    public void setPickupAreaCode(String value) { pickupAreaCode = value; }
+    public String getDeliveryProvinceCode() { return deliveryProvinceCode; }
+    public void setDeliveryProvinceCode(String value) { deliveryProvinceCode = value; }
+    public String getDeliveryAreaCode() { return deliveryAreaCode; }
+    public void setDeliveryAreaCode(String value) { deliveryAreaCode = value; }
+    /** Để trống là shipper đến lấy. */
+    private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode pickupMode;
+    public vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode getPickupMode() { return pickupMode; }
+    public void setPickupMode(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode value) { pickupMode = value; }
+    @jakarta.validation.constraints.AssertTrue(message = "Chọn tỉnh/thành và khu vực gửi, nhận để tính cước theo tuyến.")
+    public boolean isRouteSelected() {
+        return weightKg == null || java.util.stream.Stream.of(pickupProvinceCode, pickupAreaCode, deliveryProvinceCode, deliveryAreaCode)
+                .allMatch(s -> s != null && !s.isBlank());
+    }
+    @jakarta.validation.constraints.AssertTrue(message = "Khối lượng phải là số hữu hạn từ 0,01 đến 100 kg.")
+    public boolean isWeightFinite() { return weightKg == null || (Double.isFinite(weightKg) && weightKg >= 0.01 && weightKg <= 100); }
 
     /**
      * CỐ Ý không đánh @NotNull: để trống nghĩa là người dùng vừa mở trang chứ chưa

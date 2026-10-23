@@ -15,7 +15,7 @@ public interface OrderComplaintRepository extends JpaRepository<OrderComplaint, 
     @Query("""
             select new vn.edu.hcmute.uteexpress.dto.tracking.ComplaintSummary(
                 c.id, c.order.trackingCode, c.subject, c.status, c.createdAt)
-            from OrderComplaint c where (:status is null or c.status = :status)
-            """)
-    Page<ComplaintSummary> search(@Param("status") OrderComplaint.Status status, Pageable pageable);
+            from OrderComplaint c join c.order o where (:status is null or c.status = :status) and
+            """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+    Page<ComplaintSummary> search(@Param("status") OrderComplaint.Status status, @Param("branchId") Long branchId, Pageable pageable);
 }

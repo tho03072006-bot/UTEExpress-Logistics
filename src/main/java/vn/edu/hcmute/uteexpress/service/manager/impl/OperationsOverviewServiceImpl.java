@@ -14,28 +14,37 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
     private final OperationsPolicyService policies;
     private final StaffAccessPolicy access;
     private final Clock clock;
-    public OperationsOverviewServiceImpl(OperationsOverviewRepository data, OperationsPolicyService policies, StaffAccessPolicy access, Clock clock) {
-        this.data = data; this.policies = policies; this.access = access; this.clock = clock;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
+    private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
+    public OperationsOverviewServiceImpl(OperationsOverviewRepository data, OperationsPolicyService policies, StaffAccessPolicy access, Clock clock,
+            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope, vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
+        this.data = data; this.policies = policies; this.access = access; this.clock = clock; this.scope = scope; this.routes = routes;
     }
-    public Page<Order> alerts(String actor, Alert alert, int page) {
+    public Page<Order> alerts(String actor, Alert alert, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
         if (alert == null) throw new IllegalArgumentException("Chọn nhóm cảnh báo hợp lệ.");
+        Long branch = scope.of(actor, branchId);
         var policy = policies.current(); var now = LocalDateTime.now(clock);
-        return data.alerts(alert.name(), now.minusHours(policy.getPickupHours()), now.minusHours(policy.getStandardHours()),
+        return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now.minusHours(policy.getStandardHours()),
                 now.minusHours(policy.getExpressHours()), now.minusHours(policy.getSuperExpressHours()), now,
                 policy.getMaxDeliveryAttempts(), PageRequest.of(page, 20, Sort.by("createdAt", "id")));
     }
+    public java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders) {
+        var ids = orders.stream().map(Order::getId).toList();
+        return ids.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(routes.dropOffOrderIds(ids));
+    }
+    public java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return scope.branches(actor); }
     public Page<OrderComplaint> lateComplaints(String actor, int page) {
         access.requireOperator(actor); access.validatePage(page);
         var policy = policies.current(); var now = LocalDateTime.now(clock);
         return data.lateComplaints(now.minusHours(policy.getComplaintResponseHours()), now.minusHours(policy.getComplaintResolveHours()),
-                PageRequest.of(page, 10, Sort.by("createdAt", "id")));
+                scope.of(actor, null), PageRequest.of(page, 10, Sort.by("createdAt", "id")));
     }
-    public Page<ShipperPerformanceResponse> performance(String actor, int page) {
-        access.requireOperator(actor); access.validatePage(page); return data.performance(PageRequest.of(page, 20));
+    public Page<ShipperPerformanceResponse> performance(String actor, Long branchId, int page) {
+        access.requireOperator(actor); access.validatePage(page); return data.performance(scope.of(actor, branchId), PageRequest.of(page, 20));
     }
     public Page<CodSettlement> lateCash(String actor, int page) {
         access.requireOperator(actor); access.validatePage(page);
-        return data.lateCash(LocalDateTime.now(clock).minusDays(7), PageRequest.of(page, 10, Sort.by("reviewedAt", "id")));
+        return data.lateCash(LocalDateTime.now(clock).minusDays(7), scope.of(actor, null), PageRequest.of(page, 10, Sort.by("reviewedAt", "id")));
     }
 }

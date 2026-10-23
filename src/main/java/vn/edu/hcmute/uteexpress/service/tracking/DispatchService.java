@@ -1,6 +1,7 @@
 package vn.edu.hcmute.uteexpress.service.tracking;
 
 import java.time.*;
+import java.util.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import vn.edu.hcmute.uteexpress.repository.*;
 @Service
 @Transactional(readOnly = true)
 public class DispatchService {
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
     private final OrderRepository orders;
     private final AppUserRepository users;
     private final OrderStatusHistoryRepository history;
@@ -21,42 +23,93 @@ public class DispatchService {
     private final ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.admin.AuditService audit;
     private final vn.edu.hcmute.uteexpress.service.OrderPaymentService payments;
+    private final vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy routing;
+    private final vn.edu.hcmute.uteexpress.service.admin.StaffAccessPolicy staffAccess;
     public DispatchService(OrderRepository orders, AppUserRepository users, OrderStatusHistoryRepository history,
             ShipperNotificationRepository notifications, LogisticsAccess access, Clock clock, ApplicationEventPublisher events,
             vn.edu.hcmute.uteexpress.service.admin.AuditService audit,
-            vn.edu.hcmute.uteexpress.service.OrderPaymentService payments) {
+            vn.edu.hcmute.uteexpress.service.OrderPaymentService payments,
+            vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy routing,
+            vn.edu.hcmute.uteexpress.service.admin.StaffAccessPolicy staffAccess) {
         this.orders = orders; this.users = users; this.history = history; this.notifications = notifications;
         this.access = access; this.clock = clock; this.events = events;
         this.audit = audit;
         this.payments = payments;
+        this.routing = routing; this.staffAccess = staffAccess;
     }
     public Page<Order> pending(String actor, int page) {
-        access.internal(actor);
-        return orders.findByStatus(Order.OrderStatus.PENDING_PICKUP,
-                PageRequest.of(LogisticsInput.page(page), 10, Sort.by("createdAt", "id")));
+        return pending(actor, null, page);
     }
+    public Page<Order> pending(String actor, Long branchId, int page) { return routing.pending(access.internal(actor), branchId, page); }
+    public List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return routing.branches(access.internal(actor)); }
+    public Map<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>> suggestions(String actor, List<Order> orders) {
+        var manager = access.internal(actor); var result = new LinkedHashMap<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>>();
+        for (var order : orders) result.put(order.getId(), routing.candidates(manager, order));
+        return result;
+    }
+    public List<String> unassigned(String actor, Long branchId) { return routing.unassigned(access.internal(actor), branchId); }
     public Page<AppUser> shippers(String actor, int page) {
-        access.internal(actor);
-        return users.findByRoleAndEnabledTrue(AppUser.Role.SHIPPER,
-                PageRequest.of(LogisticsInput.page(page), 100, Sort.by("username")));
+        var manager = access.internal(actor); var all = new ArrayList<AppUser>();
+        for (var branch : routing.branches(manager)) all.addAll(routing.branchShippers(branch.getId()).stream()
+                .filter(u -> u.isEnabled() && !u.isLockedByAdmin()).toList());
+        all.sort(Comparator.comparing(AppUser::getId)); var request = PageRequest.of(LogisticsInput.page(page), 100);
+        int start = (int)Math.min(request.getOffset(), all.size()); int end = Math.min(start + request.getPageSize(), all.size());
+        return new PageImpl<>(all.subList(start, end), request, all.size());
     }
+    public long load(Long shipperId) { return routing.load(shipperId); }
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void assign(String code, Long shipperId, long expectedShipperId, LocalDateTime expectedUpdatedAt,
             String note, String actor) {
         AppUser manager = access.internal(actor);
         String reason = LogisticsInput.text(note, 5, 350, "Lý do phân công");
         if (shipperId == null || shipperId <= 0 || expectedShipperId < 0) throw new IllegalArgumentException("Mã Shipper không hợp lệ.");
-        var shipper = users.findById(shipperId).filter(u -> u.isEnabled() && !u.isLockedByAdmin() && u.getRole() == AppUser.Role.SHIPPER)
+        // Khóa Shipper trước đơn: hai Manager cùng phân công không được vượt sức chứa.
+        var shipper = users.lockById(shipperId).filter(u -> u.isEnabled() && !u.isLockedByAdmin() && u.getRole() == AppUser.Role.SHIPPER)
                 .orElseThrow(() -> new IllegalArgumentException("Hãy chọn Shipper đang hoạt động."));
         var order = orders.findLockedByTrackingCode(code)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
-        if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP)
-            throw new IllegalArgumentException("Chỉ phân công khi đơn còn chờ lấy hàng.");
         payments.requireReadyForFulfillment(order);
         long current = order.getShipper() == null ? 0 : order.getShipper().getId();
         if (current != expectedShipperId || expectedUpdatedAt == null || !expectedUpdatedAt.equals(order.getUpdatedAt()))
             throw new IllegalArgumentException("Vận đơn đã thay đổi. Hãy tải lại trang trước khi phân công.");
         if (current == shipperId) throw new IllegalArgumentException("Đơn đã được phân công cho Shipper này.");
+        assignLocked(order, shipper, reason, manager);
+    }
+    /** Điểm vào tương thích của service cũ; toàn bộ nghiệp vụ vẫn chỉ thực hiện ở đây. */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void assignById(String actor, Long orderId, vn.edu.hcmute.uteexpress.dto.manager.OrderAssignmentRequest form) {
+        var manager = access.internal(actor); staffAccess.validateId(orderId); staffAccess.validate(form);
+        String reason = LogisticsInput.text(form.getReason(), 5, 350, "Lý do phân công");
+        var shipper = users.lockById(form.getShipperId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Shipper."));
+        var order = orders.findLockedById(orderId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        if (order.getRevision() != form.getRevision()) throw new vn.edu.hcmute.uteexpress.exception.StaffConflictException("Đơn vừa được cập nhật. Hãy tải lại trang.");
+        payments.requireReadyForFulfillment(order);
+        assignLocked(order, shipper, reason, manager);
+    }
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void assignSuggested(String code, String actor) {
+        var manager = access.internal(actor);
+        var snapshot = orders.findByTrackingCode(code).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        var route = routing.route(snapshot); routing.requireManager(manager, route);
+        // Khóa theo ID cố định trước khi đọc tải, tránh hai lô chọn cùng chỗ trống cuối cùng.
+        for (var user : routing.branchShippers(routing.branch(route).getId()))
+            users.lockById(user.getId()).ifPresent(entityManager::refresh);
+        var order = orders.findLockedByTrackingCode(code).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        entityManager.refresh(order); entityManager.refresh(route);
+        if (order.getShipper() != null) throw new IllegalArgumentException("Đơn đã được phân công bởi thao tác khác.");
+        payments.requireReadyForFulfillment(order);
+        var choices = routing.candidates(manager, order);
+        if (choices.isEmpty()) throw new IllegalArgumentException("Hết shipper còn sức chứa.");
+        var selected = choices.get(0);
+        assignLocked(order, users.findById(selected.id()).orElseThrow(), selected.reason(), manager);
+    }
+    private void assignLocked(Order order, AppUser shipper, String reason, AppUser manager) {
+        var route = routing.route(order); routing.requireStage(route); routing.requireManager(manager, route);
+        routing.requireShipper(shipper, route);
+        if (order.getShipper() != null && order.getShipper().getId().equals(shipper.getId()))
+            throw new IllegalArgumentException("Đơn đã được phân công cho Shipper này.");
+        route.assignShipper(shipper);
+        String actor = manager.getUsername();
         LocalDateTime now = LocalDateTime.now(clock);
         notifications.dismissPreviousAssignment(order, now);
         order.setShipper(shipper);

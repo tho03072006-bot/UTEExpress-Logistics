@@ -24,6 +24,8 @@ public interface OrderDraftService {
     BigDecimal totalEstimatedFee(String username);
 
     DraftOrder addDraft(OrderCreateRequest request, String username);
+    vn.edu.hcmute.uteexpress.dto.DraftAreaRequest prepareAreaForm(Long draftId, String username);
+    void selectAreas(Long draftId, vn.edu.hcmute.uteexpress.dto.DraftAreaRequest form, String username);
 
     void removeDraft(Long draftId, String username);
 

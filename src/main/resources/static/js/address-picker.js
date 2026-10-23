@@ -32,6 +32,14 @@
         fillInput(picker.getAttribute('data-fill-name'), option.getAttribute('data-contact-name'));
         fillInput(picker.getAttribute('data-fill-phone'), option.getAttribute('data-contact-phone'));
         fillInput(picker.getAttribute('data-fill-address'), option.getAttribute('data-address-line'));
+        var province = document.getElementById(picker.getAttribute('data-fill-province'));
+        var area = document.getElementById(picker.getAttribute('data-fill-area'));
+        if (province && area) {
+            province.value = option.getAttribute('data-province-code') || '';
+            province.dispatchEvent(new Event('change', {bubbles:true}));
+            area.value = option.getAttribute('data-area-code') || '';
+            area.dispatchEvent(new Event('change', {bubbles:true}));
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {

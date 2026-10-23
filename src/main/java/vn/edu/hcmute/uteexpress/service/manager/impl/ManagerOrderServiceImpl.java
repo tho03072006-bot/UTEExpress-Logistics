@@ -17,13 +17,18 @@ public class ManagerOrderServiceImpl implements ManagerOrderService {
     private static final long MAX_RANGE_DAYS = 366;
     private final ManagerOrderReadRepository orders;
     private final Clock clock;
-    public ManagerOrderServiceImpl(ManagerOrderReadRepository orders, Clock clock) {
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
+    public ManagerOrderServiceImpl(ManagerOrderReadRepository orders, Clock clock, vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
         this.orders = orders;
         this.clock = clock;
+        this.scope = scope;
     }
 
     @Override
-    public Page<ManagerOrderResponse> findOrders(String tracking, Order.OrderStatus status,
+    public java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return scope.branches(actor); }
+
+    @Override
+    public Page<ManagerOrderResponse> findOrders(String actor, Long branchId, String tracking, Order.OrderStatus status,
             LocalDate from, LocalDate to, int page) {
         String code = tracking == null ? "" : tracking.strip();
         if (!code.isEmpty() && !code.matches("[A-Za-z0-9-]{1,20}")) {
@@ -38,7 +43,7 @@ public class ManagerOrderServiceImpl implements ManagerOrderService {
         if (page < 0 || page > 10000) {
             throw new IllegalArgumentException("Số trang phải từ 0 đến 10000.");
         }
-        return orders.findOrders(code, status, from.atStartOfDay(), to.plusDays(1).atStartOfDay(),
+        return orders.findOrders(scope.of(actor, branchId), code, status, from.atStartOfDay(), to.plusDays(1).atStartOfDay(),
                 PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending().and(Sort.by("id").descending())))
                 .map(ManagerOrderResponse::from);
     }

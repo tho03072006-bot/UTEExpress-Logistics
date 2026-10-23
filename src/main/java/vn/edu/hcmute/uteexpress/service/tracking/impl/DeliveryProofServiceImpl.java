@@ -2,6 +2,9 @@ package vn.edu.hcmute.uteexpress.service.tracking.impl;
 
 import java.time.LocalDateTime;
 import java.time.Clock;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -50,11 +53,30 @@ public class DeliveryProofServiceImpl
 
     @Override
     public boolean hasCompleteProof(Order order) {
-        return deliveryProofRepository.findByOrder(order)
-                .filter(proof ->
-                        validReference(proof.getProofImagePath(),MediaPurpose.PROOF)
-                        && validReference(proof.getSignaturePath(),MediaPurpose.SIGNATURE))
-                .isPresent();
+        return findViewableByOrder(order).isPresent();
+    }
+
+    @Override
+    public Optional<DeliveryProof> findViewableByOrder(Order order) {
+        return deliveryProofRepository.findByOrder(order).filter(this::viewable);
+    }
+
+    @Override
+    public Map<String, Long> orderIdsWithProof(Collection<String> trackingCodes) {
+        if (trackingCodes == null || trackingCodes.isEmpty()) return Map.of();
+        Map<String, Long> result = new HashMap<>();
+        for (Object[] row : deliveryProofRepository.findProofsByTrackingCodes(trackingCodes)) {
+            // Bằng chứng lưu theo cách cũ (ổ đĩa local) chưa chuyển lên cloud thì không mở được, bỏ qua.
+            if (validReference((String) row[2], MediaPurpose.PROOF) && validReference((String) row[3], MediaPurpose.SIGNATURE)) {
+                result.put((String) row[0], (Long) row[1]);
+            }
+        }
+        return result;
+    }
+
+    private boolean viewable(DeliveryProof proof) {
+        return validReference(proof.getProofImagePath(), MediaPurpose.PROOF)
+                && validReference(proof.getSignaturePath(), MediaPurpose.SIGNATURE);
     }
 
     @Override

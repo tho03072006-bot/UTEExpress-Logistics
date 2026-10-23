@@ -52,13 +52,7 @@ public class FeeEstimateService {
     }
 
     static BigDecimal distanceFee(double km, Order.ServiceType type) {
-        double fee;
-        if (km <= 5) fee = 0;
-        else if (km <= 30) fee = (km - 5) * 1000;
-        else if (km <= 300) fee = 25000 + (km - 30) * 300;
-        else fee = 106000 + (km - 300) * 100;
-        double factor = switch (type) { case STANDARD -> 1.0; case EXPRESS -> 1.3; case SUPER_EXPRESS -> 1.6; };
-        return BigDecimal.valueOf(fee * factor).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        return vn.edu.hcmute.uteexpress.service.routing.RouteDistance.surcharge(km, type);
     }
 
     static String deliveryTime(Order.ServiceType type, Double km) {

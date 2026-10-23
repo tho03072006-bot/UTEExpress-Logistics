@@ -19,21 +19,24 @@ public class ManagerReportController {
     @GetMapping("/bao-cao")
     public String report(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            Authentication auth, Model model) {
+            @RequestParam(required = false) Long branchId, Authentication auth, Model model) {
         var end = to == null ? LocalDate.now(clock) : to;
         var start = from == null ? end.minusDays(29) : from;
-        model.addAttribute("report", service.report(auth.getName(), start, end));
+        model.addAttribute("report", service.report(auth.getName(), start, end, branchId));
+        model.addAttribute("branches", service.branches(auth.getName())); model.addAttribute("branchId", branchId);
         model.addAttribute("today", LocalDate.now(clock));
         model.addAttribute("statusLabels", ManagerOrderResponse.getStatusLabels());
         return "manager/report";
     }
     @GetMapping("/bao-cao/csv")
     public ResponseEntity<byte[]> export(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, Authentication auth) {
-        var report = service.report(auth.getName(), from, to);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long branchId, Authentication auth) {
+        var report = service.report(auth.getName(), from, to, branchId);
         // Chỉ xuất tổng hợp số/enum; không xuất thông tin khách hàng hoặc dữ liệu có thể thành công thức Excel.
         var csv = new StringBuilder("\uFEFFChi_tieu,Gia_tri\r\n");
         csv.append("Tu_ngay,").append(from).append("\r\nDen_ngay,").append(to).append("\r\n");
+        if (branchId != null) csv.append("Ma_chi_nhanh,").append(branchId).append("\r\n");
         report.counts().forEach((status, count) -> csv.append(status.name()).append(",").append(count).append("\r\n"));
         csv.append("Tong_don,").append(report.totalOrders()).append("\r\n")
             .append("Ty_le_giao_thanh_cong_phan_tram,").append(report.completionRate()).append("\r\n")

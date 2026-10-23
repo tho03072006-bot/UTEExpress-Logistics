@@ -27,6 +27,7 @@ class AdminAccountServiceImplTest {
     @Mock StaffAccountRepository staff;
     @Mock EmailChangeRequestRepository emailChanges;
     @Mock AuditService audit;
+    @Mock vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments;
     private ValidatorFactory factory;
     private AdminAccountServiceImpl service;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
@@ -36,7 +37,7 @@ class AdminAccountServiceImplTest {
         factory = Validation.buildDefaultValidatorFactory();
         service = new AdminAccountServiceImpl(users, staff, emailChanges,
             new StaffAccessPolicy(staff, factory.getValidator()), encoder, audit,
-            new vn.edu.hcmute.uteexpress.security.admin.StaffLoginAttemptService(java.time.Clock.systemUTC()));
+            new vn.edu.hcmute.uteexpress.security.admin.StaffLoginAttemptService(java.time.Clock.systemUTC()), branchAssignments);
         admin = staffAccount(user(1L, "admin01", AppUser.Role.ADMIN));
         target = user(3L, "userdemo", AppUser.Role.USER);
     }
@@ -56,6 +57,7 @@ class AdminAccountServiceImplTest {
             assertTrue(issued.getValue().isPasswordChangeRequired()); assertEquals("admin01", issued.getValue().getIssuedBy());
         } else { verify(staff, never()).save(any()); }
         verify(audit).record(eq("admin01"), eq("ACCOUNT_CREATE"), eq("user:3"), anyString());
+        verify(branchAssignments).assign("admin01", saved.getValue(), form.getAssignment());
     }
     @ParameterizedTest @EnumSource(value = AppUser.Role.class, names = {"USER", "SHIPPER", "MANAGER"})
     void otherRolesCannotCallAnyCrudServiceDirectly(AppUser.Role role) {

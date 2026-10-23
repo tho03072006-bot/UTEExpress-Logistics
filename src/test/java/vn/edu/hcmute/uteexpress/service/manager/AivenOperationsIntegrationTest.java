@@ -77,6 +77,7 @@ class AivenOperationsIntegrationTest {
         var sender = new AppUser("qa_" + UUID.randomUUID().toString().replace("-", ""), "hash", UUID.randomUUID() + "@example.com");
         sender.setEnabled(true); em.persist(sender); em.flush();
         var request = new OrderCreateRequest();
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(request);
         request.setSenderName("Người gửi kiểm thử"); request.setSenderAddress("Địa chỉ kiểm thử");
         request.setReceiverName("Người nhận kiểm thử"); request.setReceiverAddress("Địa chỉ kiểm thử");
         request.setReceiverPhone("+84 901 234 567"); request.setWeightKg(1.0);

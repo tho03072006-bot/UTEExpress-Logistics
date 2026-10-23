@@ -88,6 +88,9 @@
             <div><span>Người nhận</span><strong th:text="${order.receiverName}">-</strong></div>
             <div><span>Dịch vụ</span><strong><span class="sx-chip" th:classappend="${'sx-service-' + #strings.toLowerCase(order.serviceType.name())}"><th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block></span></strong></div>
             <div><span>Trạng thái</span><strong><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong></div>
+            <div th:if="${route != null}"><span>Tuyến</span><strong th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh, ${route.originName}|">-</strong></div>
+            <div th:if="${route != null and route.location != null}"><span>Vị trí hiện tại</span><strong th:text="${route.location}">-</strong></div>
+            <div th:if="${route != null and route.leadTime != null}"><span>Thời gian dự kiến</span><strong th:text="${route.leadTime}">-</strong></div>
         </div>
         <p class="shipper-hint mb-0 mt-3"><i class="bi bi-person-lock"></i> Đăng nhập để xem đầy đủ hành trình.</p>
     </article>

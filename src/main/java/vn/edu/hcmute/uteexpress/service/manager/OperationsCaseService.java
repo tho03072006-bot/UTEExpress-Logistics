@@ -7,7 +7,10 @@ import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.entity.admin.OperationsCase;
 public interface OperationsCaseService {
     byte[] readEvidence(String actor, Long id);
-    Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page);
+    /** Manager: hồ sơ của chi nhánh mình; Admin: mọi chi nhánh hoặc chi nhánh đã chọn. "Chờ duyệt" đứng đầu. */
+    Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, OperationsCase.Status status, Long branchId, int page);
+    default Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page) { return list(actor, kind, null, null, page); }
+    java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor);
     OperationsCase view(String actor, Long id);
     boolean requiresAdminApproval(String actor, Long id);
     OperationsCaseRequest prepare(String actor, OperationsCase.Kind kind, Long targetId);

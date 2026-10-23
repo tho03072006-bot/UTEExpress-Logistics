@@ -4,6 +4,10 @@ import jakarta.validation.constraints.*;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 
 public class AdminAccountProfileRequest {
+    @jakarta.validation.Valid @NotNull(message = "Thiếu thông tin chi nhánh.")
+    private StaffBranchRequest assignment = new StaffBranchRequest();
+    public StaffBranchRequest getAssignment() { return assignment; }
+    public void setAssignment(StaffBranchRequest value) { assignment = value; }
     @NotBlank(message = "Vui lòng nhập họ tên.")
     @Size(min = 2, max = 100, message = "Họ tên phải từ 2 đến 100 ký tự.")
     @Pattern(regexp = "(?=.*\\p{L})[\\p{L}\\p{M} .'-]+", message = "Họ tên chỉ chứa chữ và dấu phân cách tên hợp lệ.")

@@ -10,6 +10,7 @@
 <div class="mb-3"><label for="phone" class="form-label">Số điện thoại</label><input th:field="*{phone}" type="tel" class="form-control" required maxlength="20" placeholder="0901234567 hoặc +84 901 234 567"></div>
 <div class="mb-3"><label for="role" class="form-label">Vai trò</label><select th:field="*{role}" class="form-select" required>
 <option value="">Chọn vai trò</option><option value="USER">User (người gửi)</option><option value="SHIPPER">Shipper</option><option value="MANAGER">Manager</option><option value="ADMIN">Admin</option></select></div>
+<div th:replace="~{admin/branch-fields :: fields('assignment', 'role')}"></div>
 <div th:replace="~{admin/account-form-fragments :: credentials}"></div>
 <button class="btn btn-primary" type="submit">Thêm tài khoản</button> <a class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan}">Hủy</a>
 </form></div></section></body></html>

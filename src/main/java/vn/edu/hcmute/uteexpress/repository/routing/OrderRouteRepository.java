@@ -1,0 +1,43 @@
+package vn.edu.hcmute.uteexpress.repository.routing;
+
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import vn.edu.hcmute.uteexpress.entity.routing.OrderRoute;
+
+/** Truy vấn dữ liệu OrderRoute; quyền và nghiệp vụ được kiểm tra tại tầng service.
+ *  Đơn khách tự mang ra chi nhánh (DROP_OFF) không cần shipper lấy nên không thuộc hàng chờ phân công chặng PICKUP. */
+public interface OrderRouteRepository extends JpaRepository<OrderRoute, Long> {
+    /**
+     * Điều kiện JPQL dùng chung cho đơn có bí danh {@code o} và tham số {@code :branchId} (null = mọi chi nhánh):
+     * đơn đã có tuyến chỉ thuộc chi nhánh gửi hoặc nhận; đơn cũ chưa có tuyến hiện cho mọi chi nhánh tới khi chuyển dữ liệu.
+     */
+    String BRANCH_SCOPE = " (:branchId is null or not exists (select r0.id from OrderRoute r0 where r0.order = o)"
+            + " or exists (select r1.id from OrderRoute r1 where r1.order = o and (r1.originBranch.id = :branchId or r1.destBranch.id = :branchId))) ";
+    String DISPATCHABLE = "((r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP and r.order.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and r.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER and (:branchId is null or r.originBranch.id = :branchId)) or (r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.DEST_HUB and r.order.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP and (:branchId is null or r.destBranch.id = :branchId)))";
+    @org.springframework.data.jpa.repository.Query("select r.order from OrderRoute r where " + DISPATCHABLE + " order by r.order.createdAt, r.order.id")
+    org.springframework.data.domain.Page<vn.edu.hcmute.uteexpress.entity.Order> pending(Long branchId, org.springframework.data.domain.Pageable page);
+    @org.springframework.data.jpa.repository.Query("select r.order.trackingCode from OrderRoute r where r.order.shipper is null and " + DISPATCHABLE + " order by r.order.createdAt, r.order.id")
+    List<String> unassignedCodes(Long branchId);
+    Optional<OrderRoute> findByOrder_Id(Long orderId);
+    /** ID các đơn trong danh sách thuộc phạm vi chi nhánh (xem BRANCH_SCOPE). */
+    @org.springframework.data.jpa.repository.Query("select o.id from Order o where o.id in :ids and" + BRANCH_SCOPE)
+    List<Long> idsInScope(java.util.Collection<Long> ids, Long branchId);
+    /** Đơn đã nhập kho gửi, chưa được xếp lên chuyến nào đang xếp hàng. */
+    @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"
+            + " where r.originBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB"
+            + " and not exists (select i.id from LinehaulItem i where i.order = o and i.trip.status = vn.edu.hcmute.uteexpress.entity.routing.LinehaulTrip.Status.LOADING)"
+            + " order by o.createdAt, o.id")
+    List<OrderRoute> waitingAtOriginHub(Long branchId);
+    long countByDestBranch_IdAndStage(Long branchId, OrderRoute.Stage stage);
+    /** Đơn khách đã chọn tự mang tới quầy chi nhánh gửi nhưng quầy chưa nhận. */
+    @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"
+            + " where r.originBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP"
+            + " and r.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF"
+            + " and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP order by o.createdAt, o.id")
+    List<OrderRoute> waitingDropOff(Long branchId);
+    /** ID các đơn khách tự mang ra chi nhánh trong danh sách, để trang cảnh báo ghi đúng nhãn. */
+    @org.springframework.data.jpa.repository.Query("select r.order.id from OrderRoute r where r.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF"
+            + " and r.order.id in :ids")
+    List<Long> dropOffOrderIds(java.util.Collection<Long> ids);
+}

@@ -91,6 +91,8 @@
                 <dt>Phụ trách</dt><dd th:text="${complaint.handledBy == null} ? 'Chưa có' : (${viewer == 'staff'} ? ${complaint.handledBy.username} : 'Manager UTEExpress')"></dd>
             </dl>
         </div>
+        <!-- Ảnh và chữ ký lúc giao để đối chiếu với nội dung khiếu nại -->
+        <th:block th:if="${deliveryProof != null}"><div th:replace="~{fragments/components :: deliveryProof(${deliveryProof}, ${proofBase})}"></div></th:block>
         <div th:if="${viewer == 'staff'}" class="ute-panel">
             <h3 class="h6 text-uppercase text-muted mb-3">Thao tác</h3>
             <form th:if="${!complaint.status.closed}" method="post" class="mb-2" th:action="@{/manager/khieu-nai/{id}/nhan-xu-ly(id=${complaint.id})}">

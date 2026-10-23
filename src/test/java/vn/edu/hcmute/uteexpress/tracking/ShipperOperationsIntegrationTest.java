@@ -51,6 +51,7 @@ class ShipperOperationsIntegrationTest {
         }
     }
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.context.ApplicationContext context;
     @Autowired ApplicationEvents events;
     @Autowired AppUserRepository users;
     @Autowired OrderRepository orders;
@@ -70,6 +71,7 @@ class ShipperOperationsIntegrationTest {
     Authentication managerAuth;
 
     @BeforeEach void seed() {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         customer = account("customer-ops", AppUser.Role.USER);
         shipper = account("shipper-ops", AppUser.Role.SHIPPER);
         anotherShipper = account("other-shipper-ops", AppUser.Role.SHIPPER);
@@ -436,16 +438,19 @@ class ShipperOperationsIntegrationTest {
         mvc.perform(get("/tra-cuu").accept("text/html")).andExpect(status().isOk())
             .andExpect(content().string(containsString("data-qr-panel")))
             .andExpect(content().string(containsString("/js/public-qr-lookup.js")));
-        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2.5").param("distanceKm", "12").accept("text/html"))
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2.5")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC").param("deliveryProvinceCode","79").param("deliveryAreaCode","SGN-THUDUC").accept("text/html"))
             .andExpect(status().isOk()).andExpect(content().string(containsString("Phụ phí khoảng cách")))
-            .andExpect(content().string(containsString("29.500 đ")));
-        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("distanceKm", "80").param("serviceType", "SUPER_EXPRESS").accept("text/html"))
-            .andExpect(status().isOk()).andExpect(content().string(containsString("Hỏa tốc chỉ nhận đơn trong bán kính 30 km")));
-        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("distanceKm", "5000").accept("text/html"))
-            .andExpect(status().isOk()).andExpect(content().string(containsString("Khoảng cách tối đa 2.000 km")))
-            .andExpect(content().string(not(containsString("Phụ phí khoảng cách</span>"))));
+            .andExpect(content().string(containsString("22.500 đ")));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("serviceType", "SUPER_EXPRESS")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC").param("deliveryProvinceCode","01").param("deliveryAreaCode","HAN-CAUGIAY").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("Hỏa tốc chỉ nhận trong cùng chi nhánh và không quá 30 km")));
+        mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2")
+                .param("pickupProvinceCode","79").param("pickupAreaCode","SGN-THUDUC").param("deliveryProvinceCode","99").param("deliveryAreaCode","OUTSIDE").accept("text/html"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("UTEExpress chưa phục vụ khu vực này")))
+            .andExpect(content().string(not(containsString("Phụ phí khoảng cách</dt>"))));
         mvc.perform(get("/uoc-tinh-cuoc").param("weightKg", "2").param("serviceType", "TELEPORT").accept("text/html"))
-            .andExpect(status().isOk()).andExpect(content().string(containsString("Loại dịch vụ không hợp lệ")));
+            .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "serviceType"));
         mvc.perform(get("/shipper/thong-ke").param("period", "WEEK").with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(content().string(containsString("sx-donut")))
             .andExpect(content().string(containsString("data-stats-days")))

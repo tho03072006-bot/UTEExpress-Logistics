@@ -9,9 +9,15 @@ import vn.edu.hcmute.uteexpress.entity.*;
 @Entity @Table(name = "operations_case", indexes = @Index(name = "idx_ops_case_state", columnList = "kind,status,created_at"))
 public class OperationsCase {
     public enum Kind {
-        RETRY("Giao lại"), RETURN("Chuyển hoàn"), CASH_SUPPLEMENT("Nộp bổ sung cước thiếu"),
-        CASH_REFUND("Hoàn cước nộp thừa"), COMPENSATION("Bồi hoàn cước");
-        private final String label; Kind(String label) { this.label = label; } public String getLabel() { return label; }
+        RETRY("Giao lại", "Xử lý hàng"), RETURN("Hoàn hàng về người gửi", "Xử lý hàng"),
+        CASH_SUPPLEMENT("Shipper nộp bù tiền thiếu", "Đối soát COD với Shipper"),
+        CASH_REFUND("Trả lại tiền Shipper nộp thừa", "Đối soát COD với Shipper"), COMPENSATION("Bồi hoàn cước", "Chi trả cho khách");
+        private final String label; private final String group;
+        Kind(String label, String group) { this.label = label; this.group = group; }
+        public String getLabel() { return label; }
+        /** Nhóm hiển thị trong ô lọc (optgroup). */
+        public String getGroup() { return group; }
+        public boolean isFinancial() { return this == CASH_SUPPLEMENT || this == CASH_REFUND || this == COMPENSATION; }
     }
     public enum Status {
         REQUESTED("Chờ duyệt"), APPROVED("Đã duyệt"), REJECTED("Từ chối"), IN_PROGRESS("Đang hoàn"), COMPLETED("Đã hoàn tất");

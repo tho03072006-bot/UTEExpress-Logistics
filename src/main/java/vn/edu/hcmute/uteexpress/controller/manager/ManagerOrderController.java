@@ -5,16 +5,20 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.hcmute.uteexpress.dto.manager.ManagerOrderResponse;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.service.manager.ManagerOrderService;
+import vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService;
 
 @Controller
 @RequestMapping("/manager/don-hang")
 public class ManagerOrderController {
     private final ManagerOrderService service;
+    private final DeliveryProofService deliveryProofs;
     private final Clock clock;
-    public ManagerOrderController(ManagerOrderService service, Clock clock) {
+    public ManagerOrderController(ManagerOrderService service, DeliveryProofService deliveryProofs, Clock clock) {
         this.service = service;
+        this.deliveryProofs = deliveryProofs;
         this.clock = clock;
     }
 
@@ -23,14 +27,21 @@ public class ManagerOrderController {
             @RequestParam(required = false) Order.OrderStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(defaultValue = "0") int page, Model model) {
+            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page,
+            org.springframework.security.core.Authentication auth, Model model) {
         LocalDate end = to == null ? LocalDate.now(clock) : to;
         LocalDate start = from == null ? end.minusDays(29) : from;
-        model.addAttribute("orders", service.findOrders(tracking, status, start, end, page));
+        var orders = service.findOrders(auth.getName(), branchId, tracking, status, start, end, page);
+        model.addAttribute("branches", service.branches(auth.getName()));
+        model.addAttribute("branchId", branchId);
+        model.addAttribute("orders", orders);
+        // Một truy vấn cho cả trang: đơn nào đã có ảnh/chữ ký giao hàng thì hiện link xem.
+        model.addAttribute("proofOrderIds", deliveryProofs.orderIdsWithProof(
+                orders.getContent().stream().map(ManagerOrderResponse::trackingCode).toList()));
         model.addAttribute("tracking", tracking);
         model.addAttribute("status", status);
         model.addAttribute("statuses", Order.OrderStatus.values());
-        model.addAttribute("statusLabels", vn.edu.hcmute.uteexpress.dto.manager.ManagerOrderResponse.getStatusLabels());
+        model.addAttribute("statusLabels", ManagerOrderResponse.getStatusLabels());
         model.addAttribute("from", start);
         model.addAttribute("to", end);
         model.addAttribute("today", LocalDate.now(clock));

@@ -18,11 +18,12 @@ public class OrderExtrasController {
     private final DeliveryProofFileService proofFiles;
     private final OperationsProgressService progress;
     private final vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository payments;
+    private final DeliveryProofService deliveryProofs;
     public OrderExtrasController(OrderJourneyService journey, ShipmentQrService qr, OrderComplaintService complaints,
             DeliveryProofFileService proofFiles, OperationsProgressService progress,
-            vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository payments) {
+            vn.edu.hcmute.uteexpress.repository.OrderPaymentRepository payments, DeliveryProofService deliveryProofs) {
         this.journey = journey; this.qr = qr; this.complaints = complaints; this.proofFiles = proofFiles;
-        this.progress = progress; this.payments = payments;
+        this.progress = progress; this.payments = payments; this.deliveryProofs = deliveryProofs;
     }
     @GetMapping({"/shipper/don/{orderId}/xu-ly", "/nguoi-dung/don-hang/{orderId}/xu-ly"})
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -78,8 +79,10 @@ public class OrderExtrasController {
     }
     @GetMapping("/manager/khieu-nai")
     public String list(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) OrderComplaint.Status status, Authentication auth, Model model) {
-        model.addAttribute("complaints", complaints.list(auth.getName(), status, page));
+            @RequestParam(required = false) OrderComplaint.Status status, @RequestParam(required = false) Long branchId,
+            Authentication auth, Model model) {
+        model.addAttribute("complaints", complaints.list(auth.getName(), status, branchId, page));
+        model.addAttribute("branches", complaints.branches(auth.getName())); model.addAttribute("branchId", branchId);
         model.addAttribute("statuses", OrderComplaint.Status.values());
         model.addAttribute("selectedStatus", status);
         return "manager/complaints";
@@ -151,6 +154,10 @@ public class OrderExtrasController {
         model.addAttribute("statuses", OrderComplaint.Status.values());
         // Đơn chưa thanh toán thì không có lựa chọn lập phiếu bồi hoàn cước.
         model.addAttribute("orderPaid", payments.findByOrder(order).map(p -> p.getStatus() == OrderPayment.PaymentStatus.PAID).orElse(false));
+        // Khiếu nại thường hỏi về lúc giao, nên kèm ảnh và chữ ký giao hàng để đối chiếu.
+        model.addAttribute("deliveryProof", deliveryProofs.findViewableByOrder(order).orElse(null));
+        model.addAttribute("proofBase", (viewer.equals("staff") ? "/manager/don-hang/"
+                : viewer.equals("shipper") ? "/shipper/don/" : "/nguoi-dung/don-hang/") + order.getId());
     }
     private String prefix(Authentication auth) {
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SHIPPER"))

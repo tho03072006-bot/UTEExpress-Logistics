@@ -42,6 +42,7 @@ public class SecurityConfig {
                     new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED),
                     vn.edu.hcmute.uteexpress.security.PageRequestCache::isBackgroundRequest))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/routing/quote").permitAll()
                 .requestMatchers("/uploads/**", "/private-proof/**").denyAll()
                 .requestMatchers("/tep-danh-gia/**").permitAll()
                 .requestMatchers("/", "/trang-chu", "/tra-cuu/**", "/uoc-tinh-cuoc",
