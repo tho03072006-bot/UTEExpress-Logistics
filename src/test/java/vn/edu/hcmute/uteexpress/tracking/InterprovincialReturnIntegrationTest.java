@@ -162,6 +162,23 @@ class InterprovincialReturnIntegrationTest {
         var labels = orderService.buildTimeline(orders.findById(order.getId()).orElseThrow()).stream().map(s -> s.getLabel()).toList();
         assertTrue(labels.containsAll(List.of("Giao thất bại", "Hàng hoàn về kho " + han.getName(), "Hàng hoàn đang trung chuyển",
                 "Hàng hoàn về kho " + sgn.getName(), "Đã hoàn trả")), labels.toString());
+        // Đơn đã hoàn trả đi qua mọi mốc: không mốc nào được hiện như chưa xảy ra.
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
+    }
+
+    @Test void failedInterprovincialOrderShowsEveryForwardMilestoneAsDone() {
+        var order = failedAtDestination();
+        var steps = orderService.buildTimeline(orders.findById(order.getId()).orElseThrow());
+        assertEquals(List.of("Chờ lấy hàng", "Đã lấy hàng", "Tại kho gửi", "Đang trung chuyển", "Tới kho nhận", "Đang giao", "Giao thất bại"),
+                steps.stream().map(s -> s.getLabel()).toList());
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
+        assertTrue(steps.get(steps.size() - 1).isCurrent());
+    }
+
+    private void assertAllStepsDone(Order order) {
+        var steps = orderService.buildTimeline(order);
+        var pending = steps.stream().filter(s -> !s.isDone()).map(s -> s.getLabel()).toList();
+        assertTrue(pending.isEmpty(), "Mốc hiện như chưa xảy ra: " + pending);
     }
 
     @Test void intraProvinceReturnKeepsTheOldFlow() {
@@ -177,6 +194,7 @@ class InterprovincialReturnIntegrationTest {
         var started = cases.view(managerSgn.getUsername(), caseId);
         cases.complete(managerSgn.getUsername(), caseId, started.getRevision(), "Trần Minh Thọ nhận lại hàng", image());
         assertEquals(Order.OrderStatus.RETURNED, orders.findById(order.getId()).orElseThrow().getStatus());
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
     }
 
     @ParameterizedTest
