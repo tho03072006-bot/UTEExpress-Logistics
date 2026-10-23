@@ -72,6 +72,10 @@ class InterprovincialReturnIntegrationTest {
     @Autowired OperationsCaseService cases;
     @Autowired HubService hub;
     @Autowired OrderRoutingService routing;
+    @Autowired ProvinceAreaRepository areas;
+    @Autowired ShipperZoneRepository zones;
+    @Autowired vn.edu.hcmute.uteexpress.service.tracking.DispatchService dispatch;
+    @Autowired vn.edu.hcmute.uteexpress.service.tracking.TrackingService tracking;
     @Autowired vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService qr;
     AppUser customer, admin, managerSgn, managerHan, shipperHan;
     Branch sgn, han;
@@ -89,7 +93,7 @@ class InterprovincialReturnIntegrationTest {
     }
 
     @Test void failedInterprovincialOrderTravelsBackOnReverseTripAndOriginHubCompletesReturn() throws Exception {
-        var order = failedAtDestination();
+        var order = failedAfterForwardTrip();
         Long caseId = cases.request(managerHan.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETURN, order.getId(),
                 order.getRevision(), null, null, "Người nhận từ chối, hoàn về người gửi", "", UUID.randomUUID().toString()), null);
         assertEquals(OperationsCase.Status.APPROVED, cases.view(managerHan.getUsername(), caseId).getStatus(), "Hoàn hàng lập là có hiệu lực");
@@ -210,6 +214,43 @@ class InterprovincialReturnIntegrationTest {
         route.receiveAtOriginHub(); route.departLinehaul(); route.arriveFromLinehaul(); route.assignShipper(shipperHan);
         order.setShipper(shipperHan); order.setStatus(Order.OrderStatus.FAILED); orders.saveAndFlush(order); routes.saveAndFlush(route);
         assertEquals(OrderRoute.Stage.LAST_MILE, route.getStage());
+        return order;
+    }
+    /** Đi toàn bộ chiều đi qua service thực, không đặt trực tiếp trạng thái để bỏ qua quy tắc phân công/kho. */
+    private Order failedAfterForwardTrip() {
+        var order = orderService.createOrder(request("SGN-THUDUC", "01", "HAN-CAUGIAY"), customer.getUsername());
+        var shipperSgn = account("return-shipper-sgn", AppUser.Role.SHIPPER);
+        staffBranches.save(new StaffBranch(shipperSgn, sgn, admin, NOW));
+        zones.save(new ShipperZone(shipperSgn, areas.findByAreaCode("SGN-THUDUC").orElseThrow(), true));
+        zones.save(new ShipperZone(shipperHan, areas.findByAreaCode("HAN-CAUGIAY").orElseThrow(), true));
+        dispatch.assign(order.getTrackingCode(), shipperSgn.getId(), 0L, order.getUpdatedAt(),
+                "Kiểm thử phân công lấy hàng tại SGN", managerSgn.getUsername());
+        tracking.updateStatus(order.getId(), shipperSgn.getUsername(), Order.OrderStatus.PICKED_UP);
+        assertThrows(IllegalStateException.class,
+                () -> tracking.updateStatus(order.getId(), shipperSgn.getUsername(), Order.OrderStatus.IN_TRANSIT),
+                "Shipper SGN không được tự đi giao liên tỉnh");
+        tracking.handoverToHub(order.getId(), shipperSgn.getUsername());
+        assertEquals(0, dispatch.load(shipperSgn.getId()), "Bàn giao kho xong thì giải phóng tải cho shipper lấy");
+        assertTrue(tracking.findAssignedOrder(order.getId(), shipperSgn.getUsername()).isEmpty());
+        var trip = hub.createTrip(managerSgn.getUsername(), null, han.getId(), "51C-123.45",
+                "Tài xế kiểm thử chiều đi", "0901234567", List.of(order.getId()));
+        em.flush();
+        hub.depart(managerSgn.getUsername(), trip.getId(), trip.getRevision(), "NP-KIEM-THU-DI");
+        em.flush();
+        hub.arrive(managerHan.getUsername(), trip.getId(), trip.getRevision(), "NP-KIEM-THU-DI", List.of(order.getId()), "");
+        assertThrows(IllegalArgumentException.class, () -> dispatch.assign(order.getTrackingCode(), shipperSgn.getId(), 0L,
+                order.getUpdatedAt(), "Kiểm thử gán shipper SGN tại HAN", managerHan.getUsername()));
+        dispatch.assign(order.getTrackingCode(), shipperHan.getId(), 0L, order.getUpdatedAt(),
+                "Kiểm thử phân công giao hàng tại HAN", managerHan.getUsername());
+        tracking.updateStatus(order.getId(), shipperHan.getUsername(), Order.OrderStatus.IN_TRANSIT);
+        tracking.updateStatus(order.getId(), shipperHan.getUsername(), Order.OrderStatus.FAILED,
+                vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason.REFUSED,
+                "Kiểm thử khách từ chối nhận, chuẩn bị hoàn về SGN", null);
+        em.flush();
+        var route = routes.findByOrder_Id(order.getId()).orElseThrow();
+        assertEquals(shipperSgn.getId(), route.getPickupShipper().getId());
+        assertEquals(shipperHan.getId(), route.getDeliveryShipper().getId());
+        assertEquals(Order.OrderStatus.FAILED, order.getStatus());
         return order;
     }
     private OrderCreateRequest request(String pickupArea, String deliveryProvince, String deliveryArea) {

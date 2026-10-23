@@ -111,6 +111,23 @@ class DispatchRulesIntegrationTest {
     private List<Long> ranked(AppUser manager, Order order) {
         return dispatch.suggestions(manager.getUsername(), List.of(order)).get(order.getId()).stream().map(c -> c.id()).toList();
     }
+
+    @Test void defaultCapacityAllowsFifteenthOrderAndRejectsSixteenth() {
+        assertEquals(15, policies.findAll().get(0).getMaxActiveOrders());
+        hold(primary, 14);
+        var fifteenth = order();
+        assertTrue(ranked(managerSgn, fifteenth).contains(primary.getId()));
+        dispatch.assign(fifteenth.getTrackingCode(), primary.getId(), 0L, fifteenth.getUpdatedAt(),
+                "Kiểm thử phân công đơn thứ 15", managerSgn.getUsername());
+        assertEquals(15, dispatch.load(primary.getId()));
+        var sixteenth = order();
+        assertFalse(ranked(managerSgn, sixteenth).contains(primary.getId()));
+        var error = assertThrows(IllegalArgumentException.class, () -> dispatch.assign(sixteenth.getTrackingCode(), primary.getId(),
+                0L, sixteenth.getUpdatedAt(), "Kiểm thử từ chối đơn thứ 16", managerSgn.getUsername()));
+        assertEquals("Shipper đã đủ số đơn tối đa đang giữ.", error.getMessage());
+        assertNull(orders.findById(sixteenth.getId()).orElseThrow().getShipper());
+        assertEquals(15, dispatch.load(primary.getId()));
+    }
     private Order order() {
         var request = new OrderCreateRequest();
         request.setPickupProvinceCode("79"); request.setPickupAreaCode("SGN-THUDUC");
