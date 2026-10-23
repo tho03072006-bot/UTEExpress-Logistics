@@ -1,6 +1,7 @@
 # BÀN GIAO: LÀM TIẾP PHẦN CÒN LẠI CỦA KẾ HOẠCH LIÊN TỈNH 3 CHI NHÁNH
 
-Bạn tiếp quản code đang dở trên máy tôi (Windows), repo `D:\WEB\Project_CK`, nhánh `develop` local.
+Bạn tiếp quản code trên nhánh **`feature_Tho_lien_tinh`** (GitHub `tho03072006-bot/UTEExpress-Logistics`, commit `18db294`),
+tách ra từ `develop` tại `4ce5661`. Trên máy tôi repo nằm ở `D:\WEB\Project_CK` (Windows).
 Đọc trước hai file: `docs/PROMPT_CHATGPT_LIEN_TINH.md` (các quyết định đã chốt B1–B11, bảng bước C, kịch bản nghiệm thu)
 và `docs/KE_HOACH_LIEN_TINH.md`. File này chỉ ghi **trạng thái hiện tại** và **việc còn lại**. Chỗ nào hai file mâu thuẫn thì theo file này.
 
@@ -8,7 +9,7 @@ và `docs/KE_HOACH_LIEN_TINH.md`. File này chỉ ghi **trạng thái hiện t�
 
 ## 1. Quy tắc bắt buộc (giữ nguyên như trước)
 
-1. **Chỉ sửa trên máy tôi.** Không tạo nhánh, không commit, không push, không `git stash/reset/checkout --/clean/rebase/merge`. Tôi kiểm xong và nói rõ "commit" thì mới commit.
+1. **Làm trên nhánh `feature_Tho_lien_tinh`.** Không tạo nhánh khác, không commit, không push, không `git stash/reset/checkout --/clean/rebase/merge`, không force push. Tôi kiểm xong và nói rõ "commit" thì mới commit.
 2. **Không ghi gì lên Aiven** (DB dùng chung cả nhóm) khi tôi chưa xác nhận rõ. Được chạy `--print-schema` và `--check` (chỉ đọc). `--apply` thì dừng lại hỏi tôi.
 3. **Không đọc, in hay sửa** `config/*-local.properties`, `src/main/resources/application-local.properties`, `config/certificates/*`.
 4. **Không sửa** `entity/Order.java`, `entity/AppUser.java`, giá trị enum `OrderStatus`. Thêm dữ liệu thì tạo bảng/entity riêng.
@@ -42,7 +43,19 @@ java '-Dfile.encoding=UTF-8' '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8'
 
 ## 2. Trạng thái hiện tại (tối 23/10/2026)
 
-Bước 1–11 trong bảng C **đã có code và test đạt** (chưa commit, 158 file thay đổi/mới). Bước 12 làm được một phần. Bước 13–17 và kiểm tra cuối **chưa làm**.
+Bước 1–11 trong bảng C **đã có code và test đạt**, nằm trong commit `18db294` (195 file). Bước 12 làm được một phần. Bước 13–17 và kiểm tra cuối **chưa làm**.
+
+### 2.0. Việc phải hỏi tôi TRƯỚC KHI code tiếp: `develop` vừa có cách tính cước thứ hai
+
+Sau khi tách nhánh, Tài push lên `develop` 2 commit (`c097b85` "phụ phí khoảng cách đường chim bay giữa hai địa chỉ", `f2b4877` test JS).
+Commit này **thêm cột vào `Order.java`**, lấy tọa độ địa chỉ qua ArcGIS (`service/geo/*`, `OrderPricingService`), có migration `UpgradeAivenOrderDistance` / `db/migration/V7__order_distance.sql`,
+và **trùng 8 file** với nhánh này: `UserOrderController`, `FeeEstimateService`, `OrderDraftServiceImpl`, `OrderServiceImpl`, `shipper/order-detail.html`, `user/order-detail.html`, `user/order-form.html`, `OrderFeeEstimateTest`.
+Nhánh này đã tính phụ phí khoảng cách theo tâm khu vực (B7, `RouteQuoteService` + `RouteDistance`), nên hai cách tính sẽ chồng nhau.
+**Không tự merge `origin/develop`.** Xem `git diff 4ce5661 origin/develop`, rồi trình tôi phương án (giữ cách nào, gộp ra sao, cột nào trong `Order.java` còn dùng, migration nào đã apply lên Aiven) và chờ tôi chọn.
+
+### 2.0b. File cấu hình không có trong Git
+
+`config/*-local.properties` (Aiven, JWT, Cloudinary, Groq, MoMo) và `config/certificates/*` bị gitignore. Máy mới thì tôi gửi riêng; bạn chỉ đặt đúng chỗ, không mở ra in, không commit.
 
 ### 2.1. CẢNH BÁO: DB chưa có 2 cột mới, web chưa chạy được với Aiven
 
@@ -57,7 +70,7 @@ ALTER TABLE order_route ADD COLUMN pickup_mode ENUM('COURIER','DROP_OFF') NOT NU
 ALTER TABLE operations_policy ADD COLUMN drop_off_discount DECIMAL(12,0) NOT NULL DEFAULT 3000;
 ```
 
-Lưu ý thêm: một tiến trình app cũ (Spring Boot, cổng 8080, chạy code cũ) có thể vẫn đang chạy. Trước khi kiểm web, kiểm tra cổng 8080 và hỏi tôi trước khi tắt.
+Lưu ý thêm: trên máy tôi, một tiến trình app cũ (Spring Boot, cổng 8080, chạy code cũ) có thể vẫn đang chạy. Trước khi kiểm web, kiểm tra cổng 8080 và hỏi tôi trước khi tắt.
 
 ### 2.2. Những gì đã làm (để bạn dùng lại, đừng viết trùng)
 
