@@ -9,7 +9,6 @@ import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 import vn.edu.hcmute.uteexpress.repository.DraftOrderRepository;
 import vn.edu.hcmute.uteexpress.service.OrderDraftService;
-import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.PromoCodeService;
 
 import java.math.BigDecimal;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@Transactional
 public class OrderDraftServiceImpl implements OrderDraftService {
 
     /** Giới hạn số đơn nháp trong giỏ, tránh người dùng gom quá nhiều rồi xác nhận một lần gây treo. */
@@ -25,7 +23,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     private final DraftOrderRepository draftOrderRepository;
     private final AppUserRepository appUserRepository;
-    private final OrderService orderService;
+    private final OrderCreationWriter creationWriter;
+    private final org.springframework.transaction.support.TransactionTemplate writes;
+    private final jakarta.persistence.EntityManager em;
     private final PromoCodeService promoCodeService;
     private final jakarta.validation.Validator validator;
     private final vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions;
@@ -33,13 +33,17 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     public OrderDraftServiceImpl(DraftOrderRepository draftOrderRepository,
                                  AppUserRepository appUserRepository,
-                                 OrderService orderService,
+                                 OrderCreationWriter creationWriter,
                                  PromoCodeService promoCodeService, jakarta.validation.Validator validator,
                                  vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard submissions,
-                                 vn.edu.hcmute.uteexpress.service.OrderPricingService pricing) {
+                                 vn.edu.hcmute.uteexpress.service.OrderPricingService pricing,
+                                 org.springframework.transaction.PlatformTransactionManager transactions,
+                                 jakarta.persistence.EntityManager em) {
         this.draftOrderRepository = draftOrderRepository;
         this.appUserRepository = appUserRepository;
-        this.orderService = orderService;
+        this.creationWriter = creationWriter;
+        this.writes = new org.springframework.transaction.support.TransactionTemplate(transactions);
+        this.em = em;
         this.promoCodeService = promoCodeService;
         this.validator=validator;
         this.submissions=submissions;
@@ -74,6 +78,26 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         }
         var errors=validator.validate(request);
         if(!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
+        DraftOrder existing = writes.execute(status -> {
+            var owner = requireLockedUser(username);
+            var retry = existingDraft(request, owner);
+            if (retry == null) requireCartSpace(owner);
+            return retry;
+        });
+        if (existing != null) return existing;
+        var route = pricing.resolveRoute(request.getSenderAddress(), request.getReceiverAddress());
+        return writes.execute(status -> addResolvedDraft(request, username, route));
+    }
+
+    private DraftOrder existingDraft(OrderCreateRequest request, AppUser owner) {
+        var existing = submissions.findExisting(request, owner, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DRAFT);
+        if (existing.isEmpty()) return null;
+        return draftOrderRepository.findByIdAndUser(existing.get().getResourceId(), owner)
+                .orElseThrow(vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard::reused);
+    }
+
+    private DraftOrder addResolvedDraft(OrderCreateRequest request, String username,
+            vn.edu.hcmute.uteexpress.service.OrderPricingService.ResolvedRoute route) {
         AppUser owner = requireLockedUser(username);
         var submission = submissions.reserve(request, owner, vn.edu.hcmute.uteexpress.entity.OrderFormSubmission.Purpose.DRAFT);
         if (submission.getResourceId() != null) {
@@ -81,10 +105,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
                 .orElseThrow(vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard::reused);
         }
 
-        if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER) {
-            throw new IllegalStateException("Giỏ đơn chỉ chứa tối đa " + MAX_DRAFTS_PER_USER
-                    + " đơn. Vui lòng xác nhận bớt trước khi thêm đơn mới.");
-        }
+        requireCartSpace(owner);
 
         DraftOrder draft = new DraftOrder();
         draft.setUser(owner);
@@ -98,7 +119,7 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setPaymentMethod(request.getPaymentMethod());
         draft.setPromoCode(request.getPromoCode());
         // Giỏ đơn báo đúng cước sẽ thu (có phụ phí khoảng cách); lúc xác nhận tạo đơn vẫn tính lại ở OrderService.
-        BigDecimal fee = pricing.price(request.getSenderAddress(), request.getReceiverAddress(),
+        BigDecimal fee = pricing.priceResolved(route, request.getSenderAddress(), request.getReceiverAddress(),
                 request.getServiceType(), request.getWeightKg()).total();
         draft.setEstimatedFee(fee);
 
@@ -114,42 +135,81 @@ public class OrderDraftServiceImpl implements OrderDraftService {
     }
 
     @Override
+    @Transactional
     public void removeDraft(Long draftId, String username) {
         draftOrderRepository.delete(requireOwnedDraft(draftId, username));
     }
 
     @Override
+    @Transactional
     public void clearDrafts(String username) {
         draftOrderRepository.deleteByUser(requireLockedUser(username));
     }
 
     @Override
     public Order confirmDraft(Long draftId, String username) {
-        DraftOrder draft = requireOwnedDraft(draftId, username);
-        Order order = orderService.createOrder(toCreateRequest(draft), username);
-        draftOrderRepository.delete(draft);
-        return order;
+        var snapshot = writes.execute(status -> snapshot(requireOwnedDraft(draftId, username)));
+        var route = pricing.resolveRoute(snapshot.request().getSenderAddress(), snapshot.request().getReceiverAddress());
+        return writes.execute(status -> {
+            var draft = requireOwnedDraft(draftId, username);
+            requireUnchanged(snapshot, draft);
+            var order = creationWriter.createResolved(snapshot.request(), username, route);
+            draftOrderRepository.delete(draft);
+            return order;
+        });
     }
 
     @Override
     public List<Order> confirmAllDrafts(String username) {
-        AppUser owner = requireLockedUser(username);
-        List<DraftOrder> drafts = draftOrderRepository.findByUserOrderByCreatedAtDesc(owner);
-        if (drafts.isEmpty()) {
-            throw new IllegalStateException("Giỏ đơn đang trống, chưa có đơn nào để xác nhận.");
-        }
+        List<DraftSnapshot> snapshots = writes.execute(status -> {
+            var owner = requireLockedUser(username);
+            var drafts = draftOrderRepository.findByUserOrderByCreatedAtDesc(owner);
+            if (drafts.isEmpty()) throw new IllegalStateException("Giỏ đơn đang trống, chưa có đơn nào để xác nhận.");
+            if (drafts.size() > MAX_DRAFTS_PER_USER) throw new IllegalStateException("Giỏ đơn vượt giới hạn 30 đơn.");
+            return drafts.stream().map(this::snapshot).toList();
+        });
+        // Tra toàn bộ địa chỉ TRƯỚC transaction ghi, không giữ khóa trong lúc đợi mạng.
+        var routes = snapshots.stream().map(s -> pricing.resolveRoute(s.request().getSenderAddress(), s.request().getReceiverAddress())).toList();
+        return writes.execute(status -> {
+            var owner = requireLockedUser(username);
+            var current = draftOrderRepository.findByUserOrderByCreatedAtDesc(owner);
+            if (!current.stream().map(DraftOrder::getId).sorted().toList().equals(snapshots.stream().map(DraftSnapshot::id).sorted().toList()))
+                throw cartChanged();
+            var byId = current.stream().collect(java.util.stream.Collectors.toMap(DraftOrder::getId, d -> d));
+            List<Order> created = new ArrayList<>();
+            for (int i = 0; i < snapshots.size(); i++) {
+                var snapshot = snapshots.get(i);
+                requireUnchanged(snapshot, byId.get(snapshot.id()));
+                created.add(creationWriter.createResolved(snapshot.request(), username, routes.get(i)));
+            }
+            // Cước/khuyến mãi được kiểm tra lại trong cùng transaction: một đơn lỗi thì rollback cả giỏ.
+            draftOrderRepository.deleteAll(current);
+            return created;
+        });
+    }
 
-        List<Order> created = new ArrayList<>();
-        for (DraftOrder draft : drafts) {
-            created.add(orderService.createOrder(toCreateRequest(draft), username));
-        }
-        // Ca vong lap nam trong cung mot transaction: neu mot don loi thi khong don nao duoc tao,
-        // gio van con nguyen de nguoi dung sua lai roi xac nhan lai.
-        draftOrderRepository.deleteAll(drafts);
-        return created;
+    private record DraftSnapshot(Long id, OrderCreateRequest request, String hash) { }
+    private DraftSnapshot snapshot(DraftOrder draft) {
+        em.refresh(draft);
+        var request = toCreateRequest(draft);
+        var errors = validator.validate(request);
+        if (!errors.isEmpty()) throw new IllegalStateException(errors.iterator().next().getMessage());
+        return new DraftSnapshot(draft.getId(), request, vn.edu.hcmute.uteexpress.service.OrderSubmissionGuard.fingerprint(request));
+    }
+    private void requireUnchanged(DraftSnapshot before, DraftOrder current) {
+        if (current == null || !before.hash().equals(snapshot(current).hash())) throw cartChanged();
+    }
+    private static IllegalStateException cartChanged() {
+        return new IllegalStateException("Giỏ đơn vừa thay đổi. Hãy tải lại trang và xác nhận lại.");
     }
 
     // ----- Phần dùng chung trong service -----
+
+    private void requireCartSpace(AppUser owner) {
+        if (draftOrderRepository.countByUser(owner) >= MAX_DRAFTS_PER_USER)
+            throw new IllegalStateException("Giỏ đơn chỉ chứa tối đa " + MAX_DRAFTS_PER_USER
+                    + " đơn. Vui lòng xác nhận bớt trước khi thêm đơn mới.");
+    }
 
     private AppUser requireUser(String username) {
         return appUserRepository.findByUsername(username)
@@ -164,13 +224,14 @@ public class OrderDraftServiceImpl implements OrderDraftService {
 
     private AppUser requireLockedUser(String username) {
         var owner=appUserRepository.findLockedByUsername(username).orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        em.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if(!owner.isEnabled() || owner.isLockedByAdmin() || owner.getRole()!=AppUser.Role.USER)
             throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được thay đổi giỏ đơn.");
         return owner;
     }
 
     /**
-     * Đổ đơn nháp về lại DTO để tái sử dụng nguyên OrderService.createOrder - nhờ vậy
+     * Đổ đơn nháp về DTO để dùng chung OrderCreationWriter với luồng tạo đơn trực tiếp - nhờ vậy
      * đơn xác nhận từ giỏ và đơn tạo trực tiếp đi qua đúng một luồng nghiệp vụ
      * (sinh mã vận đơn, tính cước, đặt trạng thái PENDING_PICKUP).
      */

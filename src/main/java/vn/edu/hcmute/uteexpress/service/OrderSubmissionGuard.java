@@ -32,6 +32,12 @@ public class OrderSubmissionGuard {
         return token != null && token.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
     }
     public OrderFormSubmission reserve(OrderCreateRequest request, AppUser user, Purpose purpose) {
+        var existing = findExisting(request, user, purpose);
+        if (existing.isPresent()) return existing.get();
+        return submissions.saveAndFlush(new OrderFormSubmission(request.getSubmissionToken(), user, fingerprint(request), purpose, LocalDateTime.now(clock)));
+    }
+    /** Kiểm tra retry trước khi gọi bản đồ, không giữ chỗ hoặc ghi token chưa hoàn tất. */
+    public java.util.Optional<OrderFormSubmission> findExisting(OrderCreateRequest request, AppUser user, Purpose purpose) {
         if (!validToken(request.getSubmissionToken()))
             throw new IllegalStateException("Phiên biểu mẫu không hợp lệ. Hãy mở lại trang tạo đơn.");
         String hash = fingerprint(request);
@@ -41,11 +47,11 @@ public class OrderSubmissionGuard {
             if (!record.getUser().getId().equals(user.getId()) || !purpose.name().equals(record.getPurpose())
                     || !hash.equals(record.getRequestHash()) || record.getResourceId() == null)
                 throw reused();
-            return record;
+            return existing;
         }
         // Các đơn được tạo trước migration đã có creation_token nhưng chưa có dấu vết mới.
         if (purpose == Purpose.DRAFT && orders.findByCreationToken(request.getSubmissionToken()).isPresent()) throw reused();
-        return submissions.saveAndFlush(new OrderFormSubmission(request.getSubmissionToken(), user, hash, purpose, LocalDateTime.now(clock)));
+        return java.util.Optional.empty();
     }
     public static IllegalStateException reused() {
         return new IllegalStateException("Phiên biểu mẫu đã được xử lý hoặc dùng cho dữ liệu khác. Hãy mở lại trang tạo đơn.");
