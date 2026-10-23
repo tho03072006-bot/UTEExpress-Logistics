@@ -20,6 +20,9 @@ public interface OrderRouteRepository extends JpaRepository<OrderRoute, Long> {
     @org.springframework.data.jpa.repository.Query("select r.order.trackingCode from OrderRoute r where r.order.shipper is null and " + DISPATCHABLE + " order by r.order.createdAt, r.order.id")
     List<String> unassignedCodes(Long branchId);
     Optional<OrderRoute> findByOrder_Id(Long orderId);
+    /** Tuyến kèm khu vực lấy/giao của nhiều đơn một lần (sắp lộ trình shipper, không truy vấn từng đơn). */
+    @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.pickupArea join fetch r.deliveryArea where r.order.id in :ids")
+    List<OrderRoute> findWithAreasByOrderIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
     /** ID các đơn trong danh sách thuộc phạm vi chi nhánh (xem BRANCH_SCOPE). */
     @org.springframework.data.jpa.repository.Query("select o.id from Order o where o.id in :ids and" + BRANCH_SCOPE)
     List<Long> idsInScope(java.util.Collection<Long> ids, Long branchId);

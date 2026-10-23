@@ -53,6 +53,7 @@ class PickupStatisticsIntegrationTest {
     @Autowired TrackingService tracking;
     @Autowired ShipperStatisticsService statistics;
     @Autowired OperationsOverviewService overview;
+    @Autowired ShipperRouteService shipperRoutes;
     AppUser customer, managerSgn, admin, shipperSgn;
 
     @BeforeEach void seed() {
@@ -86,11 +87,29 @@ class PickupStatisticsIntegrationTest {
         assertEquals(0, row.getActive());
     }
 
-    private OrderCreateRequest request() {
+    @Test void todayRouteStartsFromBranchHubAndVisitsNearestPickupFirst() {
+        var far = orderService.createOrder(request("SGN-CUCHI", "SGN-THUDUC", "79", "Số 9 Củ Chi"), customer.getUsername());
+        var near = orderService.createOrder(request("SGN-THUDUC", "SGN-Q1", "79", "Số 1 Thủ Đức"), customer.getUsername());
+        zones.save(new ShipperZone(shipperSgn, areas.findByAreaCode("SGN-CUCHI").orElseThrow(), false));
+        dispatch.assignSuggested(far.getTrackingCode(), managerSgn.getUsername());
+        dispatch.assignSuggested(near.getTrackingCode(), managerSgn.getUsername());
+        var route = shipperRoutes.today(shipperSgn.getUsername());
+        var hub = branches.findByCode("SGN").orElseThrow();
+        assertNotNull(route.startHub());
+        assertTrue(route.startHub().contains(hub.getName()));
+        // Kho SGN đặt ở khu vực Thủ Đức nên điểm lấy ở Thủ Đức đi trước điểm ở Củ Chi dù đơn Củ Chi tạo trước.
+        assertEquals(near.getTrackingCode(), route.stops().get(0).tasks().get(0).trackingCode());
+        assertEquals(1, route.stops().get(0).number());
+        assertTrue(route.legs().get(0).url().contains("&origin="), "Chặng đầu xuất phát từ địa chỉ kho");
+    }
+
+    private OrderCreateRequest request() { return request("SGN-THUDUC", "HAN-CAUGIAY", "01", "Số 1 Võ Văn Ngân"); }
+
+    private OrderCreateRequest request(String pickupArea, String deliveryArea, String deliveryProvince, String street) {
         var request = new OrderCreateRequest();
-        request.setPickupProvinceCode("79"); request.setPickupAreaCode("SGN-THUDUC");
-        request.setDeliveryProvinceCode("01"); request.setDeliveryAreaCode("HAN-CAUGIAY");
-        request.setSenderName("Người gửi kiểm thử"); request.setSenderAddress("Số 1 Võ Văn Ngân");
+        request.setPickupProvinceCode("79"); request.setPickupAreaCode(pickupArea);
+        request.setDeliveryProvinceCode(deliveryProvince); request.setDeliveryAreaCode(deliveryArea);
+        request.setSenderName("Người gửi kiểm thử"); request.setSenderAddress(street);
         request.setReceiverName("Người nhận kiểm thử"); request.setReceiverPhone("0901234567"); request.setReceiverAddress("Số 2 Cầu Giấy");
         request.setWeightKg(1.0); request.setServiceType(Order.ServiceType.STANDARD); request.setPaymentMethod(OrderPayment.PaymentMethod.COD);
         return request;

@@ -7,8 +7,10 @@ import java.util.List;
  * {@code legs}: chặng cho máy tính (tối đa 10 điểm mỗi chặng).
  * {@code mobileLegs}: chặng cho điện thoại; Google Maps trên trình duyệt điện thoại chỉ nhận 3 điểm dừng
  * giữa đường nên mỗi chặng tối đa 4 điểm.
+ * {@code startHub}: kho chi nhánh shipper xuất phát ("Chi nhánh ... · địa chỉ kho"); null khi shipper chưa gán chi nhánh.
  */
-public record ShipperRoute(List<Stop> stops, List<Leg> legs, List<Leg> mobileLegs, int orderCount, int missingAddress, boolean truncated) {
+public record ShipperRoute(List<Stop> stops, List<Leg> legs, List<Leg> mobileLegs, int orderCount, int missingAddress, boolean truncated,
+        String startHub) {
     public record Task(Long orderId, String trackingCode, boolean pickup, String contactName, String phone, boolean due) { }
     public record Stop(int number, String address, List<Task> tasks) {
         public boolean hasPickup() { return tasks.stream().anyMatch(Task::pickup); }
