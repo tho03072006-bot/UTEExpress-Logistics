@@ -34,6 +34,12 @@ public class OrderRoute {
     @JoinColumn(name = "pickup_shipper_id", foreignKey = @ForeignKey(name = "fk_route_pickup_shipper")) private AppUser pickupShipper;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_shipper_id", foreignKey = @ForeignKey(name = "fk_route_delivery_shipper")) private AppUser deliveryShipper;
+    /**
+     * B9 hoàn hàng liên tỉnh: true khi đơn đi chiều ngược (kho nhận -> chuyến về -> kho gửi -> trả người gửi).
+     * Dùng lại các giai đoạn cũ: DEST_HUB = hàng hoàn ở kho nhận, LINEHAUL = đang về, ORIGIN_HUB = đã về kho gửi.
+     */
+    @org.hibernate.annotations.ColumnDefault("0")
+    @Column(name = "return_leg", nullable = false) private boolean returnLeg;
     @Version @Column(nullable = false) private long revision;
     protected OrderRoute() { }
     public OrderRoute(Order order, ProvinceArea pickupArea, ProvinceArea deliveryArea) {
@@ -58,6 +64,20 @@ public class OrderRoute {
         pickupMode = mode == null ? PickupMode.COURIER : mode;
     }
     public boolean isInterprovincial() { return !originBranch.getId().equals(destBranch.getId()); }
+    public boolean isReturnLeg() { return returnLeg; }
+    /** Kho đang giữ hàng hoặc chi nhánh phụ trách chặng hiện tại (chiều ngược thì đổi vai hai kho). */
+    public Branch currentBranch() {
+        if (returnLeg) return stage == Stage.DEST_HUB ? destBranch : originBranch;
+        return stage == Stage.PICKUP || stage == Stage.ORIGIN_HUB ? originBranch : destBranch;
+    }
+    /** Chi nhánh đích của chuyến trung chuyển kế tiếp. */
+    public Branch nextHub() { return returnLeg ? originBranch : destBranch; }
+    /** Đơn liên tỉnh giao thất bại, đã có hồ sơ hoàn: hàng quay về kho nhận chờ chuyến về chi nhánh gửi. */
+    public void beginReturn() {
+        if (!isInterprovincial() || returnLeg || stage != Stage.LAST_MILE)
+            throw new IllegalStateException("Chỉ đơn liên tỉnh đang ở chặng giao mới chuyển hoàn qua chuyến trung chuyển ngược.");
+        returnLeg = true; stage = Stage.DEST_HUB;
+    }
     public void assignShipper(AppUser shipper) {
         if (stage == Stage.PICKUP) {
             pickupShipper = shipper;
@@ -81,10 +101,17 @@ public class OrderRoute {
         if (stage != Stage.PICKUP || !isDropOff()) throw new IllegalStateException("Chỉ đơn khách tự mang tới và chưa nhận mới nhận tại quầy.");
         stage = isInterprovincial() ? Stage.ORIGIN_HUB : Stage.DEST_HUB;
     }
-    /** Kho gửi xuất chuyến trung chuyển. */
+    /** Kho gửi xuất chuyến trung chuyển; hàng hoàn thì kho nhận xuất chuyến về. */
     public void departLinehaul() {
-        if (stage != Stage.ORIGIN_HUB) throw new IllegalStateException("Đơn chưa nằm ở kho gửi nên không thể xuất chuyến.");
+        if (stage != (returnLeg ? Stage.DEST_HUB : Stage.ORIGIN_HUB))
+            throw new IllegalStateException(returnLeg ? "Hàng hoàn chưa nằm ở kho nhận nên không thể xuất chuyến về."
+                    : "Đơn chưa nằm ở kho gửi nên không thể xuất chuyến.");
         stage = Stage.LINEHAUL;
+    }
+    /** Kho đích của chuyến đã nhận đơn: chiều đi về kho nhận (chờ giao), chiều ngược về kho gửi (chờ trả người gửi). */
+    public void arriveFromLinehaul() {
+        if (stage != Stage.LINEHAUL) throw new IllegalStateException("Đơn không nằm trên chuyến trung chuyển.");
+        stage = returnLeg ? Stage.ORIGIN_HUB : Stage.DEST_HUB;
     }
     /** Kho nhận đã nhận đơn từ chuyến trung chuyển, chờ phân công shipper giao. */
     public void arriveDestHub() {

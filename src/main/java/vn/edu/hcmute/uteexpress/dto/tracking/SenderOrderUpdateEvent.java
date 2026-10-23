@@ -22,7 +22,9 @@ public record SenderOrderUpdateEvent(String email, String recipientName, String 
         AT_ORIGIN_HUB("đã nhập kho gửi", "Vận đơn đã được nhập kho chi nhánh gửi, chờ chuyến trung chuyển."),
         IN_LINEHAUL("đang trung chuyển", "Vận đơn đang trên chuyến trung chuyển tới chi nhánh nhận."),
         AT_DEST_HUB("đã tới kho nhận", "Vận đơn đã tới kho chi nhánh nhận, chờ shipper giao."),
-        RECEIVED_AT_COUNTER("đã nhận tại quầy", "Chi nhánh đã nhận hàng bạn mang tới quầy.");
+        RECEIVED_AT_COUNTER("đã nhận tại quầy", "Chi nhánh đã nhận hàng bạn mang tới quầy."),
+        RETURN_IN_LINEHAUL("hàng hoàn đang trung chuyển", "Hàng hoàn đang trên chuyến trung chuyển về chi nhánh gửi."),
+        RETURN_AT_ORIGIN_HUB("hàng hoàn đã về chi nhánh gửi", "Hàng hoàn đã về kho chi nhánh gửi, chi nhánh sẽ liên hệ trả hàng cho bạn.");
         private final String subject;
         private final String headline;
         Kind(String subject, String headline) { this.subject = subject; this.headline = headline; }

@@ -65,7 +65,11 @@ public class OrderRoutingService {
                 case LAST_MILE -> "Tại kho " + dest + ", Shipper sắp đi giao";
             };
             case IN_TRANSIT -> "Shipper " + dest + " đang giao";
-            case FAILED -> "Giao chưa thành công, kho " + dest + " đang xử lý";
+            case FAILED -> !route.isReturnLeg() ? "Giao chưa thành công, kho " + dest + " đang xử lý" : switch (route.getStage()) {
+                case DEST_HUB -> "Hàng hoàn tại kho " + dest + ", chờ chuyến về " + origin;
+                case LINEHAUL -> "Hàng hoàn đang trung chuyển từ " + dest + " về " + origin;
+                default -> "Hàng hoàn đã về kho " + origin + ", chờ trả người gửi";
+            };
             default -> null;
         };
     }
