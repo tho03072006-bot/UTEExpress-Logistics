@@ -78,7 +78,10 @@ public class OperationsController {
                 && (!financial || !auth.getName().equals(record.getCreatedBy())));
         model.addAttribute("canApprove", (admin || !cases.requiresAdminApproval(auth.getName(), id))
                 && (!financial || !auth.getName().equals(record.getCreatedBy())));
-        model.addAttribute("canComplete", record.getKind() == OperationsCase.Kind.RETURN || (admin && !auth.getName().equals(record.getCreatedBy())));
+        var returnActions = cases.returnActions(auth.getName(), id);
+        model.addAttribute("canStartReturn", returnActions.canStart());
+        model.addAttribute("canComplete", record.getKind() == OperationsCase.Kind.RETURN ? returnActions.canComplete()
+                : admin && !auth.getName().equals(record.getCreatedBy()));
         if (record.getSettlement() != null) model.addAttribute("outstanding", cases.outstanding(record.getSettlement()));
         return "manager/operations-case";
     }

@@ -12,6 +12,9 @@ public interface OperationsCaseService {
     default Page<OperationsCaseResponse> list(String actor, OperationsCase.Kind kind, int page) { return list(actor, kind, null, null, page); }
     java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor);
     OperationsCase view(String actor, Long id);
+    /** Nút hoàn hàng theo đúng kho và giai đoạn; các thao tác ghi vẫn kiểm tra lại quyền. */
+    record ReturnActions(boolean canStart, boolean canComplete) { }
+    ReturnActions returnActions(String actor, Long id);
     boolean requiresAdminApproval(String actor, Long id);
     OperationsCaseRequest prepare(String actor, OperationsCase.Kind kind, Long targetId);
     Long request(String actor, OperationsCaseRequest form, MultipartFile evidence);

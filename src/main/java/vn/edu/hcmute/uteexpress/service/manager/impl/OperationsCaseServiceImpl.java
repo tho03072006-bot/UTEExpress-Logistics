@@ -60,6 +60,11 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute interprovincialRoute(Order order) {
         return routes.findByOrder_Id(order.getId()).filter(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute::isInterprovincial).orElse(null);
     }
+    /** Hai đầu tuyến được xem hồ sơ; chỉ kho nhận phụ trách lập yêu cầu xử lý chặng giao thất bại. */
+    private void requireDeliveryHub(String actor, Order order) {
+        var route = interprovincialRoute(order);
+        if (route != null) requireHub(actor, route.getDestBranch(), "Lập yêu cầu giao lại/hoàn hàng liên tỉnh");
+    }
     /** Chỉ Manager của đúng kho (hoặc Admin) thao tác bước hoàn ở kho đó. */
     private void requireHub(String actor, vn.edu.hcmute.uteexpress.entity.routing.Branch branch, String step) {
         Long mine = scope.of(actor, null);
@@ -77,6 +82,22 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var record = cases.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ."));
         requireBranch(actor, record.getOrder(), record.getSettlement());
         return record;
+    }
+    public ReturnActions returnActions(String actor, Long id) {
+        var record = view(actor, id);
+        if (record.getKind() != OperationsCase.Kind.RETURN || record.getOrder().getStatus() != Order.OrderStatus.FAILED)
+            return new ReturnActions(false, false);
+        var route = interprovincialRoute(record.getOrder());
+        boolean canStart = record.getStatus() == OperationsCase.Status.APPROVED;
+        boolean canComplete = record.getStatus() == OperationsCase.Status.IN_PROGRESS;
+        if (route == null) return new ReturnActions(canStart, canComplete);
+        Long branch = scope.of(actor, null);
+        return new ReturnActions(canStart && !route.isReturnLeg()
+                && route.getStage() == vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE
+                && (branch == null || branch.equals(route.getDestBranch().getId())),
+                canComplete && route.isReturnLeg()
+                && route.getStage() == vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB
+                && (branch == null || branch.equals(route.getOriginBranch().getId())));
     }
     /** Manager chỉ thao tác hồ sơ của đơn đi/đến chi nhánh mình hoặc phiếu của Shipper chi nhánh mình. */
     private void requireBranch(String actor, Order order, CodSettlement settlement) {
@@ -115,6 +136,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             case RETRY, RETURN -> {
                 var order = orders.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn."));
                 requireBranch(actor, order, null);
+                requireDeliveryHub(actor, order);
                 if (kind == OperationsCase.Kind.RETRY) requireManagerCreates(actor, kind, overLimit(order));
                 revision = order.getRevision();
             }
@@ -147,6 +169,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 if (form.amount() != null) throw new IllegalArgumentException("Giao lại/hoàn hàng không nhập số tiền.");
                 order = lockedOrder(form.targetId());
                 requireBranch(actor, order, null);
+                requireDeliveryHub(actor, order);
                 if (form.kind() == OperationsCase.Kind.RETRY) requireManagerCreates(actor, form.kind(), overLimit(order));
                 checkRevision(order.getRevision(), form.revision());
                 requireFailed(order);
