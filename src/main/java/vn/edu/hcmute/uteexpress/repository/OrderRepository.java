@@ -31,11 +31,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           and future.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
           and future.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED)
           and (select count(attempt.id) from OrderStatusHistory attempt where attempt.order = o
-            and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED) < :maxAttempts
+            and attempt.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and attempt.previousStatus <> attempt.status) < :maxAttempts
           and exists (select h.id from OrderStatusHistory h where h.order = o and h.nextAttemptAt <= :now
-            and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+            and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and h.previousStatus <> h.status
             and h.id = (select max(latest.id) from OrderStatusHistory latest where latest.order = o
-              and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED))))
+              and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and latest.previousStatus <> latest.status))))
         """;
 
     long countByShipperAndStatus(AppUser shipper, Order.OrderStatus status);
@@ -97,9 +97,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                          and approved.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.RETRY
                          and approved.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.APPROVED) and exists (
                        select due.id from OrderStatusHistory due where due.order = o and due.nextAttemptAt <= :sortNow
-                         and due.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                         and due.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and due.previousStatus <> due.status
                          and due.id = (select max(latest.id) from OrderStatusHistory latest where latest.order = o
-                           and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)))) then 0
+                           and latest.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and latest.previousStatus <> latest.status)))) then 0
                      when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and exists (
                        select q.id from OrderStatusHistory q where q.order = o and q.nextAttemptAt <= :sortNow
                          and q.id = (select max(q2.id) from OrderStatusHistory q2 where q2.order = o and q2.failureReason is not null

@@ -161,6 +161,15 @@ class OperationsControlsIntegrationTest {
         Long id=cases.request(admin.getUsername(),request(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null),null);
         assertEquals(OperationsCase.Status.APPROVED,cases.view(admin.getUsername(),id).getStatus());
     }
+    @Test void supplementMustReadConfirmedStateAgainAfterLockingPreloadedSettlement() {
+        var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Phiếu cần kiểm tra",NOW));
+        settlement.review(manager,true,"Đã nhận tiền",NOW); settlements.flush();
+        em.createNativeQuery("update cod_settlement set status='SUBMITTED', revision=revision+1 where id=:id")
+                .setParameter("id",settlement.getId()).executeUpdate();
+        assertThrows(StaffConflictException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.CASH_SUPPLEMENT,
+                settlement.getId(),settlement.getRevision(),new BigDecimal("1000"),null),image()));
+    }
+
     @Test void financialSupplementNeedsAdminAndReducesOutstandingExactly() {
         var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Nộp thiếu có ghi nhận",NOW));
         settlement.review(manager,true,"Chờ nộp bổ sung",NOW); settlements.flush();
