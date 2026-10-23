@@ -44,8 +44,16 @@ public class OrderRoutingService {
                     route.isDropOff(), route.isDropOff() ? origin.getHubAddress() : null);
         });
     }
+    /** Vị trí hiện tại kèm tuyến (đơn liên tỉnh) cho email và trợ lý; null nếu trạng thái đã tự nói rõ. */
+    public static String describe(Order order, OrderRoute route) {
+        String location = location(order, route);
+        if (location == null) return null;
+        return route.isInterprovincial()
+                ? location + " (tuyến " + route.getOriginBranch().getName() + " → " + route.getDestBranch().getName() + ")"
+                : location + " (nội tỉnh " + route.getOriginBranch().getName() + ")";
+    }
     /** Vị trí theo chặng; trạng thái kết thúc (đã giao, hủy, hoàn) đã tự nói rõ nên trả null. */
-    static String location(Order order, OrderRoute route) {
+    public static String location(Order order, OrderRoute route) {
         var origin = route.getOriginBranch().getName(); var dest = route.getDestBranch().getName();
         return switch (order.getStatus()) {
             case PENDING_PICKUP -> route.isDropOff() ? "Chờ người gửi mang hàng tới quầy " + origin : "Chờ Shipper " + origin + " đến lấy hàng";

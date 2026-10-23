@@ -2,9 +2,16 @@ package vn.edu.hcmute.uteexpress.dto.tracking;
 
 import java.time.LocalDateTime;
 
-/** Dữ liệu chụp trong transaction để gửi email cho người gửi sau khi commit. */
+/**
+ * Dữ liệu chụp trong transaction để gửi email cho người gửi sau khi commit.
+ * location: vị trí hiện tại theo chi nhánh/kho (ví dụ "Tại kho Chi nhánh TP.HCM, chờ xếp chuyến"); null với đơn chưa có tuyến.
+ */
 public record SenderOrderUpdateEvent(String email, String recipientName, String trackingCode, Kind kind,
-        String reason, LocalDateTime nextAttemptAt) {
+        String reason, LocalDateTime nextAttemptAt, String location) {
+    public SenderOrderUpdateEvent(String email, String recipientName, String trackingCode, Kind kind,
+            String reason, LocalDateTime nextAttemptAt) {
+        this(email, recipientName, trackingCode, kind, reason, nextAttemptAt, null);
+    }
     public enum Kind {
         PICKUP_FAILED("chưa lấy được hàng", "Shipper chưa lấy được hàng tại địa chỉ của bạn."),
         DELIVERED("đã giao thành công", "Người nhận đã nhận hàng."),

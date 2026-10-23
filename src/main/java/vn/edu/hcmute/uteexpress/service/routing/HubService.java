@@ -252,7 +252,8 @@ public class HubService {
         AppUser sender = order.getSender();
         if (sender == null) return;
         String name = sender.getFullName() == null || sender.getFullName().isBlank() ? order.getSenderName() : sender.getFullName();
-        events.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, null, null));
+        String location = routes.findByOrder_Id(order.getId()).map(route -> OrderRoutingService.describe(order, route)).orElse(null);
+        events.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, null, null, location));
     }
 
     private List<TripView> views(List<LinehaulTrip> list) {

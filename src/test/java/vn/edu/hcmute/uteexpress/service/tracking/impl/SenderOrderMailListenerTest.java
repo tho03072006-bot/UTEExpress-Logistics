@@ -39,6 +39,19 @@ class SenderOrderMailListenerTest {
         assertEquals("UTEExpress <shop@gmail.com>", message.getFrom());
     }
 
+    @Test void hubUpdateMailNamesTheBranchHoldingTheParcel() {
+        when(provider.getIfAvailable()).thenReturn(sender);
+        var listener = new SenderOrderMailListener(provider, from, true, Runnable::run);
+        listener.onOrderUpdate(new SenderOrderUpdateEvent("khach@gmail.com", "Nguyễn Hữu Tài", "UTE456", SenderOrderUpdateEvent.Kind.AT_ORIGIN_HUB,
+                null, null, "Tại kho Chi nhánh TP. Hồ Chí Minh, chờ xếp chuyến (tuyến Chi nhánh TP. Hồ Chí Minh → Chi nhánh Hà Nội)"));
+        var captor = org.mockito.ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(sender).send(captor.capture());
+        assertEquals("[UTEExpress] Vận đơn UTE456 đã nhập kho gửi", captor.getValue().getSubject());
+        assertTrue(captor.getValue().getText().contains("Vị trí hiện tại: Tại kho Chi nhánh TP. Hồ Chí Minh, chờ xếp chuyến (tuyến Chi nhánh TP. Hồ Chí Minh → Chi nhánh Hà Nội)"));
+        // Đơn cũ chưa có tuyến: không có dòng vị trí.
+        assertFalse(listener.message(event("khach@gmail.com")).getText().contains("Vị trí hiện tại"));
+    }
+
     @Test void skipsWhenDisabledUnconfiguredOrTestAddress() {
         when(provider.getIfAvailable()).thenReturn(sender);
         new SenderOrderMailListener(provider, from, false, Runnable::run).onOrderUpdate(event("khach@gmail.com"));

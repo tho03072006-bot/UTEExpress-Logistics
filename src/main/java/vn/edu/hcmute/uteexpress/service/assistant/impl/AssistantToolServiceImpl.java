@@ -35,10 +35,13 @@ public class AssistantToolServiceImpl implements AssistantToolService {
     private final EntityManager entityManager;
     private final ObjectMapper mapper;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
     private final Map<AppUser.Role,String> knowledge;
     public AssistantToolServiceImpl(AssistantAccessService access,OrderService orders,TrackingService tracking,
             OrderJourneyService journey,OrderPaymentService payments,ShipperWorkspaceService workspace,
-            OperationsPolicyService policies,FeeEstimateService fees,EntityManager entityManager,ObjectMapper mapper,Clock clock) throws java.io.IOException {
+            OperationsPolicyService policies,FeeEstimateService fees,EntityManager entityManager,ObjectMapper mapper,Clock clock,
+            vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) throws java.io.IOException {
+        this.routing=routing;
         this.access=access; this.orders=orders; this.tracking=tracking; this.journey=journey; this.payments=payments;
         this.workspace=workspace; this.policies=policies; this.fees=fees; this.entityManager=entityManager; this.mapper=mapper; this.clock=clock;
         knowledge=Map.of(AppUser.Role.USER,readGuide("user"),AppUser.Role.SHIPPER,readGuide("shipper"));
@@ -51,7 +54,7 @@ public class AssistantToolServiceImpl implements AssistantToolService {
     @Override public String getKnowledge(AssistantAccessService.Actor actor) { return knowledge.get(actor.role()); }
     @Override public ArrayNode definitions(AssistantAccessService.Actor actor) {
         var result=mapper.createArrayNode();
-        addTool(result,"lookup_order","Read CURRENT status, payment, history and read-only eligibility of an authorized order. Never use old chat as status evidence.",
+        addTool(result,"lookup_order","Read CURRENT status, branch route (origin/destination branch, current hub location, route lead time), payment, history and read-only eligibility of an authorized order. Never use old chat as status evidence.",
                 "{\"tracking_code\":{\"type\":\"string\",\"description\":\"Authorized tracking code from current selection/list. Omit to open account order picker; never ask the user to type a code.\"}}",List.of());
         addTool(result,"request_order_selection","Open account-scoped order picker when a specific order is needed and none has been selected. Do not ask the user to manually type a code.","{}",List.of());
         addTool(result,"list_my_orders","List up to 10 own/assigned orders, not other accounts. Ask which code if ambiguous.",
@@ -125,6 +128,15 @@ public class AssistantToolServiceImpl implements AssistantToolService {
         var data=base(); data.put("tracking_code",order.getTrackingCode()).put("status",OrderStatusText.of(order.getStatus()));
         data.put("updated_at",String.valueOf(order.getUpdatedAt())).put("service",order.getServiceType()==null ? "Chưa xác định" : order.getServiceType().getDisplayName());
         data.putNull("estimated_delivery_at"); data.put("eta_note","Chưa có thời gian giao dự kiến cụ thể cho đơn này; mục tiêu SLA không phải lịch giao cam kết.");
+        // Tuyến chi nhánh và vị trí hiện tại lấy từ cùng hàm với trang tra cứu, không suy đoán vị trí ở đây.
+        routing.summary(order).ifPresent(route -> {
+            var node=data.putObject("route"); node.put("origin_branch",route.originName()).put("dest_branch",route.destName());
+            node.put("interprovincial",route.interprovincial()).put("drop_off",route.dropOff());
+            if (route.location()!=null) node.put("current_location",route.location()); else node.putNull("current_location");
+            if (route.leadTime()!=null) node.put("lead_time",route.leadTime()); else node.putNull("lead_time");
+            if (route.counterAddress()!=null) node.put("counter_address",route.counterAddress());
+            node.put("note","lead_time là thời gian dự kiến theo tuyến và dịch vụ, không phải giờ giao cam kết.");
+        });
         data.put("can_cancel",actor.role()==AppUser.Role.USER && orders.canCancelOrder(order,actor.username()));
         if (actor.role()==AppUser.Role.SHIPPER) {
             data.put("can_retry_now",tracking.canRetry(order)); data.put("has_current_proof",tracking.hasCurrentProof(order));

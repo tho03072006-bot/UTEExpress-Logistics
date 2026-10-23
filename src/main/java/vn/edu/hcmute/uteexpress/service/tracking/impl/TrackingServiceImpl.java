@@ -293,7 +293,10 @@ public class TrackingServiceImpl implements TrackingService {
         AppUser sender = order.getSender();
         if (sender == null) return;
         String name = sender.getFullName() == null || sender.getFullName().isBlank() ? order.getSenderName() : sender.getFullName();
-        eventPublisher.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, reason, next));
+        // Đơn có tuyến chi nhánh thì email ghi thêm kho/chi nhánh đang giữ hàng.
+        String location = routes.findByOrder_Id(order.getId())
+                .map(route -> vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService.describe(order, route)).orElse(null);
+        eventPublisher.publishEvent(new SenderOrderUpdateEvent(sender.getEmail(), name, order.getTrackingCode(), kind, reason, next, location));
     }
 
     private LocalDateTime now() {
