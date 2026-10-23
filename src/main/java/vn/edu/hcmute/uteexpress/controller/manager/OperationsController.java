@@ -21,22 +21,36 @@ public class OperationsController {
     public OperationsController(OperationsOverviewService overview, OperationsCaseService cases) { this.overview = overview; this.cases = cases; }
     @GetMapping("/canh-bao") @Transactional(readOnly = true)
     public String alerts(@RequestParam(defaultValue = "UNASSIGNED") OperationsOverviewService.Alert alert,
-            @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
-        model.addAttribute("orders", overview.alerts(auth.getName(), alert, page));
+            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
+        var orders = overview.alerts(auth.getName(), alert, branchId, page);
+        model.addAttribute("orders", orders);
+        model.addAttribute("dropOffIds", overview.dropOffOrderIds(orders.getContent()));
+        model.addAttribute("branches", overview.branches(auth.getName())); model.addAttribute("branchId", branchId);
         model.addAttribute("lateComplaints", overview.lateComplaints(auth.getName(), 0));
         model.addAttribute("lateCash", overview.lateCash(auth.getName(), 0));
         model.addAttribute("alerts", OperationsOverviewService.Alert.values()); model.addAttribute("selected", alert);
         return "manager/operations-alerts";
     }
     @GetMapping("/hieu-suat-shipper") @Transactional(readOnly = true)
-    public String performance(@RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
-        model.addAttribute("performance", overview.performance(auth.getName(), page)); return "manager/shipper-performance";
+    public String performance(@RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page,
+            Authentication auth, Model model) {
+        model.addAttribute("branches", overview.branches(auth.getName())); model.addAttribute("branchId", branchId);
+        model.addAttribute("performance", overview.performance(auth.getName(), branchId, page)); return "manager/shipper-performance";
     }
     @GetMapping("/ho-so-van-hanh") @Transactional(readOnly = true)
-    public String cases(@RequestParam(required = false) OperationsCase.Kind kind, @RequestParam(defaultValue = "0") int page,
-            Authentication auth, Model model) {
-        model.addAttribute("cases", cases.list(auth.getName(), kind, page)); model.addAttribute("kinds", OperationsCase.Kind.values());
-        model.addAttribute("selectedKind", kind); return "manager/operations-cases";
+    public String cases(@RequestParam(required = false) OperationsCase.Kind kind, @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
+        // Mở trang lần đầu (chưa chọn trạng thái): Admin thấy ngay hồ sơ chờ mình duyệt; chọn "Tất cả" thì gửi status rỗng.
+        boolean admin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        OperationsCase.Status selected = status == null ? (admin ? OperationsCase.Status.REQUESTED : null)
+                : status.isBlank() ? null : OperationsCase.Status.valueOf(status);
+        model.addAttribute("cases", cases.list(auth.getName(), kind, selected, branchId, page));
+        model.addAttribute("kindGroups", java.util.Arrays.stream(OperationsCase.Kind.values())
+                .collect(java.util.stream.Collectors.groupingBy(OperationsCase.Kind::getGroup, java.util.LinkedHashMap::new, java.util.stream.Collectors.toList())));
+        model.addAttribute("statuses", OperationsCase.Status.values());
+        model.addAttribute("selectedKind", kind); model.addAttribute("selectedStatus", selected);
+        model.addAttribute("branches", cases.branches(auth.getName())); model.addAttribute("branchId", branchId);
+        return "manager/operations-cases";
     }
     @PostMapping("/ho-so-van-hanh")
     public String request(@Valid @ModelAttribute OperationsCaseRequest form, BindingResult errors,
@@ -52,7 +66,7 @@ public class OperationsController {
     @GetMapping("/ho-so-van-hanh/tao") @Transactional(readOnly = true)
     public String prepare(@RequestParam OperationsCase.Kind kind, @RequestParam Long targetId, Authentication auth, Model model) {
         model.addAttribute("submitted", cases.prepare(auth.getName(), kind, targetId));
-        return cases(null, 0, auth, model);
+        return cases(null, null, null, 0, auth, model);
     }
     @GetMapping("/ho-so-van-hanh/{id}") @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Authentication auth, Model model) {

@@ -11,6 +11,12 @@ import vn.edu.hcmute.uteexpress.entity.SavedAddress;
  * Không bind thẳng vào Entity SavedAddress để tránh người dùng sửa lén field user/id.
  */
 public class SavedAddressRequest {
+    @NotBlank(message = "Chọn tỉnh/thành.") @Size(max = 10) private String provinceCode;
+    @NotBlank(message = "Chọn khu vực giao nhận.") @Size(max = 40) private String areaCode;
+    public String getProvinceCode() { return provinceCode; }
+    public void setProvinceCode(String value) { provinceCode = value; }
+    public String getAreaCode() { return areaCode; }
+    public void setAreaCode(String value) { areaCode = value; }
 
     @NotBlank(message = "Vui lòng nhập nhãn gợi nhớ cho địa chỉ")
     @Size(max = 50, message = "Nhãn địa chỉ tối đa 50 ký tự")
@@ -28,7 +34,7 @@ public class SavedAddressRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ chi tiết")
     @Size(min=5,max = 255, message = "Địa chỉ từ 5–255 ký tự")
-    @Pattern(regexp="[^\\p{Cntrl}]+",message="Địa chỉ không chứa ký tự điều khiển.")
+    @Pattern(regexp=vn.edu.hcmute.uteexpress.validation.ShippingInputValidation.ADDRESS,message="Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String addressLine;
 
     @NotNull(message = "Vui lòng chọn loại địa chỉ")

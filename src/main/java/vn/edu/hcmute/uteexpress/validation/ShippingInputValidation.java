@@ -5,7 +5,7 @@ public final class ShippingInputValidation {
     private ShippingInputValidation() { }
     public static final String MIN_WEIGHT = "0.01";
     public static final String MAX_WEIGHT = "100";
-    public static final String ADDRESS = "[^\\p{Cntrl}]+";
+    public static final String ADDRESS = "(?=.*[\\p{L}\\p{N}])[^\\p{Cntrl}]+";
 
     public static boolean validWeight(double weightKg) {
         return Double.isFinite(weightKg) && weightKg >= 0.01 && weightKg <= 100;
@@ -16,6 +16,6 @@ public final class ShippingInputValidation {
     public static void requireAddress(String address) {
         if (address == null || address.strip().length() < 5 || address.strip().length() > 255
                 || !address.matches(ADDRESS))
-            throw new IllegalArgumentException("Địa chỉ phải từ 5–255 ký tự và không chứa ký tự điều khiển.");
+            throw new IllegalArgumentException("Địa chỉ phải từ 5–255 ký tự, có chữ hoặc số và không chứa ký tự điều khiển.");
     }
 }

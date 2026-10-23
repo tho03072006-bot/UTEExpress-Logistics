@@ -47,30 +47,39 @@ public class ShipperStatisticsServiceImpl implements ShipperStatisticsService {
         activities.sort(Comparator.comparing(ShipperActivity::at));
         var last = new HashMap<Long, Order.OrderStatus>();
         var buckets = new TreeMap<LocalDate, long[]>();
-        for (var date = from; !date.isAfter(to); date = date.plusDays(1)) buckets.put(date, new long[3]);
+        for (var date = from; !date.isAfter(to); date = date.plusDays(1)) buckets.put(date, new long[4]);
+        var pickedUp = new HashSet<Long>();
         for (var activity : activities) {
             last.put(activity.orderId(), activity.status());
             var counts = buckets.get(activity.at().toLocalDate());
             if (counts == null) continue;
-            switch (activity.status()) { case DELIVERED -> counts[0]++; case FAILED -> counts[1]++; case RETURNED -> counts[2]++; default -> { } }
+            switch (activity.status()) {
+                case DELIVERED -> counts[0]++; case FAILED -> counts[1]++; case RETURNED -> counts[2]++;
+                // Chuyển sang "đã lấy hàng" chỉ xảy ra khi shipper lấy hàng (lượt nhập/xuất kho giữ nguyên trạng thái nên không vào đây).
+                case PICKED_UP -> { if (pickedUp.add(activity.orderId())) counts[3]++; }
+                default -> { }
+            }
         }
         var codByDay = new HashMap<LocalDate, BigDecimal>();
         for (var row : repository.dailyCod(shipper, start, end)) codByDay.put(row.getDate(), row.getAmount());
         var days = buckets.entrySet().stream().map(e -> new ShipperDailyStatistics(e.getKey(), e.getValue()[0],
-                e.getValue()[1], e.getValue()[2], codByDay.getOrDefault(e.getKey(), BigDecimal.ZERO))).toList();
+                e.getValue()[1], e.getValue()[2], codByDay.getOrDefault(e.getKey(), BigDecimal.ZERO), e.getValue()[3])).toList();
         long delivered = last.values().stream().filter(s -> s == Order.OrderStatus.DELIVERED).count();
         long unsuccessful = last.values().stream().filter(s -> s == Order.OrderStatus.FAILED || s == Order.OrderStatus.RETURNED).count();
-        long active = last.values().stream().filter(s -> s == Order.OrderStatus.PENDING_PICKUP || s == Order.OrderStatus.PICKED_UP || s == Order.OrderStatus.IN_TRANSIT).count();
+        var activeIds = last.entrySet().stream().filter(e -> e.getValue() == Order.OrderStatus.PENDING_PICKUP
+                || e.getValue() == Order.OrderStatus.PICKED_UP || e.getValue() == Order.OrderStatus.IN_TRANSIT).map(Map.Entry::getKey).toList();
+        // Đơn liên tỉnh đã bàn giao vào kho: shipper hết giữ đơn nên không còn là "đang xử lý" của shipper này.
+        long active = activeIds.isEmpty() ? 0 : repository.heldBy(activeIds, shipper).size();
         var cod = repository.sumCollectedCod(shipper, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.PAID, start, end);
         long returned = last.values().stream().filter(s -> s == Order.OrderStatus.RETURNED).count();
         var rate = vn.edu.hcmute.uteexpress.util.DeliverySuccessRate.calculate(delivered, returned);
         return new ShipperStatisticsResponse(selected, from, to, last.size(), delivered, unsuccessful, active,
-                rate, cod == null ? BigDecimal.ZERO : cod, days, legacy.size());
+                rate, cod == null ? BigDecimal.ZERO : cod, days, legacy.size(), pickedUp.size());
     }
     @Override public byte[] exportCsv(String username, ShipperStatisticsPeriod period, LocalDate from, LocalDate to) {
         var result = getStatistics(username, period, from, to);
-        var csv = new StringBuilder("\uFEFFNgày,Giao thành công,Lượt giao thất bại,Hoàn trả,Cước COD đã thu\r\n");
-        for (var day : result.days()) csv.append(day.date()).append(',').append(day.delivered()).append(',')
+        var csv = new StringBuilder("\uFEFFNgày,Đã lấy hàng,Giao thành công,Lượt giao thất bại,Hoàn trả,Cước COD đã thu\r\n");
+        for (var day : result.days()) csv.append(day.date()).append(',').append(day.pickedUp()).append(',').append(day.delivered()).append(',')
                 .append(day.failed()).append(',').append(day.returned()).append(',').append(day.collectedCod().toPlainString()).append("\r\n");
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }

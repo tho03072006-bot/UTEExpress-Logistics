@@ -26,7 +26,10 @@
 <option value="MANAGER" th:selected="${account.role == 'MANAGER'}">Manager — vận hành</option><option value="ADMIN" th:selected="${account.role == 'ADMIN'}">Admin — quản trị</option></select></div>
 <div class="col-md-4"><label class="form-label" th:for="|active-${account.id}|">Trạng thái</label><select name="active" th:id="|active-${account.id}|" class="form-select" required>
 <option value="true" th:selected="${account.active}">Hoạt động</option><option value="false" th:selected="${!account.active}">Khóa</option></select></div>
-<div class="col-md-4"><button class="btn btn-primary" type="submit">Lưu quyền và trạng thái</button></div>
+<div class="col-md-4"><label class="form-label" th:for="|branch-${account.id}|">Chi nhánh (bắt buộc cho Manager)</label>
+<select name="assignment.branchId" th:id="|branch-${account.id}|" class="form-select">
+<option value="">Chọn chi nhánh</option><option th:each="b : ${branches}" th:value="${b.id}" th:selected="${assignments[account.id].branchId == b.id}" th:text="|${b.code} · ${b.name}|"></option></select></div>
+<div class="col-12"><button class="btn btn-primary" type="submit">Lưu quyền và trạng thái</button></div>
 </form>
 <details th:if="${account.active}" class="mt-3"><summary>Cấp lại mật khẩu cho nhân sự</summary>
 <form th:action="@{/admin/tai-khoan/{id}/cap-lai-mat-khau(id=${account.id})}" method="post" class="mt-3">

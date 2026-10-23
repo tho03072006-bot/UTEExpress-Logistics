@@ -14,17 +14,29 @@ import vn.edu.hcmute.uteexpress.service.tracking.DispatchService;
 public class DispatchController {
     private final DispatchService service;
     private final vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace;
-    public DispatchController(DispatchService service, vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace) {
-        this.service = service; this.workspace = workspace;
+    private final vn.edu.hcmute.uteexpress.service.routing.DispatchBulkService bulk;
+    public DispatchController(DispatchService service, vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService workspace,
+            vn.edu.hcmute.uteexpress.service.routing.DispatchBulkService bulk) {
+        this.service = service; this.workspace = workspace; this.bulk = bulk;
     }
     @GetMapping
     public String list(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "0") int shipperPage, Authentication auth, Model model) {
-        var orders = service.pending(auth.getName(), page);
+            @RequestParam(defaultValue = "0") int shipperPage, @RequestParam(required = false) Long branchId, Authentication auth, Model model) {
+        var orders = service.pending(auth.getName(), branchId, page);
         model.addAttribute("orders", orders);
         model.addAttribute("money", workspace.money(auth.getName(), orders.getContent()));
-        model.addAttribute("shippers", service.shippers(auth.getName(), shipperPage));
+        model.addAttribute("suggestions", service.suggestions(auth.getName(), orders.getContent()));
+        model.addAttribute("branches", service.branches(auth.getName()));
+        model.addAttribute("branchId", branchId);
         return "manager/dispatch";
+    }
+    @PostMapping("/hang-loat")
+    public String bulk(@RequestParam(required = false) Long branchId, Authentication auth, RedirectAttributes flash) {
+        var result = bulk.assign(auth.getName(), branchId);
+        flash.addFlashAttribute("message", "Đã phân công " + result.assigned() + " đơn theo gợi ý.");
+        flash.addFlashAttribute("remaining", result.remaining());
+        if (branchId != null) flash.addAttribute("branchId", branchId);
+        return "redirect:/manager/phan-cong";
     }
     @PostMapping
     public String assign(@RequestParam String trackingCode, @RequestParam Long shipperId,

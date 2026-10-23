@@ -3,6 +3,7 @@
 <head><title>Cấu hình bảng cước - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <h1 class="h3">Cấu hình bảng cước</h1>
+<a class="btn btn-outline-primary mb-3" th:href="@{/admin/cuoc-tuyen}">Phụ phí tuyến và thời gian dự kiến</a>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 <p>Cước = cơ bản + phụ phí/kg × khối lượng. Chỉ áp dụng cho đơn mới.</p><div class="table-responsive ute-panel p-3"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cước cơ bản (VND)</th><th>Phụ phí mỗi kg (VND)</th><th>Cập nhật</th><th></th></tr></thead>

@@ -58,6 +58,7 @@ class LogisticsIntegrationTest {
         }
     }
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.context.ApplicationContext context;
     @Autowired AppUserRepository users;
     @Autowired OrderRepository orders;
     @Autowired OrderStatusHistoryRepository history;
@@ -71,13 +72,6 @@ class LogisticsIntegrationTest {
     @Autowired ShipmentQrService qr;
     @Autowired OrderJourneyService journey;
     @Autowired OrderService orderService;
-    @Autowired vn.edu.hcmute.uteexpress.service.impl.OrderCreationWriter orderWriter;
-    @Autowired vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
-    vn.edu.hcmute.uteexpress.service.OrderPricingService.ResolvedRoute preparedRoute;
-    @org.springframework.test.context.transaction.BeforeTransaction
-    void resolveRouteBeforeDatabaseTransaction() {
-        preparedRoute = pricing.resolveRoute("Địa chỉ gửi thử", "Địa chỉ nhận thử");
-    }
     @Autowired ShipperWorkspaceService workspace;
     @Autowired ShipperStatisticsService statistics;
     @Autowired OrderPaymentRepository payments;
@@ -91,6 +85,7 @@ class LogisticsIntegrationTest {
     Authentication managerAuth;
 
     @BeforeEach void seed() {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         customer = userAccount("customer-test", AppUser.Role.USER);
         anotherCustomer = userAccount("another-customer", AppUser.Role.USER);
         shipper = userAccount("shipper-test", AppUser.Role.SHIPPER);
@@ -101,6 +96,8 @@ class LogisticsIntegrationTest {
         var principal = new StaffPrincipal(account);
         managerAuth = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
         order = order("UTE-TEST-01", shipper);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.assignStaff(context, manager, manager, shipper, anotherShipper);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.route(context, order);
         payment(order, OrderPayment.PaymentMethod.COD, OrderPayment.PaymentStatus.UNPAID, 18000, null);
     }
 
@@ -216,12 +213,12 @@ class LogisticsIntegrationTest {
 
     @Test void creatingAndCancellingAnOrderRecordsItsRealJourney() {
         var request = new OrderCreateRequest();
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(request);
         request.setSenderName("Người gửi thử"); request.setSenderAddress("Địa chỉ gửi thử");
         request.setReceiverName("Người nhận thử"); request.setReceiverPhone("0901234567");
         request.setReceiverAddress("Địa chỉ nhận thử"); request.setWeightKg(1.0);
         request.setServiceType(Order.ServiceType.STANDARD); request.setPaymentMethod(OrderPayment.PaymentMethod.COD);
-        // Test transaction ghi/lịch sử; tra bản đồ đã hoàn tất trước transaction của fixture.
-        var created = orderWriter.createResolved(request, customer.getUsername(), preparedRoute);
+        var created = orderService.createOrder(request, customer.getUsername());
         assertEquals(NOW, created.getCreatedAt());
         var initial = journey.history(created.getId(), customer.getUsername(), 0);
         assertEquals(1, initial.getTotalElements());
@@ -508,8 +505,8 @@ class LogisticsIntegrationTest {
         mvc.perform(get("/shipper/thong-ke/xuat.csv").param("from", "2026-10-10").param("to", "2026-10-11")
                 .with(user(shipper.getUsername()).roles("SHIPPER")))
             .andExpect(status().isOk()).andExpect(header().string("Content-Disposition", containsString("attachment")))
-            .andExpect(content().string(containsString("Ngày,Giao thành công")))
-            .andExpect(content().string(containsString("2026-10-11,0,0,0,0")))
+            .andExpect(content().string(containsString("Ngày,Đã lấy hàng,Giao thành công")))
+            .andExpect(content().string(containsString("2026-10-11,0,0,0,0,0")))
             .andExpect(content().string(not(containsString(order.getReceiverPhone()))));
         mvc.perform(get("/shipper/thong-ke/xuat.csv").with(user(customer.getUsername()).roles("USER")))
             .andExpect(status().isForbidden());
@@ -591,7 +588,8 @@ class LogisticsIntegrationTest {
     }
     private void payment(Order value, OrderPayment.PaymentMethod method, OrderPayment.PaymentStatus status, int amount, LocalDateTime paidAt) {
         var payment = payments.findByOrder(value).orElseGet(OrderPayment::new); payment.setOrder(value); payment.setMethod(method); payment.setStatus(status);
-        payment.setAmount(BigDecimal.valueOf(amount)); payment.setDiscountAmount(new BigDecimal("6000")); payment.setPaidAt(paidAt);
+        payment.setAmount(BigDecimal.valueOf(amount)); payment.setDiscountAmount(value.getShippingFee().subtract(payment.getAmount()).max(BigDecimal.ZERO)); payment.setPaidAt(paidAt);
+        if (method == OrderPayment.PaymentMethod.MOMO && status == OrderPayment.PaymentStatus.PAID) payment.setTransactionRef("SIM-MOMO-TEST-RECEIPT");
         payments.saveAndFlush(payment);
     }
 

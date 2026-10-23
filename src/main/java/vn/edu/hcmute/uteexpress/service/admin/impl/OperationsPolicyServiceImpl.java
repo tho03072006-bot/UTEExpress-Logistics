@@ -30,7 +30,13 @@ public class OperationsPolicyServiceImpl implements OperationsPolicyService {
         if (policy.getRevision() != form.revision()) throw new StaffConflictException("Chính sách đã thay đổi. Hãy tải lại trang.");
         policy.configure(form.pickupHours(), form.standardHours(), form.expressHours(), form.superExpressHours(),
                 form.maxDeliveryAttempts(), form.complaintResponseHours(), form.complaintResolveHours(), actor, LocalDateTime.now(clock));
+        policy.setMaxActiveOrders(form.maxActiveOrders());
+        var oldDiscount = policy.getDropOffDiscount();
+        var newDiscount = java.math.BigDecimal.valueOf(form.dropOffDiscount());
+        policy.setDropOffDiscount(newDiscount);
         policies.saveAndFlush(policy);
-        audit.record(actor, "POLICY_UPDATE", "operations-policy:1", reason);
+        String detail = oldDiscount.compareTo(newDiscount) == 0 ? reason
+                : reason + "; Giảm khi tự mang ra chi nhánh: " + oldDiscount.toPlainString() + " → " + newDiscount.toPlainString() + " đ";
+        audit.record(actor, "POLICY_UPDATE", "operations-policy:1", detail.length() > 500 ? detail.substring(0, 500) : detail);
     }
 }

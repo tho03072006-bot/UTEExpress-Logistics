@@ -4,6 +4,7 @@
 <section class="shipper-workspace">
 <a class="shipper-back" th:href="@{/shipper/trang-chu(work='TODAY')}"><i class="bi bi-arrow-left"></i> Về công việc hôm nay</a>
 <header class="shipper-hero sx-hero-compact"><div class="sx-hero-main"><h2>Lộ trình hôm nay</h2>
+        <p class="small mb-2" th:if="${route.startHub != null}"><i class="bi bi-house-door"></i> <span th:text="|Xuất phát từ kho ${route.startHub}|">Xuất phát từ kho</span></p>
         <div class="sx-hero-row" th:with="pickups=${#lists.size(route.stops.?[hasPickup()])},deliveries=${#lists.size(route.stops.?[hasDelivery()])},due=${#lists.size(route.stops.?[isDue()])}">
             <span class="sx-hero-chip"><i class="bi bi-calendar3"></i> <span th:text="${#temporals.format(today, 'dd/MM/yyyy')}"></span></span>
             <span class="sx-hero-chip" th:if="${pickups > 0}"><i class="bi bi-box-seam"></i> <span th:text="|${pickups} điểm lấy|"></span></span>

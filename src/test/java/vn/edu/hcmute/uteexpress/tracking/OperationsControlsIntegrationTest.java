@@ -153,6 +153,23 @@ class OperationsControlsIntegrationTest {
         var record=cases.view(manager.getUsername(),id);
         assertThrows(AccessDeniedException.class,()->cases.review(manager.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Thử vượt quyền Manager")));
     }
+    @Test void adminCannotCreateRetryBeyondPolicyButStillCreatesReturn() {
+        for(int i=0;i<3;i++) history.save(new OrderStatusHistory(order,shipper,Order.OrderStatus.IN_TRANSIT,Order.OrderStatus.FAILED,
+                DeliveryFailureReason.CUSTOMER_ABSENT,"Khách không có mặt",null,NOW.minusHours(4-i)));
+        history.flush();
+        assertThrows(AccessDeniedException.class,()->cases.request(admin.getUsername(),request(OperationsCase.Kind.RETRY,order.getId(),order.getRevision(),null,NOW.plusHours(1)),null));
+        Long id=cases.request(admin.getUsername(),request(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null),null);
+        assertEquals(OperationsCase.Status.APPROVED,cases.view(admin.getUsername(),id).getStatus());
+    }
+    @Test void supplementMustReadConfirmedStateAgainAfterLockingPreloadedSettlement() {
+        var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Phiếu cần kiểm tra",NOW));
+        settlement.review(manager,true,"Đã nhận tiền",NOW); settlements.flush();
+        em.createNativeQuery("update cod_settlement set status='SUBMITTED', revision=revision+1 where id=:id")
+                .setParameter("id",settlement.getId()).executeUpdate();
+        assertThrows(StaffConflictException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.CASH_SUPPLEMENT,
+                settlement.getId(),settlement.getRevision(),new BigDecimal("1000"),null),image()));
+    }
+
     @Test void financialSupplementNeedsAdminAndReducesOutstandingExactly() {
         var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Nộp thiếu có ghi nhận",NOW));
         settlement.review(manager,true,"Chờ nộp bổ sung",NOW); settlements.flush();
@@ -162,12 +179,13 @@ class OperationsControlsIntegrationTest {
         assertEquals(0,cases.outstanding(settlement).signum());
         assertEquals(new BigDecimal("10000"),settlement.getDeclaredAmount());
     }
-    @Test void creatorCannotApproveOwnFinancialCase() {
+    @Test void adminCannotCreateFinancialCaseSoCreatorAndApproverDiffer() {
+        // Bảng phân quyền: phiếu tiền do Manager lập, Admin duyệt; Admin không lập nên không thể tự duyệt phiếu của mình.
         var settlement=settlements.saveAndFlush(new CodSettlement(shipper,1,new BigDecimal("18000"),new BigDecimal("10000"),"Thiếu cước",NOW));
         settlement.review(manager,true,"Ghi nhận khoản thiếu",NOW); settlements.flush();
-        Long id=cases.request(admin.getUsername(),request(OperationsCase.Kind.CASH_SUPPLEMENT,settlement.getId(),settlement.getRevision(),new BigDecimal("1000"),null),image());
-        var record=cases.view(admin.getUsername(),id);
-        assertThrows(IllegalArgumentException.class,()->cases.review(admin.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Tự duyệt phiếu nộp tiền")));
+        assertThrows(AccessDeniedException.class,()->cases.prepare(admin.getUsername(),OperationsCase.Kind.CASH_SUPPLEMENT,settlement.getId()));
+        assertThrows(AccessDeniedException.class,()->cases.request(admin.getUsername(),request(OperationsCase.Kind.CASH_SUPPLEMENT,settlement.getId(),settlement.getRevision(),new BigDecimal("1000"),null),image()));
+        assertEquals(0,caseRepository.count());
     }
     @Test void compensationApprovalDoesNotPretendMoneyHasBeenPaid() {
         paid(); var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Yêu cầu bồi hoàn cước","Nội dung kiểm thử khiếu nại",null,NOW));
@@ -226,7 +244,7 @@ class OperationsControlsIntegrationTest {
     }
     @Test void policyServerValidationAndStaleForm() {
         var p=policies.current();
-        var form=new OperationsPolicyRequest(p.getRevision(),24,100,40,4,4,24,168,"Điều chỉnh chính sách thử");
+        var form=new OperationsPolicyRequest(p.getRevision(),24,100,40,4,4,24,168, 15, 3000,"Điều chỉnh chính sách thử");
         policies.update(admin.getUsername(),form); assertEquals(4,policies.current().getMaxDeliveryAttempts());
         assertThrows(StaffConflictException.class,()->policies.update(admin.getUsername(),form));
     }
@@ -288,6 +306,12 @@ class OperationsControlsIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
         paid();
         assertEquals(OperationsCase.Kind.COMPENSATION, cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()).kind());
+        // B8: Manager có nút đề xuất; Admin (người duyệt chi tiền) chỉ thấy ghi chú, không có nút.
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước")));
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phiếu tiền do Manager lập, Admin duyệt.")));
     }
     @Test void invalidUploadAndIncompleteReturnDoNotFinishOrder() {
         Long id=newReturn(); var record=cases.view(manager.getUsername(),id);
@@ -321,9 +345,10 @@ class OperationsControlsIntegrationTest {
         mvc.perform(post("/admin/chinh-sach-van-hanh").with(authentication(auth(adminAccount))).with(csrf())
                 .param("revision",Long.toString(policy.getRevision())).param("pickupHours","24").param("standardHours","120")
                 .param("expressHours","48").param("superExpressHours","4").param("maxDeliveryAttempts","4")
-                .param("complaintResponseHours","24").param("complaintResolveHours","168").param("reason","Đổi chính sách qua form"))
+                .param("complaintResponseHours","24").param("complaintResolveHours","168").param("maxActiveOrders","15").param("dropOffDiscount","5000").param("reason","Đổi chính sách qua form"))
                 .andExpect(redirectedUrl("/admin/chinh-sach-van-hanh"));
         assertEquals(4,policies.current().getMaxDeliveryAttempts());
+        assertEquals(0,new BigDecimal("5000").compareTo(policies.current().getDropOffDiscount()));
         mvc.perform(post("/admin/lich-cuoc").with(authentication(auth(adminAccount))).with(csrf())
                 .param("serviceType","STANDARD").param("baseFee","30000").param("feePerKg","5000")
                 .param("startsAt",NOW.plusHours(1).toString()).param("endsAt",NOW.plusHours(3).toString()).param("reason","Lập lịch cước qua form"))

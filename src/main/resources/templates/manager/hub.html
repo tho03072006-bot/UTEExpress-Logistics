@@ -1,0 +1,141 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Kho chi nhánh - UTEExpress</title></head><body><section th:with="b=${hub.branch}">
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-warehouse"><div><h2 th:text="|Kho ${b.name}|">Kho chi nhánh</h2>
+    <p th:text="|${b.hubAddress}. Nhận hàng khách mang tới quầy, xếp đơn lên chuyến, niêm phong xuất kho, nhận chuyến từ chi nhánh khác.|"></p></div></div>
+<div class="alert alert-light border" role="status" th:if="${message}" th:text="${message}"></div>
+<div class="ute-field-error mb-3" role="alert" th:if="${error}" th:text="${error}"></div>
+
+<form method="get" th:action="@{/manager/kho}" class="d-flex gap-2 align-items-center mb-3" sec:authorize="hasRole('ADMIN')">
+    <label for="branchId" class="form-label mb-0">Xem kho</label>
+    <select id="branchId" name="branchId" class="form-select w-auto">
+        <option th:each="item : ${hub.branches}" th:value="${item.id}" th:selected="${item.id == b.id}" th:text="${item.name}"></option></select>
+    <button class="btn btn-outline-primary">Xem</button></form>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="ute-panel h-100"><div class="text-muted small">Chờ xếp chuyến</div><div class="fs-4 fw-semibold" th:text="${hub.waiting.size()}">0</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ute-panel h-100"><div class="text-muted small">Chuyến đang xếp hàng</div><div class="fs-4 fw-semibold" th:text="${hub.loading.size()}">0</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ute-panel h-100"><div class="text-muted small">Chuyến đang tới kho này</div><div class="fs-4 fw-semibold" th:text="${hub.incoming.size()}">0</div></div></div>
+    <div class="col-6 col-lg-3"><div class="ute-panel h-100"><div class="text-muted small">Đã nhập kho, chờ phân công giao</div>
+        <div class="fs-4 fw-semibold" th:text="${hub.waitingDelivery}">0</div>
+        <a class="small" th:href="@{/manager/phan-cong}" th:if="${hub.waitingDelivery > 0}">Mở trang phân công</a></div></div>
+</div>
+
+<h3 class="h5 mt-2">Chờ khách mang hàng tới quầy</h3>
+<p class="text-muted" th:if="${hub.dropOffs.empty}">Không có đơn nào đang chờ khách mang tới.</p>
+<div class="ute-panel mb-4" th:unless="${hub.dropOffs.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Vận đơn</th><th>Người gửi</th><th>Đi đến</th><th>Tạo lúc</th><th>Nhận tại quầy</th></tr></thead><tbody>
+    <tr th:each="r : ${hub.dropOffs}" th:with="o=${r.order}">
+        <td th:text="${o.trackingCode}"></td>
+        <td><span th:text="${o.senderName}"></span><div class="small text-muted" th:text="|${o.weightKg} kg · ${o.serviceType.displayName}|"></div></td>
+        <td th:text="${r.interprovincial} ? ${r.destBranch.name} : 'Nội tỉnh, giao luôn'"></td>
+        <td th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+        <td><form method="post" th:action="@{/manager/kho/quay/{id}/nhan(id=${o.id})}"
+                  th:attr="data-ute-confirm=|Xác nhận đã nhận kiện ${o.trackingCode} tại quầy? Kiểm tra khối lượng trước khi nhận.|">
+            <input type="hidden" name="branchId" th:value="${b.id}">
+            <button class="btn btn-sm btn-primary text-nowrap">Nhận hàng tại quầy</button></form></td></tr></tbody></table></div></div>
+
+<h3 class="h5 mt-2">Chuyến đang tới kho này</h3>
+<p class="text-muted" th:if="${hub.incoming.empty}">Chưa có chuyến nào đang tới.</p>
+<article class="ute-panel mb-3" th:each="view : ${hub.incoming}" th:with="t=${view.trip}">
+    <div class="d-flex flex-wrap justify-content-between gap-2"><h4 class="h6 mb-1" th:text="|Chuyến ${t.code} từ ${t.fromBranch.name}|"></h4>
+        <span class="text-muted small" th:text="|Xuất lúc ${#temporals.format(t.departedAt, 'dd/MM/yyyy HH:mm')}|"></span></div>
+    <p class="mb-2 small" th:text="|Xe ${t.vehiclePlate} · Tài xế ${t.driverName} (${t.driverPhone}) · ${t.itemCount} kiện|"></p>
+    <form method="post" th:action="@{/manager/kho/chuyen/{id}/nhan(id=${t.id})}">
+        <input type="hidden" name="revision" th:value="${t.revision}"><input type="hidden" name="branchId" th:value="${b.id}">
+        <div class="mb-2"><label class="form-label" th:for="|seal-${t.id}|">Mã niêm phong trên thùng xe</label>
+            <input class="form-control" th:id="|seal-${t.id}|" name="sealCode" required minlength="4" maxlength="50" autocomplete="off"
+                   placeholder="Nhập đúng mã in trên niêm phong để đối chiếu"></div>
+        <fieldset class="mb-2"><legend class="form-label fs-6">Kiện đã nhận (bỏ chọn kiện không có trên xe)</legend>
+            <div class="form-check" th:each="item : ${view.items}">
+                <input class="form-check-input" type="checkbox" name="receivedOrderIds" th:value="${item.order.id}" th:id="|recv-${item.id}|" checked>
+                <label class="form-check-label" th:for="|recv-${item.id}|" th:text="|${item.order.trackingCode} · ${item.order.receiverName}|"></label></div></fieldset>
+        <div class="mb-2"><label class="form-label" th:for="|note-${t.id}|">Ghi chú <span class="text-muted">(bắt buộc nếu thiếu kiện hoặc niêm phong không khớp)</span></label>
+            <textarea class="form-control" th:id="|note-${t.id}|" name="note" rows="2" maxlength="400"></textarea></div>
+        <button class="btn btn-primary">Xác nhận nhận chuyến</button></form>
+</article>
+
+<h3 class="h5 mt-4">Kiện ghi thiếu, chờ nhận bổ sung</h3>
+<p class="text-muted" th:if="${hub.missing.empty}">Không có kiện nào bị thiếu.</p>
+<div class="ute-panel mb-3" th:unless="${hub.missing.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Vận đơn</th><th>Chuyến</th><th>Nhận bổ sung</th></tr></thead><tbody>
+    <tr th:each="item : ${hub.missing}"><td th:text="${item.order.trackingCode}"></td><td th:text="${item.trip.code}"></td>
+        <td><form method="post" class="d-flex gap-2" th:action="@{/manager/kho/kien/{id}/nhan-bo-sung(id=${item.id})}">
+            <input type="hidden" name="branchId" th:value="${b.id}">
+            <label class="visually-hidden" th:for="|late-${item.id}|">Ghi chú nhận bổ sung</label>
+            <input class="form-control form-control-sm" th:id="|late-${item.id}|" name="note" required minlength="10" maxlength="400" placeholder="Tìm thấy ở đâu, ai bàn giao">
+            <button class="btn btn-sm btn-outline-primary text-nowrap">Nhận vào kho</button></form></td></tr></tbody></table></div></div>
+
+<h3 class="h5 mt-4">Hàng hoàn đã về kho, chờ trả người gửi</h3>
+<p class="text-muted" th:if="${hub.returned.empty}">Không có hàng hoàn nào chờ trả người gửi.</p>
+<div class="ute-panel mb-4" th:unless="${hub.returned.empty}">
+    <p class="small text-muted">Trả hàng cho người gửi rồi ghi nhận ở hồ sơ hoàn hàng (bước Hoàn tất, kèm ảnh biên nhận).</p>
+    <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Vận đơn</th><th>Người gửi</th><th>Khu vực lấy</th><th>Hoàn từ</th><th></th></tr></thead><tbody>
+        <tr th:each="r : ${hub.returned}"><td th:text="${r.order.trackingCode}"></td><td th:text="${r.order.senderName}"></td>
+            <td th:text="${r.pickupArea.areaName}"></td><td th:text="${r.destBranch.name}"></td>
+            <td><a class="btn btn-sm btn-outline-primary" th:href="@{/manager/ho-so-van-hanh(kind='RETURN',status='IN_PROGRESS')}">Mở hồ sơ hoàn hàng</a></td></tr>
+        </tbody></table></div></div>
+
+<h3 class="h5 mt-4">Đơn đã nhập kho, chờ xếp chuyến</h3>
+<p class="text-muted" th:if="${hub.waiting.empty}">Chưa có đơn liên tỉnh nào trong kho.</p>
+<th:block th:each="dest : ${hub.destinations}" th:with="list=${hub.waitingFor(dest.id)}">
+<article class="ute-panel mb-3" th:unless="${list.empty}">
+    <h4 class="h6" th:text="|Đi ${dest.name} · ${list.size()} đơn|"></h4>
+    <form method="post" th:action="@{/manager/kho/chuyen}">
+        <input type="hidden" name="branchId" th:value="${b.id}"><input type="hidden" name="destBranchId" th:value="${dest.id}">
+        <div class="table-responsive"><table class="table table-sm align-middle">
+            <thead><tr><th scope="col"><span class="visually-hidden">Chọn</span></th><th>Vận đơn</th><th>Người nhận</th><th>Khu vực giao</th><th>Khối lượng</th></tr></thead><tbody>
+            <tr th:each="r : ${list}"><td><input class="form-check-input" type="checkbox" name="orderIds" th:value="${r.order.id}" th:id="|pick-${r.order.id}|" checked
+                        th:attr="aria-label=|Xếp ${r.order.trackingCode} lên chuyến|"></td>
+                <td><span th:text="${r.order.trackingCode}"></span> <span class="badge text-bg-light border" th:if="${r.returnLeg}">Hàng hoàn</span></td>
+                <td th:text="${r.returnLeg} ? |${r.order.senderName} (người gửi)| : ${r.order.receiverName}"></td>
+                <td th:text="${r.returnLeg} ? ${r.pickupArea.areaName} : ${r.deliveryArea.areaName}"></td><td th:text="|${r.order.weightKg} kg|"></td></tr></tbody></table></div>
+        <div class="row g-2">
+            <div class="col-md-4"><label class="form-label" th:for="|plate-${dest.id}|">Biển số xe</label>
+                <input class="form-control" th:id="|plate-${dest.id}|" name="vehiclePlate" required maxlength="20" placeholder="51C-123.45"></div>
+            <div class="col-md-4"><label class="form-label" th:for="|driver-${dest.id}|">Tên tài xế</label>
+                <input class="form-control" th:id="|driver-${dest.id}|" name="driverName" required maxlength="100"></div>
+            <div class="col-md-4"><label class="form-label" th:for="|phone-${dest.id}|">Số điện thoại tài xế</label>
+                <input class="form-control" th:id="|phone-${dest.id}|" name="driverPhone" required pattern="0[0-9]{9}" inputmode="tel" maxlength="10"></div>
+        </div>
+        <button class="btn btn-primary mt-3">Tạo chuyến với các đơn đã chọn</button></form>
+</article>
+</th:block>
+
+<h3 class="h5 mt-4">Chuyến đang xếp hàng</h3>
+<p class="text-muted" th:if="${hub.loading.empty}">Không có chuyến nào đang xếp hàng.</p>
+<article class="ute-panel mb-3" th:each="view : ${hub.loading}" th:with="t=${view.trip}">
+    <h4 class="h6 mb-1" th:text="|Chuyến ${t.code} đi ${t.toBranch.name}|"></h4>
+    <p class="small mb-2" th:text="|Xe ${t.vehiclePlate} · Tài xế ${t.driverName} (${t.driverPhone}) · ${t.itemCount} kiện|"></p>
+    <p class="small text-muted mb-2" th:text="${#strings.listJoin(view.items.![order.trackingCode], ', ')}"></p>
+    <div class="d-flex flex-wrap gap-2 align-items-end">
+        <form method="post" class="d-flex gap-2 align-items-end" th:action="@{/manager/kho/chuyen/{id}/xuat(id=${t.id})}">
+            <input type="hidden" name="revision" th:value="${t.revision}"><input type="hidden" name="branchId" th:value="${b.id}">
+            <div><label class="form-label" th:for="|depart-seal-${t.id}|">Mã niêm phong</label>
+                <input class="form-control" th:id="|depart-seal-${t.id}|" name="sealCode" required minlength="4" maxlength="50" autocomplete="off"></div>
+            <button class="btn btn-primary">Niêm phong và xuất kho</button></form>
+        <form method="post" th:action="@{/manager/kho/chuyen/{id}/huy(id=${t.id})}"
+              th:attr="data-ute-confirm=|Hủy chuyến ${t.code}? Các đơn quay lại danh sách chờ xếp chuyến.|" data-ute-confirm-nut="Hủy chuyến">
+            <input type="hidden" name="revision" th:value="${t.revision}"><input type="hidden" name="branchId" th:value="${b.id}">
+            <button class="btn btn-outline-secondary">Hủy chuyến</button></form>
+    </div>
+</article>
+
+<h3 class="h5 mt-4">Chuyến đã xuất, đang trên đường</h3>
+<p class="text-muted" th:if="${hub.outgoing.empty}">Không có chuyến nào đang trên đường.</p>
+<div class="ute-panel mb-3" th:unless="${hub.outgoing.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Chuyến</th><th>Đến</th><th>Xe và tài xế</th><th>Niêm phong</th><th>Số kiện</th><th>Xuất lúc</th></tr></thead><tbody>
+    <tr th:each="view : ${hub.outgoing}" th:with="t=${view.trip}"><td th:text="${t.code}"></td><td th:text="${t.toBranch.name}"></td>
+        <td th:text="|${t.vehiclePlate} · ${t.driverName}|"></td><td th:text="${t.sealCode}"></td><td th:text="${t.itemCount}"></td>
+        <td th:text="${#temporals.format(t.departedAt, 'dd/MM HH:mm')}"></td></tr></tbody></table></div></div>
+
+<h3 class="h5 mt-4">Chuyến đã nhận gần đây</h3>
+<p class="text-muted" th:if="${hub.arrived.empty}">Chưa nhận chuyến nào.</p>
+<div class="ute-panel mb-3" th:unless="${hub.arrived.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Chuyến</th><th>Từ</th><th>Nhận lúc</th><th>Người nhận</th><th>Ghi chú</th></tr></thead><tbody>
+    <tr th:each="view : ${hub.arrived}" th:with="t=${view.trip}"><td th:text="${t.code}"></td><td th:text="${t.fromBranch.name}"></td>
+        <td th:text="${#temporals.format(t.arrivedAt, 'dd/MM HH:mm')}"></td>
+        <td th:text="${t.arrivedBy == null ? '' : (t.arrivedBy.fullName == null ? t.arrivedBy.username : t.arrivedBy.fullName)}"></td>
+        <td th:text="${t.arrivalNote == null ? 'Đủ kiện, niêm phong khớp' : t.arrivalNote}"></td></tr></tbody></table></div></div>
+</section></body></html>

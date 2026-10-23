@@ -71,7 +71,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
     @Override
     @Transactional(readOnly = true)
     public void requireReadyForFulfillment(Order order) {
-        if (!orderPaymentRepository.findByOrder(order).map(PaymentReadiness::isReady).orElse(false)) {
+        if (!orderPaymentRepository.findByOrder(order).filter(PaymentReadiness::hasConsistentSnapshot)
+                .filter(PaymentReadiness::hasRequiredReceipt).map(PaymentReadiness::isReady).orElse(false)) {
             throw new IllegalArgumentException("Đơn chưa đủ điều kiện thanh toán: ví phải trả trước, COD phải có thông tin cước hợp lệ.");
         }
     }
@@ -115,7 +116,7 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         }
         OrderPayment payment = orderPaymentRepository.findByOrder(order)
                 .orElseThrow(() -> new IllegalStateException("Đơn hàng này chưa có thông tin thanh toán"));
-        if (payment.getMethod() == null || payment.getStatus() == null || !PaymentReadiness.isValidAmount(payment.getAmount())) {
+        if (payment.getMethod() == null || payment.getStatus() == null || !PaymentReadiness.hasConsistentSnapshot(payment)) {
             throw new IllegalStateException("Thông tin thanh toán không hợp lệ. Hãy liên hệ Manager.");
         }
 
@@ -148,7 +149,8 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
         if (payment.getMethod() != OrderPayment.PaymentMethod.COD) {
             throw new IllegalStateException("Đơn này không phải đơn COD");
         }
-        if (order.getStatus() != Order.OrderStatus.DELIVERED || !PaymentReadiness.isValidAmount(payment.getAmount())) {
+        if (order.getStatus() != Order.OrderStatus.DELIVERED || !PaymentReadiness.isReady(payment)
+                || !PaymentReadiness.hasConsistentSnapshot(payment)) {
             throw new IllegalStateException("Chỉ ghi thu cước COD hợp lệ khi đã giao thành công.");
         }
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) {

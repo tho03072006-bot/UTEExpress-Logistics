@@ -24,16 +24,20 @@ public class HomeController {
 
     private final OrderService orderService;
     private final ServiceReviewService serviceReviewService;
-    private final vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService;
+    private final vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
     private final vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
 
     public HomeController(OrderService orderService, ServiceReviewService serviceReviewService,
-                          vn.edu.hcmute.uteexpress.service.FeeEstimateService feeEstimateService,
-                          vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs) {
+                          vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes,
+                          vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog,
+                          vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs,
+                          vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) {
         this.orderService = orderService;
         this.serviceReviewService = serviceReviewService;
-        this.feeEstimateService = feeEstimateService;
-        this.tariffs=tariffs;
+        this.routeQuotes = routeQuotes; this.catalog = catalog;
+        this.tariffs=tariffs; this.routing = routing;
     }
 
     @GetMapping("/")
@@ -54,14 +58,15 @@ public class HomeController {
     public String feeEstimatePage(@Valid @ModelAttribute("form") FeeEstimateRequest form,
                                   BindingResult bindingResult, Model model) {
         model.addAttribute("currentTariffs",tariffs.currentTariffs());
+        model.addAttribute("branches", catalog.branches()); model.addAttribute("areas", catalog.areas());
+        model.addAttribute("dropOffDiscount", catalog.dropOffDiscount());
         // Chua nhap gi (vua mo trang) hoac nhap sai thi chi hien lai form, chua tinh cuoc.
         if (form.getWeightKg() == null || bindingResult.hasErrors()) {
             return "uoc-tinh-cuoc";
         }
 
-        model.addAttribute("bangCuoc", orderService.estimateAllServices(form.getWeightKg()));
-        // Báo giá chi tiết: cước gốc + phụ phí khoảng cách tham khảo (nếu có nhập khoảng cách).
-        model.addAttribute("quotes", feeEstimateService.quotes(form.getWeightKg(), form.getDistanceKm(), form.getServiceType()));
+        try { model.addAttribute("quotes", routeQuotes.quotes(form)); }
+        catch (IllegalArgumentException | IllegalStateException ex) { bindingResult.reject("invalid", ex.getMessage()); }
         return "uoc-tinh-cuoc";
     }
 
@@ -71,6 +76,7 @@ public class HomeController {
             Optional<Order> order = orderService.findByTrackingCode(trackingCode.trim());
             model.addAttribute("searched", true);
             model.addAttribute("order", order.orElse(null));
+            model.addAttribute("route", routing.summary(order.orElse(null)).orElse(null));
         }
         return "tra-cuu";
     }

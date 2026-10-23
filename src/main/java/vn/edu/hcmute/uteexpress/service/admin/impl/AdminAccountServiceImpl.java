@@ -23,13 +23,16 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final StaffAccessPolicy access;
     private final PasswordEncoder encoder;
     private final AuditService audit;
+    private final vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments;
     private final vn.edu.hcmute.uteexpress.security.admin.StaffLoginAttemptService attempts;
     public AdminAccountServiceImpl(AdminUserRepository users, StaffAccountRepository staff,
             EmailChangeRequestRepository emailChanges, StaffAccessPolicy access,
             PasswordEncoder encoder, AuditService audit,
-            vn.edu.hcmute.uteexpress.security.admin.StaffLoginAttemptService attempts) {
+            vn.edu.hcmute.uteexpress.security.admin.StaffLoginAttemptService attempts,
+            vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments) {
         this.users = users; this.staff = staff; this.emailChanges = emailChanges;
         this.access = access; this.encoder = encoder; this.audit = audit; this.attempts = attempts;
+        this.branchAssignments = branchAssignments;
     }
     @Override @Transactional(readOnly = true)
     public Page<AdminAccountResponse> findAccounts(String actor, AppUser.Role role, int page) {
@@ -53,6 +56,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         var user = new AppUser(form.getUsername(), encoder.encode(form.getCredentials().getPassword()), form.getEmail());
         applyProfile(user, form); user.setEnabled(true);
         users.save(user);
+        branchAssignments.assign(actor, user, form.getAssignment());
         if (isInternal(user.getRole())) {
             var account = new StaffAccount(); account.setUser(user); account.setIssuedBy(actor);
             // Mật khẩu bàn giao của Admin/Manager luôn phải đổi ở lần đăng nhập đầu.
@@ -81,13 +85,15 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         if (Objects.equals(user.getFullName(), profile.getFullName()) && Objects.equals(user.getEmail(), profile.getEmail())
                 && Objects.equals(user.getPhone(), profile.getPhone()) && oldRole == profile.getRole()
                 && user.isEnabled() == form.getActive() && user.isLockedByAdmin() == !form.getActive()
-                && (account == null || account.isActive() == form.getActive())) {
+                && (account == null || account.isActive() == form.getActive())
+                && !branchAssignments.hasChanges(actor, id, profile.getAssignment())) {
             throw new IllegalArgumentException("Chưa có thay đổi thông tin, quyền hoặc trạng thái.");
         }
         if (users.existsByEmailIgnoreCaseAndIdNot(profile.getEmail(), id)) {
             throw new IllegalArgumentException("Email đã được tài khoản khác sử dụng.");
         }
         applyProfile(user, profile); user.setEnabled(form.getActive()); user.setLockedByAdmin(!form.getActive());
+        branchAssignments.assign(actor, user, profile.getAssignment());
         clearRecovery(user); user.revokeSessions();
         if (account != null) { account.setActive(form.getActive()); account.revokeSessions(); }
         staff.flush();
@@ -178,7 +184,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         return users.countOrders(id) > 0 || users.countAddresses(id) > 0 || users.countDrafts(id) > 0 || users.countFormSubmissions(id) > 0
             || users.countReviews(id) > 0 || users.countProofs(id) > 0 || users.countEmailChanges(id) > 0
             || users.countIssuedAccounts(user.getUsername()) > 0 || users.countJourneyActions(id) > 0
-            || users.countHandledComplaints(id) > 0 || users.countCashRecords(id) > 0;
+            || users.countHandledComplaints(id) > 0 || users.countCashRecords(id) > 0 || branchAssignments.hasReferences(id);
     }
     private void clearRecovery(AppUser user) {
         user.setOtpCode(null); user.setOtpExpiry(null);

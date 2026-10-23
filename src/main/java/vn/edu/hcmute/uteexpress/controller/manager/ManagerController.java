@@ -29,7 +29,7 @@ public class ManagerController {
 
     @GetMapping("/trang-chu")
     public String dashboard(java.security.Principal actor, Model model) {
-        model.addAttribute("summary", managerDashboardService.getSummary());
+        model.addAttribute("summary", managerDashboardService.getSummary(actor.getName()));
         model.addAttribute("charts", charts.getOperationsCharts(actor.getName()));
         model.addAttribute("queues", workbench.getWorkQueues(actor.getName()));
         return "manager/dashboard";

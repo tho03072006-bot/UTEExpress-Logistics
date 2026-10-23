@@ -20,21 +20,24 @@ class ControlsValidationTest {
     @AfterAll static void close() { factory.close(); }
     static Stream<Arguments> invalidPolicies() {
         return Stream.of(
-            new OperationsPolicyRequest(null,24,120,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(-1L,24,120,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,0,120,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,169,120,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,null,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,721,48,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,0,4,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,721,3,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,4,0,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,4,11,24,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,4,3,169,168,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,4,3,24,2161,"Lý do hợp lệ"),
-            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168,"no"),
-            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168," ".repeat(8)),
-            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168,"a".repeat(501))
+            new OperationsPolicyRequest(null,24,120,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(-1L,24,120,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,0,120,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,169,120,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,null,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,721,48,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,0,4,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,721,3,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,0,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,11,24,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,169,168, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,2161, 15, 3000,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, 3000,"no"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, 3000," ".repeat(8)),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, 3000,"a".repeat(501)),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, -1,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, 20001,"Lý do hợp lệ"),
+            new OperationsPolicyRequest(0L,24,120,48,4,3,24,168, 15, null,"Lý do hợp lệ")
         ).map(Arguments::of);
     }
     @ParameterizedTest @MethodSource("invalidPolicies") void invalidPolicyFieldsReject(OperationsPolicyRequest form) {

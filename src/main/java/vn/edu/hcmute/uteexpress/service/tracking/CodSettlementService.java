@@ -24,10 +24,11 @@ public class CodSettlementService {
     private final CodSettlementRepository settlements;
     private final CodSettlementItemRepository items;
     private final Clock clock;
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
 
     public CodSettlementService(LogisticsAccess access, CodSettlementRepository settlements,
-            CodSettlementItemRepository items, Clock clock) {
-        this.access = access; this.settlements = settlements; this.items = items; this.clock = clock;
+            CodSettlementItemRepository items, Clock clock, vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
+        this.access = access; this.settlements = settlements; this.items = items; this.clock = clock; this.scope = scope;
     }
 
     /** Tiền đang giữ (chưa nộp) và tiền đang chờ Manager xác nhận của Shipper. */
@@ -70,26 +71,35 @@ public class CodSettlementService {
 
     public CodSettlement viewAsManager(Long id, String username) {
         access.internal(username);
-        return settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp tiền."));
+        var settlement = settlements.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp tiền."));
+        requireBranch(username, settlement);
+        return settlement;
+    }
+    /** Phiếu thuộc chi nhánh của Shipper nộp; Manager chi nhánh khác không xem hay duyệt được. */
+    private void requireBranch(String username, CodSettlement settlement) {
+        scope.requireShipper(username, settlement.getShipper());
     }
 
     public List<CodSettlementItem> items(CodSettlement settlement) {
         return items.findWithOrders(settlement);
     }
 
-    public Page<CodSettlement> search(String username, CodSettlement.Status status, int page) {
+    public Page<CodSettlement> search(String username, CodSettlement.Status status, int page) { return search(username, status, null, page); }
+    public Page<CodSettlement> search(String username, CodSettlement.Status status, Long branchId, int page) {
         access.internal(username);
-        return settlements.search(status, PageRequest.of(LogisticsInput.page(page), 10,
+        return settlements.search(status, scope.of(username, branchId), PageRequest.of(LogisticsInput.page(page), 10,
                 Sort.by("submittedAt", "id").descending()));
     }
 
     public record ManagerSummary(long pendingCount, BigDecimal pendingAmount, long confirmedCount) { }
 
-    public ManagerSummary managerSummary(String username) {
+    public ManagerSummary managerSummary(String username) { return managerSummary(username, null); }
+    public ManagerSummary managerSummary(String username, Long branchId) {
         access.internal(username);
-        BigDecimal pending = settlements.sumDeclared(CodSettlement.Status.SUBMITTED);
-        return new ManagerSummary(settlements.countByStatus(CodSettlement.Status.SUBMITTED),
-                pending == null ? BigDecimal.ZERO : pending, settlements.countByStatus(CodSettlement.Status.CONFIRMED));
+        Long branch = scope.of(username, branchId);
+        BigDecimal pending = settlements.sumDeclared(CodSettlement.Status.SUBMITTED, branch);
+        return new ManagerSummary(settlements.countByStatus(CodSettlement.Status.SUBMITTED, branch),
+                pending == null ? BigDecimal.ZERO : pending, settlements.countByStatus(CodSettlement.Status.CONFIRMED, branch));
     }
 
     /** Đọc số tiền người dùng nhập: chỉ chữ số, cho phép dấu chấm/phẩy/khoảng trắng phân tách hàng nghìn. */
@@ -104,14 +114,14 @@ public class CodSettlementService {
         return new BigDecimal(value);
     }
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public CodSettlement submit(String username, List<Long> orderIds, BigDecimal declared, String note) {
         var shipper = access.shipper(username);
-        if (orderIds == null || orderIds.stream().noneMatch(Objects::nonNull))
+        if (orderIds == null || orderIds.isEmpty())
             throw new IllegalArgumentException("Hãy chọn ít nhất một đơn COD để nộp tiền.");
-        var ids = new LinkedHashSet<>(orderIds.stream().filter(Objects::nonNull).toList());
-        if (ids.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi phiếu tối đa " + MAX_ORDERS + " đơn.");
-        if (ids.stream().anyMatch(id -> id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        if (orderIds.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi phiếu tối đa " + MAX_ORDERS + " đơn.");
+        if (orderIds.stream().anyMatch(id -> id == null || id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        var ids = new TreeSet<>(orderIds);
         String normalizedNote = LogisticsInput.text(note, 0, 500, "Ghi chú");
         settlements.lockShipper(shipper.getId());
         if (settlements.existsByShipperAndStatus(shipper, CodSettlement.Status.SUBMITTED))
@@ -143,6 +153,7 @@ public class CodSettlementService {
     public CodSettlement review(String username, Long id, long revision, boolean approve, String note) {
         var manager = access.internal(username);
         var settlement = settlements.lockById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nộp tiền."));
+        requireBranch(username, settlement);
         if (settlement.getRevision() != revision) throw new IllegalArgumentException("Phiếu đã thay đổi. Hãy tải lại trang.");
         if (settlement.getStatus() != CodSettlement.Status.SUBMITTED)
             throw new IllegalArgumentException("Phiếu đã được xử lý trước đó.");

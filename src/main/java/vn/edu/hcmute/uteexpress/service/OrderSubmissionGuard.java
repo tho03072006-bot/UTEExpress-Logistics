@@ -61,8 +61,12 @@ public class OrderSubmissionGuard {
         for (String part : List.of(request.getSenderName(), request.getSenderAddress(), request.getReceiverName(),
                 request.getReceiverPhone(), request.getReceiverAddress(), BigDecimal.valueOf(request.getWeightKg()).stripTrailingZeros().toPlainString(),
                 request.getServiceType().name(), request.getPaymentMethod().name(),
-                request.getPromoCode() == null ? "" : request.getPromoCode().toUpperCase(Locale.ROOT)))
+                request.getPromoCode() == null ? "" : request.getPromoCode().toUpperCase(Locale.ROOT),
+                java.util.Objects.toString(request.getPickupProvinceCode(), ""), java.util.Objects.toString(request.getPickupAreaCode(), ""),
+                java.util.Objects.toString(request.getDeliveryProvinceCode(), ""), java.util.Objects.toString(request.getDeliveryAreaCode(), "")))
             canonical.append(part.length()).append(':').append(part);
+        // Chỉ thêm khi tự mang ra chi nhánh để mã băm của đơn shipper đến lấy giữ nguyên như trước.
+        if (request.getPickupMode() == vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF) canonical.append("8:DROP_OFF");
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.toString().getBytes(StandardCharsets.UTF_8))); }
         catch (NoSuchAlgorithmException ex) { throw new IllegalStateException("Không hỗ trợ SHA-256.", ex); }
     }

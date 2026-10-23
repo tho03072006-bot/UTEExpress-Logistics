@@ -14,8 +14,9 @@ public interface ManagerOrderReadRepository extends Repository<Order, Long> {
     @EntityGraph(attributePaths = "shipper")
     @Query("select o from Order o where (:tracking = '' or o.trackingCode = :tracking) "
             + "and (:status is null or o.status = :status) "
-            + "and o.createdAt >= :start and o.createdAt < :end")
-    Page<Order> findOrders(@Param("tracking") String tracking, @Param("status") Order.OrderStatus status,
+            + "and o.createdAt >= :start and o.createdAt < :end and"
+            + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+    Page<Order> findOrders(@Param("branchId") Long branchId, @Param("tracking") String tracking, @Param("status") Order.OrderStatus status,
             @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
 }
 

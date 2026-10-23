@@ -54,6 +54,7 @@ application.properties.backup*
 /config/certificates/
 # Mat khau tam do cong cu khoi phuc tai khoan tao rieng tren may.
 /config/recovery/
+/config/demo-account-backups/
 /config/jwt-local.properties
 /config/jwt-local.properties.*
 !/config/jwt-local.properties.example

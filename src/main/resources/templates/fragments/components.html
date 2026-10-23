@@ -211,6 +211,38 @@
     </div>
 </div>
 
+<!--
+  ẢNH BẰNG CHỨNG GIAO HÀNG: ảnh chụp và chữ ký người nhận do Shipper lưu khi giao.
+
+  Dùng cho người gửi và Manager xem lại. basePath là đường dẫn đơn theo vai trò, ví dụ
+  '/nguoi-dung/don-hang/12' hoặc '/manager/don-hang/12'. Ảnh không nằm ở thư mục công khai,
+  phải đi qua route .../bang-chung/{anh|chu-ky} để server kiểm tra quyền xem đơn.
+  Trang Shipper có khối riêng kèm form tải ảnh nên không dùng fragment này.
+
+  Bọc chỗ gọi bằng th:block th:if="${proof != null}": th:replace chạy trước th:if.
+-->
+<div th:fragment="deliveryProof(proof, basePath)" class="ute-panel mb-3" id="delivery-proof">
+    <h5 class="mb-3">Bằng chứng giao hàng</h5>
+    <div class="shipper-proof-grid">
+        <div>
+            <span class="shipper-field-label">Ảnh lúc giao hàng</span>
+            <a th:href="@{${basePath + '/bang-chung/anh'}}" target="_blank" rel="noopener">
+                <img class="shipper-proof-image" loading="lazy" decoding="async"
+                     th:src="@{${basePath + '/bang-chung/anh'}}" alt="Ảnh bằng chứng giao hàng">
+            </a>
+        </div>
+        <div>
+            <span class="shipper-field-label">Chữ ký người nhận</span>
+            <a th:href="@{${basePath + '/bang-chung/chu-ky'}}" target="_blank" rel="noopener">
+                <img class="shipper-proof-image" loading="lazy" decoding="async"
+                     th:src="@{${basePath + '/bang-chung/chu-ky'}}" alt="Chữ ký người nhận">
+            </a>
+        </div>
+    </div>
+    <p class="ute-profile-note mt-2 mb-0"
+       th:text="|Shipper lưu lúc ${#temporals.format(proof.updatedAt, 'HH:mm · dd/MM/yyyy')}. Bấm vào ảnh để xem cỡ lớn.|"></p>
+</div>
+
 <th:block th:fragment="serviceTypeText(serviceType)"
           th:switch="${serviceType == null} ? '' : ${serviceType.name()}">
     <th:block th:case="'STANDARD'">Tiêu chuẩn</th:block>

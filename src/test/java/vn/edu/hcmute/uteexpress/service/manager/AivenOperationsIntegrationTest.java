@@ -27,15 +27,6 @@ class AivenOperationsIntegrationTest {
     @Autowired ShippingTariffService tariffs;
     @Autowired AuditService audit;
     @Autowired vn.edu.hcmute.uteexpress.service.impl.OrderCreationWriter orders;
-    @Autowired vn.edu.hcmute.uteexpress.service.OrderPricingService pricing;
-    @org.springframework.boot.test.mock.mockito.MockBean vn.edu.hcmute.uteexpress.service.geo.AddressGeocoder geocoder;
-    vn.edu.hcmute.uteexpress.service.OrderPricingService.ResolvedRoute preparedRoute;
-    @org.springframework.test.context.transaction.BeforeTransaction
-    void prepareRouteWithoutCallingExternalMap() {
-        org.mockito.Mockito.when(geocoder.locate(org.mockito.ArgumentMatchers.anyString()))
-                .thenReturn(new vn.edu.hcmute.uteexpress.service.geo.GeoPoint(10.8497, 106.7702));
-        preparedRoute = pricing.resolveRoute("Địa chỉ kiểm thử", "Địa chỉ kiểm thử");
-    }
     @Autowired Clock clock;
     private String operator(AppUser.Role role) {
         var user = new AppUser("qa_" + UUID.randomUUID().toString().replace("-", ""), "test-hash", UUID.randomUUID() + "@example.com");
@@ -85,11 +76,12 @@ class AivenOperationsIntegrationTest {
         var sender = new AppUser("qa_" + UUID.randomUUID().toString().replace("-", ""), "hash", UUID.randomUUID() + "@example.com");
         sender.setEnabled(true); em.persist(sender); em.flush();
         var request = new OrderCreateRequest();
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.fill(request);
         request.setSenderName("Người gửi kiểm thử"); request.setSenderAddress("Địa chỉ kiểm thử");
         request.setReceiverName("Người nhận kiểm thử"); request.setReceiverAddress("Địa chỉ kiểm thử");
         request.setReceiverPhone("+84 901 234 567"); request.setWeightKg(1.0);
         request.setServiceType(Order.ServiceType.STANDARD); request.setPromoCode(form.getCode());
-        var order = orders.createResolved(request, sender.getUsername(), preparedRoute); em.flush();
+        var order = orders.createRouted(request, sender.getUsername()); em.flush();
         assertNotNull(order.getId());
         var payment = em.createQuery("select p from OrderPayment p where p.order = :order", OrderPayment.class)
             .setParameter("order", order).getSingleResult();
@@ -97,7 +89,7 @@ class AivenOperationsIntegrationTest {
         var promo = em.createQuery("select p from PromoCode p where p.code = :code", PromoCode.class)
             .setParameter("code", form.getCode()).getSingleResult();
         assertEquals(1, promo.getUsedCount()); assertFalse(promo.hasRemainingUsage());
-        assertThrows(IllegalStateException.class, () -> orders.createResolved(request, sender.getUsername(), preparedRoute));
+        assertThrows(IllegalStateException.class, () -> orders.createRouted(request, sender.getUsername()));
     }
 }
 

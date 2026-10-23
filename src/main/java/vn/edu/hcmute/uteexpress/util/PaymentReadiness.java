@@ -20,4 +20,18 @@ public final class PaymentReadiness {
                 && (payment.getMethod() == OrderPayment.PaymentMethod.COD
                     || payment.getStatus() == OrderPayment.PaymentStatus.PAID);
     }
+
+    /** Cước đã chốt trừ giảm giá phải đúng số cần thu; không tin riêng trạng thái PAID hoặc một số tiền dương. */
+    public static boolean hasConsistentSnapshot(OrderPayment payment) {
+        if (payment == null || payment.getOrder() == null) return false;
+        BigDecimal fee = payment.getOrder().getShippingFee();
+        BigDecimal discount = payment.getDiscountAmount() == null ? BigDecimal.ZERO : payment.getDiscountAmount();
+        return isValidAmount(fee) && isValidAmount(discount) && isValidAmount(payment.getAmount())
+                && discount.compareTo(fee) <= 0 && fee.subtract(discount).compareTo(payment.getAmount()) == 0;
+    }
+
+    public static boolean hasRequiredReceipt(OrderPayment payment) {
+        return payment != null && (payment.getMethod() != OrderPayment.PaymentMethod.MOMO
+                || (payment.getPaidAt() != null && payment.getTransactionRef() != null && !payment.getTransactionRef().isBlank()));
+    }
 }

@@ -5,6 +5,10 @@ import java.util.Locale;
 import vn.edu.hcmute.uteexpress.entity.AppUser;
 
 public class StaffAccountCreateRequest extends StaffPasswordRequest {
+    @jakarta.validation.Valid @NotNull(message = "Thiếu thông tin chi nhánh.")
+    private StaffBranchRequest assignment = new StaffBranchRequest();
+    public StaffBranchRequest getAssignment() { return assignment; }
+    public void setAssignment(StaffBranchRequest value) { assignment = value; }
     @NotBlank(message = "Vui lòng nhập tên đăng nhập.")
     @Pattern(regexp = "[a-z][a-z0-9._-]{3,49}", message = "Tên đăng nhập gồm 4–50 ký tự; bắt đầu bằng chữ, chỉ dùng chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.")
     private String username;

@@ -37,11 +37,11 @@ public class ShipperBulkService {
     public Result update(String username, List<Long> orderIds, Order.OrderStatus status) {
         if (status != Order.OrderStatus.PICKED_UP && status != Order.OrderStatus.IN_TRANSIT)
             throw new IllegalArgumentException("Chỉ cập nhật hàng loạt bước Đã lấy hàng hoặc Bắt đầu giao.");
-        if (orderIds == null || orderIds.stream().noneMatch(Objects::nonNull))
+        if (orderIds == null || orderIds.isEmpty())
             throw new IllegalArgumentException("Hãy chọn ít nhất một đơn.");
-        var ids = new LinkedHashSet<>(orderIds.stream().filter(Objects::nonNull).toList());
-        if (ids.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi lần cập nhật tối đa " + MAX_ORDERS + " đơn.");
-        if (ids.stream().anyMatch(id -> id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        if (orderIds.size() > MAX_ORDERS) throw new IllegalArgumentException("Mỗi lần cập nhật tối đa " + MAX_ORDERS + " đơn.");
+        if (orderIds.stream().anyMatch(id -> id == null || id <= 0)) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
+        var ids = new LinkedHashSet<>(orderIds);
         List<String> updated = new ArrayList<>();
         List<Failure> failed = new ArrayList<>();
         for (Long id : ids) {

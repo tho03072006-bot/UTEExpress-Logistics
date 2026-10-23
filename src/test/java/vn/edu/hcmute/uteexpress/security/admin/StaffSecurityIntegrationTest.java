@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {AdminController.class, ManagerController.class, StaffAccountController.class,
         StaffAccessController.class, AdminAccountController.class, ManagerOrderController.class, AuthController.class,
         ShippingTariffController.class, AuditController.class, DispatchController.class, ManagerPromotionController.class, ManagerReportController.class, ManagerTariffController.class,
-        StaffApiAccessController.class, StaffProfileController.class, BatchTrackingController.class})
+        StaffApiAccessController.class, StaffProfileController.class, BatchTrackingController.class, BranchAdminController.class})
 @Import({SecurityConfig.class, StaffSecurityConfig.class, StaffOtpPolicyConfig.class,
         TimeConfig.class, StaffLoginAttemptService.class, StaffExceptionHandler.class})
 class StaffSecurityIntegrationTest {
@@ -52,6 +52,9 @@ class StaffSecurityIntegrationTest {
     @MockBean vn.edu.hcmute.uteexpress.repository.AppUserRepository publicUsers;
     @MockBean vn.edu.hcmute.uteexpress.service.admin.AdminAccountService allAccounts;
     @MockBean StaffAccountService staffService;
+    @MockBean vn.edu.hcmute.uteexpress.service.routing.StaffBranchService branchAssignments;
+    @MockBean vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService routingCatalog;
+    @MockBean vn.edu.hcmute.uteexpress.service.routing.BranchAdminService branchAdmin;
     @MockBean ManagerDashboardService dashboard;
     @MockBean StaffDashboardChartService dashboardCharts;
     @MockBean StaffWorkbenchService workbench;
@@ -60,7 +63,9 @@ class StaffSecurityIntegrationTest {
     @MockBean ManagerOrderService orders;
     @MockBean ManagerDispatchService dispatch;
     @MockBean vn.edu.hcmute.uteexpress.service.tracking.DispatchService sharedDispatch;
+    @MockBean vn.edu.hcmute.uteexpress.service.routing.DispatchBulkService bulkDispatch;
     @MockBean vn.edu.hcmute.uteexpress.service.tracking.ShipperWorkspaceService sharedWorkspace;
+    @MockBean vn.edu.hcmute.uteexpress.service.tracking.DeliveryProofService deliveryProofs;
     @MockBean ManagerPromotionService promotions;
     @MockBean ManagerReportService reports;
     @MockBean vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffs;
@@ -72,11 +77,20 @@ class StaffSecurityIntegrationTest {
     private StaffAccount manager;
 
     @BeforeEach void setUp() {
+        when(branchAssignments.selection(anyString(), anyLong())).thenReturn(new StaffBranchRequest());
+        when(branchAssignments.selectionByUsername(anyString(), anyString())).thenReturn(new StaffBranchRequest());
+        var branch = new vn.edu.hcmute.uteexpress.entity.routing.Branch("SGN", "Kho SGN", "SGN", "Thủ Đức", "SGN-THUDUC", LocalDateTime.now());
+        org.springframework.test.util.ReflectionTestUtils.setField(branch, "id", 1L);
+        when(routingCatalog.branches()).thenReturn(List.of(branch));
+        when(routingCatalog.areas()).thenReturn(List.of(new vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService.AreaOption("SGN-THUDUC", "Thủ Đức", "SGN", 1L, "SGN")));
+        when(branchAdmin.list("admin01")).thenReturn(List.of(branch));
+        when(branchAdmin.get("admin01", 1L)).thenReturn(branch);
         admin = account(1L, "admin01", AppUser.Role.ADMIN);
         manager = account(2L, "manager01", AppUser.Role.MANAGER);
         when(accounts.findByUserUsername("admin01")).thenReturn(Optional.of(admin));
         when(accounts.findByUserUsername("manager01")).thenReturn(Optional.of(manager));
         when(dashboard.getSummary()).thenReturn(new ManagerDashboardResponse(4, 8, 2, 3));
+        when(dashboard.getSummary(anyString())).thenReturn(new ManagerDashboardResponse(4, 8, 2, 3));
         when(dashboardCharts.getAdminCharts(anyString())).thenReturn(chartFixture());
         when(dashboardCharts.getOperationsCharts(anyString())).thenReturn(chartFixture());
         when(workbench.getWorkQueues(anyString())).thenReturn(List.of(
@@ -97,7 +111,7 @@ class StaffSecurityIntegrationTest {
         when(allAccounts.findAccounts(anyString(), any(), anyInt())).thenReturn(new PageImpl<>(
             List.of(AdminAccountResponse.from(user), AdminAccountResponse.from(admin.getUser()))));
         when(allAccounts.findAccount(anyString(), eq(3L))).thenReturn(AdminAccountResponse.from(user));
-        when(orders.findOrders(anyString(), any(), any(), any(), anyInt())).thenReturn(new PageImpl<>(List.of(
+        when(orders.findOrders(anyString(), any(), anyString(), any(), any(), any(), anyInt())).thenReturn(new PageImpl<>(List.of(
                 new ManagerOrderResponse("UTE123", "Người gửi", "Người nhận", "Chưa phân công",
                         Order.OrderStatus.PENDING_PICKUP, new BigDecimal("30000"), LocalDateTime.of(2026, 9, 18, 9, 0)))));
         attempts.clearFailures("admin01"); attempts.clearFailures("manager01");
@@ -105,7 +119,7 @@ class StaffSecurityIntegrationTest {
             new DispatchOrderResponse(1L, "UTEDEMO", "Người nhận", "Chưa phân công", 0))));
         when(dispatch.findShippers(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of(
             new ShipperWorkloadResponse(3L, "shipper01", "Shipper", 2))));
-        when(sharedDispatch.pending(anyString(), anyInt())).thenReturn(Page.empty());
+        when(sharedDispatch.pending(anyString(), any(), anyInt())).thenReturn(Page.empty());
         when(sharedDispatch.shippers(anyString(), anyInt())).thenReturn(Page.empty());
         when(promotions.findPromotions(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of()));
         when(audit.findEvents(anyString(), anyInt())).thenReturn(new PageImpl<>(List.of()));
@@ -115,7 +129,7 @@ class StaffSecurityIntegrationTest {
         when(tariffs.findTariffs(anyString())).thenReturn(List.of(ShippingTariffResponse.from(tariff)));
         var counts = new EnumMap<Order.OrderStatus, Long>(Order.OrderStatus.class);
         for (var status : Order.OrderStatus.values()) { counts.put(status, 0L); }
-        when(reports.report(anyString(), any(), any())).thenReturn(
+        when(reports.report(anyString(), any(), any(), any())).thenReturn(
             new OperationsReportResponse(LocalDate.now().minusDays(29), LocalDate.now(), counts, 0, BigDecimal.ZERO.setScale(1), BigDecimal.ZERO));
     }
 
@@ -233,7 +247,8 @@ class StaffSecurityIntegrationTest {
         mvc.perform(get("/manager/bao-cao/csv").with(authentication(auth(manager)))
             .param("from", "2026-10-01").param("to", "2026-10-10"))
             .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
-            .andExpect(content().string(containsString("Cuoc_da_thanh_toan_VND,0")));
+            .andExpect(content().string(containsString("Cuoc_da_thanh_toan_VND,0")))
+            .andExpect(content().string(containsString("Chi_nhanh,")));
         mvc.perform(get("/manager/bao-cao").with(authentication(auth(manager))).param("from", "not-a-date"))
             .andExpect(status().isBadRequest());
     }
@@ -284,9 +299,14 @@ class StaffSecurityIntegrationTest {
                     .andExpect(status().isOk()).andExpect(content().string(containsString("Trạng thái đơn hàng")))
                     .andExpect(content().string(containsString("Đơn mới trong 14 ngày")))
                     .andExpect(content().string(containsString("không phải tỷ lệ giao thành công")))
-                    .andExpect(content().string(not(containsString("NaN"))))
-                    .andExpect(content().string(not(containsString("Infinity"))))
                     .andReturn().getResponse().getContentAsString();
+            // Chỉ kiểm tra dữ liệu biểu đồ; token CSRF ngẫu nhiên ở phần khác có thể chứa các chuỗi này.
+            int chartStart = html.indexOf("class=\"staff-dashboard-charts\"");
+            int chartEnd = html.indexOf("class=\"staff-charts-snapshot\"", chartStart);
+            org.junit.jupiter.api.Assertions.assertTrue(chartStart >= 0 && chartEnd > chartStart);
+            String chartHtml = html.substring(chartStart, chartEnd);
+            org.junit.jupiter.api.Assertions.assertFalse(chartHtml.contains("NaN"));
+            org.junit.jupiter.api.Assertions.assertFalse(chartHtml.contains("Infinity"));
             org.junit.jupiter.api.Assertions.assertEquals(2, html.split("staff-chart-card",-1).length - 1);
         }
         verify(dashboardCharts).getAdminCharts("admin01"); verify(dashboardCharts).getOperationsCharts("admin01");
@@ -456,7 +476,7 @@ class StaffSecurityIntegrationTest {
     }
 
     @Test void serverFailureDoesNotLeakSqlOrSecrets() throws Exception {
-        when(dashboard.getSummary()).thenThrow(new IllegalStateException("jdbc:SECRET_DATABASE_PASSWORD"));
+        when(dashboard.getSummary(anyString())).thenThrow(new IllegalStateException("jdbc:SECRET_DATABASE_PASSWORD"));
         mvc.perform(get("/manager/trang-chu").with(authentication(auth(manager))))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(not(containsString("SECRET_DATABASE_PASSWORD"))));
@@ -517,7 +537,7 @@ class StaffSecurityIntegrationTest {
     }
 
     @Test void ordersEmptyStateRenders() throws Exception {
-        when(orders.findOrders(anyString(), any(), any(), any(), anyInt())).thenReturn(Page.empty());
+        when(orders.findOrders(anyString(), any(), anyString(), any(), any(), any(), anyInt())).thenReturn(Page.empty());
         mvc.perform(get("/manager/don-hang").with(authentication(auth(manager))))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Không có đơn phù hợp")));
     }
@@ -652,6 +672,27 @@ class StaffSecurityIntegrationTest {
             .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("private-database-detail"));
         mvc.perform(get("/admin/nhat-ky").with(authentication(auth(admin))).param("category","ACCOUNT"))
             .andExpect(status().isServiceUnavailable()).andExpect(content().string(not(containsString("private-database-detail"))));
+    }
+
+    @Test void branchPagesRequireAdminAndRenderAvailableHubAreas() throws Exception {
+        for (String path : List.of("/admin/chi-nhanh", "/admin/chi-nhanh/1/sua")) {
+            mvc.perform(get(path).with(authentication(auth(admin)))).andExpect(status().isOk())
+                    .andExpect(content().string(containsString("SGN")));
+            mvc.perform(get(path).with(authentication(auth(manager)))).andExpect(status().isForbidden());
+        }
+    }
+    @Test void branchUpdateRequiresAdminCsrfAndValidForm() throws Exception {
+        mvc.perform(post("/admin/chi-nhanh/1/sua").with(authentication(auth(manager))).with(csrf())).andExpect(status().isForbidden());
+        mvc.perform(post("/admin/chi-nhanh/1/sua").with(authentication(auth(admin)))).andExpect(status().isForbidden());
+        mvc.perform(post("/admin/chi-nhanh/1/sua").with(authentication(auth(admin))).with(csrf())
+                .param("name", "").param("revision", "-1"))
+                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "name", "revision"));
+        verify(branchAdmin, never()).update(anyString(), anyLong(), any());
+        mvc.perform(post("/admin/chi-nhanh/1/sua").with(authentication(auth(admin))).with(csrf())
+                .param("name", "Kho SGN mới").param("revision", "0").param("hubAddress", "Địa chỉ kho mới")
+                .param("hubAreaCode", "SGN-THUDUC").param("active", "true").param("reason", "Kiểm thử sửa kho"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/admin/chi-nhanh"));
+        verify(branchAdmin).update(eq("admin01"), eq(1L), any());
     }
 
     private StaffAccount account(Long id, String name, AppUser.Role role) {

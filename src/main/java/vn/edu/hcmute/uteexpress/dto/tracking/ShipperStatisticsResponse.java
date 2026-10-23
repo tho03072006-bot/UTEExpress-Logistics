@@ -14,7 +14,9 @@ public record ShipperStatisticsResponse(
         BigDecimal successRate,
         BigDecimal collectedCod,
         java.util.List<ShipperDailyStatistics> days,
-        long legacyOrders) {
+        long legacyOrders,
+        /* Đơn shipper đã lấy hàng trong kỳ; đơn liên tỉnh bàn giao vào kho chỉ tính ở đây, không tính "đang xử lý". */
+        long pickedUpOrders) {
     public long getChartMax() {
         return Math.max(1, days.stream().mapToLong(d -> Math.max(d.delivered(), d.getUnsuccessful())).max().orElse(1));
     }

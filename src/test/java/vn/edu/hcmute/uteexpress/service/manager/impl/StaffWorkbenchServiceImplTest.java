@@ -20,11 +20,12 @@ import static org.mockito.ArgumentMatchers.*;
 class StaffWorkbenchServiceImplTest {
     private final ManagerOrderReadRepository orders = mock(ManagerOrderReadRepository.class);
     private final OperationsOverviewService overview = mock(OperationsOverviewService.class);
+    private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope = mock(vn.edu.hcmute.uteexpress.service.routing.BranchScope.class);
     private StaffWorkbenchServiceImpl service;
     private StaffAccessPolicy access;
     @BeforeEach void setUp() {
         access = spy(new StaffAccessPolicy(mock(StaffAccountRepository.class), Validation.buildDefaultValidatorFactory().getValidator()));
-        doNothing().when(access).requireOperator("manager01"); service = new StaffWorkbenchServiceImpl(access, overview, orders);
+        doNothing().when(access).requireOperator("manager01"); service = new StaffWorkbenchServiceImpl(access, overview, orders, scope);
     }
     @ParameterizedTest @NullAndEmptySource @ValueSource(strings = {" ", ",UTE1", "UTE1,", "UTE1,,UTE2", "UTE1;;UTE2", "UTE1\n\nUTE2", "UTE1<script>", "UTE 1", "a123456789012345678901", "UTE1/../../admin", "UTE1\t", "UTE1\u0000"})
     void invalidInputDoesNotQueryDatabase(String codes) {
@@ -40,13 +41,22 @@ class StaffWorkbenchServiceImplTest {
         verifyNoInteractions(orders);
     }
     @Test void deduplicatesNormalizesAndPreservesRequestedOrderIncludingMissing() {
-        var order = new Order(); order.setTrackingCode("UTE2"); order.setStatus(Order.OrderStatus.PENDING_PICKUP);
+        var order = new Order(); order.setId(2L); order.setTrackingCode("UTE2"); order.setStatus(Order.OrderStatus.PENDING_PICKUP);
         order.setServiceType(Order.ServiceType.STANDARD); order.setShippingFee(new BigDecimal("30000"));
         when(orders.findByTrackingCodeIn(anyCollection())).thenReturn(List.of(order));
+        when(scope.visible(eq("manager01"), anyCollection())).thenReturn(Set.of(2L));
         var rows = service.findShipments("manager01", form("ute2\r\n ute1 ;UTE2"));
         assertEquals(List.of("UTE2", "UTE1"), rows.stream().map(BatchTrackingResponse::trackingCode).toList());
         assertTrue(rows.get(0).found()); assertFalse(rows.get(1).found());
         verify(orders).findByTrackingCodeIn(new LinkedHashSet<>(List.of("UTE2", "UTE1")));
+    }
+    @Test void orderOfAnotherBranchIsReportedWithoutItsDetails() {
+        var order = new Order(); order.setId(9L); order.setTrackingCode("UTE9"); order.setStatus(Order.OrderStatus.PICKED_UP);
+        order.setShippingFee(new BigDecimal("45000"));
+        when(orders.findByTrackingCodeIn(anyCollection())).thenReturn(List.of(order));
+        when(scope.visible(eq("manager01"), anyCollection())).thenReturn(Set.of());
+        var row = service.findShipments("manager01", form("UTE9")).get(0);
+        assertFalse(row.found()); assertEquals("Thuộc chi nhánh khác", row.status()); assertNull(row.shippingFee());
     }
     @Test void tenCodesAndUnknownCodeAreValid() {
         when(orders.findByTrackingCodeIn(anyCollection())).thenReturn(List.of());

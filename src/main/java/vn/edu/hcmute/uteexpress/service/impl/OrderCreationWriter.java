@@ -24,16 +24,18 @@ public class OrderCreationWriter {
     private final Clock clock;
     private final Validator validator;
     private final OrderSubmissionGuard submissions;
-    private final OrderPricingService pricingService;
     private final EntityManager em;
+    private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
     private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
 
     public OrderCreationWriter(OrderRepository orderRepository, AppUserRepository users, OrderPaymentService orderPaymentService,
             PromoCodeService promoCodeService, OrderStatusHistoryRepository history, Clock clock, Validator validator,
-            OrderSubmissionGuard submissions, OrderPricingService pricingService, EntityManager em) {
+            OrderSubmissionGuard submissions, EntityManager em,
+            vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) {
         this.orderRepository=orderRepository; this.users=users; this.orderPaymentService=orderPaymentService;
         this.promoCodeService=promoCodeService; this.history=history; this.clock=clock; this.validator=validator;
-        this.submissions=submissions; this.pricingService=pricingService; this.em=em;
+        this.submissions=submissions; this.em=em;
+        this.routing=routing;
     }
 
     public Order findExisting(OrderCreateRequest request, String username) {
@@ -67,7 +69,7 @@ public class OrderCreationWriter {
         return null;
     }
 
-    public Order createResolved(OrderCreateRequest request, String senderUsername, OrderPricingService.ResolvedRoute route) {
+    public Order createRouted(OrderCreateRequest request, String senderUsername) {
         validate(request);
         AppUser sender = requireSender(senderUsername);
         Order existing = existing(request, sender);
@@ -81,19 +83,18 @@ public class OrderCreationWriter {
         order.setTrackingCode(generateTrackingCode());
         order.setSender(sender);
         order.setSenderName(request.getSenderName());
-        order.setSenderAddress(request.getSenderAddress());
+        var quote = routing.quote(request);
+        order.setSenderAddress(routing.fullAddress(request.getSenderAddress(), quote.pickupArea()));
         order.setReceiverName(request.getReceiverName());
         order.setReceiverPhone(request.getReceiverPhone());
-        order.setReceiverAddress(request.getReceiverAddress());
+        order.setReceiverAddress(routing.fullAddress(request.getReceiverAddress(), quote.deliveryArea()));
         order.setWeightKg(request.getWeightKg());
         order.setServiceType(request.getServiceType());
-        // Cước = cước dịch vụ + phụ phí khoảng cách đường chim bay; địa chỉ không xác định được thì báo lại trên form.
-        var pricing = pricingService.priceResolved(route, request.getSenderAddress(), request.getReceiverAddress(),
-                request.getServiceType(), request.getWeightKg());
-        BigDecimal fee = pricing.total();
+        // Giá và tuyến chốt trong cùng transaction, không tin giá/khoảng cách từ trình duyệt.
+        BigDecimal fee = quote.total();
         order.setShippingFee(fee);
-        order.setDistanceKm(pricing.distanceKm());
-        order.setDistanceFee(pricing.distanceFee());
+        // Cột distance_* của đơn cũ chỉ mô tả giá theo địa chỉ/ArcGIS. Tuyến mới có cả
+        // phụ phí liên tỉnh và giảm tại quầy; không ghi vào các cột đó để tránh hiện sai cách tính.
         order.setStatus(Order.OrderStatus.PENDING_PICKUP);
         var now = java.time.LocalDateTime.now(clock);
         order.setCreatedAt(now);
@@ -108,6 +109,7 @@ public class OrderCreationWriter {
         }
 
         Order savedOrder = orderRepository.save(order);
+        routing.attach(savedOrder, quote);
         // Moi van don deu co dung mot ban ghi thanh toan, tao ngay tai day de khong bao gio
         // ton tai don "khong biet tra bang gi" trong CSDL.
         orderPaymentService.createForOrder(savedOrder, request.getPaymentMethod(), promoCode, discount);

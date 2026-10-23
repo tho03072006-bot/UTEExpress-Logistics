@@ -45,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc @ActiveProfiles("isolated-logistics") @Transactional @RecordApplicationEvents
 @Import(CrossRoleSynchronizationIntegrationTest.TestClock.class)
 class CrossRoleSynchronizationIntegrationTest {
+    @Autowired org.springframework.context.ApplicationContext context;
     static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 16, 10, 0);
     @TestConfiguration static class TestClock {
         @Bean @Primary Clock synchronizationClock() {
@@ -52,6 +53,7 @@ class CrossRoleSynchronizationIntegrationTest {
         }
     }
     @Autowired MockMvc mvc;
+    @Autowired jakarta.persistence.EntityManager em;
     @Autowired ApplicationEvents events;
     @Autowired AppUserRepository users;
     @Autowired StaffAccountRepository staff;
@@ -75,6 +77,7 @@ class CrossRoleSynchronizationIntegrationTest {
     OrderPayment payment;
 
     @BeforeEach void seed() {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         customer = account("sync-customer", AppUser.Role.USER); otherCustomer = account("sync-other-customer", AppUser.Role.USER);
         shipper = account("sync-shipper", AppUser.Role.SHIPPER); otherShipper = account("sync-other-shipper", AppUser.Role.SHIPPER);
         manager = account("sync-manager", AppUser.Role.MANAGER); admin = account("sync-admin", AppUser.Role.ADMIN);
@@ -85,6 +88,8 @@ class CrossRoleSynchronizationIntegrationTest {
         order.setReceiverPhone("0901234567"); order.setWeightKg(1.0); order.setShippingFee(new BigDecimal("18000"));
         order.setStatus(Order.OrderStatus.PENDING_PICKUP); order.setCreatedAt(NOW.minusDays(1)); order.setUpdatedAt(NOW.minusHours(1));
         orders.saveAndFlush(order);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.assignStaff(context, admin, manager, shipper, otherShipper);
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.route(context, order);
         payment = paymentService.createForOrder(order, OrderPayment.PaymentMethod.COD, null, BigDecimal.ZERO); payments.flush();
     }
 
@@ -247,6 +252,8 @@ class CrossRoleSynchronizationIntegrationTest {
                 "Giao không thành công", null, NOW.minusHours(4 - index)));
         history.flush();
         for (int index = 0; index < 21; index++) {
+            // Mỗi biểu mẫu thật được tải từ một request mới, không tái dùng ảnh chụp của giao dịch trước.
+            em.flush(); em.clear(); order = orders.findById(order.getId()).orElseThrow();
             long id = cases.request(manager.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETRY, order.getId(),
                     order.getRevision(), null, NOW.plusHours(1), "Đề nghị giao vượt giới hạn", "", UUID.randomUUID().toString()), null);
             var record = cases.view(admin.getUsername(), id);

@@ -12,4 +12,8 @@ public interface ManagerUserStatisticsRepository extends Repository<AppUser, Lon
     long count();
 
     long countByRole(AppUser.Role role);
+    /** Shipper thuộc chi nhánh (Shipper chưa gán chi nhánh tính cho mọi chi nhánh, xem StaffBranchRepository.USER_SCOPE). */
+    @org.springframework.data.jpa.repository.Query("select count(u) from AppUser u where u.role = vn.edu.hcmute.uteexpress.entity.AppUser.Role.SHIPPER and"
+            + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
+    long countShippersInScope(@org.springframework.data.repository.query.Param("branchId") Long branchId);
 }

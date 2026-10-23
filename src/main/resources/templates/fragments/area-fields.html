@@ -1,0 +1,12 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="vi"><body>
+<div th:fragment="fields(provinceField, areaField)" data-area-fields class="row g-3 mb-3">
+<div class="col-md-6"><label class="form-label" th:for="${provinceField}">Tỉnh/thành phục vụ</label>
+<select class="form-select" th:field="*{__${provinceField}__}" data-province-select required>
+<option value="">Chọn tỉnh/thành</option><option th:each="b : ${branches}" th:if="${b.active}" th:value="${b.provinceCode}" th:text="${b.name}"></option></select>
+<span class="ute-field-error" th:if="${#fields.hasErrors(provinceField)}" th:errors="*{__${provinceField}__}"></span></div>
+<div class="col-md-6"><label class="form-label" th:for="${areaField}">Khu vực giao nhận</label>
+<select class="form-select" th:field="*{__${areaField}__}" data-area-select required>
+<option value="">Chọn khu vực</option><option th:each="a : ${areas}" th:value="${a.code}" th:attr="data-province-code=${a.provinceCode}" th:text="${a.name}"></option></select>
+<span class="ute-field-error" th:if="${#fields.hasErrors(areaField)}" th:errors="*{__${areaField}__}"></span></div>
+<script th:src="@{/js/area-picker.js}" defer></script>
+</div></body></html>

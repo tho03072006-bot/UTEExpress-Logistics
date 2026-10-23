@@ -14,6 +14,23 @@ import vn.edu.hcmute.uteexpress.validation.ShippingInputValidation;
  * Entity Order de nhan du lieu tu form - tranh loi bind sai quan he sender/shipper).
  */
 public class OrderCreateRequest {
+    @NotBlank(message = "Chọn tỉnh/thành gửi.") @Size(max = 10) private String pickupProvinceCode;
+    @NotBlank(message = "Chọn khu vực lấy hàng.") @Size(max = 40) private String pickupAreaCode;
+    @NotBlank(message = "Chọn tỉnh/thành nhận.") @Size(max = 10) private String deliveryProvinceCode;
+    @NotBlank(message = "Chọn khu vực giao hàng.") @Size(max = 40) private String deliveryAreaCode;
+    public String getPickupProvinceCode() { return pickupProvinceCode; }
+    public void setPickupProvinceCode(String value) { pickupProvinceCode = value; }
+    public String getPickupAreaCode() { return pickupAreaCode; }
+    public void setPickupAreaCode(String value) { pickupAreaCode = value; }
+    public String getDeliveryProvinceCode() { return deliveryProvinceCode; }
+    public void setDeliveryProvinceCode(String value) { deliveryProvinceCode = value; }
+    public String getDeliveryAreaCode() { return deliveryAreaCode; }
+    public void setDeliveryAreaCode(String value) { deliveryAreaCode = value; }
+    /** Shipper đến lấy (mặc định) hay khách tự mang tới quầy chi nhánh gửi; vẫn bắt nhập địa chỉ người gửi. */
+    @NotNull(message = "Chọn hình thức gửi hàng.")
+    private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER;
+    public vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode getPickupMode() { return pickupMode; }
+    public void setPickupMode(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode value) { pickupMode = value; }
 
     @Pattern(regexp="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",message="Phiên biểu mẫu không hợp lệ. Hãy mở lại trang tạo đơn.")
     private String submissionToken;
@@ -38,7 +55,7 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ lấy hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ lấy hàng từ 5–255 ký tự.")
-    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String senderAddress;
 
     @NotBlank(message = "Vui lòng nhập tên người nhận")
@@ -52,7 +69,7 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ giao hàng từ 5–255 ký tự.")
-    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ phải có chữ hoặc số và không chứa ký tự điều khiển.")
     private String receiverAddress;
 
     @NotNull(message = "Vui lòng nhập khối lượng")

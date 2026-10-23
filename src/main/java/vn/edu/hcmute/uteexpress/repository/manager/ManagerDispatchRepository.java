@@ -25,15 +25,16 @@ public interface ManagerDispatchRepository extends JpaRepository<Order, Long> {
     Page<ShipperWorkloadResponse> findWorkloads(@Param("role") AppUser.Role role,
         @Param("statuses") List<Order.OrderStatus> statuses, Pageable pageable);
 
-    @Query("select o.status as status, count(o.id) as total from Order o where o.createdAt >= :from and o.createdAt < :to group by o.status")
-    List<StatusCount> countStatuses(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    @Query("select o.status as status, count(o.id) as total from Order o where o.createdAt >= :from and o.createdAt < :to and"
+            + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE + " group by o.status")
+    List<StatusCount> countStatuses(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to, @Param("branchId") Long branchId);
     interface StatusCount { Order.OrderStatus getStatus(); long getTotal(); }
 
     @Query("""
-        select coalesce(sum(p.amount), 0) from OrderPayment p
+        select coalesce(sum(p.amount), 0) from OrderPayment p join p.order o
         where p.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
-        and p.paidAt >= :from and p.paidAt < :to
-        """)
-    java.math.BigDecimal sumPaidFees(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+        and p.paidAt >= :from and p.paidAt < :to and
+        """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+    java.math.BigDecimal sumPaidFees(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to, @Param("branchId") Long branchId);
 }
 
