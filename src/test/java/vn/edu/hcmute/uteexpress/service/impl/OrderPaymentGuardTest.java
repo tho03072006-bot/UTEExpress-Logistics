@@ -63,6 +63,7 @@ class OrderPaymentGuardTest {
         order.setTrackingCode("UTE250076");
         order.setSender(nguoiGui);
         order.setStatus(trangThaiDon);
+        order.setShippingFee(BigDecimal.valueOf(30000));
 
         OrderPayment payment = new OrderPayment();
         payment.setOrder(order);

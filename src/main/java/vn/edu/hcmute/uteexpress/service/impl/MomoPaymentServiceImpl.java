@@ -136,12 +136,7 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
     private static IllegalArgumentException unavailable() { return new IllegalArgumentException("Không thể truy cập thanh toán này. Hãy mở lại từ tài khoản sở hữu đơn hàng."); }
     private static String text(Object value) { return value == null ? "" : value.toString(); }
     private static void validateSnapshot(OrderPayment payment) {
-        var fee = payment.getOrder().getShippingFee();
-        var discount = payment.getDiscountAmount() == null ? BigDecimal.ZERO : payment.getDiscountAmount();
-        if (!vn.edu.hcmute.uteexpress.util.PaymentReadiness.isValidAmount(fee)
-                || !vn.edu.hcmute.uteexpress.util.PaymentReadiness.isValidAmount(discount)
-                || discount.compareTo(fee) > 0 || payment.getAmount() == null
-                || fee.subtract(discount).compareTo(payment.getAmount()) != 0)
+        if (!vn.edu.hcmute.uteexpress.util.PaymentReadiness.hasConsistentSnapshot(payment))
             throw new IllegalStateException("Cước và giảm giá không khớp dữ liệu thanh toán. Hãy liên hệ Manager để kiểm tra.");
     }
     private static void requireReceipt(OrderPayment payment) {
