@@ -103,14 +103,9 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         draft.setPaymentMethod(request.getPaymentMethod());
         draft.setPromoCode(request.getPromoCode());
         var quote = routing.quote(request);
+        validateQuotedDraft(request, quote);
         BigDecimal fee = quote.total();
         draft.setEstimatedFee(fee);
-
-        // Kiem tra ma ngay luc them vao gio de bao som, thay vi de nguoi dung gom xong
-        // ca gio roi bam xac nhan moi biet ma sai. Luc xac nhan van kiem tra lai lan nua.
-        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
-            promoCodeService.requireUsableCode(request.getPromoCode(), fee);
-        }
 
         DraftOrder saved = draftOrderRepository.save(draft);
         draftAreas.save(new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(saved, quote.pickupArea(), quote.deliveryArea()));
@@ -228,8 +223,17 @@ public class OrderDraftServiceImpl implements OrderDraftService {
         request.setPickupProvinceCode(form.getPickupProvinceCode()); request.setPickupAreaCode(form.getPickupAreaCode());
         request.setDeliveryProvinceCode(form.getDeliveryProvinceCode()); request.setDeliveryAreaCode(form.getDeliveryAreaCode());
         var quote = routing.quote(request);
+        validateQuotedDraft(request, quote);
         var record = draftAreas.findByDraftOrder_Id(id).orElseGet(() -> new vn.edu.hcmute.uteexpress.entity.routing.DraftOrderArea(draft, quote.pickupArea(), quote.deliveryArea()));
         record.configure(quote.pickupArea(), quote.deliveryArea()); draftAreas.save(record);
         draft.setEstimatedFee(quote.total()); draft.setUpdatedAt(java.time.LocalDateTime.now());
+    }
+
+    private void validateQuotedDraft(OrderCreateRequest request,
+            vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService.Quote quote) {
+        routing.fullAddress(request.getSenderAddress(), quote.pickupArea());
+        routing.fullAddress(request.getReceiverAddress(), quote.deliveryArea());
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank())
+            promoCodeService.requireUsableCode(request.getPromoCode(), quote.total());
     }
 }
