@@ -57,6 +57,7 @@ class InterprovincialReturnIntegrationTest {
     @Autowired LinehaulTripRepository trips;
     @Autowired jakarta.persistence.EntityManager em;
     @Autowired OrderRepository orders;
+    @Autowired OrderStatusHistoryRepository history;
     @Autowired OrderService orderService;
     @Autowired OperationsCaseService cases;
     @Autowired HubService hub;
@@ -140,6 +141,66 @@ class InterprovincialReturnIntegrationTest {
         var started = cases.view(managerSgn.getUsername(), caseId);
         cases.complete(managerSgn.getUsername(), caseId, started.getRevision(), "Trần Minh Thọ nhận lại hàng", image());
         assertEquals(Order.OrderStatus.RETURNED, orders.findById(order.getId()).orElseThrow().getStatus());
+    }
+
+    @Test void completedReturnIsNoLongerListedAsWaitingForSenderHandover() {
+        var order = failedAtDestination();
+        var route = routes.findByOrder_Id(order.getId()).orElseThrow();
+        route.beginReturn(); route.departLinehaul(); route.arriveFromLinehaul();
+        order.setStatus(Order.OrderStatus.RETURNED); orders.saveAndFlush(order);
+        assertTrue(hub.overview(managerSgn.getUsername(), null).returned().isEmpty());
+    }
+
+    @Test void closedForwardOrdersDoNotStayInOriginWaitingQueue() {
+        var order = orderService.createOrder(request("SGN-THUDUC", "01", "HAN-CAUGIAY"), customer.getUsername());
+        routes.findByOrder_Id(order.getId()).orElseThrow().receiveAtOriginHub();
+        order.setStatus(Order.OrderStatus.CANCELLED); orders.saveAndFlush(order);
+        assertTrue(hub.overview(managerSgn.getUsername(), null).waiting().isEmpty());
+    }
+
+    @Test void closedDestinationOrdersDoNotCountAsReadyForDelivery() {
+        var order = failedAtDestination();
+        org.springframework.test.util.ReflectionTestUtils.setField(routes.findByOrder_Id(order.getId()).orElseThrow(), "stage", OrderRoute.Stage.DEST_HUB);
+        order.setStatus(Order.OrderStatus.CANCELLED); orders.saveAndFlush(order);
+        assertEquals(0, hub.overview(managerHan.getUsername(), null).waitingDelivery());
+    }
+
+    @Test void originManagerCannotOpenDeliveryRetryOrReturnForDestinationBranch() {
+        var order = failedAtDestination();
+        assertThrows(AccessDeniedException.class, () -> cases.prepare(managerSgn.getUsername(), OperationsCase.Kind.RETURN, order.getId()));
+        assertThrows(AccessDeniedException.class, () -> cases.prepare(managerSgn.getUsername(), OperationsCase.Kind.RETRY, order.getId()));
+    }
+
+    @Test void originManagerCannotPostReturnForDestinationBranchDirectly() {
+        var order = failedAtDestination();
+        assertThrows(AccessDeniedException.class, () -> cases.request(managerSgn.getUsername(), new OperationsCaseRequest(
+                OperationsCase.Kind.RETURN, order.getId(), order.getRevision(), null, null,
+                "Kho gửi thử lập hoàn cho kho nhận", "", UUID.randomUUID().toString()), null));
+    }
+
+    @Test void movementNotesCannotBecomeExtraDeliveryAttemptsOrEraseRetryAppointment() {
+        var order = failedAtDestination();
+        history.save(new OrderStatusHistory(order, shipperHan, Order.OrderStatus.IN_TRANSIT, Order.OrderStatus.FAILED,
+                vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason.OTHER, "Không giao được hàng", NOW.minusMinutes(1), NOW.minusHours(1)));
+        for (int i = 0; i < 3; i++) history.save(new OrderStatusHistory(order, managerHan, Order.OrderStatus.FAILED, Order.OrderStatus.FAILED,
+                null, "Cập nhật vị trí kiện hàng", null, NOW.minusMinutes(10 - i)));
+        history.flush();
+        assertEquals(1, history.countByOrderAndStatus(order, Order.OrderStatus.FAILED));
+        assertEquals(1, history.failureEntries(List.of(order.getId())).size());
+        assertTrue(cases.canRetry(order));
+        assertEquals(1, orders.countDueRetries(shipperHan, NOW, 3));
+    }
+
+    @Test void startReturnMustRecheckStatusAfterLockingAPreloadedOrder() {
+        var order = failedAtDestination();
+        Long id = cases.request(managerHan.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETURN, order.getId(),
+                order.getRevision(), null, null, "Người nhận từ chối nhận hàng", "", UUID.randomUUID().toString()), null);
+        var record = cases.view(managerHan.getUsername(), id);
+        em.flush();
+        // Mô phỏng DB đã đổi trong lúc persistence context còn giữ ảnh chụp cũ; không ghi Aiven.
+        em.createNativeQuery("update shipment_order set status='DELIVERED', revision=revision+1 where id=:id")
+                .setParameter("id", order.getId()).executeUpdate();
+        assertThrows(StaffConflictException.class, () -> cases.startReturn(managerHan.getUsername(), id, record.getRevision(), "Bắt đầu hoàn từ biểu mẫu cũ"));
     }
 
     /** Đơn SGN -> HAN đã qua chuyến, đang ở chặng giao cuối do shipper HAN giữ và vừa giao thất bại. */
