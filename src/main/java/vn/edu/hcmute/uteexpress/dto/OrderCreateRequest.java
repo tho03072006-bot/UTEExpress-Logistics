@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.*;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.validation.PublicAccountValidation;
+import vn.edu.hcmute.uteexpress.validation.ShippingInputValidation;
 
 /**
  * Du lieu nguoi dung nhap tu form "Tao don gui hang" (khong dung truc tiep
@@ -31,17 +33,17 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập tên người gửi")
     @Size(min = 2, max = 100, message = "Tên người gửi từ 2–100 ký tự.")
-    @Pattern(regexp = "[\\p{L}\\p{M} .'-]+", message = "Tên người gửi chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
+    @Pattern(regexp = PublicAccountValidation.NAME, message = "Tên người gửi phải có chữ cái, chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
     private String senderName;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ lấy hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ lấy hàng từ 5–255 ký tự.")
-    @Pattern(regexp = "[^\\p{Cntrl}]+", message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
     private String senderAddress;
 
     @NotBlank(message = "Vui lòng nhập tên người nhận")
     @Size(min = 2, max = 100, message = "Tên người nhận từ 2–100 ký tự.")
-    @Pattern(regexp = "[\\p{L}\\p{M} .'-]+", message = "Tên người nhận chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
+    @Pattern(regexp = PublicAccountValidation.NAME, message = "Tên người nhận phải có chữ cái, chỉ chứa chữ, khoảng trắng, dấu chấm/gạch nối/nháy.")
     private String receiverName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại người nhận")
@@ -50,13 +52,13 @@ public class OrderCreateRequest {
 
     @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
     @Size(min = 5, max = 255, message = "Địa chỉ giao hàng từ 5–255 ký tự.")
-    @Pattern(regexp = "[^\\p{Cntrl}]+", message = "Địa chỉ không được chứa ký tự điều khiển.")
+    @Pattern(regexp = ShippingInputValidation.ADDRESS, message = "Địa chỉ không được chứa ký tự điều khiển.")
     private String receiverAddress;
 
     @NotNull(message = "Vui lòng nhập khối lượng")
     @Positive(message = "Khối lượng phải lớn hơn 0")
-    @DecimalMin(value="0.01",message="Khối lượng tối thiểu 0,01 kg.")
-    @DecimalMax(value = "100", message = "Khối lượng tối đa 100 kg.")
+    @DecimalMin(value=ShippingInputValidation.MIN_WEIGHT,message="Khối lượng tối thiểu 0,01 kg.")
+    @DecimalMax(value = ShippingInputValidation.MAX_WEIGHT, message = "Khối lượng tối đa 100 kg.")
     private Double weightKg;
 
     @NotNull(message = "Vui lòng chọn dịch vụ")

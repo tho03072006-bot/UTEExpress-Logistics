@@ -46,12 +46,12 @@ class ShippingTariffServiceImplTest {
         form.setBaseFee(BigDecimal.valueOf(20000)); form.setFeePerKg(BigDecimal.valueOf(4000));
         form.setReason("Cập nhật cước demo"); return form;
     }
-    @ParameterizedTest @ValueSource(doubles = {-1, 0, 100.01, Double.NaN, Double.POSITIVE_INFINITY})
+    @ParameterizedTest @ValueSource(doubles = {-1, 0, 0.001, 100.01, Double.NaN, Double.POSITIVE_INFINITY})
     void invalidWeightIsRejected(double weight) {
         assertThrows(IllegalArgumentException.class, () -> service.quote(Order.ServiceType.STANDARD, weight));
     }
     @Test void fractionalMoneyRoundsToWholeVndAndReadsCurrentTariff() {
-        assertEquals(new BigDecimal("15004"), service.quote(Order.ServiceType.STANDARD, 0.0012));
+        assertEquals(new BigDecimal("15034"), service.quote(Order.ServiceType.STANDARD, 0.0112));
         tariff.setBaseFee(BigDecimal.valueOf(25000));
         assertEquals(new BigDecimal("31000"), service.quote(Order.ServiceType.STANDARD, 2));
     }

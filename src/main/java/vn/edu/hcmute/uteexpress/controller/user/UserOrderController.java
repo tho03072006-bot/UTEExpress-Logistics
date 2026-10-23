@@ -125,19 +125,17 @@ public class UserOrderController {
     @PostMapping(value = "/tao-don/bao-gia", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @org.springframework.web.bind.annotation.ResponseBody
     public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> quote(
-            @RequestParam String senderAddress, @RequestParam String receiverAddress,
-            @RequestParam Order.ServiceType serviceType, @RequestParam double weightKg, Authentication authentication) {
+            @Valid @ModelAttribute vn.edu.hcmute.uteexpress.dto.OrderQuoteRequest form,
+            BindingResult errors, Authentication authentication) {
         var noStore = org.springframework.http.CacheControl.noStore();
-        senderAddress = senderAddress.strip(); receiverAddress = receiverAddress.strip();
-        if (senderAddress.length() < 5 || receiverAddress.length() < 5 || senderAddress.length() > 255 || receiverAddress.length() > 255
-                || !Double.isFinite(weightKg) || weightKg <= 0 || weightKg > 100)
+        if (errors.hasErrors())
             return org.springframework.http.ResponseEntity.ok().cacheControl(noStore)
-                    .body(java.util.Map.of("ok", false, "message", "Nhập đủ hai địa chỉ và khối lượng để xem cước."));
+                    .body(java.util.Map.of("ok", false, "message", "Nhập hai địa chỉ hợp lệ, dịch vụ và khối lượng từ 0,01–100 kg để xem cước."));
         if (!allowQuote(authentication.getName()))
             return org.springframework.http.ResponseEntity.status(429).cacheControl(noStore)
                     .body(java.util.Map.of("ok", false, "message", "Bạn xem báo giá quá nhanh. Đợi một chút rồi thử lại."));
         try {
-            var price = pricing.price(senderAddress, receiverAddress, serviceType, weightKg);
+            var price = pricing.price(form.getSenderAddress(), form.getReceiverAddress(), form.getServiceType(), form.getWeightKg());
             return org.springframework.http.ResponseEntity.ok().cacheControl(noStore).body(java.util.Map.of("ok", true,
                     "distanceKm", price.distanceKm(), "baseFee", price.baseFee(), "distanceFee", price.distanceFee(), "total", price.total()));
         } catch (IllegalStateException | IllegalArgumentException ex) {

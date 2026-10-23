@@ -29,7 +29,10 @@
         }
         function ask() {
             var sender=fields.sender.value.trim(), receiver=fields.receiver.value.trim(), weight=fields.weight.value;
-            if(sender.length<5 || receiver.length<5 || !(Number(weight)>0)) { lastKey=''; show('idle','Nhập địa chỉ lấy hàng, địa chỉ giao hàng và khối lượng để xem cước.'); return; }
+            if(sender.length<5 || sender.length>255 || receiver.length<5 || receiver.length>255 || /[\x00-\x1f\x7f]/.test(sender+receiver)
+                    || !Number.isFinite(Number(weight)) || Number(weight)<0.01 || Number(weight)>100) {
+                lastKey=''; show('idle','Nhập hai địa chỉ hợp lệ và khối lượng từ 0,01–100 kg để xem cước.'); return;
+            }
             var key=[sender,receiver,weight,fields.service.value].join('|');
             if(key===lastKey) return;
             lastKey=key; var run=++sequence;
@@ -50,7 +53,11 @@
                 })
                 .catch(function () { if(run===sequence) { lastKey=''; show('error','Chưa tính được cước. Kiểm tra mạng rồi thử lại.'); } });
         }
-        function schedule() { window.clearTimeout(timer); timer=window.setTimeout(ask,700); }
+        function schedule() {
+            // Đổi đầu vào là hết hiệu lực kết quả đang đợi, kể cả đầu vào mới không hợp lệ.
+            ++sequence; lastKey=''; show('idle','Đang cập nhật dữ liệu báo giá…');
+            window.clearTimeout(timer); timer=window.setTimeout(ask,700);
+        }
         [fields.sender,fields.receiver,fields.weight].forEach(function (input) { input.addEventListener('input',schedule); });
         fields.service.addEventListener('change',schedule);
         // Chọn từ sổ địa chỉ: address-picker.js điền thẳng vào ô, không phát sự kiện input.
