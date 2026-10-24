@@ -25,6 +25,7 @@ public class OperationsController {
         var orders = overview.alerts(auth.getName(), alert, branchId, page);
         model.addAttribute("orders", orders);
         model.addAttribute("dropOffIds", overview.dropOffOrderIds(orders.getContent()));
+        model.addAttribute("deliveryHubIds", overview.deliveryHubOrderIds(auth.getName(), orders.getContent()));
         model.addAttribute("branches", overview.branches(auth.getName())); model.addAttribute("branchId", branchId);
         model.addAttribute("lateComplaints", overview.lateComplaints(auth.getName(), 0));
         model.addAttribute("lateCash", overview.lateCash(auth.getName(), 0));
@@ -71,17 +72,13 @@ public class OperationsController {
     @GetMapping("/ho-so-van-hanh/{id}") @Transactional(readOnly = true)
     public String detail(@PathVariable Long id, Authentication auth, Model model) {
         var record = cases.view(auth.getName(), id); model.addAttribute("case", record);
-        boolean admin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        boolean financial = record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND
-                || record.getKind() == OperationsCase.Kind.COMPENSATION;
-        model.addAttribute("canReview", (admin || !cases.requiresAdminApproval(auth.getName(), id))
-                && (!financial || !auth.getName().equals(record.getCreatedBy())));
-        model.addAttribute("canApprove", (admin || !cases.requiresAdminApproval(auth.getName(), id))
-                && (!financial || !auth.getName().equals(record.getCreatedBy())));
+        var reviewActions = cases.reviewActions(auth.getName(), id);
+        model.addAttribute("canReview", reviewActions.canReview());
+        model.addAttribute("canApprove", reviewActions.canApprove());
         var returnActions = cases.returnActions(auth.getName(), id);
         model.addAttribute("canStartReturn", returnActions.canStart());
         model.addAttribute("canComplete", record.getKind() == OperationsCase.Kind.RETURN ? returnActions.canComplete()
-                : admin && !auth.getName().equals(record.getCreatedBy()));
+                : cases.canComplete(auth.getName(), id));
         if (record.getSettlement() != null) model.addAttribute("outstanding", cases.outstanding(record.getSettlement()));
         return "manager/operations-case";
     }

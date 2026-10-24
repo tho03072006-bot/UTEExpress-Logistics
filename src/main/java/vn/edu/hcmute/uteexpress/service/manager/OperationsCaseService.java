@@ -15,7 +15,12 @@ public interface OperationsCaseService {
     /** Nút hoàn hàng theo đúng kho và giai đoạn; các thao tác ghi vẫn kiểm tra lại quyền. */
     record ReturnActions(boolean canStart, boolean canComplete) { }
     ReturnActions returnActions(String actor, Long id);
+    record ReviewActions(boolean canReview, boolean canApprove) { }
+    ReviewActions reviewActions(String actor, Long id);
     boolean requiresAdminApproval(String actor, Long id);
+    default boolean canStartReturn(String actor, Long id) { return returnActions(actor, id).canStart(); }
+    boolean canComplete(String actor, Long id);
+    boolean canRequestCompensation(String actor, Long complaintId);
     OperationsCaseRequest prepare(String actor, OperationsCase.Kind kind, Long targetId);
     Long request(String actor, OperationsCaseRequest form, MultipartFile evidence);
     void review(String actor, Long id, OperationsReviewRequest form);

@@ -89,7 +89,9 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         return record;
     }
     public ReturnActions returnActions(String actor, Long id) {
-        var record = view(actor, id);
+        return returnActionsFor(actor, view(actor, id));
+    }
+    private ReturnActions returnActionsFor(String actor, OperationsCase record) {
         if (record.getKind() != OperationsCase.Kind.RETURN || record.getOrder().getStatus() != Order.OrderStatus.FAILED)
             return new ReturnActions(false, false);
         var route = interprovincialRoute(record.getOrder());
@@ -129,8 +131,58 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     }
     public boolean requiresAdminApproval(String actor, Long id) {
         var record = view(actor, id);
+        return requiresAdminApproval(record);
+    }
+    private boolean requiresAdminApproval(OperationsCase record) {
         return isFinancial(record) || (record.getKind() == OperationsCase.Kind.RETRY
                 && history.countByOrderAndStatus(record.getOrder(), Order.OrderStatus.FAILED) >= policies.current().getMaxDeliveryAttempts());
+    }
+    public ReviewActions reviewActions(String actor, Long id) {
+        var record = view(actor, id);
+        boolean allowed = record.getStatus() == OperationsCase.Status.REQUESTED
+                && (scope.isAdmin(actor) || !requiresAdminApproval(record))
+                && (!isFinancial(record) || !actor.equals(record.getCreatedBy()));
+        return new ReviewActions(allowed, allowed && canApprove(record));
+    }
+    /** Điều kiện đọc cho nút Duyệt; các bước ghi vẫn khóa và kiểm tra lại toàn bộ trước khi duyệt. */
+    private boolean canApprove(OperationsCase record) {
+        if (isFinancial(record) && !isPositiveMoney(record.getAmount())) return false;
+        var now = LocalDateTime.now(clock);
+        return switch (record.getKind()) {
+            case RETRY -> record.getOrder().getStatus() == Order.OrderStatus.FAILED && record.getNextAttemptAt() != null
+                    && record.getNextAttemptAt().isAfter(now) && !record.getNextAttemptAt().isAfter(now.plusDays(30));
+            case RETURN -> record.getOrder().getStatus() == Order.OrderStatus.FAILED;
+            case CASH_SUPPLEMENT, CASH_REFUND -> record.getSettlement().getStatus() == CodSettlement.Status.CONFIRMED
+                    && record.getAmount().compareTo(record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT
+                        ? outstanding(record.getSettlement()) : refundable(record.getSettlement())) <= 0;
+            case COMPENSATION -> record.getComplaint().getStatus() != OrderComplaint.Status.REJECTED
+                    && hasRefundableAmount(record.getOrder(), record.getAmount());
+        };
+    }
+    private boolean hasRefundableAmount(Order order, BigDecimal amount) {
+        return isPositiveMoney(amount) && payments.findByOrder(order).filter(vn.edu.hcmute.uteexpress.util.PaymentReadiness::isRefundable)
+                .filter(p -> amount.compareTo(p.getAmount()) <= 0).isPresent();
+    }
+    public boolean canComplete(String actor, Long id) {
+        var record = view(actor, id);
+        if (record.getKind() == OperationsCase.Kind.RETURN) return returnActionsFor(actor, record).canComplete();
+        return (record.getKind() == OperationsCase.Kind.COMPENSATION || record.getKind() == OperationsCase.Kind.CASH_REFUND)
+                && record.getStatus() == OperationsCase.Status.APPROVED && isPositiveMoney(record.getAmount()) && scope.isAdmin(actor)
+                && !actor.equals(record.getCreatedBy())
+                && (record.getKind() != OperationsCase.Kind.COMPENSATION
+                    || (record.getComplaint().getStatus() != OrderComplaint.Status.REJECTED
+                        && hasRefundableAmount(record.getOrder(), record.getAmount())));
+    }
+    public boolean canRequestCompensation(String actor, Long complaintId) {
+        access.requireOperator(actor); access.validateId(complaintId);
+        var complaint = complaints.findById(complaintId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+        requireBranch(actor, complaint.getOrder(), null);
+        return !scope.isAdmin(actor) && complaint.getStatus() != OrderComplaint.Status.REJECTED
+                && isPaid(complaint.getOrder()) && !hasCompensationCase(complaint);
+    }
+    private boolean hasCompensationCase(OrderComplaint complaint) {
+        return cases.existsByComplaintAndKindAndStatusIn(complaint, OperationsCase.Kind.COMPENSATION,
+                List.of(OperationsCase.Status.REQUESTED, OperationsCase.Status.APPROVED, OperationsCase.Status.COMPLETED));
     }
     public OperationsCaseRequest prepare(String actor, OperationsCase.Kind kind, Long id) {
         access.requireOperator(actor); access.validateId(id);
@@ -153,8 +205,10 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             case COMPENSATION -> {
                 var complaint = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
                 requireBranch(actor, complaint.getOrder(), null);
+                if (complaint.getStatus() == OrderComplaint.Status.REJECTED || hasCompensationCase(complaint))
+                    throw new IllegalArgumentException("Khiếu nại đã từ chối hoặc đã có đề xuất bồi hoàn đang chờ/đã duyệt/đã hoàn tất.");
                 if (!isPaid(complaint.getOrder()))
-                    throw new IllegalArgumentException("Đơn chưa thanh toán nên không lập phiếu bồi hoàn cước.");
+                    throw new IllegalArgumentException("Cước chưa thanh toán hoặc số tiền/chứng từ chưa hợp lệ; cần tra soát trước khi lập phiếu bồi hoàn.");
                 revision = complaint.getRevision();
             }
             default -> throw new IllegalArgumentException("Loại hồ sơ không hợp lệ.");
@@ -211,8 +265,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 checkRevision(complaint.getRevision(), form.revision());
                 if (complaint.getStatus() == OrderComplaint.Status.REJECTED)
                     throw new IllegalArgumentException("Không đề xuất chi trả cho khiếu nại đã từ chối.");
-                if (cases.existsByComplaintAndKindAndStatusIn(complaint, OperationsCase.Kind.COMPENSATION,
-                        List.of(OperationsCase.Status.REQUESTED, OperationsCase.Status.APPROVED, OperationsCase.Status.COMPLETED)))
+                if (hasCompensationCase(complaint))
                     throw new StaffConflictException("Khiếu nại đã có đề xuất đang chờ hoặc đã được duyệt.");
                 validateCompensation(order, form.amount());
                 if (image == null && !cloud.isReference(complaint.getImageAsset(),vn.edu.hcmute.uteexpress.service.media.MediaPurpose.COMPLAINT))
@@ -252,6 +305,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             access.requireAdmin(actor);
         }
         if (form.approve()) {
+            if (isFinancial(record)) requireMoney(record.getAmount());
             switch (record.getKind()) {
                 case RETRY -> {
                     requireFailed(record.getOrder()); validateAppointment(record.getNextAttemptAt(), LocalDateTime.now(clock));
@@ -290,6 +344,8 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         if (route != null) {
             // B9: kho chi nhánh nhận bắt đầu hoàn; hàng về kho nhận, shipper giao hết giữ đơn, chờ chuyến về chi nhánh gửi.
             requireHub(actor, route.getDestBranch(), "Bắt đầu hoàn hàng liên tỉnh");
+            if (route.isReturnLeg() || route.getStage() != vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE)
+                throw new StaffConflictException("Chặng vận chuyển đã thay đổi; chỉ bắt đầu hoàn khi hàng còn ở chặng giao.");
             var order = record.getOrder();
             route.beginReturn();
             order.setShipper(null); order.setUpdatedAt(now); orders.saveAndFlush(order);
@@ -324,6 +380,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         } else if ((record.getKind() == OperationsCase.Kind.COMPENSATION || record.getKind() == OperationsCase.Kind.CASH_REFUND)
                 && record.getStatus() == OperationsCase.Status.APPROVED) {
             access.requireAdmin(actor);
+            requireMoney(record.getAmount());
             if (record.getCreatedBy().equals(actor)) throw new IllegalArgumentException("Người đề xuất không tự ghi nhận chi trả.");
             if (record.getKind() == OperationsCase.Kind.COMPENSATION) {
                 if (record.getComplaint().getStatus() == OrderComplaint.Status.REJECTED)
@@ -424,17 +481,21 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             throw new IllegalArgumentException("Lịch giao lại phải sau hiện tại và trong 30 ngày.");
     }
     private void requireMoney(BigDecimal amount) {
-        if (amount == null || amount.signum() <= 0 || amount.stripTrailingZeros().scale() > 0
-                || amount.compareTo(new BigDecimal("999999999999")) > 0)
+        if (!isPositiveMoney(amount))
             throw new IllegalArgumentException("Số tiền phải là VND nguyên dương, tối đa 12 chữ số.");
+    }
+    private boolean isPositiveMoney(BigDecimal amount) {
+        return vn.edu.hcmute.uteexpress.util.PaymentReadiness.isValidAmount(amount) && amount.signum() > 0;
     }
     private void validateCompensation(Order order, BigDecimal amount) {
         var payment = payments.findByOrder(order).orElseThrow(() -> new IllegalArgumentException("Đơn chưa có thanh toán."));
-        if (payment.getStatus() != OrderPayment.PaymentStatus.PAID || amount.compareTo(payment.getAmount()) > 0)
-            throw new IllegalArgumentException("Mô hình hiện tại chỉ hỗ trợ hoàn/bồi hoàn cước không vượt cước đã thanh toán, không phải giá trị hàng hóa.");
+        // Các bước ghi đã khóa đơn: đọc lại/khóa cả thanh toán, không duyệt theo snapshot nạp trước khi chờ khóa.
+        entityManager.refresh(payment, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        if (!vn.edu.hcmute.uteexpress.util.PaymentReadiness.isRefundable(payment) || amount.compareTo(payment.getAmount()) > 0)
+            throw new IllegalArgumentException("Chỉ bồi hoàn cước thực thu có số tiền/chứng từ hợp lệ, không vượt cước đã trả; không bồi hoàn giá trị hàng hóa.");
     }
     public boolean isPaid(Order order) {
-        return order != null && payments.findByOrder(order).map(p -> p.getStatus() == OrderPayment.PaymentStatus.PAID).orElse(false);
+        return order != null && payments.findByOrder(order).map(vn.edu.hcmute.uteexpress.util.PaymentReadiness::isRefundable).orElse(false);
     }
     private boolean isFinancial(OperationsCase record) {
         return record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND

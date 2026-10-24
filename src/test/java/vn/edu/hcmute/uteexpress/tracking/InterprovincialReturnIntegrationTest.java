@@ -17,9 +17,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseRequest;
 import vn.edu.hcmute.uteexpress.entity.*;
@@ -37,7 +35,6 @@ import vn.edu.hcmute.uteexpress.service.routing.*;
 import vn.edu.hcmute.uteexpress.security.admin.StaffPrincipal;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -53,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.mail.order-updates.enabled=false", "app.upload.dir=target/test-interprovincial-return-uploads"
 })
 @ActiveProfiles("isolated-logistics") @Transactional
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 @Import(InterprovincialReturnIntegrationTest.TestClock.class)
 class InterprovincialReturnIntegrationTest {
     static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 24, 9, 0);
@@ -60,6 +58,7 @@ class InterprovincialReturnIntegrationTest {
         @Bean @Primary Clock returnClock() { return Clock.fixed(NOW.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant(), ZoneId.of("Asia/Ho_Chi_Minh")); }
     }
     @Autowired ApplicationContext context;
+    @Autowired MockMvc mvc;
     @Autowired AppUserRepository users;
     @Autowired StaffAccountRepository staff;
     @Autowired StaffBranchRepository staffBranches;
@@ -71,6 +70,7 @@ class InterprovincialReturnIntegrationTest {
     @Autowired OrderStatusHistoryRepository history;
     @Autowired OrderService orderService;
     @Autowired OperationsCaseService cases;
+    @Autowired vn.edu.hcmute.uteexpress.service.manager.OperationsOverviewService overview;
     @Autowired HubService hub;
     @Autowired OrderRoutingService routing;
     @Autowired ProvinceAreaRepository areas;
@@ -80,10 +80,8 @@ class InterprovincialReturnIntegrationTest {
     @Autowired vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService qr;
     AppUser customer, admin, managerSgn, managerHan, shipperHan;
     Branch sgn, han;
-    MockMvc mvc;
 
     @BeforeEach void seed() {
-        mvc = MockMvcBuilders.webAppContextSetup((WebApplicationContext) context).apply(springSecurity()).build();
         vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         sgn = branches.findByCode("SGN").orElseThrow(); han = branches.findByCode("HAN").orElseThrow();
         customer = account("return-customer", AppUser.Role.USER);
@@ -226,6 +224,41 @@ class InterprovincialReturnIntegrationTest {
         assertEquals(canComplete, html.contains("/manager/ho-so-van-hanh/" + caseId + "/hoan-tat"));
     }
 
+    @Test void returnFormsOnlyAppearForResponsibleBranchAndCurrentStage() throws Exception {
+        var order=failedAtDestination();
+        Long id=cases.request(managerHan.getUsername(),new OperationsCaseRequest(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null,
+                "Người nhận yêu cầu hoàn hàng", "",UUID.randomUUID().toString()),null);
+        String start="/manager/ho-so-van-hanh/"+id+"/bat-dau-hoan", complete="/manager/ho-so-van-hanh/"+id+"/hoan-tat";
+        assertFalse(caseHtml(managerSgn,id).contains(start));assertTrue(caseHtml(managerHan,id).contains(start));
+        var record=cases.view(managerHan.getUsername(),id);cases.startReturn(managerHan.getUsername(),id,record.getRevision(),"Bắt đầu hoàn về người gửi");
+        assertFalse(caseHtml(managerSgn,id).contains(complete));
+        var route=routes.findByOrder_Id(order.getId()).orElseThrow();route.departLinehaul();route.arriveFromLinehaul();routes.flush();
+        assertTrue(caseHtml(managerSgn,id).contains(complete));assertFalse(caseHtml(managerHan,id).contains(complete));
+    }
+    @Test void alertsOnlyOfferRetryAndReturnAtResponsibleDeliveryHub() {
+        var order=failedAtDestination();
+        assertFalse(overview.deliveryHubOrderIds(managerSgn.getUsername(),List.of(order)).contains(order.getId()));
+        assertTrue(overview.deliveryHubOrderIds(managerHan.getUsername(),List.of(order)).contains(order.getId()));
+        var route=routes.findByOrder_Id(order.getId()).orElseThrow();route.beginReturn();routes.flush();
+        assertFalse(overview.deliveryHubOrderIds(managerHan.getUsername(),List.of(order)).contains(order.getId()));
+    }
+    private String caseHtml(AppUser actor,Long id) throws Exception {
+        var principal=new vn.edu.hcmute.uteexpress.security.admin.StaffPrincipal(staff.findByUserUsername(actor.getUsername()).orElseThrow());
+        var authentication=new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal,null,principal.getAuthorities());
+        return mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/manager/ho-so-van-hanh/"+id)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication(authentication)))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+    @Test void startingReturnWithChangedRouteIsBusinessConflictNotInternalError() {
+        var order=failedAtDestination();
+        Long id=cases.request(managerHan.getUsername(),new OperationsCaseRequest(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null,
+                "Người nhận yêu cầu hoàn hàng", "",UUID.randomUUID().toString()),null);
+        var record=cases.view(managerHan.getUsername(),id);
+        org.springframework.test.util.ReflectionTestUtils.setField(routes.findByOrder_Id(order.getId()).orElseThrow(),"stage",OrderRoute.Stage.DEST_HUB);
+        routes.flush();
+        assertFalse(cases.canStartReturn(managerHan.getUsername(),id));
+        assertThrows(StaffConflictException.class,()->cases.startReturn(managerHan.getUsername(),id,record.getRevision(),"Bắt đầu hoàn về người gửi"));
+    }
     @Test void completedReturnIsNoLongerListedAsWaitingForSenderHandover() {
         var order = failedAtDestination();
         var route = routes.findByOrder_Id(order.getId()).orElseThrow();
