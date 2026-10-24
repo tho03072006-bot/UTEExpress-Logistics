@@ -78,7 +78,7 @@ public class SimulatorConfiguration {
                 .headers(headers -> headers
                         .cacheControl(cache -> { })
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")))
                 // CSRF mặc định được giữ nguyên cho mọi POST, không mở CORS/callback công khai.
                 .build();
     }

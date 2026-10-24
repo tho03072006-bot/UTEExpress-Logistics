@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#A50064">
-<title>MoMo mô phỏng · UTEExpress</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"></head>
+<title>MoMo · Ví mô phỏng</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"></head>
 <body class="wallet">
 <header class="wallet-bar">
-    <span class="wallet-back" aria-hidden="true"></span>
-    <div class="wallet-bar-title"><strong>Ví điện tử mô phỏng</strong><span>Cổng thanh toán demo của UTEExpress</span></div>
+    <span class="wallet-brand-mark" aria-hidden="true">mo<br>mo</span>
+    <div class="wallet-bar-title"><strong>MoMo</strong><span>Ví điện tử mô phỏng</span></div>
     <span class="wallet-demo" title="Không thu tiền thật">DEMO</span>
 </header>
 <main class="wallet-shell">
@@ -18,12 +18,16 @@
         <p class="wallet-fine">Không có khoản tiền nào bị trừ thêm. Kiểm tra trạng thái đơn tại UTEExpress.</p>
     </section>
 
-    <section th:if="${notice != null and alreadyPaid != true}" class="wallet-card wallet-notice" role="status">
+    <section th:if="${replacedQr == true}" class="wallet-card wallet-result is-blocked" role="alert">
+        <div class="result-badge" aria-hidden="true">↻</div><h1>Mã QR đã được thay thế</h1>
+        <p class="result-note" th:text="${notice}"></p><p class="wallet-fine">Không phát sinh thanh toán từ mã cũ. Hãy quét mã QR đang hiển thị mới nhất trên trang đơn hàng.</p>
+    </section>
+    <section th:if="${notice != null and alreadyPaid != true and replacedQr != true}" class="wallet-card wallet-notice" role="status">
         <p th:text="${notice}"></p>
     </section>
 
-    <section class="wallet-card wallet-merchant" th:if="${alreadyPaid != true}">
-        <div class="merchant-logo" aria-hidden="true">UTE</div>
+    <section class="wallet-card wallet-merchant" th:if="${alreadyPaid != true and replacedQr != true}">
+        <div class="merchant-logo" aria-hidden="true">mo<br>mo</div>
         <div class="merchant-name"><strong>Thanh toán bằng mã QR</strong><span>Mở từ đơn hàng trên UTEExpress</span></div>
         <ol class="wallet-steps">
             <li><span>1</span>Trên UTEExpress, chọn đơn và bấm thanh toán bằng MoMo.</li>

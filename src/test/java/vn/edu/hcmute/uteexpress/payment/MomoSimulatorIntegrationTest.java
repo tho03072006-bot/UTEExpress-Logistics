@@ -88,6 +88,20 @@ class MomoSimulatorIntegrationTest {
         assertEquals("PAID", service.status(orderId, "momo-owner").state());
         assertEquals(paid.transactionRef(), service.confirm(token).transactionRef());
     }
+    @Test void statusMustNotReportPaidWhenTheFinancialSnapshotIsInconsistent() {
+        service.confirm(token);
+        change(payment -> payment.getOrder().setShippingFee(new BigDecimal("30000")));
+        assertThrows(IllegalStateException.class, () -> service.status(orderId, "momo-owner"));
+        assertEquals("PAID", jdbc.queryForObject("select status from order_payment where order_id=?", String.class, orderId));
+    }
+    @Test void pendingStatusAlsoRejectsAnInconsistentFinancialSnapshot() {
+        change(payment -> payment.setDiscountAmount(new BigDecimal("99999")));
+        assertThrows(IllegalStateException.class, () -> service.status(orderId, "momo-owner"));
+    }
+    @Test void momoStatusDoesNotDescribeCashPaymentAsWalletSuccess() {
+        change(payment -> { payment.setMethod(OrderPayment.PaymentMethod.COD); payment.setStatus(OrderPayment.PaymentStatus.PAID); });
+        assertEquals("UNAVAILABLE", service.status(orderId, "momo-owner").state());
+    }
     @RepeatedTest(64) void qrDecodesToExactConfiguredRenderCheckoutUrl() throws Exception {
         var checkout = service.createCheckout(orderId, "momo-owner");
         byte[] bytes = Base64.getDecoder().decode(checkout.qrDataUrl().substring("data:image/png;base64,".length()));
@@ -161,6 +175,82 @@ class MomoSimulatorIntegrationTest {
         assertEquals(paid.transactionRef(), service.confirm(token).transactionRef());
         assertEquals(paid.transactionRef(), jdbc.queryForObject("select transaction_ref from order_payment where order_id=?", String.class, orderId));
     }
+    @Test void creatingAnotherQrRevokesOldQrBeforeEitherHasPaid() {
+        String old = service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1];
+        String current = service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1];
+        assertThrows(IllegalStateException.class, () -> service.view(old));
+        assertThrows(IllegalStateException.class, () -> service.confirmOnce(old));
+        assertEquals("UNPAID", service.status(orderId, "momo-owner").state());
+        assertTrue(service.confirmOnce(current).paidNow());
+        assertFalse(service.confirmOnce(current).paidNow());
+    }
+    @Test void alreadyOpenOldQrCannotSubmitAfterOwnerGeneratesNewQr() throws Exception {
+        var opened = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
+        String page = opened.getResponse().getRedirectedUrl(); var phone = (MockHttpSession) opened.getRequest().getSession(false);
+        service.createCheckout(orderId, "momo-owner");
+        mvc.perform(post(page + "/xac-nhan").session(phone).with(csrf()).param("simulationAcknowledged", "true"))
+                .andExpect(status().isConflict()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-confirm-form"))));
+        assertEquals("UNPAID", service.status(orderId, "momo-owner").state());
+    }
+    @Test void concurrentOldAndCurrentQrCanOnlyPayCurrentQr() throws Exception {
+        String old = service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1];
+        String current = service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1];
+        var pool = Executors.newFixedThreadPool(2); var start = new CountDownLatch(1);
+        try {
+            var a = pool.submit(() -> { start.await(); return assertThrows(IllegalStateException.class, () -> service.confirmOnce(old)); });
+            var b = pool.submit(() -> { start.await(); return service.confirmOnce(current); });
+            start.countDown(); a.get(10, TimeUnit.SECONDS); assertTrue(b.get(10, TimeUnit.SECONDS).paidNow());
+            assertFalse(service.confirmOnce(current).paidNow());
+        } finally { start.countDown(); pool.shutdownNow(); }
+        assertEquals(1, jdbc.queryForObject("select count(*) from order_payment where order_id=? and status='PAID'", Integer.class, orderId));
+    }
+    @Test void qrRotationChangesOnlyRevisionNotOrderStatusOrBusinessTimestamp() {
+        var before = jdbc.queryForMap("select revision,status,updated_at from shipment_order where id=?", orderId);
+        service.createCheckout(orderId, "momo-owner");
+        var after = jdbc.queryForMap("select revision,status,updated_at from shipment_order where id=?", orderId);
+        assertTrue(((Number) after.get("revision")).longValue() > ((Number) before.get("revision")).longValue());
+        assertEquals(before.get("status"), after.get("status")); assertEquals(before.get("updated_at"), after.get("updated_at"));
+        assertEquals("UNPAID", service.status(orderId, "momo-owner").state());
+    }
+    @Test void anotherOwnerCannotRevokeExistingQr() {
+        long before = jdbc.queryForObject("select revision from shipment_order where id=?", Long.class, orderId);
+        assertThrows(IllegalArgumentException.class, () -> service.createCheckout(orderId, "another-owner"));
+        assertEquals(before, jdbc.queryForObject("select revision from shipment_order where id=?", Long.class, orderId));
+        assertFalse(service.view(token).paid());
+    }
+    @Test void rolledBackQrRotationDoesNotInvalidatePreviousQr() {
+        String rolledBack = transaction.execute(status -> {
+            String value = service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1];
+            status.setRollbackOnly(); return value;
+        });
+        assertFalse(service.view(token).paid());
+        assertThrows(IllegalStateException.class, () -> service.view(rolledBack));
+    }
+    @Test void simultaneousRotationsLeaveExactlyOneQrGenerationActive() throws Exception {
+        var pool = Executors.newFixedThreadPool(2); var start = new CountDownLatch(1);
+        Callable<String> rotate = () -> { start.await(); return service.createCheckout(orderId, "momo-owner").url().split("\\?t=", 2)[1]; };
+        try {
+            var a = pool.submit(rotate); var b = pool.submit(rotate); start.countDown();
+            var first = a.get(10, TimeUnit.SECONDS); var second = b.get(10, TimeUnit.SECONDS);
+            long liveRevision = jdbc.queryForObject("select revision from shipment_order where id=?", Long.class, orderId);
+            var current = codec.verify(first, Instant.now()).orderRevision() == liveRevision ? first : second;
+            var old = current.equals(first) ? second : first;
+            assertNotEquals(codec.verify(first, Instant.now()).orderRevision(), codec.verify(second, Instant.now()).orderRevision());
+            assertFalse(service.view(current).paid()); assertThrows(IllegalStateException.class, () -> service.view(old));
+        } finally { start.countDown(); pool.shutdownNow(); }
+    }
+    @Test void phoneStatusDetectsReplacedQrAndClosedSessionWithoutLeakingToken() throws Exception {
+        var opened = mvc.perform(get("/momo/thanh-toan").param("t", token)).andReturn();
+        var page = opened.getResponse().getRedirectedUrl(); var phone = (MockHttpSession) opened.getRequest().getSession(false);
+        var statusPath = page + "/trang-thai";
+        mvc.perform(get(statusPath).session(phone)).andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.state").value("UNPAID")).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(token))));
+        mvc.perform(get(statusPath)).andExpect(status().isGone()).andExpect(jsonPath("$.state").value("UNAVAILABLE"));
+        service.createCheckout(orderId, "momo-owner");
+        mvc.perform(get(statusPath).session(phone)).andExpect(status().isConflict()).andExpect(jsonPath("$.state").value("REPLACED"));
+        mvc.perform(post(page + "/huy").session(phone).with(csrf())).andExpect(status().isOk());
+        assertEquals("UNPAID", service.status(orderId, "momo-owner").state());
+    }
     @Test void cancellationCommittedBeforeWaitingConfirmationWins() throws Exception {
         var pool = Executors.newFixedThreadPool(2); var locked = new CountDownLatch(1); var release = new CountDownLatch(1);
         try {
@@ -177,7 +267,19 @@ class MomoSimulatorIntegrationTest {
         var opened = mvc.perform(get("/momo/thanh-toan").param("t", token)).andExpect(status().is3xxRedirection()).andReturn();
         String page = opened.getResponse().getRedirectedUrl(); var session = (MockHttpSession) opened.getRequest().getSession(false);
         assertFalse(page.contains(token));
-        var rendered = mvc.perform(get(page).session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("UTEMOMOTEST01"))).andReturn();
+        var rendered = mvc.perform(get(page).session(session)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("UTEMOMOTEST01")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<strong>MoMo</strong>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"simulationAcknowledged\" value=\"true\" required")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"_csrf\"")))
+                .andReturn();
+        String html = rendered.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var shipping = java.util.regex.Pattern.compile("<details\\s+class=\"wallet-shipping-details\"\\s*>(.*?)</details>", java.util.regex.Pattern.DOTALL).matcher(html);
+        assertTrue(shipping.find(), "Optional delivery details must be collapsed initially");
+        assertTrue(shipping.group(1).contains("Người gửi thử nghiệm"));
+        assertFalse(shipping.group(1).contains("UTEMOMOTEST01"));
+        assertFalse(shipping.group(1).contains("Người nhận thử nghiệm"));
+        assertTrue(html.contains("Người nhận thử nghiệm"));
         if (Boolean.getBoolean("momo.export-preview")) java.nio.file.Files.writeString(java.nio.file.Path.of("target/momo-checkout-preview.html"),
                 rendered.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
         mvc.perform(get(page)).andExpect(status().isBadRequest());
@@ -204,6 +306,8 @@ class MomoSimulatorIntegrationTest {
         // Cả hai cùng mở trang trước khi ai bấm; máy 1 bấm trước.
         mvc.perform(post(firstPage + "/xac-nhan").session(firstPhone).with(csrf()).param("simulationAcknowledged", "true")).andExpect(status().is3xxRedirection());
         mvc.perform(get(firstPage).session(firstPhone)).andExpect(content().string(org.hamcrest.Matchers.containsString("Thanh toán thành công")));
+        mvc.perform(get(firstPage + "/trang-thai").session(firstPhone)).andExpect(jsonPath("$.state").value("PAID"));
+        mvc.perform(get(secondPage + "/trang-thai").session(secondPhone)).andExpect(jsonPath("$.state").value("ALREADY_PAID"));
         // Máy 2 tải lại hoặc vẫn bấm xác nhận: bị chặn, không báo thành công, không có nút thanh toán.
         mvc.perform(get(secondPage).session(secondPhone)).andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Đơn đã được thanh toán")))
@@ -226,7 +330,10 @@ class MomoSimulatorIntegrationTest {
         assertEquals("UNPAID", service.status(orderId, "momo-owner").state());
     }
     @Test void standaloneAppDoesNotExposeMainWebsite() throws Exception {
-        mvc.perform(get("/")).andExpect(status().isOk());
+        mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<title>MoMo · Ví mô phỏng</title>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("DEMO")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("<strong>UTEExpress</strong>"))));
         mvc.perform(get("/admin/tai-khoan")).andExpect(status().isForbidden());
         mvc.perform(get("/nguoi-dung/don-hang")).andExpect(status().isForbidden());
         mvc.perform(get("/api/payments/momo/" + orderId + "/status")).andExpect(status().isForbidden());

@@ -92,7 +92,7 @@ public class MomoStartupServiceImpl implements MomoStartupService, AutoCloseable
                 }
                 if (attempt < 2) TimeUnit.MILLISECONDS.sleep(retryDelayMillis);
             }
-            if (!closed.get()) update("UNREACHABLE", "Chưa kết nối được MoMo mô phỏng. Bấm \"Tạo lại QR\" để thử đánh thức lại; nếu vẫn lỗi, kiểm tra deploy Render và mạng. Đơn chưa được coi là đã thanh toán.");
+            if (!closed.get()) update("UNREACHABLE", "MoMo chưa sẵn sàng hoặc Render đang chạy bản cũ. Cần redeploy Render cùng phiên bản web local và kiểm tra mạng. Đơn chưa được coi là đã thanh toán.");
         } catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
     }
 

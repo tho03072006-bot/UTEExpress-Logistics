@@ -14,26 +14,27 @@ import vn.edu.hcmute.uteexpress.entity.OrderPayment;
 /** Vé AES-256-GCM: không để lộ id/tài khoản trong QR, không nhận số tiền từ trình duyệt. */
 @Component
 public class MomoTicketCodec {
+    public static final int PROTOCOL_VERSION = 3;
     public static final Duration LIFETIME = Duration.ofMinutes(10);
     private static final byte[] AAD = "UTEExpress:momo-simulation:v1".getBytes(StandardCharsets.UTF_8);
     private static final SecureRandom RANDOM = new SecureRandom();
     private final MomoSettings settings;
     public MomoTicketCodec(MomoSettings settings) { this.settings = settings; }
 
-    public record Ticket(long orderId, long paymentId, long ownerId, long accessVersion,
+    public record Ticket(long orderId, long paymentId, long ownerId, long accessVersion, long orderRevision,
                          long amount, long issuedAt, long expiresAt, String passwordDigest) { }
 
     public String issue(OrderPayment payment, Instant now) {
         if (now.getEpochSecond() < 0 || now.plus(LIFETIME).getEpochSecond() > 0xffffffffL)
             throw new IllegalStateException("Thời gian hệ thống không hợp lệ để tạo phiên thanh toán.");
         var user = payment.getOrder().getSender();
-        var ticket = new Ticket(payment.getOrder().getId(), payment.getId(), user.getId(), user.getAccessVersion(),
+        var ticket = new Ticket(payment.getOrder().getId(), payment.getId(), user.getId(), user.getAccessVersion(), payment.getOrder().getRevision(),
                 payment.getAmount().longValueExact(), now.getEpochSecond(), now.plus(LIFETIME).getEpochSecond(), digest(user.getPassword()));
         try {
             var bytes = new ByteArrayOutputStream();
             try (var out = new DataOutputStream(bytes)) {
-                out.writeByte(2); out.writeLong(ticket.orderId()); out.writeLong(ticket.paymentId());
-                out.writeLong(ticket.ownerId()); out.writeLong(ticket.accessVersion()); out.writeLong(ticket.amount());
+                out.writeByte(PROTOCOL_VERSION); out.writeLong(ticket.orderId()); out.writeLong(ticket.paymentId());
+                out.writeLong(ticket.ownerId()); out.writeLong(ticket.accessVersion()); out.writeLong(ticket.orderRevision()); out.writeLong(ticket.amount());
                 out.writeInt((int) ticket.issuedAt()); out.writeInt((int) ticket.expiresAt());
                 out.write(HexFormat.of().parseHex(ticket.passwordDigest()));
             }
@@ -54,11 +55,11 @@ public class MomoTicketCodec {
             byte[] plain = cipher(Cipher.DECRYPT_MODE, Arrays.copyOf(bytes, 12))
                     .doFinal(Arrays.copyOfRange(bytes, 12, bytes.length));
             try (var in = new DataInputStream(new ByteArrayInputStream(plain))) {
-                if (in.readByte() != 2) throw invalid();
-                var ticket = new Ticket(in.readLong(), in.readLong(), in.readLong(), in.readLong(), in.readLong(),
+                if (in.readByte() != PROTOCOL_VERSION) throw invalid();
+                var ticket = new Ticket(in.readLong(), in.readLong(), in.readLong(), in.readLong(), in.readLong(), in.readLong(),
                         Integer.toUnsignedLong(in.readInt()), Integer.toUnsignedLong(in.readInt()), HexFormat.of().formatHex(in.readNBytes(32)));
                 if (in.available() != 0 || ticket.orderId() <= 0 || ticket.paymentId() <= 0 || ticket.ownerId() <= 0
-                        || ticket.accessVersion() < 0 || ticket.amount() < 0 || ticket.amount() > 999999999999L
+                        || ticket.accessVersion() < 0 || ticket.orderRevision() < 0 || ticket.amount() < 0 || ticket.amount() > 999999999999L
                         || ticket.expiresAt() - ticket.issuedAt() != LIFETIME.toSeconds()
                         || ticket.issuedAt() > now.getEpochSecond() + 30 || ticket.expiresAt() <= now.getEpochSecond()
                         || !ticket.passwordDigest().matches("[a-f0-9]{64}")) throw invalid();

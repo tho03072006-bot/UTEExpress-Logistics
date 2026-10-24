@@ -38,10 +38,30 @@ class MomoLocalWebIntegrationTest {
         order.setShippingFee(new BigDecimal("18000")); order.setWeightKg(1.0); orders.saveAndFlush(order);
         payment = new OrderPayment(); payment.setOrder(order); payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setAmount(new BigDecimal("18000")); payments.saveAndFlush(payment);
     }
-    @Test void ownerSeesQrAndCorrectPollingEndpointNotLocalConfirmButton() throws Exception {
-        mvc.perform(get("/nguoi-dung/thanh-toan/" + order.getId()).with(user(new PublicAccountPrincipal(owner))))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("https://uteexpress-momo-test.onrender.com/momo/thanh-toan?t=")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Xác nhận đã thanh toán"))));
+    @Test void ownerSeesOnlyQrAndRegenerateControlWithAutomaticStatusChecks() throws Exception {
+        var result = mvc.perform(get("/nguoi-dung/thanh-toan/" + order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("src=\"data:image/png;base64,")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-status-url=\"/api/payments/momo/" + order.getId() + "/status\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-momo-check"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Mở MoMo mô phỏng"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("https://uteexpress-momo-test.onrender.com"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Xác nhận đã thanh toán"))))
+                .andReturn();
+        String html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        String qrPanel = html.substring(html.indexOf("data-momo-payment"), html.indexOf("</section>", html.indexOf("data-momo-payment")));
+        assertEquals(1L, java.util.regex.Pattern.compile("<a\\s").matcher(qrPanel).results().count());
+        assertFalse(qrPanel.contains("<button"));
+        assertTrue(qrPanel.contains("href=\"/nguoi-dung/thanh-toan/" + order.getId() + "\""));
+        assertTrue(qrPanel.contains("data-momo-refresh"));
+        // Removing the clickable link must not remove the actual Render address encoded in the QR.
+        var checkout = (vn.edu.hcmute.uteexpress.service.payment.MomoPaymentService.Checkout) result.getModelAndView().getModel().get("checkout");
+        byte[] bytes = java.util.Base64.getDecoder().decode(checkout.qrDataUrl().substring("data:image/png;base64,".length()));
+        var bitmap = new com.google.zxing.BinaryBitmap(new com.google.zxing.common.HybridBinarizer(
+                new com.google.zxing.client.j2se.BufferedImageLuminanceSource(javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes)))));
+        assertEquals(checkout.url(), new com.google.zxing.MultiFormatReader().decode(bitmap,
+                java.util.Map.of(com.google.zxing.DecodeHintType.TRY_HARDER, true)).getText());
+        assertTrue(checkout.url().startsWith("https://uteexpress-momo-test.onrender.com/momo/thanh-toan?t="));
     }
     @Test void onlyOwnerCanPollFreshDatabaseState() throws Exception {
         String url = "/api/payments/momo/" + order.getId() + "/status";
@@ -57,6 +77,15 @@ class MomoLocalWebIntegrationTest {
         mvc.perform(post("/nguoi-dung/thanh-toan/" + order.getId() + "/xac-nhan").with(user(new PublicAccountPrincipal(owner))).with(csrf()))
                 .andExpect(status().isNotFound());
         assertEquals(OrderPayment.PaymentStatus.UNPAID, payment.getStatus());
+    }
+    @Test void invalidReceiptIsADataConflictWithoutLeakingItOrMisreportingAccessDenial() throws Exception {
+        payment.setStatus(OrderPayment.PaymentStatus.PAID); payments.flush();
+        mvc.perform(get("/api/payments/momo/" + order.getId() + "/status").with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isConflict()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.state").value("UNAVAILABLE"))
+                .andExpect(jsonPath("$.transactionRef").doesNotExist())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Manager")));
+        assertEquals(OrderPayment.PaymentStatus.PAID, payment.getStatus());
     }
     @Test void legacyConversionRequiresOwnerAndCsrf() throws Exception {
         payment.setMethod(OrderPayment.PaymentMethod.VNPAY); payments.flush();

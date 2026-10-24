@@ -26,7 +26,12 @@ class MomoTicketCodecTest {
         String encoded = codec.issue(payment, now); var result = codec.verify(encoded, now);
         assertEquals(44, result.orderId()); assertEquals(55, result.paymentId()); assertEquals(12, result.ownerId());
         assertEquals(3, result.accessVersion()); assertEquals(18000, result.amount()); assertEquals(now.plusSeconds(600).getEpochSecond(), result.expiresAt());
+        assertEquals(payment.getOrder().getRevision(), result.orderRevision());
         assertFalse(encoded.contains("alice")); assertNotEquals(encoded, codec.issue(payment, now));
+    }
+    @Test void encryptedTicketIncludesOrderRevisionForQrRevocation() {
+        org.springframework.test.util.ReflectionTestUtils.setField(payment.getOrder(), "revision", 42L);
+        assertEquals(42L, codec.verify(codec.issue(payment, now), now).orderRevision());
     }
     @Test void everyModifiedCiphertextByteIsRejected() {
         byte[] bytes = Base64.getUrlDecoder().decode(codec.issue(payment, now));

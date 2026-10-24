@@ -27,126 +27,150 @@
         filters.open = false;
     }
 
-    /* ---------- Sao chép địa chỉ ---------- */
-    document.querySelectorAll('[data-copy-text]').forEach(button => {
-        button.addEventListener('click', async () => {
-            const message = document.querySelector('[data-copy-status]');
-            try {
-                await navigator.clipboard.writeText(button.dataset.copyText);
-                if (message) message.textContent = 'Đã sao chép địa chỉ.';
-            } catch (_) {
-                if (message) message.textContent = 'Trình duyệt chưa cho phép sao chép. Bạn có thể chọn địa chỉ để sao chép thủ công.';
-            }
+    const initializedFields = new WeakSet();
+    function initializeFields() {
+        /* ---------- Sao chép địa chỉ ---------- */
+        document.querySelectorAll('[data-copy-text]').forEach(button => {
+            if (initializedFields.has(button)) return;
+            initializedFields.add(button);
+            button.addEventListener('click', async () => {
+                const message = document.querySelector('[data-copy-status]');
+                try {
+                    await navigator.clipboard.writeText(button.dataset.copyText);
+                    if (message) message.textContent = 'Đã sao chép địa chỉ.';
+                } catch (_) {
+                    if (message) message.textContent = 'Trình duyệt chưa cho phép sao chép. Bạn có thể chọn địa chỉ để sao chép thủ công.';
+                }
+            });
         });
-    });
 
-    /* ---------- Khoảng ngày: từ ngày <= đến ngày, tối đa N ngày nếu có ---------- */
-    document.querySelectorAll('[data-sx-range-form]').forEach(form => {
-        const from = form.querySelector('[data-sx-from]');
-        const to = form.querySelector('[data-sx-to]');
-        const maxDays = Number(form.dataset.sxMaxDays || 0);
-        if (!from || !to) return;
-        function validate() {
-            let error = '';
-            if (from.value && to.value) {
-                const days = (Date.parse(to.value) - Date.parse(from.value)) / 86400000 + 1;
-                if (days < 1) error = 'Ngày kết thúc phải từ ngày bắt đầu trở đi.';
-                else if (maxDays && days > maxDays) error = 'Vui lòng chọn tối đa ' + maxDays + ' ngày.';
-            } else if (maxDays && (from.value || to.value) && !(from.value && to.value)) {
-                error = 'Hãy chọn cả từ ngày và đến ngày.';
+        /* ---------- Khoảng ngày: từ ngày <= đến ngày, tối đa N ngày nếu có ---------- */
+        document.querySelectorAll('[data-sx-range-form]').forEach(form => {
+            if (initializedFields.has(form)) return;
+            initializedFields.add(form);
+            const from = form.querySelector('[data-sx-from]');
+            const to = form.querySelector('[data-sx-to]');
+            const maxDays = Number(form.dataset.sxMaxDays || 0);
+            if (!from || !to) return;
+            function validate() {
+                let error = '';
+                if (from.value && to.value) {
+                    const days = (Date.parse(to.value) - Date.parse(from.value)) / 86400000 + 1;
+                    if (days < 1) error = 'Ngày kết thúc phải từ ngày bắt đầu trở đi.';
+                    else if (maxDays && days > maxDays) error = 'Vui lòng chọn tối đa ' + maxDays + ' ngày.';
+                } else if (maxDays && (from.value || to.value) && !(from.value && to.value)) {
+                    error = 'Hãy chọn cả từ ngày và đến ngày.';
+                }
+                to.setCustomValidity(error);
+                to.classList.toggle('is-invalid', Boolean(error));
+                const feedback = to.parentElement.querySelector('.invalid-feedback');
+                if (feedback && error) feedback.textContent = error;
+                return !error;
             }
-            to.setCustomValidity(error);
-            to.classList.toggle('is-invalid', Boolean(error));
-            const feedback = to.parentElement.querySelector('.invalid-feedback');
-            if (feedback && error) feedback.textContent = error;
-            return !error;
-        }
-        from.addEventListener('change', validate);
-        to.addEventListener('change', validate);
-        form.addEventListener('submit', event => {
-            if (!validate() || !form.checkValidity()) {
-                event.preventDefault();
-                form.reportValidity();
-            }
+            from.addEventListener('change', validate);
+            to.addEventListener('change', validate);
+            form.addEventListener('submit', event => {
+                if (!validate() || !form.checkValidity()) {
+                    event.preventDefault();
+                    form.reportValidity();
+                }
+            });
         });
-    });
 
-    /* ---------- Hẹn lại: sau hiện tại và trong 30 ngày (giờ máy = giờ Việt Nam của Shipper) ---------- */
-    document.querySelectorAll('input[data-sx-schedule]').forEach(input => {
-        function bounds() {
-            const now = new Date();
-            now.setSeconds(0, 0);
-            const min = new Date(now.getTime() + 60000);
-            const max = new Date(now.getTime() + 30 * 86400000);
-            input.min = localInput(min);
-            input.max = localInput(max);
-            return { min, max };
-        }
-        bounds();
-        function validate() {
-            const { min, max } = bounds();
-            let error = '';
-            if (input.value) {
-                const chosen = new Date(input.value);
-                if (Number.isNaN(chosen.getTime())) error = 'Thời gian hẹn không hợp lệ.';
-                else if (chosen < min) error = 'Thời gian hẹn phải sau thời điểm hiện tại.';
-                else if (chosen > max) error = 'Chỉ hẹn trong 30 ngày tới.';
+        /* ---------- Hẹn lại: sau hiện tại và trong 30 ngày (giờ máy = giờ Việt Nam của Shipper) ---------- */
+        document.querySelectorAll('input[data-sx-schedule]').forEach(input => {
+            if (initializedFields.has(input)) return;
+            initializedFields.add(input);
+            function bounds() {
+                const now = new Date();
+                now.setSeconds(0, 0);
+                const min = new Date(now.getTime() + 60000);
+                const max = new Date(now.getTime() + 30 * 86400000);
+                input.min = localInput(min);
+                input.max = localInput(max);
+                return { min, max };
             }
-            input.setCustomValidity(error);
-            input.classList.toggle('is-invalid', Boolean(error));
-        }
-        input.addEventListener('change', validate);
-        input.addEventListener('focus', bounds);
-        if (input.form) input.form.addEventListener('submit', event => {
-            validate();
-            if (!input.checkValidity()) { event.preventDefault(); input.reportValidity(); }
-        }, true);
-    });
-
-    /* ---------- Lý do "khác" bắt buộc ghi chú >= 5 ký tự ---------- */
-    document.querySelectorAll('[data-sx-failure-form]').forEach(form => {
-        const reason = form.querySelector('[data-sx-reason]');
-        const note = form.querySelector('[data-sx-note]');
-        if (!reason || !note) return;
-        function sync() {
-            const other = reason.value === 'OTHER';
-            note.required = other;
-            note.minLength = other ? 5 : 0;
-            note.placeholder = other ? 'Bắt buộc mô tả ít nhất 5 ký tự.' : note.placeholder;
-        }
-        reason.addEventListener('change', sync);
-        sync();
-    });
-
-    /* ---------- Đếm ký tự cho ô nhập dài ---------- */
-    document.querySelectorAll('textarea[data-sx-count][maxlength]').forEach(area => {
-        const hint = document.createElement('div');
-        hint.className = 'sx-count-hint';
-        hint.setAttribute('aria-live', 'polite');
-        area.insertAdjacentElement('afterend', hint);
-        const update = () => {
-            const max = Number(area.getAttribute('maxlength'));
-            const length = area.value.trim().length;
-            hint.textContent = length + '/' + max + ' ký tự';
-            hint.classList.toggle('sx-over', length > max * 0.9);
-        };
-        area.addEventListener('input', update);
-        update();
-    });
-
-    /* ---------- Ảnh: kiểm tra dung lượng/định dạng trước khi tải lên ---------- */
-    document.querySelectorAll('input[type=file][data-sx-max]').forEach(input => {
-        input.addEventListener('change', () => {
-            const file = input.files && input.files[0];
-            const max = Number(input.dataset.sxMax);
-            let error = '';
-            if (file && !/^image\/(jpeg|png)$/.test(file.type)) error = 'Chỉ nhận ảnh JPG hoặc PNG.';
-            else if (file && file.size > max && !input.hasAttribute('data-sx-compress')) error = 'Ảnh tối đa ' + Math.round(max / 1048576) + ' MB. Hãy chọn ảnh nhỏ hơn.';
-            input.setCustomValidity(error);
-            input.classList.toggle('is-invalid', Boolean(error));
-            if (error) input.reportValidity();
+            bounds();
+            function validate() {
+                const { min, max } = bounds();
+                let error = '';
+                if (input.value) {
+                    const chosen = new Date(input.value);
+                    if (Number.isNaN(chosen.getTime())) error = 'Thời gian hẹn không hợp lệ.';
+                    else if (chosen < min) error = 'Thời gian hẹn phải sau thời điểm hiện tại.';
+                    else if (chosen > max) error = 'Chỉ hẹn trong 30 ngày tới.';
+                }
+                input.setCustomValidity(error);
+                input.classList.toggle('is-invalid', Boolean(error));
+            }
+            input.addEventListener('change', validate);
+            input.addEventListener('focus', bounds);
+            if (input.form) input.form.addEventListener('submit', event => {
+                validate();
+                if (!input.checkValidity()) { event.preventDefault(); input.reportValidity(); }
+            }, true);
         });
-    });
+
+        /* ---------- Lý do "khác" bắt buộc ghi chú >= 5 ký tự ---------- */
+        document.querySelectorAll('[data-sx-failure-form]').forEach(form => {
+            if (initializedFields.has(form)) return;
+            const reason = form.querySelector('[data-sx-reason]');
+            const note = form.querySelector('[data-sx-note]');
+            if (!reason || !note) return;
+            initializedFields.add(form);
+            function sync() {
+                const other = reason.value === 'OTHER';
+                note.required = other;
+                note.minLength = other ? 5 : 0;
+                note.placeholder = other ? 'Bắt buộc mô tả ít nhất 5 ký tự.' : note.placeholder;
+                note.setCustomValidity(other && note.value.trim().length < 5 ? 'Lý do khác cần ghi chú ít nhất 5 ký tự có nội dung.' : '');
+            }
+            reason.addEventListener('change', sync);
+            note.addEventListener('input', sync);
+            form.addEventListener('submit', event => {
+                sync();
+                if (!note.checkValidity()) { event.preventDefault(); note.reportValidity(); }
+            }, true);
+            sync();
+        });
+
+        /* ---------- Đếm ký tự cho ô nhập dài ---------- */
+        document.querySelectorAll('textarea[data-sx-count][maxlength]').forEach(area => {
+            if (initializedFields.has(area)) return;
+            initializedFields.add(area);
+            const hint = document.createElement('div');
+            hint.className = 'sx-count-hint';
+            hint.setAttribute('aria-live', 'polite');
+            area.insertAdjacentElement('afterend', hint);
+            const update = () => {
+                const max = Number(area.getAttribute('maxlength'));
+                const length = area.value.trim().length;
+                hint.textContent = length + '/' + max + ' ký tự';
+                hint.classList.toggle('sx-over', length > max * 0.9);
+            };
+            area.addEventListener('input', update);
+            update();
+        });
+
+        /* ---------- Ảnh: kiểm tra dung lượng/định dạng trước khi tải lên ---------- */
+        document.querySelectorAll('input[type=file][data-sx-max]').forEach(input => {
+            if (initializedFields.has(input)) return;
+            initializedFields.add(input);
+            input.addEventListener('change', () => {
+                const file = input.files && input.files[0];
+                const max = Number(input.dataset.sxMax);
+                let error = '';
+                if (file && !/^image\/(jpeg|png)$/.test(file.type)) error = 'Chỉ nhận ảnh JPG hoặc PNG.';
+                else if (file && file.size > max && !input.hasAttribute('data-sx-compress')) error = 'Ảnh tối đa ' + Math.round(max / 1048576) + ' MB. Hãy chọn ảnh nhỏ hơn.';
+                input.setCustomValidity(error);
+                input.classList.toggle('is-invalid', Boolean(error));
+                if (error) input.reportValidity();
+            });
+        });
+
+    }
+    initializeFields();
+    document.addEventListener('ute:regions-updated', initializeFields);
 
     /* ---------- Chống gửi hai lần: chạy sau hộp xác nhận (main.js chặn trước nếu cần hỏi) ---------- */
     document.addEventListener('submit', event => {

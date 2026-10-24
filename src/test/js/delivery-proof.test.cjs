@@ -2,8 +2,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../../main/resources/static/js/delivery-proof.js'),'utf8');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function element(){return {listeners:{},value:'',classList:{toggle(){}},addEventListener(type,fn){this.listeners[type]=fn;},setCustomValidity(v){this.error=v;},reportValidity(){},removeAttribute(){}};}
-function setup(failCanvas=false) {
+function element(){return {listeners:{},bindings:{},value:'',classList:{toggle(){}},addEventListener(type,fn){this.listeners[type]=fn;this.bindings[type]=(this.bindings[type]||0)+1;},setCustomValidity(v){this.error=v;},reportValidity(){},removeAttribute(){}};}
+function setup(failCanvas=false,initiallyAbsent=false) {
  const images=[],alerts=[],canvas=element(),form=element(),input=element(),preview=element(),signature=element(),clear=element();
  const context={fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},closePath(){},drawImage(){if(failCanvas)throw new Error('Không xử lý được ảnh');}};
  Object.assign(canvas,{width:300,height:100,getContext(){return context;},getBoundingClientRect(){return {left:0,top:0,width:300,height:100};},setPointerCapture(){},hasPointerCapture(){return false;},toDataURL(){return 'data:image/png;base64,signature';}});
@@ -12,11 +12,12 @@ function setup(failCanvas=false) {
  class FakeImage{constructor(){this.naturalWidth=2000;this.naturalHeight=2000;images.push(this);}}
  class Transfer{constructor(){this.files=[];this.items={add:f=>this.files.push(f)};}}
  class File{constructor(parts,name,options){this.name=name;this.type=options.type;this.size=parts[0].size;}}
- vm.runInNewContext(source,{document:{getElementById(id){return fields[id];},createElement(){return {getContext(){return context;},toBlob(fn){fn({size:1000});}};}},
+ let present=!initiallyAbsent;const listeners=new Map();
+ vm.runInNewContext(source,{document:{getElementById(id){return present?fields[id]:null;},addEventListener(type,fn){listeners.set(type,fn);},createElement(){return {getContext(){return context;},toBlob(fn){fn({size:1000});}};}},
   window:{alert(m){alerts.push(m);},addEventListener(){}},URL:{createObjectURL(file){return 'blob:'+file.name;},revokeObjectURL(){}},Image:FakeImage,DataTransfer:Transfer,File,Date});
  const pointer=(type,x=10,y=10)=>canvas.listeners[type]({preventDefault(){},pointerId:1,clientX:x,clientY:y});
  const submit=()=>{let prevented=false;form.listeners.submit({preventDefault(){prevented=true;}});return prevented;};
- return {images,alerts,input,preview,signature,pointer,submit,choose(file){input.files=file?[file]:[];return input.listeners.change();}};
+ return {images,alerts,input,preview,signature,pointer,submit,form,canvas,mount(){present=true;listeners.get('ute:regions-updated')?.();},choose(file){input.files=file?[file]:[];return input.listeners.change();}};
 }
 test('Chỉ chạm vào canvas chưa tạo nét ký thì không gửi bằng chứng',()=>{const q=setup();q.pointer('pointerdown');q.pointer('pointerup');assert.equal(q.submit(),true);assert.equal(q.signature.value,'');});
 test('Nét ký thực có thể được gửi',()=>{const q=setup();q.pointer('pointerdown');q.pointer('pointermove',30,20);q.pointer('pointerup');assert.equal(q.submit(),false);assert.match(q.signature.value,/^data:image\/png/);});
@@ -41,4 +42,10 @@ test('Lỗi canvas lúc nén không làm kẹt trạng thái đang xử lý',asy
 });
 test('Ảnh gốc quá lớn bị từ chối trước khi giải mã trên trình duyệt',async()=>{
  const q=setup();await q.choose({name:'huge.png',type:'image/png',size:26*1024*1024});assert.match(q.input.error,/25 MB/);assert.equal(q.images.length,0);assert.equal(q.preview.hidden,true);
+});
+test('bằng chứng xuất hiện sau đồng bộ realtime vẫn có validation chữ ký, khởi tạo không bị lặp',()=>{
+ const q=setup(false,true);assert.equal(q.canvas.listeners.pointerdown,undefined);
+ q.mount();q.mount();assert.equal(q.form.bindings.submit,1);assert.equal(q.canvas.bindings.pointerdown,1);
+ q.pointer('pointerdown');q.pointer('pointerup');assert.equal(q.submit(),true);
+ q.pointer('pointerdown');q.pointer('pointermove',30,20);q.pointer('pointerup');assert.equal(q.submit(),false);
 });

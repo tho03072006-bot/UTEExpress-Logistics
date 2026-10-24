@@ -37,3 +37,24 @@ test('Hẹn lại đã qua giờ khi người dùng để form mở lâu phải 
  schedule.listeners.change();assert.equal(schedule.error,'');now+=3*60000;
  let prevented=false;form.listeners.submit({preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.match(schedule.error,/sau thời điểm hiện tại/);
 });
+
+test('form hẹn mới từ đồng bộ realtime vẫn được gắn validation và không nhân đôi handler',()=>{
+ const listeners=new Map();let schedule=null,bindings=0;
+ const document={getElementById(){return null;},querySelector(){return null;},addEventListener(type,fn){listeners.set(type,fn);},
+  querySelectorAll(selector){return selector==='input[data-sx-schedule]'&&schedule?[schedule]:[];}};
+ vm.runInNewContext(source,{document,window:{location:{pathname:'/shipper/don/1'},addEventListener(){}},Intl,Number,Date,Set});
+ schedule=field('2000-01-01T10:00');schedule.form={addEventListener(type,handler){if(type==='submit'){bindings++;this.submit=handler;}}};
+ listeners.get('ute:regions-updated')?.();listeners.get('ute:regions-updated')?.();
+ assert.equal(bindings,1);let prevented=false;schedule.form.submit({preventDefault(){prevented=true;}});
+ assert.equal(prevented,true);assert.match(schedule.error,/sau thời điểm hiện tại/);
+});
+test('lý do khác không chấp nhận ghi chú toàn khoảng trắng và kiểm tra lại lúc gửi',()=>{
+ const reason=field('OTHER'),note=field('       '),form={listeners:{},querySelector(selector){return selector==='[data-sx-reason]'?reason:note;},
+  addEventListener(type,handler){this.listeners[type]=handler;}};
+ const document={getElementById(){return null;},querySelector(){return null;},addEventListener(){},
+  querySelectorAll(selector){return selector==='[data-sx-failure-form]'?[form]:[];}};
+ vm.runInNewContext(source,{document,window:{location:{pathname:'/shipper/don/1'},addEventListener(){}},Intl,Number,Date,Set});
+ let prevented=false;form.listeners.submit?.({preventDefault(){prevented=true;}});
+ assert.equal(prevented,true);assert.ok(note.error);note.value='Người nhận hẹn ngày khác';note.listeners.input();assert.equal(note.error,'');
+ reason.value='RECIPIENT_ABSENT';reason.listeners.change();assert.equal(note.required,false);
+});

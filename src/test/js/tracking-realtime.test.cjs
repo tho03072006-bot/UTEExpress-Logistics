@@ -39,6 +39,7 @@ function environment({ codes = ['UTESYNC01'], region = false, libraries = true }
         querySelectorAll(selector) { return selector === '[data-tracking-code]' ? state.elements : state.regions; },
         querySelector(selector) { return selector === 'main' ? main : selector === '[data-realtime-region]' ? state.regions[0] : null; },
         createElement() { return new Element(); },
+        dispatchEvent(event) { listeners.get(event.type)?.(event); },
         addEventListener(type, handler) { listeners.set(type, handler); }
     };
     const client = {
@@ -60,7 +61,7 @@ function environment({ codes = ['UTESYNC01'], region = false, libraries = true }
     const clearTimeout = id => timers.delete(id), clearInterval = id => intervals.delete(id);
     let fetchResponse = async () => ({ ok: true, redirected: false, text: async () => '<html></html>' });
     const context = {
-        document, window, clearTimeout, clearInterval, AbortController,
+        document, window, clearTimeout, clearInterval, AbortController, Event,
         DOMParser: class { parseFromString() { return { querySelectorAll() { return [replacement]; } }; } },
         fetch: async (...args) => { requests.push(args); return fetchResponse(...args); },
         console: { warn: (...args) => warnings.push(args) }
@@ -68,7 +69,7 @@ function environment({ codes = ['UTESYNC01'], region = false, libraries = true }
     if (libraries) { context.SockJS = function () { }; context.Stomp = { over: () => client }; }
     vm.runInNewContext(source, context);
     return {
-        state, document, timers, intervals, requests, removed, warnings, replacement,
+        state, document, timers, intervals, requests, removed, warnings, replacement, listeners,
         get connections() { return connections; }, get disconnected() { return disconnected; },
         get replacements() { return replacements; }, get reloads() { return reloads; },
         get notice() { return main.children[0]?.children[0]?.textContent || ''; },
@@ -113,6 +114,13 @@ test('dữ liệu không thay đổi không bị thay vùng trang vô ích', asy
     const env = environment({ region: true }); env.replacement.outerHTML = env.state.regions[0].outerHTML;
     await env.poll(); assert.equal(env.replacements, 0);
 });
+test('vùng trang thay mới thông báo để khởi tạo lại validation đúng một lần',async()=>{
+    const env=environment({region:true});let initialized=0;
+    env.document.addEventListener('ute:regions-updated',()=>initialized++);
+    await env.poll();assert.equal(env.replacements,1);assert.equal(initialized,1);
+    env.replacement.outerHTML=env.state.regions[0].outerHTML;
+    await env.poll();assert.equal(initialized,1);
+});
 test('JSON lỗi không làm chết kết nối', () => {
     const env = environment(); env.send('{'); assert.equal(env.warnings.length, 1); env.send(event());
     assert.equal(env.state.elements[0].badge.dataset.orderStatus, 'DELIVERED');
@@ -122,6 +130,10 @@ test('không thay form người dùng đang nhập hoặc đã gửi', async () 
         const env = environment({ region: true }); env.emit(type, input); await Promise.resolve(); env.send(event()); await env.flush();
         assert.equal(env.requests.length, 0); assert.equal(env.replacements, 0);
     }
+});
+test('ký trên canvas cũng giữ nguyên form khi có cập nhật realtime',async()=>{
+    const env=environment({region:true});env.emit('pointerdown',{target:{tagName:'CANVAS',closest:()=>({})}});
+    env.send(event());await env.flush();assert.equal(env.requests.length,0);assert.equal(env.replacements,0);
 });
 test('submit bị hộp xác nhận chặn không khóa làm mới vĩnh viễn', async () => {
     const env = environment({ region: true }); env.emit('submit', { defaultPrevented: true }); await Promise.resolve();
