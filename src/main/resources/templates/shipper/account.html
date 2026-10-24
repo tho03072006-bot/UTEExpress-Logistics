@@ -25,7 +25,7 @@
                     </div>
                     <div class="col-sm-5">
                         <label class="form-label" for="phone">Số điện thoại</label>
-                        <input type="tel" id="phone" th:field="*{phone}" class="form-control" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="0901234567">
+                        <input type="tel" id="phone" th:field="*{phone}" class="form-control" required data-vn-mobile inputmode="tel" maxlength="20" autocomplete="tel" placeholder="0901234567">
                         <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
                     </div>
                     <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin liên hệ</button></div>

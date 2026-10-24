@@ -42,7 +42,7 @@
         </div>
         <div class="col-md-6 mb-3">
             <label class="form-label" for="contactPhone">Số điện thoại</label>
-            <input type="tel" th:field="*{contactPhone}" class="form-control" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
+            <input type="tel" th:field="*{contactPhone}" class="form-control" required data-vn-mobile maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
             <div class="text-danger small" th:if="${#fields.hasErrors('contactPhone')}" th:errors="*{contactPhone}"></div>
         </div>
     </div>
@@ -51,6 +51,7 @@
         <label class="form-label" for="addressLine">Địa chỉ chi tiết</label>
         <textarea th:field="*{addressLine}" class="form-control" rows="2" required minlength="5" maxlength="255"
                   placeholder="Số nhà, đường, phường/xã"></textarea>
+        <div class="form-text">Tổng địa chỉ chi tiết, phường/xã và tỉnh/thành không quá 255 ký tự để dùng được khi tạo đơn.</div>
         <div class="text-danger small" th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}"></div>
     </div>
 

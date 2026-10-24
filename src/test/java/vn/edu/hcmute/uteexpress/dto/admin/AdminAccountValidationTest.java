@@ -35,6 +35,19 @@ class AdminAccountValidationTest {
     }
     @ParameterizedTest @ValueSource(strings = {"", "0123456789", "123", "09012345678", "090abc4567", "+1 901234567", "090\t1234567"})
     void invalidPhoneIsRejected(String value) { var f = valid(); f.setPhone(value); assertFalse(validator.validate(f).isEmpty()); }
+    @Test void phoneLengthAndFormattingStayConsistentAcrossAllAccountAndOrderForms() {
+        for(String value:java.util.List.of("+84 901 234 567", "090 123-45.67", " ".repeat(21)+"0901234567")) {
+            var admin=new AdminAccountProfileRequest();admin.setPhone(value);
+            var profile=new vn.edu.hcmute.uteexpress.dto.ProfileUpdateRequest();profile.setPhone(value);
+            var address=new vn.edu.hcmute.uteexpress.dto.SavedAddressRequest();address.setContactPhone(value);
+            var order=new vn.edu.hcmute.uteexpress.dto.OrderCreateRequest();order.setReceiverPhone(value);
+            boolean expected=value.length()<=20;
+            assertEquals(expected,validator.validateProperty(admin,"phone").isEmpty());
+            assertEquals(expected,validator.validateProperty(profile,"phone").isEmpty());
+            assertEquals(expected,validator.validateProperty(address,"contactPhone").isEmpty());
+            assertEquals(expected,validator.validateProperty(order,"receiverPhone").isEmpty());
+        }
+    }
     @ParameterizedTest @ValueSource(strings = {"", "short", "onlylowercase123!", "NoNumbersHere!", "NoSpecial12345", "Has Space@2026"})
     void invalidPasswordIsRejected(String value) {
         var f = valid(); f.getCredentials().setPassword(value); f.getCredentials().setConfirmPassword(value);

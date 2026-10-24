@@ -16,7 +16,7 @@ public class AdminAccountProfileRequest {
     @vn.edu.hcmute.uteexpress.validation.ValidPublicEmail
     private String email;
     @NotBlank(message = "Vui lòng nhập số điện thoại.")
-    @Pattern(regexp = "0[35789][0-9]{8}", message = "Số di động Việt Nam phải có 10 số, bắt đầu bằng 03/05/07/08/09.")
+    @Pattern(regexp = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.PHONE, message = "Số di động Việt Nam phải có 10 số, bắt đầu bằng 03/05/07/08/09.")
     private String phone;
     @NotNull(message = "Vui lòng chọn vai trò hợp lệ.")
     private AppUser.Role role;
@@ -26,8 +26,7 @@ public class AdminAccountProfileRequest {
     public void setEmail(String value) { email = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.email(value); }
     public String getPhone() { return phone; }
     public void setPhone(String value) {
-        phone = value == null ? null : value.strip().replace(" ", "").replace("-", "").replace(".", "");
-        if (phone != null && phone.startsWith("+84")) { phone = "0" + phone.substring(3); }
+        phone = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.phone(value);
     }
     public AppUser.Role getRole() { return role; }
     public void setRole(AppUser.Role value) { role = value; }
