@@ -59,9 +59,13 @@ public class PaymentController {
             var payment = momo.status(orderId, authentication.getName());
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(new PaymentStatusResponse(
                     payment.state(), payment.message(), payment.transactionRef(), payment.paidAt(), startup.snapshot()));
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException exception) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).cacheControl(CacheControl.noStore())
                     .body(java.util.Map.of("message", "Không thể truy cập thanh toán này."));
+        } catch (IllegalStateException exception) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).cacheControl(CacheControl.noStore())
+                    .body(java.util.Map.of("state", "UNAVAILABLE", "message",
+                            "Thông tin cước hoặc biên nhận chưa hợp lệ. Vui lòng liên hệ Manager để kiểm tra."));
         }
     }
     public record PaymentStatusResponse(String state, String message, String transactionRef, String paidAt,

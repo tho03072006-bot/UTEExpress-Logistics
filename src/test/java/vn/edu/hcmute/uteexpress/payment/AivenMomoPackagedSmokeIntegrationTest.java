@@ -44,13 +44,17 @@ class AivenMomoPackagedSmokeIntegrationTest {
             var health = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/healthz")).timeout(Duration.ofSeconds(3)).build();
             boolean ready = false;
             for (int attempt = 0; attempt < 45 && child.isAlive(); attempt++) {
-                try { if (client.send(health, HttpResponse.BodyHandlers.ofString()).statusCode() == 200) { ready = true; break; } }
+                try {
+                    var result = client.send(health, HttpResponse.BodyHandlers.ofString());
+                    if (result.statusCode() == 200 && result.headers().firstValue("X-Momo-Protocol").orElse("").equals("3")) { ready = true; break; }
+                }
                 catch (IOException ignored) { }
                 Thread.sleep(1000);
             }
             assertTrue(ready, "JAR chưa khởi động đúng; kiểm tra target/momo-packaged-smoke.log (không gửi cấu hình bí mật).");
             var page = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/")).build(), HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, page.statusCode()); assertTrue(page.body().contains("MoMo mô phỏng"));
+            assertEquals(200, page.statusCode()); assertTrue(page.body().contains("<title>MoMo · Ví mô phỏng</title>"));
+            assertTrue(page.body().contains("DEMO"));
             assertTrue(page.headers().firstValue("Content-Security-Policy").orElse("").contains("form-action 'self'"));
             var denied = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/admin/tai-khoan")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(403, denied.statusCode());

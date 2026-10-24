@@ -19,6 +19,7 @@ class MomoHealthClientTest {
     final URI origin = URI.create("https://uteexpress-momo-test.onrender.com");
     @SuppressWarnings("unchecked") private HttpResponse<byte[]> response(int status, String body) {
         HttpResponse<byte[]> response = mock(HttpResponse.class); when(response.statusCode()).thenReturn(status);
+        when(response.headers()).thenReturn(HttpHeaders.of(java.util.Map.of("X-Momo-Protocol", List.of("3")), (name, value) -> true));
         if (status == 200) when(response.body()).thenReturn(body.getBytes(StandardCharsets.UTF_8)); return response;
     }
     @Test void startupOnlyGetsHealthWithoutCredentialsTicketsOrCustomerData() throws Exception {
@@ -35,6 +36,14 @@ class MomoHealthClientTest {
         for (int status : new int[]{200,302,404,500,503}) {
             var result = CompletableFuture.completedFuture(response(status,"<html>loading</html>"));
             when(http.sendAsync(any(), any(HttpResponse.BodyHandler.class))).thenReturn(result);
+            assertFalse(client.isReachable(origin));
+        }
+    }
+    @Test void oldOrMissingProtocolIsNotAdvertisedAsCompatibleWithNewQrTickets() throws Exception {
+        for (String protocol : new String[]{"", "2", "4"}) {
+            var reply = response(200, "ok");
+            when(reply.headers()).thenReturn(HttpHeaders.of(java.util.Map.of("X-Momo-Protocol", List.of(protocol)), (name, value) -> true));
+            when(http.sendAsync(any(), any(HttpResponse.BodyHandler.class))).thenReturn(CompletableFuture.completedFuture(reply));
             assertFalse(client.isReachable(origin));
         }
     }

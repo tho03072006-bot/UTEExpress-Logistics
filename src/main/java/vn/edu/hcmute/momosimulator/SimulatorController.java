@@ -22,7 +22,7 @@ public class SimulatorController {
 
     @GetMapping("/") public String home() { return "momo/home"; }
     @GetMapping("/healthz") @ResponseBody public ResponseEntity<String> health() {
-        try { jdbc.queryForObject("SELECT 1", Integer.class); return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body("ok"); }
+        try { jdbc.queryForObject("SELECT 1", Integer.class); return ResponseEntity.ok().header("X-Momo-Protocol", Integer.toString(vn.edu.hcmute.uteexpress.service.payment.MomoTicketCodec.PROTOCOL_VERSION)).cacheControl(CacheControl.noStore()).body("ok"); }
         catch (org.springframework.dao.DataAccessException exception) { return ResponseEntity.status(503).body("unavailable"); }
     }
 
@@ -49,6 +49,30 @@ public class SimulatorController {
         return "momo/checkout";
     }
 
+    public record CheckoutState(String state, String message) { }
+    /** Chỉ phiên trong cookie hiện tại; không nhận id đơn, số tiền hay vé do trình duyệt tự thay. */
+    @GetMapping(value = "/momo/phien/{id}/trang-thai", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<CheckoutState> state(@PathVariable String id, HttpServletRequest request) {
+        try {
+            var checkout = checkout(request, id);
+            var receipt = payments.view(checkout.token());
+            String state = receipt.paid() ? (checkout.paidHere() ? "PAID" : "ALREADY_PAID") : "UNPAID";
+            return stateResponse(HttpStatus.OK, state, receipt.paid() ? "Đơn đã được thanh toán, không thu thêm tiền." : "Mã QR đang có hiệu lực.");
+        } catch (vn.edu.hcmute.uteexpress.service.payment.ReplacedMomoQrException exception) {
+            return stateResponse(HttpStatus.CONFLICT, "REPLACED", exception.getMessage());
+        } catch (vn.edu.hcmute.uteexpress.service.payment.PaidByAnotherQrException exception) {
+            return stateResponse(HttpStatus.CONFLICT, "ALREADY_PAID", exception.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            return stateResponse(HttpStatus.GONE, "UNAVAILABLE", "Phiên không còn hợp lệ, đã hết hạn hoặc đơn đã thay đổi. Hãy mở lại mã QR mới nhất.");
+        } catch (org.springframework.dao.DataAccessException exception) {
+            return stateResponse(HttpStatus.SERVICE_UNAVAILABLE, "RETRY", "Chưa kết nối được database để xác minh. Không ghi nhận thanh toán mới.");
+        }
+    }
+    private static ResponseEntity<CheckoutState> stateResponse(HttpStatus status, String state, String message) {
+        return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(new CheckoutState(state, message));
+    }
+
     @PostMapping("/momo/phien/{id}/xac-nhan")
     public String confirm(@PathVariable String id, HttpServletRequest request,
             @RequestParam(defaultValue = "false") boolean simulationAcknowledged) {
@@ -62,7 +86,7 @@ public class SimulatorController {
 
     @PostMapping("/momo/phien/{id}/huy")
     public String cancel(@PathVariable String id, HttpServletRequest request, Model model) {
-        payments.view(checkout(request, id).token());
+        checkout(request, id);
         model.addAttribute("notice", "Đã đóng phiên mô phỏng. Trạng thái thanh toán trong database không bị thay đổi. Bạn có thể quét lại QR nếu muốn tiếp tục.");
         checkouts(request.getSession(false)).remove(id); return "momo/home";
     }

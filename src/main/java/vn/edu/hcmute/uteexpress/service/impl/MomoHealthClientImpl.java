@@ -30,7 +30,10 @@ public class MomoHealthClientImpl implements MomoHealthClient {
         CompletableFuture<HttpResponse<byte[]>> pending = httpClient().sendAsync(request, info -> new LimitedBodySubscriber());
         try {
             var response = pending.get(WAKE_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
-            return response.statusCode() == 200 && "ok".equals(new String(response.body(), StandardCharsets.UTF_8).strip());
+            return response.statusCode() == 200
+                    && response.headers().firstValue("X-Momo-Protocol").orElse("")
+                        .equals(Integer.toString(vn.edu.hcmute.uteexpress.service.payment.MomoTicketCodec.PROTOCOL_VERSION))
+                    && "ok".equals(new String(response.body(), StandardCharsets.UTF_8).strip());
         } catch (ExecutionException | TimeoutException exception) {
             return false;
         } finally {

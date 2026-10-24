@@ -19,13 +19,13 @@
 <div th:if="${checkoutError}" class="alert alert-warning" th:text="${checkoutError}" role="alert"></div>
 <div th:if="${checkout != null}" data-momo-payment th:attr="data-status-url=@{/api/payments/momo/{id}/status(id=${order.id})},data-expires=${checkout.expiresAt}">
 <p th:if="${momoStartup != null}" class="small sx-momo-render" role="status" aria-live="polite" data-momo-render-status th:attr="data-state=${momoStartup.state}" th:text="${momoStartup.message}"></p>
-<h5>Quét QR để thanh toán mô phỏng</h5><p class="small text-muted">Mở bằng camera điện thoại hoặc mở trang demo trong tab mới.</p>
+<h5>Quét QR để thanh toán mô phỏng</h5><p class="small text-muted">Dùng camera điện thoại quét mã bên dưới để mở ví MoMo mô phỏng.</p>
 <div data-checkout-controls><img th:src="${checkout.qrDataUrl}" alt="QR mở trang MoMo mô phỏng của đơn hàng này" width="280" height="280" class="img-fluid bg-white rounded p-2" style="max-width:280px;width:100%;height:auto">
-<p class="small mt-2">QR có hiệu lực <strong data-momo-countdown>10 phút</strong>. Không chia sẻ QR công khai.</p>
-<a class="btn btn-primary" th:href="${checkout.url}" target="_blank" rel="noopener noreferrer">Mở MoMo mô phỏng</a></div>
+<p class="small mt-2">QR có hiệu lực <strong data-momo-countdown>10 phút</strong>. Tạo lại QR sẽ vô hiệu hóa mã cũ ngay lập tức. Không chia sẻ QR công khai.</p>
+</div>
 <div class="alert alert-light border mt-4 mb-2 small" role="status" aria-live="polite" data-momo-status>Đang kiểm tra trạng thái thanh toán…</div>
 <p class="small text-break" data-momo-reference hidden></p>
-<div class="d-flex flex-wrap gap-2 justify-content-center mt-3"><button class="btn btn-sm btn-outline-secondary" type="button" data-momo-check>Kiểm tra lại</button><a class="btn btn-sm btn-outline-secondary" th:href="@{/nguoi-dung/thanh-toan/{id}(id=${order.id})}" data-momo-refresh>Tạo lại QR</a></div>
+<div class="d-flex flex-wrap gap-2 justify-content-center mt-3"><a class="btn btn-outline-secondary" th:href="@{/nguoi-dung/thanh-toan/{id}(id=${order.id})}" data-momo-refresh>Tạo lại QR</a></div>
 <p class="small text-muted mt-3 mb-0">Tự kiểm tra mỗi 3 giây khi tab đang hiển thị, không gửi chồng yêu cầu. Render Free có thể mất khoảng một phút để khởi động lại sau khi ngủ.</p>
 </div>
 <div th:if="${payment.status.name() == 'UNPAID' and payment.method.name() == 'VNPAY' and order.status.name() != 'CANCELLED' and order.status.name() != 'RETURNED' and order.status.name() != 'DELIVERED'}"><p>VNPay không còn được hỗ trợ. Bạn có thể chuyển đơn cũ chưa thanh toán sang MoMo mô phỏng.</p><form method="post" th:action="@{/nguoi-dung/thanh-toan/{id}/doi-sang-momo(id=${order.id})}"><button class="btn btn-primary" type="submit">Chuyển sang MoMo</button></form></div>

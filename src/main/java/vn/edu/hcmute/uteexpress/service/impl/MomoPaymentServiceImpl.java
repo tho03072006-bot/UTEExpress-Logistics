@@ -27,11 +27,21 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
         this.payments = payments; this.orders = orders; this.tickets = tickets; this.settings = settings; this.events = events;
     }
 
-    @Override @Transactional(readOnly = true)
+    @Override
     public Checkout createCheckout(long orderId, String username) {
-        OrderPayment payment = owned(orderId, username); WalletPaymentRules.validate(payment);
+        if (orderId <= 0 || username == null || username.isBlank()) throw unavailable();
+        var order = orders.lock(orderId).orElseThrow(MomoPaymentServiceImpl::unavailable);
+        entityManager.refresh(order, LockModeType.PESSIMISTIC_WRITE);
+        entityManager.refresh(order.getSender(), LockModeType.PESSIMISTIC_READ);
+        OrderPayment payment = owned(orderId, username);
+        entityManager.refresh(payment, LockModeType.PESSIMISTIC_WRITE);
+        payment = owned(orderId, username); WalletPaymentRules.validate(payment);
         validateSnapshot(payment);
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) throw new IllegalStateException("Đơn đã thanh toán, không cần tạo QR.");
+        // @Version có sẵn là số thế hệ QR dùng chung giữa web local và Render. Khóa cùng Order với confirm/hủy.
+        // Không sửa updatedAt/trạng thái nghiệp vụ chỉ vì đổi QR; transaction lỗi thì không thu hồi mã đang có.
+        entityManager.lock(order, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+        entityManager.flush();
         Instant now = Instant.now();
         String url = settings.baseUrl() + "/momo/thanh-toan?t=" + tickets.issue(payment, now);
         return new Checkout(url, MomoQrEncoder.encode(url), now.plus(MomoTicketCodec.LIFETIME).getEpochSecond());
@@ -40,13 +50,15 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
     @Override @Transactional(readOnly = true)
     public Status status(long orderId, String username) {
         var payment = owned(orderId, username);
+        if (payment.getMethod() != OrderPayment.PaymentMethod.MOMO) return new Status("UNAVAILABLE", "Phương thức thanh toán đã thay đổi.", null, null);
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) {
+            validateSnapshot(payment);
             requireReceipt(payment);
             return new Status("PAID", "Đã xác nhận thanh toán từ database Aiven.", payment.getTransactionRef(), text(payment.getPaidAt()));
         }
         if (WalletPaymentRules.isClosed(payment.getOrder())) return new Status("CLOSED", "Đơn đã kết thúc, không thể thanh toán.", null, null);
-        if (payment.getMethod() != OrderPayment.PaymentMethod.MOMO) return new Status("UNAVAILABLE", "Phương thức thanh toán đã thay đổi.", null, null);
         WalletPaymentRules.validate(payment);
+        validateSnapshot(payment);
         return new Status("UNPAID", "Đang chờ xác nhận trên trang MoMo mô phỏng.", null, null);
     }
 
@@ -66,11 +78,11 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
         var ticket = tickets.verify(token, Instant.now());
         // Cùng khóa Order với hủy/điều phối ở web local, rồi mới đọc bản ghi thanh toán.
         var order = orders.lock(ticket.orderId()).orElseThrow(MomoPaymentServiceImpl::unavailable);
-        entityManager.refresh(order);
+        entityManager.refresh(order, LockModeType.PESSIMISTIC_WRITE);
         entityManager.refresh(order.getSender(), LockModeType.PESSIMISTIC_READ);
         tickets.verify(token, Instant.now()); // Có thể đã chờ khóa đến khi QR hết hạn.
         var payment = bound(ticket);
-        entityManager.refresh(payment);
+        entityManager.refresh(payment, LockModeType.PESSIMISTIC_WRITE);
         payment = bound(ticket);
         // Cùng mã QR bấm lại thì trả đúng biên nhận đã có; mã QR khác (người thứ hai quét) thì bị từ chối.
         requirePaidByThisQr(payment, token);
@@ -114,6 +126,8 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
                 || payment.getMethod() != OrderPayment.PaymentMethod.MOMO) throw unavailable();
         // Cho phép xem lại biên nhận PAID kể cả đơn sau đó đã giao xong.
         if (payment.getStatus() != OrderPayment.PaymentStatus.PAID) WalletPaymentRules.validate(payment);
+        if (payment.getStatus() != OrderPayment.PaymentStatus.PAID && payment.getOrder().getRevision() != ticket.orderRevision())
+            throw new ReplacedMomoQrException();
         validateSnapshot(payment);
         if (payment.getStatus() == OrderPayment.PaymentStatus.PAID) requireReceipt(payment);
         return payment;
