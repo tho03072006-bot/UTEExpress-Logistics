@@ -87,6 +87,21 @@ class ShipperOperationsIntegrationTest {
 
     /* ===================== Lấy hàng thất bại ===================== */
 
+    @Test void detailKeepsAnEvidenceRegionBeforeDeliveryAndRendersTheFormAndHistoryWhenTransitStarts() throws Exception {
+        order.setStatus(Order.OrderStatus.PICKED_UP); orders.flush();
+        String path = "/shipper/don/" + order.getId();
+        mvc.perform(get(path).with(user(shipper.getUsername()).roles("SHIPPER")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-realtime-region=\"shipper-delivery-evidence\"")))
+                .andExpect(content().string(containsString("data-realtime-region=\"shipper-history\"")))
+                .andExpect(content().string(not(containsString("id=\"deliveryProofForm\""))));
+        tracking.updateStatus(order.getId(), shipper.getUsername(), Order.OrderStatus.IN_TRANSIT, null, null, null);
+        mvc.perform(get(path).with(user(shipper.getUsername()).roles("SHIPPER")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("id=\"deliveryProofForm\"")))
+                .andExpect(content().string(containsString("id=\"signatureCanvas\"")))
+                .andExpect(content().string(containsString("Người cập nhật")));
+    }
+
     @Test void pickupFailureKeepsOrderWaitingRecordsReasonAndNotifiesSender() throws Exception {
         var entry = tracking.reportPickupFailure(order.getId(), shipper.getUsername(), DeliveryFailureReason.CUSTOMER_ABSENT,
                 "  Người gửi hẹn chiều nay  ", NOW.plusHours(6));

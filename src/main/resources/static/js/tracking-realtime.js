@@ -71,7 +71,10 @@
                 if (stableHtml(region) !== stableHtml(replacement)) { region.replaceWith(replacement); changed = true; }
             });
             synchronizeSubscriptions();
-            if (changed) showNotice("Đã đồng bộ dữ liệu mới và các thao tác hiện được phép.");
+            if (changed) {
+                document.dispatchEvent(new Event("ute:regions-updated"));
+                showNotice("Đã đồng bộ dữ liệu mới và các thao tác hiện được phép.");
+            }
         } catch (error) {
             console.warn("Chưa đồng bộ được trang vận đơn.", error);
             showNotice("Có thay đổi nhưng chưa tải được dữ liệu mới. Hãy kiểm tra kết nối hoặc đăng nhập lại.");
@@ -92,6 +95,16 @@
         // Spring đổi token CSRF đã che ở mỗi GET; không coi đó là thay đổi nghiệp vụ.
         copy.querySelectorAll('input[name="_csrf"]').forEach(input => input.removeAttribute("value"));
         copy.querySelectorAll("[data-realtime-volatile]").forEach(element => { element.textContent = ""; });
+        // Trạng thái mở khối và các thuộc tính/hint do JS tạo không phải thay đổi từ server.
+        // Nếu so cả chúng, mỗi lần polling sẽ đóng form vừa mở dù dữ liệu nghiệp vụ chưa thay đổi.
+        copy.querySelectorAll("details[open]").forEach(element => element.removeAttribute("open"));
+        copy.querySelectorAll(".sx-count-hint").forEach(element => element.remove());
+        copy.querySelectorAll("[data-sx-schedule]").forEach(input => {
+            input.removeAttribute("min"); input.removeAttribute("max"); input.classList.remove("is-invalid");
+        });
+        copy.querySelectorAll("[data-sx-note]").forEach(input => {
+            input.removeAttribute("required"); input.removeAttribute("minlength");
+        });
         return copy.outerHTML;
     }
 
@@ -150,6 +163,9 @@
 
     document.addEventListener("input", event => { if (event.target.closest("form")) dirty = true; });
     document.addEventListener("change", event => { if (event.target.closest("form")) dirty = true; });
+    document.addEventListener("pointerdown", event => {
+        if (event.target.tagName === "CANVAS" && event.target.closest("form")) dirty = true;
+    });
     document.addEventListener("submit", event => {
         // Hộp xác nhận có thể chặn submit; chỉ khóa làm mới khi form thực sự được gửi.
         Promise.resolve().then(() => { if (!event.defaultPrevented) submitting = true; });
