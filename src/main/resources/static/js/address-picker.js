@@ -19,6 +19,9 @@
         var input = document.getElementById(inputId);
         if (input) {
             input.value = value;
+            // Điền bằng code cũng phải gỡ lỗi của giá trị cũ và chạy lại các bộ kiểm tra như khi người dùng nhập.
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+            input.dispatchEvent(new Event('change', {bubbles: true}));
         }
     }
 
