@@ -97,7 +97,10 @@
         }
         input.addEventListener('change', validate);
         input.addEventListener('focus', bounds);
-        if (input.form) input.form.addEventListener('submit', validate, true);
+        if (input.form) input.form.addEventListener('submit', event => {
+            validate();
+            if (!input.checkValidity()) { event.preventDefault(); input.reportValidity(); }
+        }, true);
     });
 
     /* ---------- Lý do "khác" bắt buộc ghi chú >= 5 ký tự ---------- */
@@ -154,10 +157,13 @@
         if (form.dataset.sxSubmitting === 'true') { event.preventDefault(); return; }
         form.dataset.sxSubmitting = 'true';
         // Đợi trình duyệt lấy giá trị nút đã bấm rồi mới khóa nút.
-        setTimeout(() => form.querySelectorAll('button[type=submit], button:not([type])').forEach(button => {
-            button.disabled = true;
-            button.classList.add('sx-busy');
-        }), 0);
+        setTimeout(() => {
+            if (event.defaultPrevented) { delete form.dataset.sxSubmitting; return; }
+            form.querySelectorAll('button[type=submit], button:not([type])').forEach(button => {
+                button.disabled = true;
+                button.classList.add('sx-busy');
+            });
+        }, 0);
     });
     window.addEventListener('pageshow', event => {
         if (!event.persisted) return;
@@ -227,7 +233,13 @@
         const diff = codForm.querySelector('[data-cod-diff]');
         let total = 0;
         let touched = Boolean(amount.value);
-        const parse = value => Number(String(value).replace(/[.,\s]/g, ''));
+        // Cùng quy tắc với CodSettlementService.parseAmount: VND nguyên, nhóm nghìn phải đủ 3 số.
+        const parse = raw => {
+            const value = String(raw).replace(/\u00a0/g, ' ').replace(/\s*(đ|vnd)$/iu, '').trim();
+            if (!/^(?:\d{1,12}|\d{1,3}(?:\.\d{3})+|\d{1,3}(?:,\d{3})+|\d{1,3}(?: \d{3})+)$/.test(value)) return NaN;
+            const digits = value.replace(/[., ]/g, '');
+            return /^\d{1,12}$/.test(digits) ? Number(digits) : NaN;
+        };
         function render() {
             const selected = checks.filter(c => c.checked);
             const previousTotal = total;
@@ -249,20 +261,27 @@
             const value = parse(amount.value);
             let error = '';
             if (!selected) error = 'Hãy chọn ít nhất một đơn.';
-            else if (!/^[0-9.,\s]+$/.test(amount.value.trim()) || !Number.isFinite(value)) error = 'Số tiền chỉ gồm chữ số.';
+            else if (selected > 200) error = 'Mỗi phiếu tối đa 200 đơn.';
+            else if (!Number.isFinite(total) || total <= 0 || total > 999999999999) error = 'Tổng cước không hợp lệ hoặc vượt giới hạn 12 chữ số.';
+            else if (!Number.isFinite(value)) error = 'Nhập VND nguyên, tối đa 12 chữ số; dấu phân cách đúng nhóm 3 số.';
             else if (value <= 0) error = 'Số tiền nộp phải lớn hơn 0.';
-            else if (value > total) error = 'Số tiền nộp không được lớn hơn tổng cước COD.';
             amount.setCustomValidity(error);
             amount.classList.toggle('is-invalid', Boolean(error));
             const different = !error && value !== total;
-            diff.textContent = error ? error : different ? 'Nộp thiếu ' + money(total - value) + '.' : 'Khớp tổng cước.';
+            diff.textContent = error ? error : different ? (value < total ? 'Nộp thiếu ' : 'Nộp thừa ') + money(Math.abs(total - value)) + '.' : 'Khớp tổng cước.';
             diff.className = 'sx-diff ' + (error || different ? 'sx-short' : 'sx-even');
             note.required = different;
             note.minLength = different ? 10 : 0;
+            note.setCustomValidity(different && note.value.trim().length < 10 ? 'Ghi rõ lý do chênh lệch ít nhất 10 ký tự có nội dung.' : '');
         }
         checks.forEach(c => c.addEventListener('change', render));
         if (all) all.addEventListener('change', () => { checks.forEach(c => { c.checked = all.checked; }); render(); });
         amount.addEventListener('input', () => { touched = true; validate(); });
+        note.addEventListener('input', validate);
+        codForm.addEventListener('submit', event => {
+            validate();
+            if (!codForm.checkValidity()) { event.preventDefault(); codForm.reportValidity(); }
+        });
         render();
     }
 }());

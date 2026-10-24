@@ -35,7 +35,7 @@
         <span class="shipper-eyebrow"><i class="bi bi-send"></i> LẬP PHIẾU NỘP TIỀN</span><h3 class="mt-2">Xác nhận số tiền</h3>
         <div class="sx-total-box my-3"><span class="shipper-hint">Tổng cước COD của <b data-cod-count>0</b> đơn đã chọn</span><strong data-cod-total>0 đ</strong></div>
         <div class="mb-3"><label for="declaredAmount" class="form-label">Số tiền mặt bạn nộp (đ)</label>
-            <input id="declaredAmount" name="declaredAmount" class="form-control form-control-lg" inputmode="numeric" pattern="[0-9.,\s]{1,20}" maxlength="20" required autocomplete="off" th:value="${formAmount}" data-cod-amount>
+            <input id="declaredAmount" name="declaredAmount" class="form-control form-control-lg" inputmode="numeric" maxlength="30" required autocomplete="off" th:value="${formAmount}" data-cod-amount>
             <div class="form-text"><span class="sx-diff" data-cod-diff></span></div></div>
         <div class="mb-3"><label for="codNote" class="form-label">Ghi chú cho Manager</label><textarea id="codNote" name="note" class="form-control" rows="3" maxlength="500" data-sx-count data-cod-note th:text="${formNote}" placeholder="Bắt buộc ít nhất 10 ký tự khi số tiền khác tổng cước."></textarea></div>
         <button class="btn sx-btn-gold w-100" type="submit"><i class="bi bi-send-check"></i> Gửi phiếu cho Manager</button>    </form>
