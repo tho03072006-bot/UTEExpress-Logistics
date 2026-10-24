@@ -49,9 +49,9 @@
                 </div>
             </th:block>
         </div>
-        <div th:if="${viewer == 'staff' and activities != null and (activities.hasPrevious() or activities.hasNext())}" class="sx-cx-pager">
-            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasPrevious()}" th:href="@{/manager/khieu-nai/{id}/lich-su(id=${complaint.id},page=${activities.number-1})}"><i class="bi bi-chevron-left"></i> Cũ hơn</a>
-            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasNext()}" th:href="@{/manager/khieu-nai/{id}/lich-su(id=${complaint.id},page=${activities.number+1})}">Mới hơn <i class="bi bi-chevron-right"></i></a></div>
+        <div th:if="${activities != null and (activities.hasPrevious() or activities.hasNext())}" class="sx-cx-pager">
+            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasPrevious()}" th:href="@{${complaintPath + '/lich-su'}(page=${activities.number-1})}"><i class="bi bi-chevron-left"></i> Cũ hơn</a>
+            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasNext()}" th:href="@{${complaintPath + '/lich-su'}(page=${activities.number+1})}">Mới hơn <i class="bi bi-chevron-right"></i></a></div>
 
         <!-- Khung soạn tin theo vai trò -->
         <form th:if="${viewer == 'customer'}" class="sx-cx-compose" method="post" th:action="@{/nguoi-dung/khieu-nai/{id}/nhan-tin(id=${complaint.id})}">
@@ -61,7 +61,7 @@
             <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi</button>
             <p class="sx-cx-hint" th:if="${complaint.status.closed}"><i class="bi bi-info-circle"></i> Hồ sơ đã kết thúc. Nhắn thêm sẽ mở lại hồ sơ để Manager xem tiếp.</p>
         </form>
-        <form th:if="${viewer == 'staff' and !complaint.status.closed}" class="sx-cx-compose is-staff" method="post" th:action="@{/manager/khieu-nai/{id}/phan-hoi(id=${complaint.id})}">
+        <form th:if="${viewer == 'staff' and canRespond}" class="sx-cx-compose is-staff" method="post" th:action="@{/manager/khieu-nai/{id}/phan-hoi(id=${complaint.id})}">
             <input type="hidden" name="revision" th:value="${complaint.revision}">
             <label for="reply" class="visually-hidden">Phản hồi</label>
             <textarea id="reply" name="reply" class="form-control" rows="2" maxlength="2000" required placeholder="Trả lời khách hàng…"></textarea>
@@ -71,6 +71,7 @@
                 <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi phản hồi</button></div>
         </form>
         <p th:if="${viewer == 'staff' and complaint.status.closed}" class="sx-cx-hint"><i class="bi bi-lock"></i> Hồ sơ đã kết thúc. Nếu khách nhắn thêm, hồ sơ sẽ tự mở lại.</p>
+        <p th:if="${viewer == 'staff' and !complaint.status.closed and !canRespond}" class="sx-cx-hint"><i class="bi bi-person-lock"></i> Hồ sơ đang do Manager khác phụ trách. Bạn được xem; chỉ người phụ trách hoặc Admin được phản hồi/tiếp quản.</p>
         <form th:if="${viewer == 'shipper' and !complaint.status.closed}" class="sx-cx-compose" method="post" th:action="@{/shipper/khieu-nai/{id}/bo-sung(id=${complaint.id})}">
             <input type="hidden" name="revision" th:value="${complaint.revision}">
             <label for="shipperNote" class="visually-hidden">Thông tin gửi Manager</label>
@@ -95,14 +96,15 @@
         <th:block th:if="${deliveryProof != null}"><div th:replace="~{fragments/components :: deliveryProof(${deliveryProof}, ${proofBase})}"></div></th:block>
         <div th:if="${viewer == 'staff'}" class="ute-panel">
             <h3 class="h6 text-uppercase text-muted mb-3">Thao tác</h3>
-            <form th:if="${!complaint.status.closed}" method="post" class="mb-2" th:action="@{/manager/khieu-nai/{id}/nhan-xu-ly(id=${complaint.id})}">
+            <form th:if="${canClaim}" method="post" class="mb-2" th:action="@{/manager/khieu-nai/{id}/nhan-xu-ly(id=${complaint.id})}">
                 <input type="hidden" name="revision" th:value="${complaint.revision}">
                 <button class="btn btn-outline-primary w-100"><i class="bi bi-person-check"></i> Nhận xử lý</button></form>
             <!-- B8: Admin là người duyệt chi tiền nên không lập phiếu tiền; server cũng chặn. -->
-            <a class="btn btn-outline-secondary w-100" th:if="${complaint.status.name() != 'REJECTED' and orderPaid}" sec:authorize="!hasRole('ADMIN')"
+            <a class="btn btn-outline-secondary w-100" th:if="${canRequestCompensation}"
                th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}"><i class="bi bi-cash-stack"></i> Đề xuất bồi hoàn cước</a>
             <p class="small text-muted mb-0 mt-2" th:if="${complaint.status.name() != 'REJECTED' and orderPaid}" sec:authorize="hasRole('ADMIN')">Phiếu tiền do Manager lập, Admin duyệt.</p>
-            <p class="small text-muted mb-0 mt-2" th:if="${!orderPaid}">Đơn chưa thanh toán nên không có bồi hoàn cước.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!orderPaid}">Cước chưa thực thu, bằng 0 hoặc số tiền/chứng từ chưa hợp lệ. Cần tra soát thanh toán trước khi bồi hoàn.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${orderPaid and complaint.status.name() != 'REJECTED' and !canRequestCompensation}" sec:authorize="!hasRole('ADMIN')">Đã có đề xuất bồi hoàn đang chờ, đã duyệt hoặc hoàn tất. Kiểm tra trong Hồ sơ vận hành.</p>
         </div>
     </aside>
 </div>

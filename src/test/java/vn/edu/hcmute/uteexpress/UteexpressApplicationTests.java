@@ -16,8 +16,34 @@ class UteexpressApplicationTests {
     @org.springframework.beans.factory.annotation.Autowired
     vn.edu.hcmute.uteexpress.repository.manager.ManagerOrderStatisticsRepository orderStatistics;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.manager.OperationsOverviewRepository overview;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository complaintActivities;
+
     @Test
     void contextLoads() {
+    }
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void complaintConversationPagingQueriesExecuteOnAivenWithoutWritingData() {
+        org.junit.jupiter.api.Assertions.assertEquals(0L, complaintActivities.countByComplaintId(-1L));
+        org.junit.jupiter.api.Assertions.assertTrue(complaintActivities.findByComplaintIdOrderByCreatedAtAscIdAsc(-1L,
+                org.springframework.data.domain.PageRequest.of(0, 50)).isEmpty());
+    }
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void paymentAlertQueryExecutesOnAivenWithoutWritingData() {
+        var now=java.time.LocalDateTime.now();
+        var result=overview.alerts("PAYMENT_ISSUE",null,now.minusHours(24),now.minusDays(5),now.minusDays(2),
+                now.minusHours(4),now,3,org.springframework.data.domain.PageRequest.of(0,1));
+        org.junit.jupiter.api.Assertions.assertTrue(result.getTotalElements()>=0);
+        var ids=result.isEmpty()?java.util.List.of(-1L):result.map(vn.edu.hcmute.uteexpress.entity.Order::getId).getContent();
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->routes.idsAtDeliveryHub(ids,null));
     }
 
     @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)

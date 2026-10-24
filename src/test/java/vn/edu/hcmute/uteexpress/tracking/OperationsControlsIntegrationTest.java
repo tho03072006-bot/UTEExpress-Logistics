@@ -104,6 +104,13 @@ class OperationsControlsIntegrationTest {
         payment.setMethod(OrderPayment.PaymentMethod.COD); payment.setStatus(OrderPayment.PaymentStatus.PAID);
         payment.setPaidAt(NOW.minusHours(1)); return payments.saveAndFlush(payment);
     }
+    @Test void emptyBranchCatalogueDoesNotTellAdminToAskAnotherAdminForAssignment() throws Exception {
+        mvc.perform(get("/manager/canh-bao").with(authentication(auth(adminAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Tài khoản chưa được gán chi nhánh"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Chưa có chi nhánh trong danh mục")));
+        mvc.perform(get("/manager/canh-bao").with(authentication(auth(managerAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Tài khoản chưa được gán chi nhánh")));
+    }
     @Test void allNewPagesRenderAndManagerCannotEditPolicy() throws Exception {
         for (String path : List.of("/manager/canh-bao", "/manager/hieu-suat-shipper", "/manager/ho-so-van-hanh", "/manager/lich-cuoc"))
             mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk());
@@ -203,6 +210,136 @@ class OperationsControlsIntegrationTest {
         assertEquals(3,complaintService.timeline(complaint.getId(),manager.getUsername(),0).getTotalElements());
         assertEquals(manager.getId(),complaint.getHandledBy().getId());
     }
+    @Test void customerAndShipperSeeLatestComplaintMessageAndCanReadOlderPages() throws Exception {
+        complaintService.create(order.getId(), customer.getUsername(), "Kiểm tra hội thoại dài", "Nội dung mở hồ sơ", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        for (int i = 1; i <= 51; i++) complaintService.customerMessage(complaint.getId(), customer.getUsername(), "Tin kiểm thử " + i);
+        for (var viewer : List.of(customer, shipper)) {
+            String prefix = viewer.getRole() == AppUser.Role.USER ? "/nguoi-dung/khieu-nai/" : "/shipper/khieu-nai/";
+            mvc.perform(get(prefix + complaint.getId()).with(user(viewer.getUsername()).roles(viewer.getRole().name())))
+                    .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Tin kiểm thử 51")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(prefix + complaint.getId() + "/lich-su?page=0")));
+            mvc.perform(get(prefix + complaint.getId() + "/lich-su").param("page", "0")
+                    .with(user(viewer.getUsername()).roles(viewer.getRole().name())))
+                    .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Tin kiểm thử 1")));
+        }
+    }
+    @Test void complaintHistoryPagesRetainOwnershipAndValidatePage() throws Exception {
+        complaintService.create(order.getId(), customer.getUsername(), "Kiểm tra quyền lịch sử", "Nội dung mở hồ sơ", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        var stranger = account("stranger-control", AppUser.Role.USER);
+        mvc.perform(get("/nguoi-dung/khieu-nai/" + complaint.getId() + "/lich-su").param("page", "0")
+                .with(user(stranger.getUsername()).roles("USER"))).andExpect(status().isForbidden());
+        mvc.perform(get("/nguoi-dung/khieu-nai/" + complaint.getId() + "/lich-su").param("page", "-1")
+                .with(user(customer.getUsername()).roles("USER"))).andExpect(status().isBadRequest());
+    }
+    @Test void complaintUiOnlyOffersHandlingToOwnerOrAdmin() throws Exception {
+        complaintService.create(order.getId(), customer.getUsername(), "Hồ sơ có người phụ trách", "Nội dung mở hồ sơ", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        complaintService.claim(complaint.getId(), manager.getUsername(), complaint.getRevision());
+        var colleague = internal(account("colleague-control", AppUser.Role.MANAGER));
+        String path = "/manager/khieu-nai/" + complaint.getId();
+        mvc.perform(get(path).with(authentication(auth(colleague)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(path + "/phan-hoi"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(path + "/nhan-xu-ly"))));
+        mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(path + "/phan-hoi")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(path + "/nhan-xu-ly"))));
+        mvc.perform(get(path).with(authentication(auth(adminAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(path + "/phan-hoi")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(path + "/nhan-xu-ly")));
+    }
+    @Test void claimingSameComplaintTwiceDoesNotCreateRepeatedActivity() {
+        complaintService.create(order.getId(), customer.getUsername(), "Không nhận xử lý lặp", "Nội dung mở hồ sơ", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        complaintService.claim(complaint.getId(), manager.getUsername(), complaint.getRevision());
+        assertThrows(IllegalArgumentException.class, () -> complaintService.claim(complaint.getId(), manager.getUsername(), complaint.getRevision()));
+        assertEquals(2, complaintService.timeline(complaint.getId(), manager.getUsername(), 0).getTotalElements());
+    }
+    @Test void inconsistentPaidSnapshotDoesNotOfferOrAllowCompensation() throws Exception {
+        var payment = paid(); payment.setAmount(new BigDecimal("20000")); payments.flush();
+        var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Cước cần tra soát", "Số tiền không khớp cước đã chốt", null, NOW));
+        mvc.perform(get("/manager/khieu-nai/" + complaint.getId()).with(authentication(auth(managerAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+        assertThrows(IllegalArgumentException.class, () -> cases.prepare(manager.getUsername(), OperationsCase.Kind.COMPENSATION, complaint.getId()));
+    }
+    @Test void missingWalletReceiptCannotCreateCompensationEvenIfPaidFlagIsSet() {
+        var payment = paid(); payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setTransactionRef(null); payments.flush();
+        var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Thiếu biên nhận thanh toán", "Cần tra soát giao dịch trước khi chi trả", null, NOW));
+        assertThrows(IllegalArgumentException.class, () -> cases.request(manager.getUsername(),
+                request(OperationsCase.Kind.COMPENSATION, complaint.getId(), complaint.getRevision(), BigDecimal.TEN, null), image()));
+        assertEquals(0, caseRepository.count());
+    }
+    @Test void compensationApprovalRechecksPaymentReceipt() throws Exception {
+        var payment = paid();
+        var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Kiểm tra lại chứng từ", "Thanh toán thay đổi sau khi lập phiếu", null, NOW));
+        Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.COMPENSATION, complaint.getId(), complaint.getRevision(), BigDecimal.TEN, null), image());
+        var record = cases.view(admin.getUsername(), id);
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setTransactionRef(null); payments.flush();
+        mvc.perform(get("/manager/ho-so-van-hanh/" + id).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"true\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"false\"")));
+        assertThrows(IllegalArgumentException.class, () -> cases.review(admin.getUsername(), id,
+                new OperationsReviewRequest(record.getRevision(), true, "Không duyệt khi thiếu biên nhận")));
+        assertEquals(OperationsCase.Status.REQUESTED, record.getStatus());
+    }
+    @Test void approvalUiDoesNotOfferExpiredRetryButStillAllowsRejection() throws Exception {
+        for (int i = 0; i < 3; i++) history.save(new OrderStatusHistory(order, shipper, Order.OrderStatus.IN_TRANSIT,
+                Order.OrderStatus.FAILED, DeliveryFailureReason.CUSTOMER_ABSENT, "Khách không có mặt", null, NOW.minusHours(4 - i)));
+        history.flush();
+        Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.RETRY, order.getId(), order.getRevision(), null, NOW.plusHours(1)), null);
+        clock.at(NOW.plusHours(2));
+        mvc.perform(get("/manager/ho-so-van-hanh/" + id).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"true\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"false\"")));
+    }
+    @Test void legacyFinancialCaseWithoutAmountDoesNotCrashOrOfferApproval() throws Exception {
+        var settlement = settlements.saveAndFlush(new CodSettlement(shipper, 1, new BigDecimal("18000"), new BigDecimal("10000"), "Thiếu cước kiểm thử", NOW));
+        settlement.review(manager, true, "Đã xác nhận khoản thiếu", NOW); settlements.flush();
+        Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.CASH_SUPPLEMENT, settlement.getId(), settlement.getRevision(), BigDecimal.TEN, null), image());
+        var record = cases.view(admin.getUsername(), id);
+        em.createNativeQuery("update operations_case set amount=null where id=:id").setParameter("id", id).executeUpdate();
+        em.refresh(record);
+        mvc.perform(get("/manager/ho-so-van-hanh/" + id).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"true\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"approve\" value=\"false\"")));
+        mvc.perform(post("/manager/ho-so-van-hanh/" + id + "/duyet").with(authentication(auth(adminAccount))).with(csrf())
+                .param("revision", Long.toString(record.getRevision())).param("approve", "true").param("reason", "Kiểm tra phiếu thiếu số tiền"))
+                .andExpect(redirectedUrl("/manager/ho-so-van-hanh/" + id)).andExpect(flash().attributeExists("error"));
+        assertEquals(OperationsCase.Status.REQUESTED, record.getStatus());
+    }
+    @Test void compensationCompletionRechecksReceiptAndDoesNotOfferInvalidPaymentAction() throws Exception {
+        var payment = paid();
+        var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Kiểm tra lại trước khi chi", "Thanh toán thay đổi sau lúc duyệt", null, NOW));
+        Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.COMPENSATION, complaint.getId(), complaint.getRevision(), BigDecimal.TEN, null), image());
+        var record = cases.view(admin.getUsername(), id);
+        cases.review(admin.getUsername(), id, new OperationsReviewRequest(record.getRevision(), true, "Duyệt cước đã thanh toán hợp lệ"));
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setTransactionRef(null); payments.flush();
+        assertFalse(cases.canComplete(admin.getUsername(), id));
+        mvc.perform(get("/manager/ho-so-van-hanh/" + id).with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("/" + id + "/hoan-tat"))));
+        assertThrows(IllegalArgumentException.class, () -> cases.complete(admin.getUsername(), id, record.getRevision(), "RECEIPT-OUT-01", image()));
+        assertEquals(OperationsCase.Status.APPROVED, record.getStatus());
+    }
+    @Test void duplicateClaimPostReturnsToComplaintWithValidationMessage() throws Exception {
+        complaintService.create(order.getId(), customer.getUsername(), "Kiểm tra nhận lặp từ form", "Nội dung mở hồ sơ", null);
+        var complaint = complaints.findByOrder(order).orElseThrow();
+        complaintService.claim(complaint.getId(), manager.getUsername(), complaint.getRevision());
+        mvc.perform(post("/manager/khieu-nai/" + complaint.getId() + "/nhan-xu-ly").with(authentication(auth(managerAccount))).with(csrf())
+                .param("revision", Long.toString(complaint.getRevision())))
+                .andExpect(redirectedUrl("/manager/khieu-nai/" + complaint.getId())).andExpect(flash().attributeExists("error"));
+    }
+    @Test void compensationUiDoesNotOfferDuplicatePendingOrApprovedCase() throws Exception {
+        paid(); var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Không lập phiếu trùng", "Hồ sơ đã có đề xuất đang xử lý", null, NOW));
+        Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.COMPENSATION, complaint.getId(), complaint.getRevision(), BigDecimal.TEN, null), image());
+        String path = "/manager/khieu-nai/" + complaint.getId();
+        mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+        var record = cases.view(admin.getUsername(), id);
+        cases.review(admin.getUsername(), id, new OperationsReviewRequest(record.getRevision(), false, "Từ chối đề xuất để kiểm tra lại"));
+        mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước")));
+    }
     @Test void approvedCompensationPreventsContradictoryComplaintRejection() {
         paid(); var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Đề nghị hoàn cước","Kiểm thử chống trạng thái mâu thuẫn",null,NOW));
         Long id=cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,complaint.getId(),complaint.getRevision(),BigDecimal.TEN,null),image());
@@ -247,6 +384,14 @@ class OperationsControlsIntegrationTest {
         var form=new OperationsPolicyRequest(p.getRevision(),24,100,40,4,4,24,168, 15, 3000,"Điều chỉnh chính sách thử");
         policies.update(admin.getUsername(),form); assertEquals(4,policies.current().getMaxDeliveryAttempts());
         assertThrows(StaffConflictException.class,()->policies.update(admin.getUsername(),form));
+    }
+    @Test void inconsistentPaymentSnapshotIsVisibleInManagerAlerts() {
+        var payment=paid();payment.setDiscountAmount(new BigDecimal("1000"));payments.saveAndFlush(payment);
+        assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.PAYMENT_ISSUE,0).getContent().contains(order));
+    }
+    @Test void paidMomoWithoutReceiptIsVisibleInManagerAlerts() {
+        var payment=paid();payment.setMethod(OrderPayment.PaymentMethod.MOMO);payment.setTransactionRef(null);payments.saveAndFlush(payment);
+        assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.PAYMENT_ISSUE,0).getContent().contains(order));
     }
     @Test void alertsExcludeDeliveredAndCannotBeClearedByNoteUpdate() {
         assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.LATE_DELIVERY,0).getContent().contains(order));
