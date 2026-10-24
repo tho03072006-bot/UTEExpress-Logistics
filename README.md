@@ -98,7 +98,7 @@ Chưa cấu hình mail thì các chức năng này báo "Không gửi được e
 
 ## Tài khoản test
 
-Tài khoản demo trên database Aiven dùng chung của nhóm (kiểm tra đăng nhập ngày 24/10/2026).
+Tài khoản demo trên database Aiven dùng chung của nhóm (kiểm tra đăng nhập sáng 24/10/2026, sau khi đổi tên theo chi nhánh).
 **Không đổi mật khẩu các tài khoản này**: cả nhóm dùng chung để demo.
 Tài khoản nội bộ (Manager/Admin) đăng nhập ở `/noi-bo/dang-nhap` và **bị khóa sau 5 lần nhập sai**;
 tài khoản khách hàng/Shipper đăng nhập ở `/dang-nhap`, bị khóa 15 phút sau 10 lần sai. Trang đăng nhập hiện "lần N/5" hoặc "lần N/10" để biết còn bao nhiêu lần.
@@ -116,7 +116,7 @@ Manager chỉ thấy đơn gửi đi hoặc giao tới chi nhánh của mình; S
 
 | Chi nhánh | Tên đăng nhập | Mật khẩu |
 |---|---|---|
-| SGN – TP. Hồ Chí Minh | `manager1` | `Manager@123456` |
+| SGN – TP. Hồ Chí Minh | `manager_sgn` | `Manager@123456` |
 | HAN – Hà Nội | `manager_han` | `Manager@123456` |
 | DAD – Đà Nẵng | `manager_dad` | `Manager@123456` |
 
@@ -124,11 +124,14 @@ Manager chỉ thấy đơn gửi đi hoặc giao tới chi nhánh của mình; S
 
 | Chi nhánh | Tên đăng nhập | Mật khẩu |
 |---|---|---|
-| SGN – TP. Hồ Chí Minh | `shipper1` | `123456` |
-| SGN – TP. Hồ Chí Minh | `shipper2` | `123456` |
-| HAN – Hà Nội | `shipper3` | `123456` |
+| SGN – TP. Hồ Chí Minh | `shipper_sgn1` | `123456` |
+| SGN – TP. Hồ Chí Minh | `shipper_sgn2` | `123456` |
+| HAN – Hà Nội | `shipper_han1` | `123456` |
 | HAN – Hà Nội | `shipper_han2` | `Shipper@123456` |
 | DAD – Đà Nẵng | `shipper_dad1` | `Shipper@123456` |
+
+Tên đăng nhập nội bộ theo mẫu `vaitro_chinhanh[số]`. Ngày 24/10/2026 đã đổi `manager1` → `manager_sgn`, `shipper1` → `shipper_sgn1`,
+`shipper2` → `shipper_sgn2`, `shipper3` → `shipper_han1` (công cụ `tool/database/RenameAivenBranchAccounts`); nhật ký cũ vẫn ghi tên cũ.
 
 **Người gửi (USER, không thuộc chi nhánh)** – đăng nhập ở `/dang-nhap`
 
