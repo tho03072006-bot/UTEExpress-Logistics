@@ -123,7 +123,9 @@
     if (typeof module!=='undefined' && module.exports) module.exports={AssistantClient:AssistantClient,safeSource:safeSource};
     if (typeof document==='undefined') return;
     const root=document.getElementById('uteAssistant');
-    if (!root || !window.matchMedia('(min-width: 1280px)').matches) return;
+    if (!root) return;
+    // CSS vẫn chỉ hiện trên desktop; đăng ký handler cả khi trang mở ở cửa sổ hẹp để kéo rộng lên vẫn dùng được.
+    const desktop=window.matchMedia('(min-width: 1280px)');
     const panel=document.getElementById('uteAssistantPanel'), launcher=document.getElementById('uteAssistantLauncher');
     const messages=document.getElementById('uteAssistantMessages'), notice=document.getElementById('uteAssistantNotice');
     const form=document.getElementById('uteAssistantForm'), question=document.getElementById('uteAssistantQuestion');
@@ -250,6 +252,7 @@
         panel.hidden=true; launcher.hidden=false; launcher.setAttribute('aria-expanded','false'); document.body.classList.remove('ute-assistant-open'); launcher.focus();
     }
     launcher.addEventListener('click',function () {
+        if (!desktop.matches) return;
         panel.hidden=false; launcher.hidden=true; launcher.setAttribute('aria-expanded','true'); document.body.classList.add('ute-assistant-open');
         pollCount=0; client.load().then(function(){if(client.sessionVerified) client.loadOrders(0);}); question.focus();
     });
@@ -271,9 +274,17 @@
             button.textContent=seconds ? 'Thử lại sau '+seconds+'s' : 'Thử lại'; button.disabled=client.pending || seconds>0;
         });
     },1000); }
-    startCountdown();
+    function syncViewport() {
+        if (desktop.matches) startCountdown();
+        else {
+            closePanel(); client.discard();
+            window.clearInterval(countdown); countdown=null;
+        }
+    }
+    desktop.addEventListener('change',syncViewport);
+    syncViewport();
     window.addEventListener('pagehide',function () { if (pollTimer) window.clearTimeout(pollTimer); pollTimer=null; window.clearInterval(countdown); countdown=null; client.discard(); });
-    window.addEventListener('pageshow',function (event) { startCountdown(); if (event.persisted) { client.discard(); closePanel(); } });
+    window.addEventListener('pageshow',function (event) { syncViewport(); if (event.persisted) { client.discard(); closePanel(); } });
     document.addEventListener('visibilitychange',function () {
         // load ẩn ảnh chụp cũ cho đến khi xác thực lại; nếu offline cũng không lộ lịch sử trên tab vừa quay lại.
         if (!document.hidden && !panel.hidden && !client.pending) client.load();

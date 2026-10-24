@@ -52,4 +52,19 @@
     .ute-assistant { display:block; }
     body.ute-assistant-open .ute-shell { padding-right:416px!important; }
     body.ute-assistant-open .ute-main { min-width:0; }
+    /* Bố cục đáp ứng theo phần nội dung còn lại, không theo viewport vẫn đang rộng 1280px. */
+    body.ute-assistant-open .ute-main { container-type:inline-size; container-name:ute-assistant-workspace; }
+}
+@container ute-assistant-workspace (max-width:900px) {
+    .sx-hello-grid,.sx-cod-grid { grid-template-columns:minmax(0,1fr); }
+    .sx-hello-art { width:140px; max-width:28%; }
+    .sx-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .sx-order-th { display:none; }
+    .sx-order-row { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"check code status" "check dest money" "check actions actions"; align-items:start; row-gap:.6rem; }
+    .sx-cell-check { grid-area:check; padding-top:.45rem; }
+    .sx-cell-code { grid-area:code; }
+    .sx-cell-dest { grid-area:dest; }
+    .sx-cell-money { grid-area:money; text-align:right; }
+    .sx-cell-status { grid-area:status; }
+    .sx-cell-actions { grid-area:actions; justify-content:flex-start; }
 }

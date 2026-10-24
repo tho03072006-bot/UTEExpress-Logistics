@@ -37,7 +37,7 @@ async function setup(){
         const body=clone(conversation);return {status,json:async()=>body};
     };
     const document={getElementById:id=>nodes[id],createElement:tag=>new Node(tag),body:new Node(),addEventListener(){},hidden:false};
-    const window={matchMedia:()=>({matches:true}),addEventListener(){},setInterval:()=>1,clearInterval(){},confirm:()=>true,
+    const window={matchMedia:()=>({matches:true,addEventListener(){}}),addEventListener(){},setInterval:()=>1,clearInterval(){},confirm:()=>true,
         setTimeout:(fn,ms)=>ms===0?setTimeout(fn,0):1,clearTimeout(){}};
     vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../main/resources/static/js/assistant-chat.js'),'utf8'),
         {document,window,fetch,crypto:{randomUUID:()=> 'r'+(++nextId)},AbortController,URL,location:{href:'http://example.invalid'},console});
