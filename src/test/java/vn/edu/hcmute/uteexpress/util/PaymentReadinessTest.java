@@ -18,7 +18,7 @@ class PaymentReadinessTest {
 
     @ParameterizedTest @CsvSource({"-1,false", "0,true", "0.0,true", "1.5,false", "999999999999,true", "1000000000000,false"})
     void amountMustBeWholeNonNegativeVndWithinDatabasePrecision(String amount, boolean valid) {
-        var payment = payment(); payment.setAmount(new BigDecimal(amount));
+        var payment = payment(); payment.setAmount(new BigDecimal(amount)); payment.getOrder().setShippingFee(payment.getAmount());
         assertEquals(valid, PaymentReadiness.isValidAmount(payment.getAmount()));
         assertEquals(valid, PaymentReadiness.isReady(payment));
         assertEquals(valid, ShipperMoneyView.from(payment).isFulfillmentReady());
@@ -31,8 +31,39 @@ class PaymentReadinessTest {
         payment = payment(); payment.setStatus(null); assertFalse(PaymentReadiness.isReady(payment));
     }
 
+    @Test void shipperButtonsMustBeDisabledWhenBackendRejectsAnInconsistentPayment() {
+        var payment=payment();var order=new vn.edu.hcmute.uteexpress.entity.Order();order.setShippingFee(new BigDecimal("18000"));payment.setOrder(order);
+        payment.setDiscountAmount(new BigDecimal("1000"));
+        assertFalse(ShipperMoneyView.from(payment).isFulfillmentReady());
+    }
+
+    @Test void shipperCannotSeeMomoAsPrepaidWithoutItsReceipt() {
+        var payment=payment();var order=new vn.edu.hcmute.uteexpress.entity.Order();order.setShippingFee(new BigDecimal("18000"));payment.setOrder(order);
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO);payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        payment.setPaidAt(null); payment.setTransactionRef(null);
+        assertFalse(ShipperMoneyView.from(payment).isFulfillmentReady());
+    }
+
+    @Test void compensationNeedsActuallyPaidPositiveAndConsistentAmount() {
+        var payment = payment(); assertFalse(PaymentReadiness.isRefundable(payment));
+        payment.setStatus(OrderPayment.PaymentStatus.PAID); assertTrue(PaymentReadiness.isRefundable(payment));
+        payment.setPaidAt(null); assertFalse(PaymentReadiness.isRefundable(payment));
+        payment = payment(); payment.setStatus(OrderPayment.PaymentStatus.PAID); payment.setAmount(BigDecimal.ZERO);
+        payment.setDiscountAmount(payment.getOrder().getShippingFee()); assertFalse(PaymentReadiness.isRefundable(payment));
+        payment = payment(); payment.setStatus(OrderPayment.PaymentStatus.PAID); payment.setAmount(new BigDecimal("20000"));
+        assertFalse(PaymentReadiness.isRefundable(payment)); assertFalse(PaymentReadiness.isRefundable(null));
+    }
+
+    @Test void compensationRequiresWalletReceiptAndAllowsVerifiedMomoPayment() {
+        var payment = payment(); payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        assertTrue(PaymentReadiness.isRefundable(payment));
+        payment.setTransactionRef("   "); assertFalse(PaymentReadiness.isRefundable(payment));
+    }
+
     private OrderPayment payment() {
         var value = new OrderPayment(); value.setAmount(new BigDecimal("18000"));
+        var order = new vn.edu.hcmute.uteexpress.entity.Order(); order.setShippingFee(value.getAmount()); value.setOrder(order);
+        value.setPaidAt(java.time.LocalDateTime.of(2026,10,15,12,0)); value.setTransactionRef("VALID-RECEIPT");
         value.setMethod(OrderPayment.PaymentMethod.COD); value.setStatus(OrderPayment.PaymentStatus.UNPAID); return value;
     }
 }

@@ -16,9 +16,15 @@ public final class PaymentReadiness {
 
     public static boolean isReady(OrderPayment payment) {
         return payment != null && payment.getMethod() != null && payment.getStatus() != null
-                && isValidAmount(payment.getAmount())
+                && hasConsistentSnapshot(payment) && hasRequiredReceipt(payment)
                 && (payment.getMethod() == OrderPayment.PaymentMethod.COD
                     || payment.getStatus() == OrderPayment.PaymentStatus.PAID);
+    }
+
+    /** Bồi hoàn chỉ dựa trên cước đã thực thu hợp lệ; đơn miễn phí không phát sinh khoản có thể chi trả. */
+    public static boolean isRefundable(OrderPayment payment) {
+        return isReady(payment) && payment.getStatus() == OrderPayment.PaymentStatus.PAID
+                && payment.getPaidAt() != null && payment.getAmount().signum() > 0;
     }
 
     /** Cước đã chốt trừ giảm giá phải đúng số cần thu; không tin riêng trạng thái PAID hoặc một số tiền dương. */
