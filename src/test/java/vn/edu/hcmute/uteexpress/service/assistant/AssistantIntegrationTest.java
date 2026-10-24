@@ -49,7 +49,7 @@ class AssistantIntegrationTest {
     @Autowired AssistantToolService tools;
     @Autowired AssistantAccessService access;
     @Autowired OperationsPolicyService policies;
-    @Autowired FeeEstimateService fees;
+    @Autowired vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes;
     @Autowired EntityManager em;
     @MockBean AssistantAiGateway ai;
     AppUser customer,otherCustomer,shipper,otherShipper;
@@ -141,15 +141,65 @@ class AssistantIntegrationTest {
         assertFalse(tools.execute("lookup_order",mapper.createObjectNode().put("tracking_code",own.getTrackingCode()).put("username",otherCustomer.getUsername()),auth(customer)).data().path("ok").asBoolean());
         assertEquals(before,orders.count()); assertEquals(Order.OrderStatus.PENDING_PICKUP,own.getStatus());
     }
-    @Test void policyAndTariffComeFromCurrentBusinessServices() {
+    @Test void policyAndTariffComeFromCurrentBusinessServices(@Autowired org.springframework.context.ApplicationContext context) {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);
         var policy=policies.current(); policy.configure(24,120,48,4,4,24,168,"test-only",java.time.LocalDateTime.now()); em.flush();
         var guidance=tools.execute("get_guidance",mapper.createObjectNode(),auth(customer)).data();
         assertEquals(4,guidance.path("current_policy").path("max_delivery_attempts").asInt());
-        var quotes=tools.execute("estimate_fee",mapper.createObjectNode().put("weight_kg",2d),auth(customer)).data();
-        assertEquals(mapper.valueToTree(fees.quotes(2d,null,null)),quotes.path("quotes")); assertTrue(quotes.path("reference_only").asBoolean());
+        assertTrue(guidance.path("guide").asText().contains("MỨC GIẢM HIỆN HÀNH khi tự mang ra chi nhánh: 3.000 đ"),"Hướng dẫn đọc mức giảm từ chính sách hiện hành");
+        // Liên tỉnh SGN -> HAN: đúng con số của trang Ước tính cước và lúc tạo đơn (cùng RouteQuoteService).
+        var inter=tools.execute("estimate_fee",fee(2d,"SGN","HAN").put("from_area","Quận Thủ Đức").put("to_area","cầu giấy"),auth(customer)).data();
+        assertTrue(inter.path("ok").asBoolean(),inter.toString()); assertTrue(inter.path("reference_only").asBoolean()); assertTrue(inter.path("interprovincial").asBoolean());
+        var expected=routeQuotes.quotes(form("79","SGN-THUDUC","01","HAN-CAUGIAY",2d,vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER));
+        assertEquals(expected.size(),inter.path("quotes").size());
+        for(int i=0;i<expected.size();i++) {
+            var row=inter.path("quotes").get(i);
+            assertEquals(0,expected.get(i).total().compareTo(row.path("total_vnd").decimalValue()));
+            assertTrue(row.path("route_fee_vnd").decimalValue().signum()>0); assertEquals(0,row.path("distance_fee_vnd").decimalValue().signum());
+        }
+        assertFalse(inter.path("quotes").toString().contains("Hỏa tốc"),"Hỏa tốc không có ở tuyến liên tỉnh");
+        // Không nói hình thức gửi: một lần gọi trả cả cước tự mang, khớp hàm cước với DROP_OFF.
+        var expectedDrop=routeQuotes.quotes(form("79","SGN-THUDUC","01","HAN-CAUGIAY",2d,vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF));
+        assertEquals(0,expectedDrop.get(0).total().compareTo(inter.path("quotes").get(0).path("drop_off_total_vnd").decimalValue()));
+        assertEquals(0,expected.get(0).total().compareTo(inter.path("quotes").get(0).path("courier_total_vnd").decimalValue()));
+        assertTrue(inter.path("counter_address").asText().contains("Chi nhánh"));
+        assertEquals(0,policies.current().getDropOffDiscount().compareTo(
+                tools.execute("get_guidance",mapper.createObjectNode(),auth(customer)).data().path("current_policy").path("drop_off_discount_vnd").decimalValue()));
+        // Tự mang ra chi nhánh: giảm đúng mức chính sách và có địa chỉ quầy chi nhánh gửi.
+        var drop=tools.execute("estimate_fee",fee(2d,"SGN","HAN").put("from_area","Thủ Đức").put("to_area","Cầu Giấy").put("service_type","STANDARD")
+                .put("pickup_mode","DROP_OFF"),auth(customer)).data();
+        var courier=inter.path("quotes").get(0);
+        assertEquals(0,courier.path("total_vnd").decimalValue().subtract(policies.current().getDropOffDiscount())
+                .compareTo(drop.path("quotes").get(0).path("total_vnd").decimalValue()));
+        assertTrue(drop.path("counter_address").asText().contains("Chi nhánh"));
+        // Hỏi riêng shipper đến lấy vẫn trả kèm cước tự mang: AI không cần gọi lần hai.
+        var courierOnly=tools.execute("estimate_fee",fee(2d,"SGN","HAN").put("from_area","Thủ Đức").put("to_area","Cầu Giấy").put("service_type","STANDARD")
+                .put("pickup_mode","COURIER"),auth(customer)).data().path("quotes").get(0);
+        assertEquals(0,courierOnly.path("drop_off_total_vnd").decimalValue().compareTo(drop.path("quotes").get(0).path("total_vnd").decimalValue()));
+        // Nội tỉnh "Quận 1" khớp khu vực SGN-Q1; khu vực gõ sai thì tính theo kho và ghi chú lại, không đoán bừa.
+        var local=tools.execute("estimate_fee",fee(2d,"SGN","SGN").put("from_area","Thủ Đức").put("to_area","Quận 1"),auth(customer)).data();
+        assertTrue(local.path("to").asText().endsWith("Khu vực 1"),local.toString()); assertFalse(local.path("interprovincial").asBoolean());
+        assertTrue(local.path("quotes").get(0).path("distance_fee_vnd").decimalValue().signum()>0);
+        var unknown=tools.execute("estimate_fee",fee(1d,"HAN","HAN").put("from_area","Không có thật"),auth(customer)).data();
+        assertTrue(unknown.path("notes").toString().contains("Không nhận ra khu vực"));
+        // Thiếu tỉnh, tỉnh lạ, khối lượng sai, Hỏa tốc liên tỉnh hay tham số cũ đều bị từ chối.
+        assertFalse(tools.execute("estimate_fee",mapper.createObjectNode().put("weight_kg",2d),auth(customer)).data().path("ok").asBoolean());
+        assertFalse(tools.execute("estimate_fee",fee(2d,"SGN","CTO"),auth(customer)).data().path("ok").asBoolean());
         for(double weight:new double[]{0,-1,101,Double.NaN,Double.POSITIVE_INFINITY})
-            assertFalse(tools.execute("estimate_fee",mapper.createObjectNode().put("weight_kg",weight),auth(customer)).data().path("ok").asBoolean());
-        assertFalse(tools.execute("estimate_fee",mapper.createObjectNode().put("weight_kg",1d).put("distance_km",0),auth(customer)).data().path("ok").asBoolean());
+            assertFalse(tools.execute("estimate_fee",fee(weight,"SGN","SGN"),auth(customer)).data().path("ok").asBoolean());
+        var express=tools.execute("estimate_fee",fee(1d,"SGN","HAN").put("service_type","SUPER_EXPRESS"),auth(customer)).data();
+        assertFalse(express.path("ok").asBoolean()); assertTrue(express.path("message").asText().contains("Hỏa tốc"));
+        assertFalse(tools.execute("estimate_fee",fee(1d,"SGN","SGN").put("distance_km",5),auth(customer)).data().path("ok").asBoolean());
+    }
+    private com.fasterxml.jackson.databind.node.ObjectNode fee(double weight,String from,String to) {
+        return mapper.createObjectNode().put("weight_kg",weight).put("from_branch",from).put("to_branch",to);
+    }
+    private vn.edu.hcmute.uteexpress.dto.FeeEstimateRequest form(String fromProvince,String fromArea,String toProvince,String toArea,double weight,
+            vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode mode) {
+        var form=new vn.edu.hcmute.uteexpress.dto.FeeEstimateRequest();
+        form.setPickupProvinceCode(fromProvince); form.setPickupAreaCode(fromArea); form.setDeliveryProvinceCode(toProvince);
+        form.setDeliveryAreaCode(toArea); form.setWeightKg(weight); form.setPickupMode(mode);
+        return form;
     }
     @Test void shipperToolsAndSuggestionsAreRoleSpecific() throws Exception {
         var result=tools.execute("get_shipper_work",mapper.createObjectNode(),auth(shipper)).data(); assertTrue(result.path("ok").asBoolean());

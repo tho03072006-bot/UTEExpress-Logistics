@@ -31,7 +31,8 @@ public class AssistantToolServiceImpl implements AssistantToolService {
     private final OrderPaymentService payments;
     private final ShipperWorkspaceService workspace;
     private final OperationsPolicyService policies;
-    private final FeeEstimateService fees;
+    private final vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes;
+    private final vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog;
     private final EntityManager entityManager;
     private final ObjectMapper mapper;
     private final Clock clock;
@@ -39,11 +40,13 @@ public class AssistantToolServiceImpl implements AssistantToolService {
     private final Map<AppUser.Role,String> knowledge;
     public AssistantToolServiceImpl(AssistantAccessService access,OrderService orders,TrackingService tracking,
             OrderJourneyService journey,OrderPaymentService payments,ShipperWorkspaceService workspace,
-            OperationsPolicyService policies,FeeEstimateService fees,EntityManager entityManager,ObjectMapper mapper,Clock clock,
+            OperationsPolicyService policies,vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes,
+            vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService catalog,EntityManager entityManager,ObjectMapper mapper,Clock clock,
             vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing) throws java.io.IOException {
         this.routing=routing;
         this.access=access; this.orders=orders; this.tracking=tracking; this.journey=journey; this.payments=payments;
-        this.workspace=workspace; this.policies=policies; this.fees=fees; this.entityManager=entityManager; this.mapper=mapper; this.clock=clock;
+        this.workspace=workspace; this.policies=policies; this.routeQuotes=routeQuotes; this.catalog=catalog;
+        this.entityManager=entityManager; this.mapper=mapper; this.clock=clock;
         knowledge=Map.of(AppUser.Role.USER,readGuide("user"),AppUser.Role.SHIPPER,readGuide("shipper"));
     }
     private String readGuide(String role) throws java.io.IOException {
@@ -51,7 +54,12 @@ public class AssistantToolServiceImpl implements AssistantToolService {
             return new String(input.readNBytes(10000),StandardCharsets.UTF_8);
         }
     }
-    @Override public String getKnowledge(AssistantAccessService.Actor actor) { return knowledge.get(actor.role()); }
+    /** Hướng dẫn tĩnh theo vai trò kèm mức giảm tự mang ra chi nhánh đang áp dụng (đọc lại mỗi lượt hỏi, Admin đổi là có hiệu lực ngay). */
+    @Override public String getKnowledge(AssistantAccessService.Actor actor) {
+        var discount=policies.current().getDropOffDiscount();
+        return knowledge.get(actor.role()) + "MỨC GIẢM HIỆN HÀNH khi tự mang ra chi nhánh: "
+                + String.format(Locale.ROOT, "%,d", discount.longValue()).replace(',', '.') + " đ cho mỗi đơn, áp dụng chung mọi chi nhánh.\r\n";
+    }
     @Override public ArrayNode definitions(AssistantAccessService.Actor actor) {
         var result=mapper.createArrayNode();
         addTool(result,"lookup_order","Read CURRENT status, branch route (origin/destination branch, current hub location, route lead time), payment, history and read-only eligibility of an authorized order. Never use old chat as status evidence.",
@@ -59,8 +67,19 @@ public class AssistantToolServiceImpl implements AssistantToolService {
         addTool(result,"request_order_selection","Open account-scoped order picker when a specific order is needed and none has been selected. Do not ask the user to manually type a code.","{}",List.of());
         addTool(result,"list_my_orders","List up to 10 own/assigned orders, not other accounts. Ask which code if ambiguous.",
                 "{\"status\":{\"type\":\"string\",\"enum\":[\"ALL\",\"PENDING_PICKUP\",\"PICKED_UP\",\"IN_TRANSIT\",\"DELIVERED\",\"FAILED\",\"CANCELLED\",\"RETURNED\"]},\"page\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":20}}",List.of());
-        addTool(result,"estimate_fee","Read fee quotes from existing fee service. Weight kg required; optional distance km. Result is REFERENCE, not actual shipment ETA/final discounted charge.",
-                "{\"weight_kg\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":100},\"distance_km\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":2000},\"service_type\":{\"type\":\"string\",\"enum\":[\"STANDARD\",\"EXPRESS\",\"SUPER_EXPRESS\"]}}",List.of("weight_kg"));
+        addTool(result,"estimate_fee","Read REFERENCE fee quotes from the same branch-route pricing used by the estimate page and order creation: "
+                + "base fee by weight + distance surcharge inside one province, or route surcharge between branches, minus the drop-off discount. "
+                + "Every quote row has courier_total_vnd (shipper picks up) and drop_off_total_vnd (sender brings the parcel to the sending branch counter); "
+                + "always state the concrete amounts from these fields. Ask the user for sending and receiving province when unknown; never guess them. "
+                + "Not an ETA of a shipment nor the charge after promo codes.",
+                "{\"weight_kg\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":100},"
+                + "\"from_branch\":{\"type\":\"string\",\"enum\":[\"SGN\",\"HAN\",\"DAD\"],\"description\":\"Sending province: SGN = TP. Hồ Chí Minh, HAN = Hà Nội, DAD = Đà Nẵng\"},"
+                + "\"to_branch\":{\"type\":\"string\",\"enum\":[\"SGN\",\"HAN\",\"DAD\"],\"description\":\"Receiving province, same codes\"},"
+                + "\"from_area\":{\"type\":\"string\",\"maxLength\":40,\"description\":\"Optional district/area name in the sending province, e.g. Thủ Đức, Quận 1\"},"
+                + "\"to_area\":{\"type\":\"string\",\"maxLength\":40,\"description\":\"Optional district/area name in the receiving province, e.g. Cầu Giấy\"},"
+                + "\"service_type\":{\"type\":\"string\",\"enum\":[\"STANDARD\",\"EXPRESS\",\"SUPER_EXPRESS\"]},"
+                + "\"pickup_mode\":{\"type\":\"string\",\"enum\":[\"COURIER\",\"DROP_OFF\"],\"description\":\"Only chooses which amount total_vnd repeats; both amounts are always returned\"}}",
+                List.of("weight_kg","from_branch","to_branch"));
         addTool(result,"get_guidance","Read official existing functions and CURRENT operations policy. Separate general packaging advice from official rules.","{}",List.of());
         if (actor.role()==AppUser.Role.SHIPPER) addTool(result,"get_shipper_work","Read current work counts and up to five priority orders assigned to the current shipper.","{}",List.of());
         return result;
@@ -74,13 +93,13 @@ public class AssistantToolServiceImpl implements AssistantToolService {
     }
     @Override public ToolOutput execute(String name,JsonNode arguments,Authentication authentication) {
         var actor=access.requireActor(authentication);
-        if (arguments==null || !arguments.isObject() || arguments.size()>4) return invalid("Tham số tra cứu không hợp lệ.");
+        if (arguments==null || !arguments.isObject() || arguments.size()>7) return invalid("Tham số tra cứu không hợp lệ.");
         try {
             return switch (name) {
                 case "lookup_order" -> { fields(arguments,Set.of("tracking_code")); yield arguments.has("tracking_code") ? lookup(actor,text(arguments,"tracking_code")) : selectionRequired(); }
                 case "request_order_selection" -> { fields(arguments,Set.of()); yield selectionRequired(); }
                 case "list_my_orders" -> { fields(arguments,Set.of("status","page")); yield list(actor,arguments); }
-                case "estimate_fee" -> { fields(arguments,Set.of("weight_kg","distance_km","service_type")); yield quote(arguments); }
+                case "estimate_fee" -> { fields(arguments,Set.of("weight_kg","from_branch","to_branch","from_area","to_area","service_type","pickup_mode")); yield quote(arguments); }
                 case "get_guidance" -> { fields(arguments,Set.of()); yield guidance(actor); }
                 case "get_shipper_work" -> {
                     fields(arguments,Set.of());
@@ -180,19 +199,78 @@ public class AssistantToolServiceImpl implements AssistantToolService {
         }
         return result;
     }
+    /**
+     * Cước tham khảo bằng đúng hàm của trang Ước tính cước và lúc tạo đơn (RouteQuoteService): cùng tuyến chi nhánh,
+     * cùng phụ phí và mức giảm tự mang ra chi nhánh, nên con số trợ lý nói khớp với cước khi người dùng tạo đơn.
+     */
     private ToolOutput quote(JsonNode args) {
-        if (!args.path("weight_kg").isNumber() || (args.has("distance_km") && !args.path("distance_km").isNumber())) throw new IllegalArgumentException();
+        if (!args.path("weight_kg").isNumber()) throw new IllegalArgumentException();
+        var from=branch(text(args,"from_branch")); var to=branch(text(args,"to_branch"));
         var type=args.has("service_type") ? Order.ServiceType.valueOf(text(args,"service_type")) : null;
-        var quotes=fees.quotes(args.path("weight_kg").doubleValue(),args.has("distance_km") ? args.path("distance_km").doubleValue() : null,type);
-        var data=base().put("reference_only",true).put("note","Cước gốc theo bảng cước hiện hành; phụ phí khoảng cách và thời gian chỉ tham khảo, không phải ETA của một vận đơn hay cước sau mã giảm giá.");
-        data.set("quotes",mapper.valueToTree(quotes));
+        // Luôn trả cả cước Shipper đến lấy và cước tự mang ra chi nhánh trong một lần gọi: AI không phải gọi lần hai hay đoán mức giảm.
+        var mode=args.has("pickup_mode") ? vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.valueOf(text(args,"pickup_mode"))
+                : vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER;
+        var notes=mapper.createArrayNode();
+        var pickup=area(from,args.has("from_area") ? text(args,"from_area") : null,notes);
+        var delivery=area(to,args.has("to_area") ? text(args,"to_area") : null,notes);
+        var form=new vn.edu.hcmute.uteexpress.dto.FeeEstimateRequest();
+        form.setPickupProvinceCode(from.getProvinceCode()); form.setPickupAreaCode(pickup.code());
+        form.setDeliveryProvinceCode(to.getProvinceCode()); form.setDeliveryAreaCode(delivery.code());
+        form.setWeightKg(args.path("weight_kg").doubleValue()); form.setServiceType(type);
+        List<vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService.Quote> quotes, dropOffs;
+        try {
+            form.setPickupMode(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER); quotes=routeQuotes.quotes(form);
+            form.setPickupMode(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF); dropOffs=routeQuotes.quotes(form);
+        } catch (IllegalArgumentException | IllegalStateException ex) { return invalid(ex.getMessage()); }
+        boolean dropOff=mode==vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF;
+        var data=base().put("reference_only",true).put("interprovincial",!from.getId().equals(to.getId()));
+        data.put("from",from.getName()+" · "+pickup.name()).put("to",to.getName()+" · "+delivery.name()).put("pickup_mode",mode.name());
+        data.put("counter_address",from.getName()+": "+from.getHubAddress());
+        var rows=data.putArray("quotes");
+        for (int i=0;i<quotes.size();i++) {
+            var q=quotes.get(i); var d=dropOffs.get(i);
+            var row=rows.addObject().put("service",q.serviceType().getDisplayName()).put("total_vnd",dropOff ? d.total() : q.total());
+            row.put("courier_total_vnd",q.total()).put("drop_off_total_vnd",d.total()).put("drop_off_saving_vnd",d.dropOffDiscount());
+            row.put("base_fee_vnd",q.baseFee()).put("distance_fee_vnd",q.distanceFee()).put("route_fee_vnd",q.routeFee());
+            row.put("approx_distance_km",Math.round(q.distanceKm()*10)/10.0);
+            row.put("lead_time",q.leadTimeText());
+        }
+        notes.add("Cùng cách tính với trang Ước tính cước và lúc tạo đơn; mã giảm giá trừ sau tổng này. Khoảng cách tính từ tâm khu vực, không phải km đường bộ.");
+        notes.add("Hỏa tốc chỉ nhận trong cùng chi nhánh và không quá 30 km; lead_time là thời gian dự kiến của tuyến, không phải giờ giao cam kết.");
+        data.set("notes",notes);
         return new ToolOutput(data,List.of(new LinkResponse("Ước tính cước","/uoc-tinh-cuoc")),null);
+    }
+    private vn.edu.hcmute.uteexpress.entity.routing.Branch branch(String code) {
+        return catalog.branches().stream().filter(b -> b.getCode().equals(code)).findFirst().orElseThrow(IllegalArgumentException::new);
+    }
+    /** Khu vực theo tên người dùng gõ (bỏ dấu, bỏ "Quận/Huyện/TP"); không nhận ra thì dùng khu vực kho chi nhánh và ghi chú lại. */
+    private vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService.AreaOption area(vn.edu.hcmute.uteexpress.entity.routing.Branch branch,
+            String typed,ArrayNode notes) {
+        var areas=catalog.areas().stream().filter(a -> a.branchCode().equals(branch.getCode())).toList();
+        var hub=areas.stream().filter(a -> a.code().equals(branch.getHubAreaCode())).findFirst().orElseThrow(IllegalArgumentException::new);
+        if (typed==null || typed.isBlank()) {
+            notes.add("Chưa có khu vực ở "+branch.getName()+" nên tính theo khu vực kho "+hub.name()+".");
+            return hub;
+        }
+        if (typed.length()>40) throw new IllegalArgumentException();
+        String wanted=areaKey(typed);
+        var match=areas.stream().filter(a -> areaKey(a.name()).equals(wanted)).findFirst();
+        if (match.isPresent()) return match.get();
+        notes.add("Không nhận ra khu vực \""+typed.strip()+"\" ở "+branch.getName()+" nên tính theo khu vực kho "+hub.name()+".");
+        return hub;
+    }
+    static String areaKey(String value) {
+        String plain=java.text.Normalizer.normalize(value.strip().toLowerCase(Locale.ROOT).replace('đ','d'),java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}","").replaceAll("[^a-z0-9 ]"," ").replaceAll("\\s+"," ").strip();
+        // "Quận 1", "Q1", "Khu vực 1" cùng một khu vực; bỏ tiền tố hành chính trước tên.
+        return plain.replaceFirst("^(khu vuc|quan|huyen|thi xa|thanh pho|tp)\\s+","").replaceFirst("^q\\s*(?=\\d)","");
     }
     private ToolOutput guidance(AssistantAccessService.Actor actor) {
         var policy=policies.current(); entityManager.refresh(policy);
         var data=base().put("guide",getKnowledge(actor)); var current=data.putObject("current_policy");
         current.put("max_delivery_attempts",policy.getMaxDeliveryAttempts()).put("pickup_target_hours",policy.getPickupHours());
         current.put("standard_target_hours",policy.getStandardHours()).put("express_target_hours",policy.getExpressHours()).put("super_express_target_hours",policy.getSuperExpressHours());
+        current.put("drop_off_discount_vnd",policy.getDropOffDiscount()).put("max_active_orders_per_shipper",policy.getMaxActiveOrders());
         current.put("note","Mục tiêu vận hành, không phải lịch hẹn/ETA cam kết của đơn. Điều kiện giao lại phải tra từng đơn bằng lookup_order.");
         return new ToolOutput(data,List.of(),null);
     }
