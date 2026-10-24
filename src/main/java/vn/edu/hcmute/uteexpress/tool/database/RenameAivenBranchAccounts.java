@@ -39,8 +39,7 @@ public final class RenameAivenBranchAccounts {
             }
         } catch (Exception ex) {
             System.err.println("Chưa hoàn tất kiểm tra/đổi tên. Không in thông tin kết nối.");
-            System.err.println("Exception=" + ex.getClass().getName() + (ex instanceof SQLException sql
-                    ? "; SQLState=" + sql.getSQLState() + "; errorCode=" + sql.getErrorCode() : "") + "; message=" + ex.getMessage());
+            System.err.println(errorSummary(ex));
             System.exit(1);
         }
     }
@@ -48,6 +47,13 @@ public final class RenameAivenBranchAccounts {
     public static void printPlan(PrintStream output) {
         output.println("-- Đổi tên đăng nhập demo theo chi nhánh; chỉ cột username, giữ nguyên id/mật khẩu/chi nhánh.");
         for (var rename : RENAMES) output.println("-- " + rename.from() + " -> " + rename.to() + " (" + rename.role() + ", " + rename.branch() + ")");
+    }
+
+    /** Không in message của JDBC: có thể chứa URL, tên tài khoản hoặc thông tin cấu hình riêng. */
+    static String errorSummary(Exception ex) {
+        return "Exception=" + ex.getClass().getName() + (ex instanceof SQLException sql
+                ? "; SQLState=" + (sql.getSQLState()!=null && sql.getSQLState().matches("[A-Z0-9]{5}") ? sql.getSQLState() : "unknown")
+                    + "; errorCode=" + sql.getErrorCode() : "");
     }
 
     /** Chỉ đọc. Trả về số tài khoản còn chờ đổi; ném lỗi nếu dữ liệu không khớp vai trò/chi nhánh hoặc tên mới đã bị chiếm. */
@@ -72,10 +78,12 @@ public final class RenameAivenBranchAccounts {
             if (!rows.next() || rows.getInt(1) != 1) throw new IllegalStateException("Đang có tiến trình nâng cấp khác; chưa ghi dữ liệu.");
         }
         int renamed = 0;
+        boolean transactionEnded = false;
         try {
+            connection.setAutoCommit(false);
             // Kiểm tra hết trước khi ghi: một tài khoản không khớp thì không đổi tài khoản nào.
             var pending = new ArrayList<Rename>();
-            for (var rename : RENAMES) if (state(connection, rename) == State.PENDING) pending.add(rename);
+            for (var rename : RENAMES) if (state(connection, rename, true) == State.PENDING) pending.add(rename);
             for (var rename : pending) {
                 try (var update = connection.prepareStatement("UPDATE app_user SET username = ?, access_version = access_version + 1"
                         + " WHERE username = ? AND role = ?")) {
@@ -85,16 +93,29 @@ public final class RenameAivenBranchAccounts {
                     renamed++;
                 }
             }
+            connection.commit();
+            transactionEnded = true;
+        } catch (SQLException | RuntimeException ex) {
+            try { connection.rollback(); transactionEnded = true; }
+            catch (SQLException rollbackFailure) { ex.addSuppressed(rollbackFailure); }
+            throw ex;
         } finally {
-            try (var statement = connection.createStatement()) { statement.execute("SELECT RELEASE_LOCK('" + LOCK_NAME + "')"); }
+            // Không bật auto-commit nếu rollback thất bại: JDBC có thể vô tình commit phần đang dở.
+            try { if (transactionEnded) connection.setAutoCommit(true); }
+            finally {
+                try (var statement = connection.createStatement()) { statement.execute("SELECT RELEASE_LOCK('" + LOCK_NAME + "')"); }
+            }
         }
         return renamed;
     }
 
     /** DONE: tên mới đã có đúng vai trò/chi nhánh và tên cũ không còn; PENDING: tên cũ đúng vai trò/chi nhánh, tên mới còn trống. */
     static State state(Connection connection, Rename rename) throws SQLException {
-        var oldAccount = account(connection, rename.from());
-        var newAccount = account(connection, rename.to());
+        return state(connection, rename, false);
+    }
+    private static State state(Connection connection, Rename rename, boolean lock) throws SQLException {
+        var oldAccount = account(connection, rename.from(), lock);
+        var newAccount = account(connection, rename.to(), lock);
         if (oldAccount == null && newAccount != null) { requireMatch(rename, newAccount); return State.DONE; }
         if (oldAccount != null && newAccount == null) { requireMatch(rename, oldAccount); return State.PENDING; }
         if (oldAccount == null) throw new IllegalStateException("Không có tài khoản " + rename.from() + " hay " + rename.to() + ". Không tự tạo.");
@@ -109,9 +130,9 @@ public final class RenameAivenBranchAccounts {
                     + account.branch() + ", không khớp " + rename.role() + " chi nhánh " + rename.branch() + ". Không đổi tên.");
     }
 
-    private static Account account(Connection connection, String username) throws SQLException {
+    private static Account account(Connection connection, String username, boolean lock) throws SQLException {
         try (var statement = connection.prepareStatement("SELECT u.role, b.code FROM app_user u LEFT JOIN staff_branch s ON s.user_id = u.id"
-                + " LEFT JOIN branch b ON b.id = s.branch_id WHERE u.username = ?")) {
+                + " LEFT JOIN branch b ON b.id = s.branch_id WHERE u.username = ?" + (lock ? " FOR UPDATE" : ""))) {
             statement.setString(1, username);
             try (var rows = statement.executeQuery()) { return rows.next() ? new Account(rows.getString(1), rows.getString(2)) : null; }
         }

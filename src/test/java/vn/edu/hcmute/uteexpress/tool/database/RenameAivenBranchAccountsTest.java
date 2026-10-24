@@ -57,13 +57,46 @@ class RenameAivenBranchAccountsTest {
         verify(database.statement, never()).execute(contains("RELEASE_LOCK"));
     }
 
+    @Test void updateFailureRollsBackEveryRenameInsteadOfLeavingHalfRenamedAccounts() throws Exception {
+        var database=new Fixture(); var before=new HashMap<>(database.accounts); database.failOnUpdate=2;
+        assertThrows(SQLException.class,()->RenameAivenBranchAccounts.apply(database.connection));
+        assertEquals(before,database.accounts,"Không để lại tên mới của tài khoản đã đổi trước khi gặp lỗi");
+        verify(database.connection).rollback(); verify(database.connection,never()).commit();
+        assertTrue(database.connection.getAutoCommit());
+        verify(database.statement).execute("SELECT RELEASE_LOCK('uteexpress-schema-initialize')");
+    }
+
+    @Test void applyLocksReadsInsideTransactionAndCommitsOnce() throws Exception {
+        var database=new Fixture(); RenameAivenBranchAccounts.apply(database.connection);
+        verify(database.connection).setAutoCommit(false); verify(database.connection).commit();
+        verify(database.connection).setAutoCommit(true); verify(database.connection,never()).rollback();
+        verify(database.connection,times(8)).prepareStatement(endsWith(" FOR UPDATE"));
+    }
+
+    @Test void rollbackFailureNeverEnablesAutoCommitAndAccidentallyCommitsPartialChanges() throws Exception {
+        var database=new Fixture(); database.failOnUpdate=2;
+        doThrow(new SQLException("Rollback unavailable")).when(database.connection).rollback();
+        var failure=assertThrows(SQLException.class,()->RenameAivenBranchAccounts.apply(database.connection));
+        assertEquals(1,failure.getSuppressed().length); assertFalse(database.connection.getAutoCommit());
+        verify(database.connection,never()).setAutoCommit(true); verify(database.connection,never()).commit();
+        verify(database.statement).execute("SELECT RELEASE_LOCK('uteexpress-schema-initialize')");
+    }
+
+    @Test void errorSummaryDoesNotRevealConnectionDetailsOrArbitraryDriverMessages() {
+        String detail="jdbc:mysql://private-host/internal?password=do-not-print";
+        String summary=RenameAivenBranchAccounts.errorSummary(new SQLException(detail,"08001",1045));
+        assertFalse(summary.contains(detail));assertFalse(summary.contains("private-host"));assertTrue(summary.contains("SQLState=08001"));
+        assertFalse(RenameAivenBranchAccounts.errorSummary(new SQLException(detail,detail)).contains(detail));
+    }
+
     /** CSDL giả: tên đăng nhập -> [vai trò, mã chi nhánh]. */
     static final class Fixture {
         final Connection connection = mock(Connection.class);
         final DatabaseMetaData metadata = mock(DatabaseMetaData.class);
         final Statement statement = mock(Statement.class);
         final Map<String, List<String>> accounts = new HashMap<>();
-        boolean lockAvailable = true; int updates;
+        boolean lockAvailable = true, autoCommit = true; int updates, failOnUpdate = -1;
+        Map<String,List<String>> snapshot;
 
         Fixture() throws Exception {
             accounts.put("admin", Arrays.asList("ADMIN", null));
@@ -71,7 +104,9 @@ class RenameAivenBranchAccountsTest {
             accounts.put("shipper1", List.of("SHIPPER", "SGN")); accounts.put("shipper2", List.of("SHIPPER", "SGN"));
             accounts.put("shipper3", List.of("SHIPPER", "HAN")); accounts.put("shipper_han2", List.of("SHIPPER", "HAN"));
             when(connection.getMetaData()).thenReturn(metadata);
-            when(connection.getAutoCommit()).thenReturn(true);
+            when(connection.getAutoCommit()).thenAnswer(call->autoCommit);
+            doAnswer(call->{autoCommit=call.getArgument(0);if(!autoCommit)snapshot=new HashMap<>(accounts);return null;}).when(connection).setAutoCommit(anyBoolean());
+            doAnswer(call->{if(snapshot!=null){accounts.clear();accounts.putAll(snapshot);}return null;}).when(connection).rollback();
             when(metadata.getDatabaseProductName()).thenReturn("MySQL");
             when(metadata.getDatabaseMajorVersion()).thenReturn(8);
             when(metadata.getTables(any(), any(), anyString(), any())).thenAnswer(call -> {
@@ -101,6 +136,7 @@ class RenameAivenBranchAccountsTest {
                 var prepared = mock(PreparedStatement.class); var values = new String[3];
                 doAnswer(set -> { values[set.<Integer>getArgument(0) - 1] = set.getArgument(1); return null; }).when(prepared).setString(anyInt(), anyString());
                 when(prepared.executeUpdate()).thenAnswer(update -> {
+                    if(updates+1==failOnUpdate)throw new SQLException("Simulated write failure", "40001");
                     var found = accounts.get(values[1]);
                     if (found == null || !found.get(0).equals(values[2])) return 0;
                     accounts.remove(values[1]); accounts.put(values[0], found); updates++;
