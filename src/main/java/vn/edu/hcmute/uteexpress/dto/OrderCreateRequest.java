@@ -64,7 +64,7 @@ public class OrderCreateRequest {
     private String receiverName;
 
     @NotBlank(message = "Vui lòng nhập số điện thoại người nhận")
-    @Pattern(regexp = "0[35789][0-9]{8}", message = "Nhập số di động Việt Nam 10 số hoặc dạng +84.")
+    @Pattern(regexp = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.PHONE, message = "Nhập số di động Việt Nam 10 số hoặc dạng +84.")
     private String receiverPhone;
 
     @NotBlank(message = "Vui lòng nhập địa chỉ giao hàng")
@@ -151,10 +151,7 @@ public class OrderCreateRequest {
     }
 
     public void setReceiverPhone(String receiverPhone) {
-        this.receiverPhone = receiverPhone == null ? null : receiverPhone.strip().replace(" ", "").replace("-", "");
-        if (this.receiverPhone != null && this.receiverPhone.startsWith("+84")) {
-            this.receiverPhone = "0" + this.receiverPhone.substring(3);
-        }
+        this.receiverPhone = vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.phone(receiverPhone);
     }
 
     public String getReceiverAddress() {

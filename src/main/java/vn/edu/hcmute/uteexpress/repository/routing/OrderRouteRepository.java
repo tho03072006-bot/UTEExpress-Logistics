@@ -35,6 +35,14 @@ public interface OrderRouteRepository extends JpaRepository<OrderRoute, Long> {
     /** ID các đơn trong danh sách thuộc phạm vi chi nhánh (xem BRANCH_SCOPE). */
     @org.springframework.data.jpa.repository.Query("select o.id from Order o where o.id in :ids and" + BRANCH_SCOPE)
     List<Long> idsInScope(java.util.Collection<Long> ids, Long branchId);
+    /** Xem được ở hai đầu tuyến, nhưng thao tác giao lại/hoàn chỉ tại kho đang phụ trách chặng giao. */
+    @org.springframework.data.jpa.repository.Query("select o.id from Order o where o.id in :ids and " + BRANCH_SCOPE + """
+        and (not exists (select old.id from OrderRoute old where old.order = o)
+          or exists (select delivery.id from OrderRoute delivery where delivery.order = o and delivery.returnLeg = false
+            and delivery.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE
+            and (:branchId is null or delivery.destBranch.id = :branchId)))
+        """)
+    List<Long> idsAtDeliveryHub(java.util.Collection<Long> ids, Long branchId);
     /** Đơn đã nhập kho gửi, chưa được xếp lên chuyến nào đang xếp hàng. */
     @org.springframework.data.jpa.repository.Query("select r from OrderRoute r join fetch r.order o join fetch r.destBranch"
             + " where r.originBranch.id = :branchId and r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.ORIGIN_HUB and r.returnLeg = false"

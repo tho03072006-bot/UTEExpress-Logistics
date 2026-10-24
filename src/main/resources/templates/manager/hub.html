@@ -97,7 +97,7 @@
             <div class="col-md-4"><label class="form-label" th:for="|driver-${dest.id}|">Tên tài xế</label>
                 <input class="form-control" th:id="|driver-${dest.id}|" name="driverName" required maxlength="100"></div>
             <div class="col-md-4"><label class="form-label" th:for="|phone-${dest.id}|">Số điện thoại tài xế</label>
-                <input class="form-control" th:id="|phone-${dest.id}|" name="driverPhone" required pattern="0[0-9]{9}" inputmode="tel" maxlength="10"></div>
+                <input class="form-control" th:id="|phone-${dest.id}|" name="driverPhone" type="tel" required data-vn-mobile inputmode="tel" maxlength="20" placeholder="0901234567 hoặc +84901234567"></div>
         </div>
         <button class="btn btn-primary mt-3">Tạo chuyến với các đơn đã chọn</button></form>
 </article>

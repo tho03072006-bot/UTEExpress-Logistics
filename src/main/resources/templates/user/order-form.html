@@ -102,7 +102,7 @@
     </div>
     <div class="mb-3">
         <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
-        <input type="tel" th:field="*{receiverPhone}" class="form-control" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
+        <input type="tel" th:field="*{receiverPhone}" class="form-control" required data-vn-mobile maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
         <div class="ute-field-error small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
     </div>
     <div class="mb-3">

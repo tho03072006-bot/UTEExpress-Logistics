@@ -13,6 +13,7 @@ import vn.edu.hcmute.uteexpress.repository.*;
 @Service
 @Transactional(readOnly = true)
 public class OrderComplaintService {
+    private static final int PAGE_SIZE = 50;
     private final OrderRepository orders;
     private final OrderComplaintRepository complaints;
     private final LogisticsAccess access;
@@ -40,6 +41,16 @@ public class OrderComplaintService {
         var complaint = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
         access.checkOrder(complaint.getOrder(), username);
         return complaint;
+    }
+    /** Cùng quyền phụ trách dùng cho nút trên giao diện và kiểm tra lúc ghi. Admin được tiếp quản hồ sơ. */
+    public record HandlingActions(boolean canClaim, boolean canRespond) { }
+    public HandlingActions handlingActions(Long id, String actor) {
+        return handlingActions(view(id, actor), access.internal(actor));
+    }
+    private HandlingActions handlingActions(OrderComplaint complaint, AppUser actor) {
+        boolean mine = complaint.getHandledBy() != null && complaint.getHandledBy().getId().equals(actor.getId());
+        boolean allowed = !complaint.getStatus().isClosed() && (complaint.getHandledBy() == null || mine || actor.getRole() == AppUser.Role.ADMIN);
+        return new HandlingActions(allowed && !mine, allowed);
     }
     public Page<ComplaintSummary> list(String actor, OrderComplaint.Status status, int page) { return list(actor, status, null, page); }
     /** Manager chỉ thấy khiếu nại của đơn gửi đi hoặc giao tới chi nhánh mình; Admin lọc được theo chi nhánh. */
@@ -77,8 +88,7 @@ public class OrderComplaintService {
         var manager = access.internal(actor);
         var complaint = lockedComplaint(id, actor);
         checkRevision(complaint, revision);
-        if (complaint.getHandledBy() != null && !complaint.getHandledBy().getId().equals(manager.getId())
-                && manager.getRole() != AppUser.Role.ADMIN)
+        if (!handlingActions(complaint, manager).canRespond())
             throw new org.springframework.security.access.AccessDeniedException("Hồ sơ đang do Manager khác phụ trách.");
         if (status == null || status == OrderComplaint.Status.OPEN)
             throw new IllegalArgumentException("Chọn trạng thái đang xử lý, đã giải quyết hoặc từ chối.");
@@ -102,8 +112,9 @@ public class OrderComplaintService {
     }
     @Transactional public void claim(Long id, String actor, long revision) {
         var manager = access.internal(actor); var complaint = lockedComplaint(id, actor); checkRevision(complaint, revision);
-        if (complaint.getHandledBy() != null && !complaint.getHandledBy().getId().equals(manager.getId())
-                && manager.getRole() != AppUser.Role.ADMIN)
+        if (complaint.getHandledBy() != null && complaint.getHandledBy().getId().equals(manager.getId()))
+            throw new IllegalArgumentException("Bạn đang phụ trách hồ sơ này; không cần nhận xử lý lại.");
+        if (!handlingActions(complaint, manager).canClaim())
             throw new org.springframework.security.access.AccessDeniedException("Hồ sơ đã có người phụ trách.");
         complaint.respond(manager, OrderComplaint.Status.IN_PROGRESS, complaint.getManagerReply(), LocalDateTime.now(clock));
         complaints.saveAndFlush(complaint); activity(complaint, actor, "CLAIM", "Nhận phụ trách hồ sơ.");
@@ -124,8 +135,12 @@ public class OrderComplaintService {
         complaints.saveAndFlush(complaint);
         activity(complaint, username, "CUSTOMER_MESSAGE", text);
     }
-    public Page<vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity> timeline(Long id, String actor, int page) {
-        view(id, actor); return activities.findByComplaintIdOrderByCreatedAtAscIdAsc(id, PageRequest.of(LogisticsInput.page(page), 50));
+    /** Không truyền page thì mở trang cuối để tin mới vừa gửi không bị khuất sau 50 mục đầu tiên. */
+    public Page<vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity> timeline(Long id, String actor, Integer page) {
+        view(id, actor);
+        int selected = page == null ? (int) Math.min(100_000L, Math.max(0L, activities.countByComplaintId(id) - 1) / PAGE_SIZE)
+                : LogisticsInput.page(page);
+        return activities.findByComplaintIdOrderByCreatedAtAscIdAsc(id, PageRequest.of(selected, PAGE_SIZE));
     }
     private void activity(OrderComplaint complaint, String actor, String action, String message) {
         activities.save(new vn.edu.hcmute.uteexpress.entity.admin.ComplaintActivity(complaint, actor, action,

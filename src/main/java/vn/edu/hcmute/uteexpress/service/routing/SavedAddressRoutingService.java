@@ -13,8 +13,9 @@ import vn.edu.hcmute.uteexpress.repository.routing.SavedAddressAreaRepository;
 public class SavedAddressRoutingService {
     private final SavedAddressAreaRepository addresses;
     private final RoutingCatalogService catalog;
-    public SavedAddressRoutingService(SavedAddressAreaRepository addresses, RoutingCatalogService catalog) {
-        this.addresses = addresses; this.catalog = catalog;
+    private final OrderRoutingService routing;
+    public SavedAddressRoutingService(SavedAddressAreaRepository addresses, RoutingCatalogService catalog, OrderRoutingService routing) {
+        this.addresses = addresses; this.catalog = catalog; this.routing = routing;
     }
     public record Selection(String provinceCode, String areaCode, String areaName) { }
     public Map<Long, Selection> selections(String username) {
@@ -24,6 +25,8 @@ public class SavedAddressRoutingService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void save(SavedAddress ownedAddress, SavedAddressRequest form) {
         var area = catalog.requireArea(form.getProvinceCode(), form.getAreaCode());
+        // Địa chỉ đã lưu phải dùng được ngay khi tạo đơn, gồm cả phường/xã và tỉnh/thành.
+        routing.fullAddress(form.getAddressLine(), area);
         var existing = addresses.findBySavedAddress_Id(ownedAddress.getId());
         var record = existing.orElseGet(() -> new SavedAddressArea(ownedAddress, area));
         record.configure(area); addresses.save(record);

@@ -98,18 +98,48 @@ Chưa cấu hình mail thì các chức năng này báo "Không gửi được e
 
 ## Tài khoản test
 
-**Mật khẩu xin trong nhóm chat — không ghi vào README hay commit lên Git.**
+Tài khoản demo trên database Aiven dùng chung của nhóm (kiểm tra đăng nhập sáng 24/10/2026, sau khi đổi tên theo chi nhánh).
+**Không đổi mật khẩu các tài khoản này**: cả nhóm dùng chung để demo.
 Tài khoản nội bộ (Manager/Admin) đăng nhập ở `/noi-bo/dang-nhap` và **bị khóa sau 5 lần nhập sai**;
-tài khoản khách hàng/Shipper bị khóa 15 phút sau 10 lần sai. Trang đăng nhập hiện "lần N/5" hoặc "lần N/10" để biết còn bao nhiêu lần.
+tài khoản khách hàng/Shipper đăng nhập ở `/dang-nhap`, bị khóa 15 phút sau 10 lần sai. Trang đăng nhập hiện "lần N/5" hoặc "lần N/10" để biết còn bao nhiêu lần.
 
-| Tên đăng nhập | Vai trò | Ghi chú |
+Hệ thống có 3 chi nhánh: **SGN** (TP. Hồ Chí Minh), **HAN** (Hà Nội), **DAD** (Đà Nẵng).
+Manager chỉ thấy đơn gửi đi hoặc giao tới chi nhánh của mình; Shipper chỉ nhận việc ở chi nhánh của mình; Admin xem mọi chi nhánh.
+
+**Admin** – đăng nhập ở `/noi-bo/dang-nhap`
+
+| Tên đăng nhập | Mật khẩu | Phạm vi |
 |---|---|---|
-| `thotest`, `huongshop`, `minhstore`, `lanboutique` | USER | Có sẵn đơn hàng để demo |
-| `newuser1` | USER | |
-| `chuakichhoat` | USER | Chưa kích hoạt OTP, dùng thử ca đăng nhập lỗi |
-| `shipper1`, `shipper2`, `shipper3` | SHIPPER | |
-| `manager1` | MANAGER | Đăng nhập ở `/noi-bo/dang-nhap` |
-| `admin` | ADMIN | Đăng nhập ở `/noi-bo/dang-nhap` |
+| `admin` | `Admin@123456` | Cả 3 chi nhánh |
+
+**Manager** – đăng nhập ở `/noi-bo/dang-nhap`
+
+| Chi nhánh | Tên đăng nhập | Mật khẩu |
+|---|---|---|
+| SGN – TP. Hồ Chí Minh | `manager_sgn` | `Manager@123456` |
+| HAN – Hà Nội | `manager_han` | `Manager@123456` |
+| DAD – Đà Nẵng | `manager_dad` | `Manager@123456` |
+
+**Shipper** – đăng nhập ở `/dang-nhap`
+
+| Chi nhánh | Tên đăng nhập | Mật khẩu |
+|---|---|---|
+| SGN – TP. Hồ Chí Minh | `shipper_sgn1` | `123456` |
+| SGN – TP. Hồ Chí Minh | `shipper_sgn2` | `123456` |
+| HAN – Hà Nội | `shipper_han1` | `123456` |
+| HAN – Hà Nội | `shipper_han2` | `Shipper@123456` |
+| DAD – Đà Nẵng | `shipper_dad1` | `Shipper@123456` |
+
+Tên đăng nhập nội bộ theo mẫu `vaitro_chinhanh[số]`. Ngày 24/10/2026 đã đổi `manager1` → `manager_sgn`, `shipper1` → `shipper_sgn1`,
+`shipper2` → `shipper_sgn2`, `shipper3` → `shipper_han1` (công cụ `tool/database/RenameAivenBranchAccounts`); nhật ký cũ vẫn ghi tên cũ.
+
+**Người gửi (USER, không thuộc chi nhánh)** – đăng nhập ở `/dang-nhap`
+
+| Tên đăng nhập | Mật khẩu | Ghi chú |
+|---|---|---|
+| `thotest`, `huongshop`, `minhstore`, `lanboutique` | `123456` | Có sẵn đơn hàng để demo |
+| `newuser1` | `123456` | |
+| `chuakichhoat` | `123456` | Chưa kích hoạt OTP, dùng thử ca đăng nhập bị từ chối |
 
 Mã giảm giá: `UTE10` (giảm 10%), `FREESHIP15` (giảm 15.000đ cho đơn từ 30.000đ),
 `HETHAN` (đã hết hạn), `DATAT` (đã tắt) — hai mã sau dùng để thử ca lỗi.

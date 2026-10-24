@@ -34,6 +34,12 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         return ids.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(routes.dropOffOrderIds(ids));
     }
     public java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return scope.branches(actor); }
+    public java.util.Set<Long> deliveryHubOrderIds(String actor, java.util.Collection<Order> orders) {
+        access.requireOperator(actor);
+        Long branch = scope.of(actor, null);
+        var ids = orders.stream().filter(o -> o.getStatus() == Order.OrderStatus.FAILED).map(Order::getId).toList();
+        return ids.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(routes.idsAtDeliveryHub(ids, branch));
+    }
     public Page<OrderComplaint> lateComplaints(String actor, int page) {
         access.requireOperator(actor); access.validatePage(page);
         var policy = policies.current(); var now = LocalDateTime.now(clock);

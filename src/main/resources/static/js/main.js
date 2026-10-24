@@ -196,10 +196,12 @@
 
         var dialog = new window.bootstrap.Modal(dialogElement);
         var formDangCho = null;
+        var nutDangCho = null;
+        var formDangXacNhan = null;
 
         document.addEventListener('submit', function (event) {
             var form = event.target;
-            if (!form || !form.getAttribute) {
+            if (!form || !form.getAttribute || event.defaultPrevented) {
                 return;
             }
             var cauHoi = form.getAttribute('data-ute-confirm');
@@ -208,11 +210,13 @@
             }
             // Da xac nhan roi thi cho di tiep, khong hoi vong lap.
             if (form.dataset.uteConfirmed === 'true') {
+                if (form.dataset.sxSubmitting === 'true' && formDangXacNhan !== form) event.preventDefault();
                 return;
             }
 
             event.preventDefault();
             formDangCho = form;
+            nutDangCho = event.submitter || null;
             messageElement.textContent = cauHoi;
             acceptButton.textContent = form.getAttribute('data-ute-confirm-nut') || 'Đồng ý';
             dialog.show();
@@ -223,21 +227,40 @@
                 return;
             }
             var form = formDangCho;
+            var submitter = nutDangCho;
             formDangCho = null;
+            nutDangCho = null;
             form.dataset.uteConfirmed = 'true';
             dialog.hide();
-            // Khoa nut gui va hien trang thai dang xu ly, tranh bam lai gui trung.
+            // requestSubmit chạy lại native validation, submit handlers và giữ name/value của nút đã bấm.
+            // Không gọi submit() vì nó bỏ qua cả ba bước đó.
+            var actualEvent = null;
+            function observe(event) { if (event.target === form) actualEvent = event; }
+            document.addEventListener('submit', observe);
+            formDangXacNhan = form;
+            try {
+                if (submitter && submitter.form === form && !submitter.disabled) form.requestSubmit(submitter);
+                else form.requestSubmit();
+            } finally {
+                formDangXacNhan = null;
+                document.removeEventListener('submit', observe);
+                if (!actualEvent || actualEvent.defaultPrevented) delete form.dataset.uteConfirmed;
+            }
+            if (!actualEvent || actualEvent.defaultPrevented) return;
             form.dataset.sxSubmitting = 'true';
-            form.querySelectorAll('button[type=submit], button:not([type])').forEach(function (button) {
-                button.disabled = true;
-                button.classList.add('sx-busy');
-            });
-            form.submit();
+            // Chờ trình duyệt thu thập dữ liệu của nút trước khi vô hiệu hóa nút.
+            window.setTimeout(function () {
+                form.querySelectorAll('button[type=submit], button:not([type])').forEach(function (button) {
+                    button.disabled = true;
+                    button.classList.add('sx-busy');
+                });
+            }, 0);
         });
 
         // Dong hop thoai ma khong dong y thi quen form di, tranh lan sang lan bam sau.
         dialogElement.addEventListener('hidden.bs.modal', function () {
             formDangCho = null;
+            nutDangCho = null;
         });
     });
 })();

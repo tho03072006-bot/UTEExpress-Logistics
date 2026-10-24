@@ -14,6 +14,8 @@ public final class PublicAccountValidation {
     public static String text(String value) { return value == null ? null : value.strip(); }
     public static String phone(String value) {
         if(value==null)return null;
+        // Không cho payload dài lách giới hạn 20 ký tự bằng cách chèn nhiều dấu cách/dấu phân tách.
+        if(value.length()>20)return value;
         String normalized=value.strip().replace(" ","").replace("-","").replace(".","");
         return normalized.startsWith("+84")?"0"+normalized.substring(3):normalized;
     }

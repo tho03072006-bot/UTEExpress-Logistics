@@ -2,6 +2,16 @@
 (function () {
     'use strict';
     document.addEventListener('DOMContentLoaded',function () {
+        document.querySelectorAll('input[data-vn-mobile]').forEach(function (input) {
+            function validate() {
+                var raw=input.value, normalized=raw.trim().replace(/[ .-]/g,'').replace(/^\+84/,'0');
+                input.setCustomValidity(!raw || (raw.length<=20 && /^0[35789][0-9]{8}$/.test(normalized))?'':'Nhập số di động Việt Nam 10 số hoặc dạng +84, tối đa 20 ký tự.');
+            }
+            input.addEventListener('input',validate); validate();
+            if(input.form) input.form.addEventListener('submit',function (event) {
+                validate(); if(!input.checkValidity()) { event.preventDefault(); input.reportValidity(); }
+            });
+        });
         document.querySelectorAll('input[data-public-password]').forEach(function (input) {
             function validate() {
                 var value=input.value;

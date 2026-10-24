@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -12,7 +14,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.dto.OrderCreateRequest;
 import vn.edu.hcmute.uteexpress.dto.manager.OperationsCaseRequest;
@@ -28,7 +32,11 @@ import vn.edu.hcmute.uteexpress.repository.routing.*;
 import vn.edu.hcmute.uteexpress.service.OrderService;
 import vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService;
 import vn.edu.hcmute.uteexpress.service.routing.*;
+import vn.edu.hcmute.uteexpress.security.admin.StaffPrincipal;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Bước 17 (B9): đơn liên tỉnh SGN -> HAN giao thất bại ở HAN, Manager HAN lập hoàn hàng, hàng đi chuyến ngược HAN -> SGN,
@@ -42,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
     "app.mail.order-updates.enabled=false", "app.upload.dir=target/test-interprovincial-return-uploads"
 })
 @ActiveProfiles("isolated-logistics") @Transactional
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 @Import(InterprovincialReturnIntegrationTest.TestClock.class)
 class InterprovincialReturnIntegrationTest {
     static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 24, 9, 0);
@@ -49,6 +58,7 @@ class InterprovincialReturnIntegrationTest {
         @Bean @Primary Clock returnClock() { return Clock.fixed(NOW.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant(), ZoneId.of("Asia/Ho_Chi_Minh")); }
     }
     @Autowired ApplicationContext context;
+    @Autowired MockMvc mvc;
     @Autowired AppUserRepository users;
     @Autowired StaffAccountRepository staff;
     @Autowired StaffBranchRepository staffBranches;
@@ -60,8 +70,13 @@ class InterprovincialReturnIntegrationTest {
     @Autowired OrderStatusHistoryRepository history;
     @Autowired OrderService orderService;
     @Autowired OperationsCaseService cases;
+    @Autowired vn.edu.hcmute.uteexpress.service.manager.OperationsOverviewService overview;
     @Autowired HubService hub;
     @Autowired OrderRoutingService routing;
+    @Autowired ProvinceAreaRepository areas;
+    @Autowired ShipperZoneRepository zones;
+    @Autowired vn.edu.hcmute.uteexpress.service.tracking.DispatchService dispatch;
+    @Autowired vn.edu.hcmute.uteexpress.service.tracking.TrackingService tracking;
     @Autowired vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService qr;
     AppUser customer, admin, managerSgn, managerHan, shipperHan;
     Branch sgn, han;
@@ -76,20 +91,30 @@ class InterprovincialReturnIntegrationTest {
         shipperHan = account("return-shipper-han", AppUser.Role.SHIPPER); staffBranches.save(new StaffBranch(shipperHan, han, admin, NOW));
     }
 
-    @Test void failedInterprovincialOrderTravelsBackOnReverseTripAndOriginHubCompletesReturn() {
-        var order = failedAtDestination();
+    @Test void failedInterprovincialOrderTravelsBackOnReverseTripAndOriginHubCompletesReturn() throws Exception {
+        var order = failedAfterForwardTrip();
         Long caseId = cases.request(managerHan.getUsername(), new OperationsCaseRequest(OperationsCase.Kind.RETURN, order.getId(),
                 order.getRevision(), null, null, "Người nhận từ chối, hoàn về người gửi", "", UUID.randomUUID().toString()), null);
         assertEquals(OperationsCase.Status.APPROVED, cases.view(managerHan.getUsername(), caseId).getStatus(), "Hoàn hàng lập là có hiệu lực");
+        assertReturnPage(managerSgn, caseId, false, false);
+        assertReturnPage(managerHan, caseId, true, false);
+        assertReturnPage(admin, caseId, true, false);
 
         // Bắt đầu hoàn chỉ do kho chi nhánh nhận (HAN).
         var record = cases.view(managerHan.getUsername(), caseId);
+        mvc.perform(post("/manager/ho-so-van-hanh/" + caseId + "/bat-dau-hoan")
+                .with(authentication(auth(managerSgn))).with(csrf())
+                .param("revision", Long.toString(record.getRevision())).param("reason", "Kiểm thử bắt đầu hoàn sai kho"))
+                .andExpect(status().isForbidden());
         assertThrows(AccessDeniedException.class, () -> cases.startReturn(managerSgn.getUsername(), caseId, record.getRevision(), "Kho SGN thử bắt đầu hoàn"));
         cases.startReturn(managerHan.getUsername(), caseId, record.getRevision(), "Hàng về kho Hà Nội chờ chuyến về");
         var route = routes.findByOrder_Id(order.getId()).orElseThrow();
         assertTrue(route.isReturnLeg()); assertEquals(OrderRoute.Stage.DEST_HUB, route.getStage());
         assertNull(orders.findById(order.getId()).orElseThrow().getShipper(), "Shipper giao hết giữ đơn khi hàng về kho");
         assertEquals("Hàng hoàn tại kho " + han.getName() + ", chờ chuyến về " + sgn.getName(), routing.summary(order).orElseThrow().location());
+        assertReturnPage(managerSgn, caseId, false, false);
+        assertReturnPage(managerHan, caseId, false, false);
+        assertReturnPage(admin, caseId, false, false);
 
         // Chưa về kho gửi thì không được hoàn tất.
         var started = cases.view(managerSgn.getUsername(), caseId);
@@ -107,6 +132,7 @@ class InterprovincialReturnIntegrationTest {
         em.flush(); // như trang web: form đọc phiên bản chuyến sau khi đã ghi
         hub.depart(managerHan.getUsername(), trip.getId(), trip.getRevision(), "NP-HOAN-01");
         assertEquals(OrderRoute.Stage.LINEHAUL, routes.findByOrder_Id(order.getId()).orElseThrow().getStage());
+        assertReturnPage(managerSgn, caseId, false, false);
         em.flush();
         long departed = trips.findById(trip.getId()).orElseThrow().getRevision();
         assertThrows(AccessDeniedException.class, () -> hub.arrive(managerHan.getUsername(), trip.getId(), departed, "NP-HOAN-01",
@@ -117,15 +143,41 @@ class InterprovincialReturnIntegrationTest {
         assertEquals(List.of(order.getId()), hub.overview(managerSgn.getUsername(), null).returned().stream().map(r -> r.getOrder().getId()).toList());
         assertTrue(hub.overview(managerSgn.getUsername(), null).waiting().isEmpty(), "Hàng hoàn đã về không quay lại danh sách xếp chuyến");
         assertEquals("Hàng hoàn đã về kho " + sgn.getName() + ", chờ trả người gửi", routing.summary(order).orElseThrow().location());
+        assertReturnPage(managerSgn, caseId, false, true);
+        assertReturnPage(managerHan, caseId, false, false);
+        assertReturnPage(admin, caseId, false, true);
 
         // Hoàn tất (trả người gửi) chỉ do kho chi nhánh gửi (SGN).
         var arrived = cases.view(managerSgn.getUsername(), caseId);
+        mvc.perform(multipart("/manager/ho-so-van-hanh/" + caseId + "/hoan-tat").file(image())
+                .with(authentication(auth(managerHan))).with(csrf())
+                .param("revision", Long.toString(arrived.getRevision())).param("reference", "Kiểm thử hoàn tất sai kho"))
+                .andExpect(status().isForbidden());
         assertThrows(AccessDeniedException.class, () -> cases.complete(managerHan.getUsername(), caseId, arrived.getRevision(), "Trần Minh Thọ", image()));
         cases.complete(managerSgn.getUsername(), caseId, arrived.getRevision(), "Trần Minh Thọ nhận lại hàng", image());
         assertEquals(Order.OrderStatus.RETURNED, orders.findById(order.getId()).orElseThrow().getStatus());
+        assertReturnPage(managerSgn, caseId, false, false);
+        assertReturnPage(admin, caseId, false, false);
         var labels = orderService.buildTimeline(orders.findById(order.getId()).orElseThrow()).stream().map(s -> s.getLabel()).toList();
         assertTrue(labels.containsAll(List.of("Giao thất bại", "Hàng hoàn về kho " + han.getName(), "Hàng hoàn đang trung chuyển",
                 "Hàng hoàn về kho " + sgn.getName(), "Đã hoàn trả")), labels.toString());
+        // Đơn đã hoàn trả đi qua mọi mốc: không mốc nào được hiện như chưa xảy ra.
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
+    }
+
+    @Test void failedInterprovincialOrderShowsEveryForwardMilestoneAsDone() {
+        var order = failedAtDestination();
+        var steps = orderService.buildTimeline(orders.findById(order.getId()).orElseThrow());
+        assertEquals(List.of("Chờ lấy hàng", "Đã lấy hàng", "Tại kho gửi", "Đang trung chuyển", "Tới kho nhận", "Đang giao", "Giao thất bại"),
+                steps.stream().map(s -> s.getLabel()).toList());
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
+        assertTrue(steps.get(steps.size() - 1).isCurrent());
+    }
+
+    private void assertAllStepsDone(Order order) {
+        var steps = orderService.buildTimeline(order);
+        var pending = steps.stream().filter(s -> !s.isDone()).map(s -> s.getLabel()).toList();
+        assertTrue(pending.isEmpty(), "Mốc hiện như chưa xảy ra: " + pending);
     }
 
     @Test void intraProvinceReturnKeepsTheOldFlow() {
@@ -141,8 +193,72 @@ class InterprovincialReturnIntegrationTest {
         var started = cases.view(managerSgn.getUsername(), caseId);
         cases.complete(managerSgn.getUsername(), caseId, started.getRevision(), "Trần Minh Thọ nhận lại hàng", image());
         assertEquals(Order.OrderStatus.RETURNED, orders.findById(order.getId()).orElseThrow().getStatus());
+        assertAllStepsDone(orders.findById(order.getId()).orElseThrow());
     }
 
+    @ParameterizedTest
+    @EnumSource(value = OperationsCase.Kind.class, names = {"RETRY", "RETURN"})
+    void originHubCannotOpenDeliveryCaseForFailedInterprovincialOrder(OperationsCase.Kind kind) {
+        var order = failedAtDestination();
+        assertThrows(AccessDeniedException.class, () -> cases.prepare(managerSgn.getUsername(), kind, order.getId()));
+        var request = new OperationsCaseRequest(kind, order.getId(), order.getRevision(), null,
+                kind == OperationsCase.Kind.RETRY ? NOW.plusHours(1) : null,
+                "Kiểm thử lập hồ sơ sai chi nhánh giao", "", UUID.randomUUID().toString());
+        assertThrows(AccessDeniedException.class, () -> cases.request(managerSgn.getUsername(), request, null));
+        assertDoesNotThrow(() -> cases.prepare(managerHan.getUsername(), kind, order.getId()));
+        Long caseId = cases.request(managerHan.getUsername(), request, null);
+        assertEquals(OperationsCase.Status.APPROVED, cases.view(managerHan.getUsername(), caseId).getStatus());
+    }
+
+    private UsernamePasswordAuthenticationToken auth(AppUser actor) {
+        var principal = new StaffPrincipal(staff.findByUserUsername(actor.getUsername()).orElseThrow());
+        return new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
+    }
+
+    private void assertReturnPage(AppUser actor, Long caseId, boolean canStart, boolean canComplete) throws Exception {
+        var result = mvc.perform(get("/manager/ho-so-van-hanh/" + caseId).with(authentication(auth(actor))))
+                .andExpect(status().isOk()).andExpect(model().attribute("canStartReturn", canStart))
+                .andExpect(model().attribute("canComplete", canComplete)).andReturn();
+        String html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertEquals(canStart, html.contains("/manager/ho-so-van-hanh/" + caseId + "/bat-dau-hoan"));
+        assertEquals(canComplete, html.contains("/manager/ho-so-van-hanh/" + caseId + "/hoan-tat"));
+    }
+
+    @Test void returnFormsOnlyAppearForResponsibleBranchAndCurrentStage() throws Exception {
+        var order=failedAtDestination();
+        Long id=cases.request(managerHan.getUsername(),new OperationsCaseRequest(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null,
+                "Người nhận yêu cầu hoàn hàng", "",UUID.randomUUID().toString()),null);
+        String start="/manager/ho-so-van-hanh/"+id+"/bat-dau-hoan", complete="/manager/ho-so-van-hanh/"+id+"/hoan-tat";
+        assertFalse(caseHtml(managerSgn,id).contains(start));assertTrue(caseHtml(managerHan,id).contains(start));
+        var record=cases.view(managerHan.getUsername(),id);cases.startReturn(managerHan.getUsername(),id,record.getRevision(),"Bắt đầu hoàn về người gửi");
+        assertFalse(caseHtml(managerSgn,id).contains(complete));
+        var route=routes.findByOrder_Id(order.getId()).orElseThrow();route.departLinehaul();route.arriveFromLinehaul();routes.flush();
+        assertTrue(caseHtml(managerSgn,id).contains(complete));assertFalse(caseHtml(managerHan,id).contains(complete));
+    }
+    @Test void alertsOnlyOfferRetryAndReturnAtResponsibleDeliveryHub() {
+        var order=failedAtDestination();
+        assertFalse(overview.deliveryHubOrderIds(managerSgn.getUsername(),List.of(order)).contains(order.getId()));
+        assertTrue(overview.deliveryHubOrderIds(managerHan.getUsername(),List.of(order)).contains(order.getId()));
+        var route=routes.findByOrder_Id(order.getId()).orElseThrow();route.beginReturn();routes.flush();
+        assertFalse(overview.deliveryHubOrderIds(managerHan.getUsername(),List.of(order)).contains(order.getId()));
+    }
+    private String caseHtml(AppUser actor,Long id) throws Exception {
+        var principal=new vn.edu.hcmute.uteexpress.security.admin.StaffPrincipal(staff.findByUserUsername(actor.getUsername()).orElseThrow());
+        var authentication=new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal,null,principal.getAuthorities());
+        return mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/manager/ho-so-van-hanh/"+id)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication(authentication)))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+    @Test void startingReturnWithChangedRouteIsBusinessConflictNotInternalError() {
+        var order=failedAtDestination();
+        Long id=cases.request(managerHan.getUsername(),new OperationsCaseRequest(OperationsCase.Kind.RETURN,order.getId(),order.getRevision(),null,null,
+                "Người nhận yêu cầu hoàn hàng", "",UUID.randomUUID().toString()),null);
+        var record=cases.view(managerHan.getUsername(),id);
+        org.springframework.test.util.ReflectionTestUtils.setField(routes.findByOrder_Id(order.getId()).orElseThrow(),"stage",OrderRoute.Stage.DEST_HUB);
+        routes.flush();
+        assertFalse(cases.canStartReturn(managerHan.getUsername(),id));
+        assertThrows(StaffConflictException.class,()->cases.startReturn(managerHan.getUsername(),id,record.getRevision(),"Bắt đầu hoàn về người gửi"));
+    }
     @Test void completedReturnIsNoLongerListedAsWaitingForSenderHandover() {
         var order = failedAtDestination();
         var route = routes.findByOrder_Id(order.getId()).orElseThrow();
@@ -210,6 +326,43 @@ class InterprovincialReturnIntegrationTest {
         route.receiveAtOriginHub(); route.departLinehaul(); route.arriveFromLinehaul(); route.assignShipper(shipperHan);
         order.setShipper(shipperHan); order.setStatus(Order.OrderStatus.FAILED); orders.saveAndFlush(order); routes.saveAndFlush(route);
         assertEquals(OrderRoute.Stage.LAST_MILE, route.getStage());
+        return order;
+    }
+    /** Đi toàn bộ chiều đi qua service thực, không đặt trực tiếp trạng thái để bỏ qua quy tắc phân công/kho. */
+    private Order failedAfterForwardTrip() {
+        var order = orderService.createOrder(request("SGN-THUDUC", "01", "HAN-CAUGIAY"), customer.getUsername());
+        var shipperSgn = account("return-shipper-sgn", AppUser.Role.SHIPPER);
+        staffBranches.save(new StaffBranch(shipperSgn, sgn, admin, NOW));
+        zones.save(new ShipperZone(shipperSgn, areas.findByAreaCode("SGN-THUDUC").orElseThrow(), true));
+        zones.save(new ShipperZone(shipperHan, areas.findByAreaCode("HAN-CAUGIAY").orElseThrow(), true));
+        dispatch.assign(order.getTrackingCode(), shipperSgn.getId(), 0L, order.getUpdatedAt(),
+                "Kiểm thử phân công lấy hàng tại SGN", managerSgn.getUsername());
+        tracking.updateStatus(order.getId(), shipperSgn.getUsername(), Order.OrderStatus.PICKED_UP);
+        assertThrows(IllegalStateException.class,
+                () -> tracking.updateStatus(order.getId(), shipperSgn.getUsername(), Order.OrderStatus.IN_TRANSIT),
+                "Shipper SGN không được tự đi giao liên tỉnh");
+        tracking.handoverToHub(order.getId(), shipperSgn.getUsername());
+        assertEquals(0, dispatch.load(shipperSgn.getId()), "Bàn giao kho xong thì giải phóng tải cho shipper lấy");
+        assertTrue(tracking.findAssignedOrder(order.getId(), shipperSgn.getUsername()).isEmpty());
+        var trip = hub.createTrip(managerSgn.getUsername(), null, han.getId(), "51C-123.45",
+                "Tài xế kiểm thử chiều đi", "0901234567", List.of(order.getId()));
+        em.flush();
+        hub.depart(managerSgn.getUsername(), trip.getId(), trip.getRevision(), "NP-KIEM-THU-DI");
+        em.flush();
+        hub.arrive(managerHan.getUsername(), trip.getId(), trip.getRevision(), "NP-KIEM-THU-DI", List.of(order.getId()), "");
+        assertThrows(IllegalArgumentException.class, () -> dispatch.assign(order.getTrackingCode(), shipperSgn.getId(), 0L,
+                order.getUpdatedAt(), "Kiểm thử gán shipper SGN tại HAN", managerHan.getUsername()));
+        dispatch.assign(order.getTrackingCode(), shipperHan.getId(), 0L, order.getUpdatedAt(),
+                "Kiểm thử phân công giao hàng tại HAN", managerHan.getUsername());
+        tracking.updateStatus(order.getId(), shipperHan.getUsername(), Order.OrderStatus.IN_TRANSIT);
+        tracking.updateStatus(order.getId(), shipperHan.getUsername(), Order.OrderStatus.FAILED,
+                vn.edu.hcmute.uteexpress.dto.tracking.DeliveryFailureReason.REFUSED,
+                "Kiểm thử khách từ chối nhận, chuẩn bị hoàn về SGN", null);
+        em.flush();
+        var route = routes.findByOrder_Id(order.getId()).orElseThrow();
+        assertEquals(shipperSgn.getId(), route.getPickupShipper().getId());
+        assertEquals(shipperHan.getId(), route.getDeliveryShipper().getId());
+        assertEquals(Order.OrderStatus.FAILED, order.getStatus());
         return order;
     }
     private OrderCreateRequest request(String pickupArea, String deliveryProvince, String deliveryArea) {

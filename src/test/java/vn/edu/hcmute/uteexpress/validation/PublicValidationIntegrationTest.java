@@ -118,6 +118,18 @@ class PublicValidationIntegrationTest {
         assertEquals(new BigDecimal("43000"), order.getShippingFee());
         assertTrue(draftRecords.findById(saved.getId()).isEmpty()); assertTrue(draftAreas.findByDraftOrder_Id(saved.getId()).isEmpty());
     }
+    @Test void savedAddressMustFitFullShippingAddressAndRollbackOnFailure() {
+        var form=address("Địa chỉ dài",SavedAddress.AddressType.SENDER);form.setAddressLine("A".repeat(255));
+        long before=addresses.countOfUser(customer.getUsername());
+        assertThrows(IllegalArgumentException.class,()->addresses.create(form,customer.getUsername()));
+        assertEquals(before,addresses.countOfUser(customer.getUsername()));
+    }
+    @Test void updateSavedAddressCannotMakeItUnusableForOrderCreation() {
+        var original=addresses.create(address("Địa chỉ gốc",SavedAddress.AddressType.SENDER),customer.getUsername());
+        var form=address("Địa chỉ gốc",SavedAddress.AddressType.SENDER);form.setAddressLine("A".repeat(255));
+        assertThrows(IllegalArgumentException.class,()->addresses.update(original.getId(),form,customer.getUsername()));
+        assertEquals(original.getAddressLine(),addresses.findOwned(original.getId(),customer.getUsername()).getAddressLine());
+    }
     @Test void savedAddressAreaIsUpdatedAndDeletedWithOwnedAddress() {
         var form = address("Địa chỉ khu vực", SavedAddress.AddressType.SENDER);
         var address = addresses.create(form, customer.getUsername());

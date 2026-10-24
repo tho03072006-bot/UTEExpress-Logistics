@@ -236,15 +236,14 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * Thu tu cua trang thai tren luong binh thuong, dung de biet moc nao da di qua.
-     * Cac trang thai ket thuc bat thuong khong nam tren truc nay nen tra ve 0.
+     * Giao that bai va da hoan tra chi xay ra sau mot luot di giao, nen don da qua moi moc toi "Dang giao".
      */
     private int statusRank(Order.OrderStatus status) {
         return switch (status) {
-            case PENDING_PICKUP -> 0;
+            case PENDING_PICKUP, CANCELLED -> 0;
             case PICKED_UP -> 1;
-            case IN_TRANSIT -> 2;
+            case IN_TRANSIT, FAILED, RETURNED -> 2;
             case DELIVERED -> 3;
-            default -> 0;
         };
     }
 

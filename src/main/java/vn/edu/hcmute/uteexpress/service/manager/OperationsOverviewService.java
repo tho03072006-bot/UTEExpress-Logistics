@@ -9,6 +9,7 @@ public interface OperationsOverviewService {
     default Page<Order> alerts(String actor, Alert alert, int page) { return alerts(actor, alert, null, page); }
     /** Đơn nào trong danh sách là khách tự mang hàng ra chi nhánh. */
     java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders);
+    java.util.Set<Long> deliveryHubOrderIds(String actor, java.util.Collection<Order> orders);
     java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor);
     Page<OrderComplaint> lateComplaints(String actor, int page);
     Page<CodSettlement> lateCash(String actor, int page);
