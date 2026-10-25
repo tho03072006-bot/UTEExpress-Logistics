@@ -8,7 +8,7 @@
  *   can script nay nua.
  *
  * CACH CHAY:
- *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -C -f 65001 -i db/03_seed_ma_giam_gia.sql
+ *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -C -f 65001 -i db/legacy-sqlserver/03_seed_ma_giam_gia.sql
  *   Hoac mo bang SSMS, chon database uteexpress roi bam Execute.
  *
  * CHU Y CO "-f 65001": file nay luu dang UTF-8 va co tieng Viet co dau trong phan mo ta.

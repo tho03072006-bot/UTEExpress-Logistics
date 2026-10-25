@@ -20,7 +20,10 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
               and c2.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
           and """ + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
     Page<vn.edu.hcmute.uteexpress.entity.CodSettlement> lateCash(@Param("deadline") LocalDateTime deadline, @Param("branchId") Long branchId, Pageable pageable);
-    /** "Chậm lấy" không tính đơn khách tự mang ra chi nhánh: không có Shipper nào phải đi lấy, đơn chỉ chờ khách tới quầy. */
+    /**
+     * "Chậm lấy" không tính đơn khách tự mang ra chi nhánh: không có Shipper nào phải đi lấy, đơn chỉ chờ khách tới quầy.
+     * Các đơn đó, khi quá cùng hạn lấy hàng mà khách chưa mang tới, nằm ở nhóm riêng "Chờ khách mang tới quá hạn".
+     */
     @Query("""
         select o from Order o where (
         (:kind = 'PAYMENT_ISSUE' and o.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED,
@@ -46,6 +49,9 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
             and not exists (select counter.id from OrderRoute counter where counter.order = o
                 and counter.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
+        or (:kind = 'DROP_OFF_WAITING' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
+            and exists (select waiting.id from OrderRoute waiting where waiting.order = o
+                and waiting.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
         or (:kind = 'RETRY_DUE' and (
         """ + vn.edu.hcmute.uteexpress.repository.OrderRepository.READY_RETRY + """
         ))

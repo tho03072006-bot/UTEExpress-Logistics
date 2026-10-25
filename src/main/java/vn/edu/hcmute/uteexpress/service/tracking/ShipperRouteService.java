@@ -76,14 +76,14 @@ public class ShipperRouteService {
     }
 
     /**
-     * Nhóm độ gấp của một đơn theo B6. hours là thời hạn của việc đang làm: hạn lấy hàng trong Chính sách vận hành
-     * với đơn chờ lấy, hạn giao theo tuyến (DeliveryDeadlines) với đơn đang giao.
+     * Nhóm độ gấp của một đơn theo B6. since và hours là mốc bắt đầu và thời hạn của việc đang làm: lúc tạo đơn và hạn lấy
+     * trong Chính sách vận hành với đơn chờ lấy; lúc lấy hàng và hạn giao theo tuyến (DeliveryDeadlines) với đơn đang giao.
      */
-    static int urgency(Order order, boolean due, int hours, LocalDateTime now) {
+    static int urgency(Order order, boolean due, LocalDateTime since, int hours, LocalDateTime now) {
         if (due || order.getServiceType() == Order.ServiceType.SUPER_EXPRESS) return 1;
-        if (order.getCreatedAt() == null) return 3;
+        if (since == null) return 3;
         // "Sắp quá hạn": đã dùng từ 75% thời hạn trở lên (kể cả đã quá hạn).
-        var warnFrom = order.getCreatedAt().plusMinutes(Math.round(hours * 60 * 0.75));
+        var warnFrom = since.plusMinutes(Math.round(hours * 60 * 0.75));
         return now.isBefore(warnFrom) ? 3 : 2;
     }
 
@@ -106,6 +106,7 @@ public class ShipperRouteService {
         if (!ids.isEmpty()) for (var route : routes.findWithAreasByOrderIds(ids)) routeByOrder.put(route.getOrder().getId(), route);
         var policy = policies.current();
         var rules = deadlines.rules(policy);
+        var pickedUp = deadlines.pickupTimes(ids);
         Map<String, List<ShipperRoute.Task>> grouped = new LinkedHashMap<>();
         Map<String, String> labels = new HashMap<>();
         Map<String, Integer> groupOf = new HashMap<>();
@@ -124,7 +125,8 @@ public class ShipperRouteService {
             // Điểm dừng lấy nhóm gấp nhất trong các đơn của nó; tọa độ theo khu vực lấy (chờ lấy) hoặc khu vực giao.
             var route = routeByOrder.get(order.getId());
             int hours = pickup ? policy.getPickupHours() : rules.hours(order, route);
-            groupOf.merge(key, urgency(order, isDue, hours, now), Math::min);
+            var since = pickup ? order.getCreatedAt() : pickedUp.getOrDefault(order.getId(), order.getCreatedAt());
+            groupOf.merge(key, urgency(order, isDue, since, hours, now), Math::min);
             if (route != null) areaOf.putIfAbsent(key, pickup ? route.getPickupArea() : route.getDeliveryArea());
         }
         var hub = staffBranches.findByUser_Id(shipper.getId()).map(staff -> staff.getBranch()).orElse(null);

@@ -1,0 +1,23 @@
+# Kho lưu file chữ với LF; máy Windows (core.autocrlf=true) tự đổi sang CRLF khi checkout.
+# Có file này thì máy nào cũng chuẩn hóa giống nhau, diff không lẫn khác biệt cuối dòng.
+* text=auto
+
+# Script chạy trên Linux/CI phải giữ LF; script PowerShell giữ CRLF cho Windows PowerShell 5.1.
+*.sh text eol=lf
+mvnw text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+
+# Nhị phân: không đổi cuối dòng, không diff theo dòng.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.jar binary
+*.p12 binary
+*.jks binary

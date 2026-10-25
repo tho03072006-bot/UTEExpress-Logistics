@@ -34,7 +34,9 @@ class LeadTimesTest {
         var order = new Order(); order.setServiceType(Order.ServiceType.EXPRESS); order.setCreatedAt(LocalDateTime.of(2026, 10, 20, 8, 0));
         var route = new OrderRoute(order, area("SGN-Q1", sgn), area("HAN-CAUGIAY", han));
         assertEquals(72, rules.hours(order, route));
-        assertEquals(LocalDateTime.of(2026, 10, 23, 8, 0), rules.due(order, route));
+        assertEquals(LocalDateTime.of(2026, 10, 23, 8, 0), rules.due(order, route, null), "Chưa có mốc lấy hàng thì tính từ lúc tạo");
+        assertEquals(LocalDateTime.of(2026, 10, 24, 9, 30), rules.due(order, route, LocalDateTime.of(2026, 10, 21, 9, 30)),
+                "Có mốc lấy hàng thì tính từ lúc hàng vào tay hãng");
         assertEquals(48, rules.hours(order, null), "Đơn cũ chưa có tuyến dùng Chính sách vận hành");
         order.setServiceType(Order.ServiceType.STANDARD);
         assertEquals(120, rules.hours(order, route), "Tuyến không có biểu giá đọc được cũng dùng Chính sách vận hành");

@@ -8,6 +8,13 @@ import jakarta.persistence.LockModeType;
 import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.entity.admin.OperationsCase;
 public interface OperationsCaseRepository extends JpaRepository<OperationsCase, Long> {
+    /** Trong các đơn cho trước, đơn đã chi trả xong bồi thường: hồ sơ hàng mất/hư hỏng đã đóng. */
+    @Query("""
+        select distinct c.order.id from OperationsCase c
+        where c.kind = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.COMPENSATION
+          and c.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED and c.order.id in :ids
+        """)
+    List<Long> compensatedOrderIds(@Param("ids") Collection<Long> ids);
     @Query("""
         select new vn.edu.hcmute.uteexpress.dto.tracking.OperationsProgressResponse(
           c.kind, c.status, c.amount, c.nextAttemptAt, c.updatedAt)

@@ -12,7 +12,7 @@
  *   truoc do - nen cac bang cu phai chay script nay 1 lan de chuyen kieu.
  *
  * CACH CHAY (Git Bash hoac CMD, thay <mat_khau> bang mat khau sa tren may ban):
- *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -i db/01_chuyen_cot_chu_sang_nvarchar.sql
+ *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -i db/legacy-sqlserver/01_chuyen_cot_chu_sang_nvarchar.sql
  * Hoac mo file nay bang SSMS, chon database uteexpress roi bam Execute.
  *
  * LUU Y:

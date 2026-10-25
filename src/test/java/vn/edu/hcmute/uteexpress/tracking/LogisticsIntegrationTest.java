@@ -323,6 +323,15 @@ class LogisticsIntegrationTest {
         assertThrows(IllegalArgumentException.class, () -> qr.decode(new MockMultipartFile("qrImage", "fake.png", "image/png", "fake".getBytes())));
     }
 
+    @Test void shipperOpeningAnotherShippersOrderGetsNotFoundPageNotARedirect() throws Exception {
+        mvc.perform(get("/shipper/don/" + order.getId()).with(user(shipper.getUsername()).roles("SHIPPER")))
+            .andExpect(status().isOk());
+        mvc.perform(get("/shipper/don/" + order.getId()).with(user(anotherShipper.getUsername()).roles("SHIPPER")))
+            .andExpect(status().isNotFound()).andExpect(content().string(containsString("không được phân công cho bạn")))
+            .andExpect(content().string(not(containsString(order.getReceiverPhone()))));
+        mvc.perform(get("/shipper/don/999999999").with(user(shipper.getUsername()).roles("SHIPPER"))).andExpect(status().isNotFound());
+    }
+
     @Test void foreignUserCannotReadQrOrHistory() throws Exception {
         mvc.perform(get("/nguoi-dung/don-hang/" + order.getId() + "/qr.png").with(user(anotherCustomer.getUsername()).roles("USER")))
             .andExpect(status().isForbidden());

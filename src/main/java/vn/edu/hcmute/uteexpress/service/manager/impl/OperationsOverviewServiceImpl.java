@@ -17,11 +17,15 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
     private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
     private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
     private final vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines;
+    private final vn.edu.hcmute.uteexpress.repository.routing.LinehaulItemRepository linehaulItems;
+    private final vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
     public OperationsOverviewServiceImpl(OperationsOverviewRepository data, OperationsPolicyService policies, StaffAccessPolicy access, Clock clock,
             vn.edu.hcmute.uteexpress.service.routing.BranchScope scope, vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes,
-            vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines) {
+            vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines,
+            vn.edu.hcmute.uteexpress.repository.routing.LinehaulItemRepository linehaulItems,
+            vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases) {
         this.data = data; this.policies = policies; this.access = access; this.clock = clock; this.scope = scope; this.routes = routes;
-        this.deadlines = deadlines;
+        this.deadlines = deadlines; this.linehaulItems = linehaulItems; this.cases = cases;
     }
     public Page<Order> alerts(String actor, Alert alert, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
@@ -33,16 +37,36 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now,
                 policy.getMaxDeliveryAttempts(), pageable);
     }
-    /** Quá hạn giao theo hạn của từng tuyến; số đơn đang trên đường giao của một chi nhánh nhỏ nên lọc và phân trang tại đây. */
+    /**
+     * Quá hạn giao theo hạn của từng tuyến, tính từ lúc lấy hàng; số đơn đang trên đường giao của một chi nhánh nhỏ nên lọc
+     * và phân trang tại đây. Không tính kiện đang ghi thiếu trên chuyến đã tới (theo dõi ở mục "Kiện ghi thiếu" của trang Kho)
+     * và đơn đã chi trả xong bồi thường (hồ sơ hàng mất/hư hỏng đã đóng), để cảnh báo không giữ mãi những đơn đã có người xử lý.
+     */
     private Page<Order> lateDeliveries(Long branch, vn.edu.hcmute.uteexpress.entity.admin.OperationsPolicy policy, LocalDateTime now, Pageable pageable) {
         var rules = deadlines.rules(policy);
         var candidates = data.deliveryCandidates(now.minusHours(rules.shortest()), branch);
+        var ids = candidates.stream().map(Order::getId).toList();
         java.util.Map<Long, vn.edu.hcmute.uteexpress.entity.routing.OrderRoute> routeByOrder = new java.util.HashMap<>();
-        if (!candidates.isEmpty())
-            for (var route : routes.findWithAreasByOrderIds(candidates.stream().map(Order::getId).toList())) routeByOrder.put(route.getOrder().getId(), route);
-        var late = candidates.stream().filter(order -> !rules.due(order, routeByOrder.get(order.getId())).isAfter(now)).toList();
+        java.util.Set<Long> closed = new java.util.HashSet<>();
+        if (!ids.isEmpty()) {
+            for (var route : routes.findWithAreasByOrderIds(ids)) routeByOrder.put(route.getOrder().getId(), route);
+            closed.addAll(linehaulItems.missingOrderIds(ids)); closed.addAll(cases.compensatedOrderIds(ids));
+        }
+        var pickedUp = deadlines.pickupTimes(ids);
+        var late = candidates.stream().filter(order -> !closed.contains(order.getId()))
+                .filter(order -> !rules.due(order, routeByOrder.get(order.getId()), pickedUp.get(order.getId())).isAfter(now)).toList();
         int from = (int) Math.min(pageable.getOffset(), late.size());
         return new PageImpl<>(late.subList(from, Math.min(from + pageable.getPageSize(), late.size())), pageable, late.size());
+    }
+    public DropOffWaiting dropOffWaiting(java.util.Collection<vn.edu.hcmute.uteexpress.entity.routing.OrderRoute> dropOffs) {
+        var now = LocalDateTime.now(clock);
+        java.util.Map<Long, Long> hours = new java.util.HashMap<>();
+        for (var route : dropOffs) if (route.getOrder().getCreatedAt() != null)
+            hours.put(route.getOrder().getId(), Math.max(0, Duration.between(route.getOrder().getCreatedAt(), now).toHours()));
+        return new DropOffWaiting(java.util.Map.copyOf(hours), policies.current().getPickupHours());
+    }
+    public java.util.Set<Long> compensatedOrderIds(java.util.Collection<Long> orderIds) {
+        return orderIds.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(cases.compensatedOrderIds(orderIds));
     }
     public java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders) {
         var ids = orders.stream().map(Order::getId).toList();

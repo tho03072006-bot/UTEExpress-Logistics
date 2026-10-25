@@ -169,7 +169,7 @@ public class ShipperController {
             @PathVariable Long id,
             Authentication authentication,
             Model model,
-            RedirectAttributes redirectAttributes) {
+            jakarta.servlet.http.HttpServletResponse response) {
         if (isAnonymous(authentication)) {
             return "redirect:/dang-nhap";
         }
@@ -178,11 +178,13 @@ public class ShipperController {
                 id, authentication.getName());
 
         if (order.isEmpty()) {
-            redirectAttributes.addFlashAttribute(
-                    "error",
-                    "Không tìm thấy đơn hoặc đơn không được "
-                            + "phân công cho bạn.");
-            return "redirect:/shipper/trang-chu";
+            // 404 thay vì chuyển hướng: không lộ đơn có tồn tại hay không, và trình duyệt/công cụ đọc đúng là không mở được.
+            response.setStatus(404);
+            model.addAttribute("status", 404);
+            model.addAttribute("error", "Không tìm thấy đơn hoặc đơn không được phân công cho bạn. "
+                    + "Đơn đã bàn giao vào kho hoặc chuyển cho Shipper khác cũng không còn mở ở đây.");
+            model.addAttribute("backUrl", "/shipper/trang-chu");
+            return "logistics/error";
         }
 
         Order assignedOrder = order.get();

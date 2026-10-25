@@ -37,9 +37,12 @@ public class StaffExceptionHandler {
         return showError(405, "Chức năng này không hỗ trợ thao tác vừa gửi. Hãy mở lại trang và thử đúng chức năng.", response, model);
     }
 
+    /** Lý do do service nêu (ví dụ "Bạn chỉ thao tác được kho của chi nhánh mình.") rõ hơn câu chung; câu mặc định của Spring thì thay. */
     @ExceptionHandler(AccessDeniedException.class)
     public String handleForbidden(AccessDeniedException ex, HttpServletResponse response, Model model) {
-        return showError(403, "Bạn không có quyền thực hiện thao tác này.", response, model);
+        String reason = ex.getMessage();
+        boolean specific = reason != null && !reason.isBlank() && !reason.equals("Access Denied");
+        return showError(403, specific ? reason : "Bạn không có quyền thực hiện thao tác này.", response, model);
     }
 
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class,

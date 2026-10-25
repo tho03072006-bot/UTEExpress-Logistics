@@ -94,6 +94,7 @@ application-cloud.properties.*
 # Khong day len Git vi chua du lieu that cua nguoi dung (ho ten, so dien thoai,
 # dia chi) va file co the rat nang.
 db/backup/
+db/**/backup/
 
 # Tep nguoi dung tai len khi chay thu (anh/video danh gia) - khong day len Git
 uploads/

@@ -24,12 +24,15 @@
 <h3 class="h5 mt-2">Chờ khách mang hàng tới quầy</h3>
 <p class="text-muted" th:if="${hub.dropOffs.empty}">Không có đơn nào đang chờ khách mang tới.</p>
 <div class="ute-panel mb-4" th:unless="${hub.dropOffs.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Vận đơn</th><th>Người gửi</th><th>Đi đến</th><th>Tạo lúc</th><th>Nhận tại quầy</th></tr></thead><tbody>
-    <tr th:each="r : ${hub.dropOffs}" th:with="o=${r.order}">
+    <thead><tr><th>Vận đơn</th><th>Người gửi</th><th>Đi đến</th><th>Tạo lúc</th><th>Đã chờ</th><th>Nhận tại quầy</th></tr></thead><tbody>
+    <tr th:each="r : ${hub.dropOffs}" th:with="o=${r.order}, hours=${waiting.hours[o.id]}">
         <td th:text="${o.trackingCode}"></td>
         <td><span th:text="${o.senderName}"></span><div class="small text-muted" th:text="|${o.weightKg} kg · ${o.serviceType.displayName}|"></div></td>
         <td th:text="${r.interprovincial} ? ${r.destBranch.name} : 'Nội tỉnh, giao luôn'"></td>
         <td th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+        <td><span th:text="${hours == null ? '—' : (hours >= 24 ? (hours / 24) + ' ngày ' + (hours % 24) + ' giờ' : hours + ' giờ')}"></span>
+            <div class="small ute-field-error" th:if="${waiting.overdue(o.id)}"
+                 th:text="|Quá ${waiting.limitHours} giờ, liên hệ người gửi|"></div></td>
         <td><form method="post" th:action="@{/manager/kho/quay/{id}/nhan(id=${o.id})}"
                   th:attr="data-ute-confirm=|Xác nhận đã nhận kiện ${o.trackingCode} tại quầy? Kiểm tra khối lượng trước khi nhận.|">
             <input type="hidden" name="branchId" th:value="${b.id}">
@@ -59,7 +62,8 @@
 <p class="text-muted" th:if="${hub.missing.empty}">Không có kiện nào bị thiếu.</p>
 <div class="ute-panel mb-3" th:unless="${hub.missing.empty}"><div class="table-responsive"><table class="table align-middle mb-0">
     <thead><tr><th>Vận đơn</th><th>Chuyến</th><th>Nhận bổ sung</th></tr></thead><tbody>
-    <tr th:each="item : ${hub.missing}"><td th:text="${item.order.trackingCode}"></td><td th:text="${item.trip.code}"></td>
+    <tr th:each="item : ${hub.missing}"><td><span th:text="${item.order.trackingCode}"></span>
+        <div class="small text-muted" th:if="${compensatedIds.contains(item.order.id)}">Đã chi trả bồi thường, hồ sơ đã đóng</div></td><td th:text="${item.trip.code}"></td>
         <td><form method="post" class="d-flex gap-2" th:action="@{/manager/kho/kien/{id}/nhan-bo-sung(id=${item.id})}">
             <input type="hidden" name="branchId" th:value="${b.id}">
             <label class="visually-hidden" th:for="|late-${item.id}|">Ghi chú nhận bổ sung</label>

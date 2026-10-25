@@ -50,6 +50,11 @@ class DeliveryDeadlineIntegrationTest {
     @Autowired OrderRouteRepository routes;
     @Autowired OrderService orderService;
     @Autowired OperationsOverviewService overview;
+    @Autowired OrderStatusHistoryRepository history;
+    @Autowired LinehaulTripRepository trips;
+    @Autowired LinehaulItemRepository tripItems;
+    @Autowired OrderComplaintRepository complaints;
+    @Autowired vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
     AppUser customer, managerSgn;
 
     @BeforeEach void seed() {
@@ -92,12 +97,51 @@ class DeliveryDeadlineIntegrationTest {
         assertFalse(overview.alerts(managerSgn.getUsername(), Alert.LATE_DELIVERY, 0).getContent().contains(done));
     }
 
+    @Test void deadlineCountsFromPickupNotFromCreation() {
+        // Tạo 60 giờ trước nhưng 10 giờ trước mới nhận tại quầy: hạn 48 giờ của Tiêu chuẩn nội tỉnh còn xa.
+        var receivedLate = inFlight("SGN-Q1", Order.ServiceType.STANDARD, 60);
+        history.saveAndFlush(new OrderStatusHistory(receivedLate, managerSgn, Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PICKED_UP,
+                null, "Nhận hàng tại quầy", null, NOW.minusHours(10)));
+        var pickedLongAgo = inFlight("SGN-Q1", Order.ServiceType.STANDARD, 60);
+        history.saveAndFlush(new OrderStatusHistory(pickedLongAgo, managerSgn, Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.PICKED_UP,
+                null, "Shipper đã lấy hàng", null, NOW.minusHours(50)));
+        var alerts = overview.alerts(managerSgn.getUsername(), Alert.LATE_DELIVERY, 0).getContent();
+        assertFalse(alerts.contains(receivedLate)); assertTrue(alerts.contains(pickedLongAgo));
+    }
+
+    @Test void parcelMissingOnArrivedTripOrAlreadyCompensatedLeavesLateDeliveryAlerts() {
+        var missing = inFlight("HAN-CAUGIAY", Order.ServiceType.STANDARD, 200);
+        var compensated = inFlight("HAN-CAUGIAY", Order.ServiceType.STANDARD, 200);
+        var stillLate = inFlight("HAN-CAUGIAY", Order.ServiceType.STANDARD, 200);
+        var trip = new LinehaulTrip("TC-KIEMTHU-THIEU", branches.findByCode("SGN").orElseThrow(), branches.findByCode("HAN").orElseThrow(),
+                "51A-00001", "Tài xế kiểm thử", "0901234567");
+        trip.depart("NP-001", 1, managerSgn, NOW.minusHours(100)); trip.arrive(managerSgn, NOW.minusHours(90), "Thiếu 1 kiện khi nhận chuyến");
+        trips.saveAndFlush(trip); tripItems.saveAndFlush(new LinehaulItem(trip, missing));
+        var complaint = complaints.saveAndFlush(new OrderComplaint(compensated, "Mất hàng", "Kiện thất lạc trên đường", null, NOW));
+        var paid = new vn.edu.hcmute.uteexpress.entity.admin.OperationsCase(vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Kind.COMPENSATION,
+                compensated, null, complaint, new java.math.BigDecimal("10000"), null, "Bồi thường hàng thất lạc", managerSgn.getUsername(), NOW);
+        paid.review(true, "deadline-admin", "Duyệt chi trả", NOW); paid.complete("CT-001", null, NOW);
+        cases.saveAndFlush(paid);
+        var alerts = overview.alerts(managerSgn.getUsername(), Alert.LATE_DELIVERY, 0).getContent();
+        assertFalse(alerts.contains(missing), "Kiện ghi thiếu theo dõi ở mục Kiện ghi thiếu của trang Kho");
+        assertFalse(alerts.contains(compensated), "Đã chi trả xong bồi thường thì hồ sơ đã đóng");
+        assertTrue(alerts.contains(stillLate));
+    }
+
     @Test void latePickupCountsCourierOrdersButNotCounterDropOffs() {
         var courier = created("SGN-Q1", OrderRoute.PickupMode.COURIER, 30);
         var dropOff = created("SGN-Q1", OrderRoute.PickupMode.DROP_OFF, 30);
         var alerts = overview.alerts(managerSgn.getUsername(), Alert.LATE_PICKUP, 0).getContent();
         assertTrue(alerts.contains(courier), "Shipper chưa tới lấy sau 24 giờ là chậm");
         assertFalse(alerts.contains(dropOff), "Đơn tự mang ra chi nhánh không có Shipper nào phải đi lấy");
+        var waiting = overview.alerts(managerSgn.getUsername(), Alert.DROP_OFF_WAITING, 0).getContent();
+        assertTrue(waiting.contains(dropOff), "Khách để quá hạn lấy hàng mà chưa mang tới thì nằm ở nhóm riêng");
+        assertFalse(waiting.contains(courier));
+        var fresh = created("SGN-Q1", OrderRoute.PickupMode.DROP_OFF, 5);
+        assertFalse(overview.alerts(managerSgn.getUsername(), Alert.DROP_OFF_WAITING, 0).getContent().contains(fresh));
+        var hub = routes.findByOrder_Id(dropOff.getId()).orElseThrow();
+        var view = overview.dropOffWaiting(java.util.List.of(hub, routes.findByOrder_Id(fresh.getId()).orElseThrow()));
+        assertEquals(30L, view.hours().get(dropOff.getId())); assertTrue(view.overdue(dropOff.getId())); assertFalse(view.overdue(fresh.getId()));
     }
 
     private Order inFlight(String deliveryArea, Order.ServiceType service, int hoursAgo) {

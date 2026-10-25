@@ -25,6 +25,11 @@
         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
             <i class="bi bi-printer"></i> In vận đơn
         </button>
+        <!-- Nhan dan len kien (kho A6): chi in khoi .ute-print-label, xem @media print trong style.css -->
+        <button type="button" class="btn btn-outline-secondary"
+                onclick="document.body.classList.add('ute-label-print');window.print();document.body.classList.remove('ute-label-print')">
+            <i class="bi bi-upc-scan"></i> In nhãn A6
+        </button>
         <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Về danh sách đơn
         </a>
@@ -38,6 +43,29 @@
     <div class="ute-print-note">
         Phiếu gửi hàng &middot; In lúc
         <span data-realtime-volatile th:text="${#temporals.format(#temporals.createNow(), 'HH:mm dd/MM/yyyy')}">--</span>
+    </div>
+</div>
+
+<!-- Nhan dan len kien kho A6: an tren man hinh, chi hien khi bam "In nhan A6". Den trang de may in nhiet doc ro. -->
+<div class="ute-print-label" aria-hidden="true">
+    <div class="ute-label-head"><strong>UTEExpress</strong><span th:text="${order.serviceType.displayName}">Tiêu chuẩn</span></div>
+    <div class="ute-label-code">
+        <img th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="" width="96" height="96">
+        <div><div class="ute-label-tracking" th:text="${order.trackingCode}">UTE00000000</div>
+            <div class="ute-label-route" th:if="${route != null}"
+                 th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh · ${route.originName}|">-</div></div>
+    </div>
+    <div class="ute-label-to"><span class="ute-label-tag">Người nhận</span>
+        <div class="ute-label-name" th:text="|${order.receiverName} · ${order.receiverPhone}|">-</div>
+        <div th:text="${order.receiverAddress}">-</div></div>
+    <div class="ute-label-from"><span class="ute-label-tag">Người gửi</span>
+        <div th:text="${order.sender != null and order.sender.phone != null} ? |${order.senderName} · ${order.sender.phone}| : ${order.senderName}">-</div>
+        <div th:text="${order.senderAddress}">-</div></div>
+    <div class="ute-label-foot">
+        <span th:text="|${order.weightKg} kg · Tạo ${#temporals.format(order.createdAt, 'dd/MM/yyyy')}|">-</span>
+        <strong th:if="${payment != null and payment.method.name() == 'COD' and payment.status.name() == 'UNPAID'}"
+                th:text="|Thu cước người nhận: ${#numbers.formatInteger(payment.amount, 1, 'POINT')} đ|">-</strong>
+        <strong th:unless="${payment != null and payment.method.name() == 'COD' and payment.status.name() == 'UNPAID'}">Không thu tiền khi giao</strong>
     </div>
 </div>
 
