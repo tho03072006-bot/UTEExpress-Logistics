@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Tổng quan vận hành - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>Tổng quan vận hành</h1>
-<p>Ưu tiên việc cần xử lý. Chọn một hàng đợi để kiểm tra và thao tác theo đúng quyền hạn.</p></div></div>
+<div class="ute-page-head sx-art-monitor"><div><h1>Tổng quan vận hành</h1>
+<p>Việc cần xử lý và số liệu vận hành hôm nay.</p></div></div>
 <div class="row g-3 mb-3">
 <div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tổng đơn hàng</span><span class="ute-stat-value" th:text="${summary.totalOrders}">0</span></div></div>
 <div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Đơn chờ lấy</span><span class="ute-stat-value" th:text="${summary.pendingOrders}">0</span></div></div>
@@ -14,19 +14,15 @@
 <div class="staff-section-head"><h2>Cần chú ý</h2><a class="small" th:href="@{/manager/canh-bao}">Mở tất cả cảnh báo →</a></div>
 <div class="staff-task-grid" data-tracking-refresh-region="staff-work-queues">
 <a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index < 3}" th:href="@{${queue.path}}">
-<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span><small th:text="${queue.description}"></small></a>
+<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span></a>
 </div>
 <details class="staff-disclosure"><summary>Các hàng đợi khác · giao hàng, giao lại và khiếu nại</summary><div class="staff-task-grid">
 <a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index >= 3}" th:href="@{${queue.path}}">
-<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span><small th:text="${queue.description}"></small></a>
+<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span></a>
 </div></details>
 <div class="staff-section-head"><h2>Công cụ thường dùng</h2></div>
 <div class="row g-3">
-<div class="col-md-6"><div class="ute-panel p-4 h-100"><h3 class="h6">Tra cứu nhiều vận đơn</h3><p class="small text-muted">Tối đa 10 mã mỗi lần, có kết quả riêng cho mã không tìm thấy và tệp CSV không chứa thông tin liên hệ.</p><a class="btn btn-primary btn-sm" th:href="@{/manager/tra-cuu-hang-loat}">Tra cứu danh sách</a></div></div>
-<div class="col-md-6"><div class="ute-panel p-4 h-100"><h3 class="h6">Điều phối &amp; báo cáo</h3><p class="small text-muted">Phân công theo tình trạng đơn; theo dõi hiệu suất và số liệu vận hành.</p><a class="btn btn-outline-primary btn-sm" th:href="@{/manager/phan-cong}">Phân công</a><a class="btn btn-link btn-sm" th:href="@{/manager/bao-cao}">Báo cáo</a></div></div>
+<div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div><h3 class="h6">Tra cứu nhiều vận đơn</h3><p class="small text-muted">Tối đa 10 mã mỗi lần, xuất được CSV.</p><a class="btn btn-primary btn-sm" th:href="@{/manager/tra-cuu-hang-loat}">Tra cứu danh sách</a></div><img th:src="@{/images/shipper/track-radar.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div>
+<div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div><h3 class="h6">Điều phối &amp; báo cáo</h3><p class="small text-muted">Phân công theo tình trạng đơn; theo dõi hiệu suất và số liệu vận hành.</p><a class="btn btn-outline-primary btn-sm" th:href="@{/manager/phan-cong}">Phân công</a><a class="btn btn-link btn-sm" th:href="@{/manager/bao-cao}">Báo cáo</a></div><img th:src="@{/images/shipper/report-board.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div>
 </div>
-<details class="staff-disclosure"><summary>Phạm vi quyền của Manager</summary><div class="small text-muted">
-Manager xử lý vận hành, khiếu nại, khuyến mãi và đối soát trong chính sách. Không được CRUD tài khoản, sửa cước toàn hệ thống, tự duyệt/chi hồ sơ tiền hoặc vượt giới hạn giao lại. Các quyền này thuộc Admin; cả hai vai trò đều không được bỏ qua thanh toán ví hoặc sửa phiếu tiền gốc.
-</div></details>
-<p class="small text-muted mt-3">Số liệu là ảnh chụp lúc tải trang; một đơn có thể xuất hiện trong nhiều nhóm cảnh báo. Không cộng các nhóm thành tổng đơn.</p>
 </section></body></html>

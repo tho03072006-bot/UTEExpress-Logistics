@@ -84,6 +84,16 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public long countOrdersOfUser(String username) {
+        return orderRepository.countBySender_Username(username);
+    }
+
+    @Override
+    public List<Order> recentOrdersOfUser(String username) {
+        return orderRepository.findTop5BySender_UsernameOrderByCreatedAtDescIdDesc(username);
+    }
+
+    @Override
     public List<Order> findOrdersOfUser(String username, Order.OrderStatus statusFilter) {
         AppUser sender = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + username));

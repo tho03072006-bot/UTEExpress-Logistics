@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Sửa chi nhánh - UTEExpress</title></head><body><section>
-<div class="ute-panel p-4 mx-auto" style="max-width:760px"><h1 class="h3" th:text="|Chi nhánh ${branch.code}|"></h1>
-<p>Mã và tỉnh phục vụ được giữ cố định. Tọa độ tâm khu vực kho là xấp xỉ, dùng cho sắp lộ trình.</p>
+<div class="ute-panel p-4 mx-auto" style="max-width:760px"><div class="sx-panel-head"><div><h1 class="h3" th:text="|Chi nhánh ${branch.code}|"></h1>
+<p>Mã và tỉnh phục vụ được giữ cố định. Tọa độ tâm khu vực kho là xấp xỉ, dùng cho sắp lộ trình.</p></div><img th:src="@{/images/shipper/branch-network.svg}" alt="" aria-hidden="true" width="180" height="120"></div>
 <form th:action="@{/admin/chi-nhanh/{id}/sua(id=${branch.id})}" th:object="${form}" method="post">
 <input type="hidden" th:field="*{revision}">
 <div th:if="${#fields.hasAnyErrors()}" class="ute-field-error mb-3" role="alert"><p th:each="e : ${#fields.allErrors()}" th:text="${e}"></p></div>

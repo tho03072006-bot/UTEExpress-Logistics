@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Lịch áp dụng bảng cước">
+  <ellipse cx="180" cy="226" rx="124" ry="7" fill="#000" opacity=".16"/>
+  <!-- lịch -->
+  <rect x="66" y="46" width="180" height="168" rx="14" fill="#FFFFFF"/>
+  <rect x="66" y="46" width="180" height="42" rx="14" fill="#14B8A6"/>
+  <rect x="66" y="74" width="180" height="14" fill="#14B8A6"/>
+  <rect x="100" y="32" width="12" height="30" rx="6" fill="#0F766E"/><rect x="200" y="32" width="12" height="30" rx="6" fill="#0F766E"/>
+  <g fill="#E2E8F0">
+    <rect x="86" y="104" width="24" height="20" rx="4"/><rect x="120" y="104" width="24" height="20" rx="4"/><rect x="154" y="104" width="24" height="20" rx="4"/><rect x="188" y="104" width="24" height="20" rx="4"/>
+    <rect x="86" y="134" width="24" height="20" rx="4"/><rect x="188" y="134" width="24" height="20" rx="4"/>
+    <rect x="86" y="164" width="24" height="20" rx="4"/><rect x="120" y="164" width="24" height="20" rx="4"/><rect x="154" y="164" width="24" height="20" rx="4"/>
+  </g>
+  <!-- khoảng áp dụng -->
+  <rect x="120" y="134" width="58" height="20" rx="4" fill="#0072BC"/>
+  <rect x="188" y="164" width="24" height="20" rx="4" fill="#FB7185"/>
+  <!-- thẻ giá -->
+  <g transform="translate(276 148) rotate(-18)">
+    <path d="M-40 -26 H 22 L 46 0 L 22 26 H -40 Z" fill="#FCD34D" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="22" cy="0" r="6" fill="#FFFFFF"/>
+    <text x="-10" y="9" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#92400E">đ</text>
+  </g>
+  <g fill="#A78BFA"><path d="M314 50 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+</svg>

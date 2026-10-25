@@ -79,6 +79,20 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         var ids = orders.stream().filter(o -> o.getStatus() == Order.OrderStatus.FAILED).map(Order::getId).toList();
         return ids.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(routes.idsAtDeliveryHub(ids, branch));
     }
+    public long alertCount(String actor, Alert alert) {
+        access.requireOperator(actor);
+        if (alert == null) throw new IllegalArgumentException("Chọn nhóm cảnh báo hợp lệ.");
+        var policy = policies.current(); var now = LocalDateTime.now(clock);
+        Long branch = scope.of(actor, null);
+        // "Quá hạn giao" đếm theo hạn từng tuyến như trang danh sách, để số trên bảng hàng đợi khớp số đơn khi mở ra.
+        if (alert == Alert.LATE_DELIVERY) return lateDeliveries(branch, policy, now, PageRequest.of(0, 1)).getTotalElements();
+        return data.countAlerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now, policy.getMaxDeliveryAttempts());
+    }
+    public long lateComplaintCount(String actor) {
+        access.requireOperator(actor);
+        var policy = policies.current(); var now = LocalDateTime.now(clock);
+        return data.countLateComplaints(now.minusHours(policy.getComplaintResponseHours()), now.minusHours(policy.getComplaintResolveHours()), scope.of(actor, null));
+    }
     public Page<OrderComplaint> lateComplaints(String actor, int page) {
         access.requireOperator(actor); access.validatePage(page);
         var policy = policies.current(); var now = LocalDateTime.now(clock);

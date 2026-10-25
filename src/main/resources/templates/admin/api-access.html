@@ -1,12 +1,12 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Token API chỉ đọc - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>Token API chỉ đọc · công cụ kỹ thuật Admin</h1><p>Chỉ cấp khi cần tích hợp hoặc kiểm thử API. Không cần token để làm việc trên website; không lưu JWT vào localStorage.</p></div></div>
+<div class="ute-page-head sx-art-api"><div><h1>Token API chỉ đọc · công cụ kỹ thuật Admin</h1><p>Chỉ cấp khi cần tích hợp hoặc kiểm thử API.</p></div></div>
 <p><a th:href="@{/admin/an-toan-truy-cap}">← Quay lại an toàn truy cập</a></p>
 <div class="alert alert-secondary" th:unless="${jwtEnabled}">JWT đang tắt. Cấu hình khóa riêng theo <code>config/jwt-local.properties.example</code>, rồi khởi động lại ứng dụng. Không dùng khóa JWT mẫu cũ.</div>
 <div class="alert alert-danger" th:if="${error}" th:text="${error}" role="alert"></div>
 <div class="ute-panel p-4 mb-3"><h2 class="h6">Cấp token cho chính tài khoản đang đăng nhập</h2>
-<p class="small text-muted"><span th:text="|Hiệu lực ${tokenLifetimeMinutes} phút.|">Hiệu lực 30 phút.</span> Chỉ đọc hàng đợi và tra cứu tối đa 10 mã. Admin có thêm API đọc trạng thái truy cập nội bộ; Manager không có quyền này. Token không cho phép CRUD, sửa đơn, duyệt tiền hoặc tạo tài khoản.</p>
+<p class="small text-muted"><span th:text="|Hiệu lực ${tokenLifetimeMinutes} phút.|">Hiệu lực 30 phút.</span> Token chỉ có quyền đọc.</p>
 <form method="post" th:action="@{/noi-bo/truy-cap-api}" th:if="${jwtEnabled}" autocomplete="off">
 <label class="form-label" for="apiPassword">Xác nhận mật khẩu hiện tại</label>
 <input id="apiPassword" type="password" name="password" required maxlength="72" class="form-control mb-3" autocomplete="current-password">
@@ -18,5 +18,5 @@
 <details class="staff-disclosure"><summary>Đường dẫn API và nguyên tắc sử dụng</summary><div>
 <p>Header <code>Authorization: Bearer &lt;token&gt;</code>. Chỉ dùng HTTPS khi truy cập qua mạng.</p>
 <ul><li><code>GET /api/internal/operations/queues</code> — hàng đợi.</li><li><code>GET /api/internal/operations/tracking?codes=UTE123,UTE456</code> — tra cứu.</li><li><code>GET /api/internal/admin/access?page=0</code> — chỉ Admin.</li></ul>
-<p class="small text-muted">Hết hạn: 401; sai quyền: 403; JWT chưa bật hoặc database lỗi: 503. Không có refresh token dài hạn. Khóa tài khoản, đổi quyền/mật khẩu hoặc Admin thu hồi sẽ vô hiệu hóa token cũ.</p></div></details>
+</div></details>
 </section></body></html>

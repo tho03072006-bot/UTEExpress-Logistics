@@ -85,13 +85,15 @@ public class UserOrderController {
     public String dashboard(Authentication authentication, Model model) {
         String username = authentication.getName();
         model.addAttribute("username", username);
-        model.addAttribute("orderCount", orderService.findOrdersOfUser(username).size());
+        model.addAttribute("orderCount", orderService.countOrdersOfUser(username));
+        model.addAttribute("recentOrders", orderService.recentOrdersOfUser(username));
         model.addAttribute("addressCount", savedAddressService.countOfUser(username));
         model.addAttribute("unpaidCount", orderPaymentService.countUnpaidOfUser(username));
         return "user/dashboard";
     }
 
     @GetMapping("/tao-don")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String createOrderForm(Authentication authentication, Model model) {
         var form = orderService.prepareCreateForm(authentication.getName());
         var selection = savedRoutes.selections(authentication.getName()).get(form.getSenderAddressId());

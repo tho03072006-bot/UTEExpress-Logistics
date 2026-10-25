@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Xe tải chạy tuyến giữa hai kho">
+  <ellipse cx="180" cy="226" rx="140" ry="7" fill="#000" opacity=".16"/>
+  <!-- đường -->
+  <path d="M20 200 H 340" stroke="#94A3B8" stroke-width="14" stroke-linecap="round"/>
+  <path d="M34 200 H 326" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="14 12"/>
+  <!-- kho đi -->
+  <g transform="translate(58 150)">
+    <path d="M-38 6 L 0 -24 L 38 6 V 42 H -38 Z" fill="#4F46E5"/><rect x="-16" y="14" width="32" height="28" fill="#C7D2FE"/>
+    <path d="M-16 22 h32 M-16 30 h32" stroke="#4F46E5" stroke-width="2.5"/>
+  </g>
+  <!-- kho đến -->
+  <g transform="translate(302 150)">
+    <path d="M-38 6 L 0 -24 L 38 6 V 42 H -38 Z" fill="#14B8A6"/><rect x="-16" y="14" width="32" height="28" fill="#CCFBF1"/>
+    <path d="M-16 22 h32 M-16 30 h32" stroke="#14B8A6" stroke-width="2.5"/>
+  </g>
+  <!-- xe tải -->
+  <g transform="translate(180 160)">
+    <rect x="-56" y="-38" width="74" height="46" rx="6" fill="#0072BC"/>
+    <path d="M18 -26 H 40 L 56 -8 V 8 H 18 Z" fill="#38BDF8"/>
+    <path d="M24 -20 H 38 L 48 -9 H 24 Z" fill="#E0F2FE"/>
+    <rect x="-46" y="-28" width="40" height="8" rx="4" fill="#FFFFFF" opacity=".85"/>
+    <circle cx="-34" cy="12" r="11" fill="#1E293B"/><circle cx="-34" cy="12" r="4.5" fill="#E2E8F0"/>
+    <circle cx="36" cy="12" r="11" fill="#1E293B"/><circle cx="36" cy="12" r="4.5" fill="#E2E8F0"/>
+  </g>
+  <!-- thẻ phụ phí tuyến -->
+  <g transform="translate(180 62)">
+    <path d="M-44 -22 H 30 L 48 0 L 30 22 H -44 Z" fill="#FCD34D"/>
+    <circle cx="30" cy="0" r="5" fill="#FFFFFF"/>
+    <text x="-8" y="8" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#92400E">+ đ</text>
+  </g>
+  <g fill="none" stroke="#0072BC" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"><path d="M58 112 Q 180 20 302 112"/></g>
+  <g fill="#FB7185"><path d="M330 34 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+</svg>

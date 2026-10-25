@@ -1,32 +1,70 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Màn hình bảng điều khiển vận hành">
-  <ellipse cx="180" cy="222" rx="110" ry="8" fill="#000" opacity=".2"/>
-  <!-- chân màn hình -->
-  <path d="M160 182 L 154 210 H 206 L 200 182 Z" fill="#334155"/>
-  <rect x="128" y="206" width="104" height="10" rx="5" fill="#0B2540"/>
-  <!-- màn hình -->
-  <rect x="58" y="26" width="244" height="158" rx="14" fill="#0B2540"/>
-  <rect x="68" y="36" width="224" height="136" rx="8" fill="#F8FAFC"/>
-  <rect x="82" y="48" width="62" height="8" rx="4" fill="#CBD5E1"/><rect x="82" y="62" width="40" height="6" rx="3" fill="#E2E8F0"/>
-  <!-- biểu đồ cột -->
-  <rect x="84" y="120" width="16" height="38" rx="3" fill="#A5B4FC"/>
-  <rect x="106" y="100" width="16" height="58" rx="3" fill="#6366F1"/>
-  <rect x="128" y="82" width="16" height="76" rx="3" fill="#4F46E5"/>
-  <rect x="150" y="108" width="16" height="50" rx="3" fill="#818CF8"/>
-  <line x1="80" y1="160" x2="172" y2="160" stroke="#CBD5E1" stroke-width="2"/>
-  <!-- biểu đồ tròn -->
-  <g transform="translate(234 82)">
-    <circle r="26" fill="none" stroke="#E2E8F0" stroke-width="12"/>
-    <circle r="26" fill="none" stroke="#22C55E" stroke-width="12" stroke-dasharray="104 200" transform="rotate(-90)"/>
-    <circle r="26" fill="none" stroke="#F59E0B" stroke-width="12" stroke-dasharray="32 200" stroke-dashoffset="-104" transform="rotate(-90)"/>
+  <defs>
+    <linearGradient id="mm-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EEF2FF"/></linearGradient>
+    <linearGradient id="mm-bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#0072BC"/></linearGradient>
+    <linearGradient id="mm-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F59E0B" stop-opacity=".35"/><stop offset="1" stop-color="#F59E0B" stop-opacity="0"/></linearGradient>
+  </defs>
+  <ellipse cx="180" cy="224" rx="118" ry="7" fill="#000" opacity=".16"/>
+  <!-- chân và đế màn hình -->
+  <path d="M162 186 L 156 212 H 204 L 198 186 Z" fill="#334155"/>
+  <rect x="126" y="208" width="108" height="9" rx="4.5" fill="#1E293B"/>
+  <!-- khung màn hình -->
+  <rect x="50" y="20" width="260" height="168" rx="14" fill="#1E293B"/>
+  <rect x="58" y="28" width="244" height="152" rx="9" fill="url(#mm-screen)"/>
+  <!-- thanh tiêu đề cửa sổ -->
+  <rect x="58" y="28" width="244" height="18" rx="9" fill="#E2E8F0"/>
+  <rect x="58" y="37" width="244" height="9" fill="#E2E8F0"/>
+  <circle cx="69" cy="37" r="3" fill="#FB7185"/><circle cx="79" cy="37" r="3" fill="#FCD34D"/><circle cx="89" cy="37" r="3" fill="#34D399"/>
+  <rect x="210" y="33" width="84" height="8" rx="4" fill="#FFFFFF"/>
+  <!-- ba ô KPI -->
+  <g>
+    <rect x="66" y="52" width="54" height="26" rx="5" fill="#E0E7FF"/><rect x="72" y="58" width="22" height="5" rx="2.5" fill="#6366F1"/><rect x="72" y="67" width="34" height="6" rx="3" fill="#4338CA"/>
+    <rect x="126" y="52" width="54" height="26" rx="5" fill="#DCFCE7"/><rect x="132" y="58" width="22" height="5" rx="2.5" fill="#22C55E"/><rect x="132" y="67" width="30" height="6" rx="3" fill="#15803D"/>
+    <rect x="186" y="52" width="54" height="26" rx="5" fill="#FFE4E6"/><rect x="192" y="58" width="22" height="5" rx="2.5" fill="#F43F5E"/><rect x="192" y="67" width="26" height="6" rx="3" fill="#BE123C"/>
   </g>
-  <!-- ô chỉ số -->
-  <rect x="194" y="124" width="40" height="36" rx="7" fill="#DCFCE7"/><rect x="242" y="124" width="40" height="36" rx="7" fill="#FFE4E6"/>
-  <rect x="202" y="133" width="24" height="7" rx="3.5" fill="#22C55E"/><rect x="250" y="133" width="24" height="7" rx="3.5" fill="#F43F5E"/>
-  <rect x="202" y="146" width="16" height="5" rx="2.5" fill="#86EFAC"/><rect x="250" y="146" width="16" height="5" rx="2.5" fill="#FDA4AF"/>
-  <!-- chấm trực tuyến -->
-  <circle cx="282" cy="50" r="5" fill="#22C55E"/>
-  <g fill="#FFFFFF">
-    <path d="M32 60 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
-    <path d="M326 200 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".65"/>
+  <!-- biểu đồ cột + đường xu hướng -->
+  <g>
+    <path d="M70 168 H 176" stroke="#CBD5E1" stroke-width="1.5"/>
+    <path d="M70 148 H 176 M70 128 H 176 M70 108 H 176" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="3 3"/>
+    <rect x="76" y="140" width="11" height="28" rx="2" fill="url(#mm-bar)" opacity=".55"/>
+    <rect x="92" y="126" width="11" height="42" rx="2" fill="url(#mm-bar)" opacity=".7"/>
+    <rect x="108" y="132" width="11" height="36" rx="2" fill="url(#mm-bar)" opacity=".6"/>
+    <rect x="124" y="112" width="11" height="56" rx="2" fill="url(#mm-bar)"/>
+    <rect x="140" y="120" width="11" height="48" rx="2" fill="url(#mm-bar)" opacity=".8"/>
+    <rect x="156" y="100" width="11" height="68" rx="2" fill="url(#mm-bar)"/>
+    <path d="M81 128 L 97 116 L 113 120 L 129 102 L 145 108 L 161 90 L 161 168 L 81 168 Z" fill="url(#mm-area)"/>
+    <path d="M81 128 L 97 116 L 113 120 L 129 102 L 145 108 L 161 90" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="161" cy="90" r="3.5" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2"/>
   </g>
+  <!-- biểu đồ vòng -->
+  <g transform="translate(270 66)">
+    <circle r="17" fill="none" stroke="#E2E8F0" stroke-width="7"/>
+    <circle r="17" fill="none" stroke="#22C55E" stroke-width="7" stroke-dasharray="62 107" transform="rotate(-90)"/>
+    <circle r="17" fill="none" stroke="#0072BC" stroke-width="7" stroke-dasharray="26 107" stroke-dashoffset="-62" transform="rotate(-90)"/>
+    <circle r="17" fill="none" stroke="#F59E0B" stroke-width="7" stroke-dasharray="12 107" stroke-dashoffset="-88" transform="rotate(-90)"/>
+  </g>
+  <!-- bản đồ tuyến mini -->
+  <g>
+    <rect x="186" y="90" width="108" height="78" rx="6" fill="#E0F2FE"/>
+    <path d="M186 132 C 214 120 226 150 252 138 S 284 112 294 120" fill="none" stroke="#BAE6FD" stroke-width="7"/>
+    <path d="M204 152 L 236 118 L 272 136" fill="none" stroke="#0072BC" stroke-width="2.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+    <circle cx="204" cy="152" r="5" fill="#4F46E5" stroke="#FFFFFF" stroke-width="2"/>
+    <circle cx="236" cy="118" r="5" fill="#14B8A6" stroke="#FFFFFF" stroke-width="2"/>
+    <g transform="translate(272 128)"><path d="M0 12 C -9 1 -9 -8 0 -8 C 9 -8 9 1 0 12 Z" fill="#FB7185"/><circle cy="-1" r="3.2" fill="#FFFFFF"/></g>
+  </g>
+  <!-- thẻ thông báo nổi -->
+  <g transform="translate(286 18)">
+    <rect x="-34" y="-4" width="74" height="30" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <circle cx="-20" cy="11" r="8" fill="#DCFCE7"/>
+    <path d="M-24 11 l3 3 6 -6" fill="none" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="-8" y="5" width="38" height="5" rx="2.5" fill="#94A3B8"/><rect x="-8" y="14" width="26" height="5" rx="2.5" fill="#CBD5E1"/>
+  </g>
+  <!-- chậu cây -->
+  <g transform="translate(330 198)">
+    <path d="M-12 0 H 12 L 9 20 H -9 Z" fill="#F59E0B"/>
+    <path d="M0 0 C -4 -16 -18 -22 -20 -30 C -6 -28 -2 -16 0 0 Z" fill="#22C55E"/>
+    <path d="M0 0 C 2 -18 12 -26 20 -30 C 18 -16 8 -10 0 0 Z" fill="#16A34A"/>
+    <path d="M0 0 C -1 -14 0 -26 2 -34 C 6 -24 4 -12 0 0 Z" fill="#4ADE80"/>
+  </g>
+  <g fill="#FCD34D"><path d="M30 46 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/><path d="M26 176 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".8"/></g>
 </svg>

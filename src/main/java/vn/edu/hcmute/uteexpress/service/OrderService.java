@@ -56,6 +56,12 @@ public interface OrderService {
 
     List<Order> findOrdersOfUser(String username);
 
+    /** Số đơn của người gửi, đếm ngay trong database (trang chủ không cần nạp danh sách đơn). */
+    long countOrdersOfUser(String username);
+
+    /** Năm đơn mới nhất của người gửi cho trang tổng quan. */
+    List<Order> recentOrdersOfUser(String username);
+
     /**
      * Loc lich su don theo trang thai. statusFilter = null nghia la lay tat ca (khong loc).
      */

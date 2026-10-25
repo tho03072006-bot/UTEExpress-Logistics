@@ -32,12 +32,12 @@ public class StaffWorkbenchServiceImpl implements StaffWorkbenchService {
             createQueue(actor, OperationsOverviewService.Alert.PAYMENT_ISSUE, "Cần kiểm tra thanh toán", "Không tự đánh dấu ví đã trả tiền."),
             createQueue(actor, OperationsOverviewService.Alert.LATE_DELIVERY, "Chậm giao hàng", "Đối chiếu dịch vụ và trạng thái thực tế."),
             createQueue(actor, OperationsOverviewService.Alert.RETRY_DUE, "Đến lịch giao lại", "Chỉ các hồ sơ đã đủ điều kiện."),
-            new WorkQueueResponse("Khiếu nại quá hạn", overview.lateComplaints(actor, 0).getTotalElements(),
+            new WorkQueueResponse("Khiếu nại quá hạn", overview.lateComplaintCount(actor),
                 "/manager/canh-bao#khieu-nai-qua-han", "Ưu tiên phản hồi và xử lý theo chính sách."));
     }
 
     private WorkQueueResponse createQueue(String actor, OperationsOverviewService.Alert alert, String label, String description) {
-        return new WorkQueueResponse(label, overview.alerts(actor, alert, 0).getTotalElements(),
+        return new WorkQueueResponse(label, overview.alertCount(actor, alert),
                 "/manager/canh-bao?alert=" + alert.name(), description);
     }
 

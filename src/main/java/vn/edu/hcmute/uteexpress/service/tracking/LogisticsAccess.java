@@ -22,6 +22,11 @@ public class LogisticsAccess {
     public static java.util.Optional<AppUser> findUser(AppUserRepository users, String username) {
         return TransactionCache.get("user:" + username, () -> users.findByUsername(username));
     }
+    /** Chi nhánh được giao của nhân sự, chỉ đọc một lần trong mỗi giao dịch (phạm vi được kiểm tra nhiều lần mỗi trang). */
+    public static java.util.Optional<vn.edu.hcmute.uteexpress.entity.routing.StaffBranch> findBranch(
+            vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository staffBranches, Long userId) {
+        return TransactionCache.get("staff-branch:" + userId, () -> staffBranches.findByUser_Id(userId));
+    }
     public AppUser shipper(String username) { return requireRole(username, AppUser.Role.SHIPPER); }
     public AppUser customer(String username) { return requireRole(username, AppUser.Role.USER); }
     public AppUser internal(String username) {
@@ -53,7 +58,7 @@ public class LogisticsAccess {
     private void requireBranches(AppUser manager, java.util.Collection<Order> orders) {
         var ids = orders.stream().map(Order::getId).toList();
         if (ids.stream().anyMatch(java.util.Objects::isNull)) throw denied();
-        Long branch = staffBranches.findByUser_Id(manager.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
+        Long branch = findBranch(staffBranches, manager.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
         if (!new java.util.HashSet<>(routes.idsInScope(ids, branch)).containsAll(ids))
             throw new AccessDeniedException("Đơn này không gửi đi hay giao tới chi nhánh của bạn.");
     }

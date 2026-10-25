@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Biển cảnh báo và đồng hồ hạn xử lý">
+  <ellipse cx="180" cy="226" rx="124" ry="7" fill="#000" opacity=".16"/>
+  <!-- kiện hàng -->
+  <g transform="translate(92 176)">
+    <path d="M-40 -20 L 0 -38 L 40 -20 L 0 -2 Z" fill="#FEF3C7"/>
+    <path d="M-40 -20 L 0 -2 L 0 42 L -40 24 Z" fill="#F59E0B"/>
+    <path d="M40 -20 L 0 -2 L 0 42 L 40 24 Z" fill="#D97706"/>
+    <path d="M-20 -29 L 20 -11 V 2" stroke="#FFFFFF" stroke-width="5" fill="none" opacity=".8"/>
+  </g>
+  <!-- tam giác cảnh báo -->
+  <g transform="translate(196 124)">
+    <path d="M0 -92 L 82 54 H -82 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M0 -80 L 70 46 H -70 Z" fill="#FB7185" stroke="#FB7185" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="-8" y="-38" width="16" height="52" rx="8" fill="#FFFFFF"/>
+    <circle cy="32" r="9" fill="#FFFFFF"/>
+  </g>
+  <!-- đồng hồ -->
+  <g transform="translate(296 170)">
+    <circle r="34" fill="#FFFFFF"/>
+    <circle r="27" fill="#E0E7FF"/>
+    <path d="M0 -17 V 0 L 12 8" fill="none" stroke="#4F46E5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle r="3.5" fill="#4F46E5"/>
+  </g>
+  <g stroke="#FB7185" stroke-width="5" stroke-linecap="round" opacity=".7">
+    <path d="M104 52 L 118 64"/><path d="M288 52 L 274 64"/><path d="M96 84 L 114 88"/><path d="M296 84 L 278 88"/>
+  </g>
+  <g fill="#FCD34D"><path d="M328 36 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+</svg>

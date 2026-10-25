@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<section class="ute-narrow">
+<section class="ute-narrow sx-order-wide">
 <div class="ute-page-head sx-art-create"><div><h2>Tạo đơn gửi hàng</h2>
 </div></div>
 
@@ -16,7 +16,9 @@
 <form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}" data-order-form>
     <input type="hidden" name="submissionToken" th:value="${form.submissionToken}">
     <div class="alert alert-warning" th:if="${#fields.hasErrors('submissionToken')}" th:errors="*{submissionToken}"></div>
-    <h5 class="mt-2">Người gửi</h5>
+    <div class="sx-order-parties">
+    <div class="sx-order-party">
+    <h5>Người gửi</h5>
 
     <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
     <div class="mb-3" th:if="${!#lists.isEmpty(senderAddresses)}">
@@ -71,7 +73,9 @@
             <p class="mb-0" data-drop-off-empty>Chọn tỉnh/thành gửi để xem địa chỉ quầy nhận hàng.</p>
         </div>
     </fieldset>
-    <h5 class="mt-4">Người nhận</h5>
+    </div>
+    <div class="sx-order-party">
+    <h5>Người nhận</h5>
 
     <!-- Cố ý KHÔNG điền sẵn người nhận: mỗi đơn thường gửi cho một người khác nhau -->
     <div class="mb-3" th:if="${!#lists.isEmpty(receiverAddresses)}">
@@ -112,6 +116,8 @@
     </div>
 
     <div th:replace="~{fragments/area-fields :: fields('deliveryProvinceCode', 'deliveryAreaCode')}"></div>
+    </div>
+    </div>
     <h5 class="mt-4">Gói hàng</h5>
     <div class="row">
         <div class="col-sm-4 mb-3">

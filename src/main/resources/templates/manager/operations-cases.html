@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
-<head><title>Hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Hồ sơ vận hành</h1>
-<p class="text-muted">Giao lại trong giới hạn và hoàn hàng về người gửi: lập là có hiệu lực. Giao lại vượt giới hạn và phiếu tiền: Manager lập, Admin duyệt.</p>
+<head><title>Hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-page-head sx-art-case"><div><h1 class="h3">Hồ sơ vận hành</h1>
+<p>Giao lại trong giới hạn và hoàn hàng về người gửi: lập là có hiệu lực. Giao lại vượt giới hạn và phiếu tiền: Manager lập, Admin duyệt.</p></div></div>
 <th:block th:replace="~{fragments/branch-filter :: note(${branches})}"></th:block>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 <form th:if="${submitted != null}" class="ute-panel p-3 mb-4" method="post" enctype="multipart/form-data" th:action="@{/manager/ho-so-van-hanh}">

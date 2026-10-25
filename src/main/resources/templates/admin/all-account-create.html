@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Thêm tài khoản - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-panel p-4 mx-auto" style="max-width:760px">
-<h1 class="h3">Admin · Thêm tài khoản</h1><p>Cấp bằng mật khẩu, không cần OTP.</p>
+<div class="sx-panel-head"><div><h1 class="h3">Admin · Thêm tài khoản</h1><p>Cấp bằng mật khẩu, không cần OTP.</p></div><img th:src="@{/images/shipper/admin-badge.svg}" alt="" aria-hidden="true" width="180" height="120"></div>
 <form th:action="@{/admin/quan-ly-tai-khoan/tao}" th:object="${form}" method="post">
 <div th:replace="~{admin/account-form-fragments :: errors}"></div>
 <div class="mb-3"><label for="username" class="form-label">Tên đăng nhập</label><input th:field="*{username}" class="form-control" required minlength="4" maxlength="50" pattern="[a-z][a-z0-9._-]{3,49}" autocomplete="off"><div class="form-text">4–50 ký tự, bắt đầu bằng chữ thường.</div></div>

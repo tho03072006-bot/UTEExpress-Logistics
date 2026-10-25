@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Quản lý tài khoản toàn hệ thống - UTEExpress</title></head>
 <body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><div><h1 class="h3">Quản lý tài khoản · Chỉ Admin</h1>
+<div class="ute-page-head sx-art-team"><div><h1 class="h3">Quản lý tài khoản · Chỉ Admin</h1>
 <p class="text-muted">Admin, Manager, User và Shipper.</p></div>
 <a class="btn btn-primary align-self-start" th:href="@{/admin/quan-ly-tai-khoan/tao}">Thêm tài khoản</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
