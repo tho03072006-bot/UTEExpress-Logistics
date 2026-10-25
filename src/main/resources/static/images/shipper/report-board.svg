@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Bảng báo cáo có biểu đồ">
+  <ellipse cx="180" cy="226" rx="120" ry="7" fill="#000" opacity=".16"/>
+  <!-- bảng kẹp -->
+  <rect x="96" y="30" width="168" height="188" rx="14" fill="#4F46E5"/>
+  <rect x="108" y="44" width="144" height="164" rx="8" fill="#FFFFFF"/>
+  <rect x="148" y="22" width="64" height="22" rx="8" fill="#A5B4FC"/>
+  <rect x="160" y="28" width="40" height="8" rx="4" fill="#4F46E5"/>
+  <!-- cột -->
+  <rect x="124" y="122" width="18" height="40" rx="3" fill="#2DD4BF"/>
+  <rect x="150" y="100" width="18" height="62" rx="3" fill="#0072BC"/>
+  <rect x="176" y="112" width="18" height="50" rx="3" fill="#A78BFA"/>
+  <rect x="202" y="84" width="18" height="78" rx="3" fill="#FB7185"/>
+  <path d="M120 164 H 236" stroke="#CBD5E1" stroke-width="2"/>
+  <path d="M126 96 L 158 78 L 186 88 L 226 60" fill="none" stroke="#F59E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="226" cy="60" r="5" fill="#F59E0B"/>
+  <rect x="124" y="178" width="70" height="7" rx="3.5" fill="#E2E8F0"/><rect x="124" y="191" width="46" height="7" rx="3.5" fill="#E2E8F0"/>
+  <!-- biểu đồ tròn -->
+  <g transform="translate(290 150)">
+    <circle r="34" fill="#FFFFFF"/>
+    <circle r="26" fill="#BAE6FD"/>
+    <path d="M0 0 V -26 A26 26 0 0 1 24.7 8 Z" fill="#0072BC"/>
+    <path d="M0 0 L 24.7 8 A26 26 0 0 1 -6 25.3 Z" fill="#FCD34D"/>
+  </g>
+  <g fill="#FCD34D"><path d="M62 70 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+  <circle cx="306" cy="66" r="6" fill="#2DD4BF"/>
+</svg>

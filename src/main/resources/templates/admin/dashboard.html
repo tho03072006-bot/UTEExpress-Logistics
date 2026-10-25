@@ -16,7 +16,7 @@
 <p><strong th:text="${summary.totalOrders}">0</strong> đơn hàng · <strong th:text="${summary.pendingOrders}">0</strong> đơn chờ lấy.</p>
 <a class="btn btn-outline-primary" th:href="@{/manager/trang-chu}">Mở khu Manager</a></div>
 <img th:src="@{/images/shipper/dispatch-hub.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div></div>
-<div class="ute-panel p-4 mb-3"><h2 class="h5">An toàn truy cập</h2><p class="small text-muted">Kiểm tra tài khoản nội bộ và thu hồi phiên/token khi nghi ngờ lộ thông tin truy cập.</p><a class="btn btn-outline-primary" th:href="@{/admin/an-toan-truy-cap}">Kiểm tra quyền truy cập</a></div>
+<div class="ute-panel p-4 mb-3 sx-panel-art"><div><h2 class="h5">An toàn truy cập</h2><p class="small text-muted">Thu hồi phiên và token khi nghi ngờ lộ thông tin.</p><a class="btn btn-outline-primary" th:href="@{/admin/an-toan-truy-cap}">Kiểm tra quyền truy cập</a></div><img th:src="@{/images/shipper/secure-lock.svg}" alt="" aria-hidden="true" width="168" height="112"></div>
 <details class="ute-panel p-4 sx-fold"><summary class="h5 mb-0">Phân quyền Manager và Admin</summary>
 <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Chức năng</th><th>Manager</th><th>Admin</th></tr></thead><tbody>
 <tr><td>Xem tổng quan, tra soát đơn, cảnh báo, khiếu nại, đối soát, báo cáo</td><td>Có, chỉ đơn gửi đi hoặc giao tới chi nhánh mình</td><td>Có, mọi chi nhánh và lọc theo chi nhánh</td></tr>

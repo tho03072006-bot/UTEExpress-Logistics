@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Quản lý khuyến mãi - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<h1 class="h3">Quản lý khuyến mãi</h1>
+<div class="ute-page-head sx-art-promo"><div><h1 class="h3">Quản lý khuyến mãi</h1><p>Mã giảm cước cho người gửi.</p></div></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 <p>Mã đã dùng chỉ đổi được mô tả, trạng thái và tổng lượt.</p>

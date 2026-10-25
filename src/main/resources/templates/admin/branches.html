@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Chi nhánh - UTEExpress</title></head><body><section>
-<h1 class="h3">Chi nhánh và kho</h1>
-<p>Mạng lưới SGN · HAN · DAD. Ngừng nhận đơn mới vẫn giữ thông tin và lịch sử vận hành.</p>
+<div class="ute-page-head sx-art-branch"><div><h1 class="h3">Chi nhánh và kho</h1>
+<p>Mạng lưới SGN · HAN · DAD. Ngừng nhận đơn mới vẫn giữ thông tin và lịch sử vận hành.</p></div></div>
 <p th:if="${success}" class="alert alert-info" role="status" th:text="${success}"></p>
 <div class="ute-panel p-3 table-responsive"><table class="table align-middle">
 <thead><tr><th>Mã</th><th>Chi nhánh</th><th>Địa chỉ kho</th><th>Khu vực kho</th><th>Nhận đơn mới</th><th>Thao tác</th></tr></thead>

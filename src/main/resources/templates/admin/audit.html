@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Nhật ký quản trị - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>Nhật ký quản trị</h1><p>Tra soát ai đã thay đổi gì và khi nào.</p></div></div>
+<div class="ute-page-head sx-art-audit"><div><h1>Nhật ký quản trị</h1><p>Tra soát ai đã thay đổi gì và khi nào.</p></div></div>
 <form method="get" th:action="@{/admin/nhat-ky}" th:object="${filter}" class="ute-panel p-3 mb-3">
 <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert"><ul class="mb-0"><li th:each="message : ${#fields.allErrors()}" th:text="${message}"></li></ul></div>
 <div class="row g-3 align-items-end">

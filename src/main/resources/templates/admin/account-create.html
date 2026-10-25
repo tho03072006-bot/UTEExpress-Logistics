@@ -5,8 +5,8 @@
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
 <div class="ute-panel p-4 mx-auto" style="max-width:720px">
-<h1 class="h3">Cấp tài khoản nội bộ</h1>
-<p>Mỗi nhân sự một tài khoản riêng.</p>
+<div class="sx-panel-head"><div><h1 class="h3">Cấp tài khoản nội bộ</h1>
+<p>Mỗi nhân sự một tài khoản riêng.</p></div><img th:src="@{/images/shipper/admin-badge.svg}" alt="" aria-hidden="true" width="180" height="120"></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 <form th:action="@{/admin/tai-khoan/cap-moi}" th:object="${form}" method="post">

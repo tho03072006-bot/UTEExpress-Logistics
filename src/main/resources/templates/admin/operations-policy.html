@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Chính sách vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
-<h1 class="h3">Admin · Chính sách vận hành</h1><p>Ngưỡng cảnh báo, số lần giao lại và mức giảm khi khách tự mang hàng ra chi nhánh.</p>
+<div class="ute-page-head sx-art-policy"><div><h1 class="h3">Admin · Chính sách vận hành</h1><p>Ngưỡng cảnh báo, số lần giao lại và mức giảm khi khách tự mang hàng ra chi nhánh.</p></div></div>
 <div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
 <form method="post" th:action="@{/admin/chinh-sach-van-hanh}" th:object="${form}" class="ute-panel p-3">
 <div class="ute-field-error" th:if="${#fields.hasAnyErrors()}">Kiểm tra giá trị bắt buộc, giới hạn mỗi ô; Hỏa tốc ≤ Nhanh ≤ Tiêu chuẩn, hạn phản hồi ≤ hạn giải quyết.</div>

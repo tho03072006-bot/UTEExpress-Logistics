@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Phiếu khuyến mãi giảm giá">
+  <ellipse cx="180" cy="226" rx="124" ry="7" fill="#000" opacity=".16"/>
+  <!-- phiếu sau -->
+  <g transform="rotate(-10 200 110)">
+    <path d="M110 60 H 300 V 92 a14 14 0 0 0 0 28 V 152 H 110 V 120 a14 14 0 0 0 0 -28 Z" fill="#A78BFA"/>
+  </g>
+  <!-- phiếu chính -->
+  <path d="M70 84 H 280 V 118 a16 16 0 0 0 0 32 V 184 H 70 V 150 a16 16 0 0 0 0 -32 Z" fill="#FFFFFF"/>
+  <path d="M80 94 H 270 V 120 a14 14 0 0 0 0 28 V 174 H 80 V 148 a14 14 0 0 0 0 -28 Z" fill="#FB7185"/>
+  <path d="M196 98 V 170" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="6 6"/>
+  <text x="138" y="148" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="#FFFFFF">%</text>
+  <rect x="210" y="118" width="46" height="8" rx="4" fill="#FFFFFF" opacity=".9"/>
+  <rect x="210" y="134" width="32" height="8" rx="4" fill="#FFFFFF" opacity=".7"/>
+  <!-- hộp quà -->
+  <g transform="translate(286 182)">
+    <rect x="-30" y="-24" width="60" height="42" rx="5" fill="#F59E0B"/>
+    <rect x="-34" y="-34" width="68" height="14" rx="4" fill="#FCD34D"/>
+    <rect x="-6" y="-34" width="12" height="52" fill="#FFFFFF"/>
+    <path d="M0 -34 C -18 -54 -30 -38 -12 -34 Z M0 -34 C 18 -54 30 -38 12 -34 Z" fill="#FFFFFF"/>
+  </g>
+  <g fill="#FCD34D">
+    <path d="M56 46 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/>
+    <path d="M320 70 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".8"/>
+  </g>
+  <circle cx="44" cy="190" r="6" fill="#2DD4BF"/><circle cx="242" cy="38" r="5" fill="#0072BC" opacity=".6"/>
+</svg>

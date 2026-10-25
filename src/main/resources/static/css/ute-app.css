@@ -918,3 +918,28 @@ body.sx-app::before {
     .sx-recent-row { grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .75rem; }
     .sx-recent-receiver, .sx-recent-date { font-size: .82rem; color: var(--app-muted); text-align: left; }
 }
+
+/* Hình minh họa riêng cho các trang Admin / Manager */
+@media (min-width: 992px) {
+    .ute-page-head.sx-art-api::after { background-image: url("../images/shipper/api-key.svg"); }
+    .ute-page-head.sx-art-audit::after { background-image: url("../images/shipper/audit-log.svg"); }
+    .ute-page-head.sx-art-radar::after { background-image: url("../images/shipper/track-radar.svg"); }
+    .ute-page-head.sx-art-branch::after { background-image: url("../images/shipper/branch-network.svg"); }
+    .ute-page-head.sx-art-policy::after { background-image: url("../images/shipper/policy-gear.svg"); }
+    .ute-page-head.sx-art-routetruck::after { background-image: url("../images/shipper/route-truck.svg"); }
+    .ute-page-head.sx-art-fee::after { background-image: url("../images/shipper/fee-scale.svg"); }
+    .ute-page-head.sx-art-feecalc::after { background-image: url("../images/shipper/fee-calc.svg"); }
+    .ute-page-head.sx-art-calendar::after { background-image: url("../images/shipper/tariff-calendar.svg"); }
+    .ute-page-head.sx-art-alert::after { background-image: url("../images/shipper/alert-siren.svg"); }
+    .ute-page-head.sx-art-case::after { background-image: url("../images/shipper/case-folder.svg"); }
+    .ute-page-head.sx-art-promo::after { background-image: url("../images/shipper/promo-coupon.svg"); }
+    .ute-page-head.sx-art-report::after { background-image: url("../images/shipper/report-board.svg"); }
+    .ute-page-head.sx-art-podium::after { background-image: url("../images/shipper/shipper-podium.svg"); }
+}
+/* Trang biểu mẫu hẹp (cấp tài khoản, sửa chi nhánh, cước tuyến...): đầu thẻ ngả xanh có hình bên phải */
+.sx-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: -1.5rem -1.5rem 1.4rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--app-border); border-radius: var(--app-radius) var(--app-radius) 0 0; background: linear-gradient(110deg, var(--app-card) 35%, color-mix(in srgb, var(--app-primary) 11%, var(--app-card)) 100%); }
+.sx-panel-head > div { min-width: 0; }
+.sx-panel-head :is(h1, h2) { margin-bottom: .25rem; font-size: 1.3rem; font-weight: 700; color: var(--app-ink); }
+.sx-panel-head p { margin: 0; color: var(--app-muted); font-size: .88rem; }
+.sx-panel-head > img { flex: 0 0 auto; width: 9.5rem; height: auto; margin: -.5rem 0; filter: drop-shadow(0 8px 12px rgba(29, 39, 59, .14)); }
+@media (max-width: 575px) { .sx-panel-head > img { display: none; } .sx-panel-head { margin: -1.5rem -1.5rem 1.2rem; } }

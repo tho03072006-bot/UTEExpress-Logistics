@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
-<head><title>Lịch áp dụng cước - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><h1 class="h3">Phiên bản cước theo thời điểm</h1>
-<p>Bảng cước áp dụng theo từng khoảng thời gian.</p>
+<head><title>Lịch áp dụng cước - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-page-head sx-art-calendar"><div><h1 class="h3">Phiên bản cước theo thời điểm</h1>
+<p>Bảng cước áp dụng theo từng khoảng thời gian.</p></div></div>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 <form sec:authorize="hasRole('ADMIN')" method="post" th:action="@{/admin/lich-cuoc}" class="ute-panel p-3 mb-4"><div class="row g-3">
 <div class="col-md-4"><label for="serviceType">Dịch vụ</label><select id="serviceType" class="form-select" name="serviceType" required><option th:each="s : ${services}" th:value="${s}" th:text="${s.displayName}" th:selected="${submitted != null and submitted.serviceType == s}"></option></select></div>

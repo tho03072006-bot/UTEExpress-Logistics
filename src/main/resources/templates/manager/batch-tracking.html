@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Tra cứu nhiều vận đơn - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>Tra cứu nhiều vận đơn</h1><p>Kiểm tra tối đa 10 mã vận đơn cùng lúc.</p></div></div>
+<div class="ute-page-head sx-art-radar"><div><h1>Tra cứu nhiều vận đơn</h1><p>Kiểm tra tối đa 10 mã vận đơn cùng lúc.</p></div></div>
 <div class="ute-panel p-4 mb-3">
 <form method="post" th:action="@{/manager/tra-cuu-hang-loat}" th:object="${form}">
 <label for="batchCodes" class="form-label">Mã vận đơn</label>

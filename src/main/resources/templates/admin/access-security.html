@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>An toàn truy cập - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>An toàn truy cập</h1><p>Kiểm tra và thu hồi truy cập của tài khoản nội bộ.</p></div></div>
+<div class="ute-page-head sx-art-lock"><div><h1>An toàn truy cập</h1><p>Kiểm tra và thu hồi truy cập của tài khoản nội bộ.</p></div></div>
 <div class="alert alert-danger" th:if="${error}" th:text="${error}" role="alert"></div>
 <div class="alert alert-success" th:if="${message}" th:text="${message}" role="status"></div>
 <div class="ute-panel p-3 mb-3"><h2 class="h6">Kiểm soát tài khoản nội bộ được cấp</h2>

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Chi tiết hồ sơ vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
-<h1 class="h3" th:text="|Hồ sơ #${case.id} · ${case.kind.label}|"></h1>
+<div class="ute-page-head sx-art-case"><div><h1 class="h3" th:text="|Hồ sơ #${case.id} · ${case.kind.label}|"></h1></div></div>
 <div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 <dl class="row"><dt class="col-sm-3">Trạng thái</dt><dd class="col-sm-9" th:text="${case.status.label}"></dd><dt class="col-sm-3">Người lập, người duyệt</dt><dd class="col-sm-9" th:text="|${case.createdBy}, ${case.reviewedBy ?: 'chưa duyệt'}|"></dd><dt class="col-sm-3">Lý do</dt><dd class="col-sm-9" th:text="${case.reason}"></dd><dt class="col-sm-3">Phản hồi</dt><dd class="col-sm-9" th:text="${case.reviewNote}"></dd></dl>
 <p th:if="${case.order != null}" th:text="|Vận đơn: ${case.order.trackingCode}|"></p><p th:if="${case.nextAttemptAt != null}" th:text="|Hẹn giao: ${#temporals.format(case.nextAttemptAt,'dd/MM/yyyy HH:mm')}|"></p>
