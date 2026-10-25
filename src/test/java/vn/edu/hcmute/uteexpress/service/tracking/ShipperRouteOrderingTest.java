@@ -59,12 +59,19 @@ class ShipperRouteOrderingTest {
 
     @Test void urgencyFollowsServiceAppointmentAndOperationsPolicy() {
         var policy = new OperationsPolicy(); // mặc định: lấy 24 giờ, Tiêu chuẩn 120 giờ, Nhanh 48 giờ
-        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.SUPER_EXPRESS, 1), false, false, policy, NOW));
-        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 1), false, true, policy, NOW), "Đến hẹn giao lại");
-        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 100), false, false, policy, NOW), "Đã dùng hơn 75% của 120 giờ");
-        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 50), false, false, policy, NOW));
-        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 20), true, false, policy, NOW), "Chờ lấy dùng hạn lấy hàng 24 giờ");
-        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 10), true, false, policy, NOW));
+        int standard = vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines.policyHours(policy, Order.ServiceType.STANDARD);
+        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.SUPER_EXPRESS, 1), false, policy.getSuperExpressHours(), NOW));
+        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 1), true, standard, NOW), "Đến hẹn giao lại");
+        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 100), false, standard, NOW), "Đã dùng hơn 75% của 120 giờ");
+        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 50), false, standard, NOW));
+        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 20), false, policy.getPickupHours(), NOW), "Chờ lấy dùng hạn lấy hàng 24 giờ");
+        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 10), false, policy.getPickupHours(), NOW));
+    }
+
+    @Test void urgencyUsesRouteLeadTimeWhenKnown() {
+        // Tiêu chuẩn nội tỉnh hứa "1–2 ngày" = 48 giờ: 40 giờ đã quá 75%, dù theo 120 giờ của chính sách thì còn sớm.
+        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 40), false, 48, NOW));
+        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 40), false, 120, NOW));
     }
 
     @Test void firstLegStartsFromHubAddressWhenKnown() {

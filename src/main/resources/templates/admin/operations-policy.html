@@ -11,6 +11,7 @@
 <div class="col-md-4"><label for="standardHours">Hạn giao Tiêu chuẩn (giờ, 1–720)</label><input id="standardHours" class="form-control" type="number" th:field="*{standardHours}" min="1" max="720" required></div>
 <div class="col-md-4"><label for="expressHours">Hạn giao Nhanh (giờ, 1–720)</label><input id="expressHours" class="form-control" type="number" th:field="*{expressHours}" min="1" max="720" required></div>
 <div class="col-md-4"><label for="superExpressHours">Hạn giao Hỏa tốc (giờ, 1–720)</label><input id="superExpressHours" class="form-control" type="number" th:field="*{superExpressHours}" min="1" max="720" required></div>
+<p class="col-12 form-text mt-1 mb-0">Ba hạn giao trên chỉ áp cho đơn cũ chưa có tuyến chi nhánh. Đơn có tuyến lấy hạn theo thời gian dự kiến ở trang <a th:href="@{/admin/cuoc-tuyen}">Cước tuyến</a>, đúng như đã báo khách.</p>
 <div class="col-md-4"><label for="maxDeliveryAttempts">Số lần giao tối đa (1–10)</label><input id="maxDeliveryAttempts" class="form-control" type="number" th:field="*{maxDeliveryAttempts}" min="1" max="10" required></div>
 <div class="col-md-4"><label for="complaintResponseHours">Hạn phản hồi khiếu nại (giờ, 1–168)</label><input id="complaintResponseHours" class="form-control" type="number" th:field="*{complaintResponseHours}" min="1" max="168" required></div>
 <div class="col-md-4"><label for="complaintResolveHours">Hạn giải quyết khiếu nại (giờ, 1–2160)</label><input id="complaintResolveHours" class="form-control" type="number" th:field="*{complaintResolveHours}" min="1" max="2160" required></div>

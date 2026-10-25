@@ -77,7 +77,8 @@ public class OrderPayment {
      * COD thì thu tiền lúc giao hàng nên không có bước đó.
      */
     public enum PaymentMethod {
-        COD("Thanh toán khi nhận hàng (COD)", false),
+        // COD ở UTEExpress là thu CƯỚC khi giao (người nhận trả), không phải thu hộ tiền hàng như COD của sàn TMĐT.
+        COD("Người nhận trả cước khi nhận hàng (COD)", false),
         // Giữ enum để đọc dữ liệu cũ; service/DTO từ chối tạo hoặc xác nhận VNPay mới.
         VNPAY("VNPay (lịch sử cũ)", true),
         MOMO("MoMo mô phỏng", true);

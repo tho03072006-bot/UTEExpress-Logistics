@@ -10,8 +10,8 @@ import vn.edu.hcmute.uteexpress.entity.*;
 public class OperationsCase {
     public enum Kind {
         RETRY("Giao lại", "Xử lý hàng"), RETURN("Hoàn hàng về người gửi", "Xử lý hàng"),
-        CASH_SUPPLEMENT("Shipper nộp bù tiền thiếu", "Đối soát COD với Shipper"),
-        CASH_REFUND("Trả lại tiền Shipper nộp thừa", "Đối soát COD với Shipper"), COMPENSATION("Bồi hoàn cước", "Chi trả cho khách");
+        CASH_SUPPLEMENT("Shipper nộp bù tiền thiếu", "Đối soát cước COD với Shipper"),
+        CASH_REFUND("Trả lại tiền Shipper nộp thừa", "Đối soát cước COD với Shipper"), COMPENSATION("Bồi thường cho khách", "Chi trả cho khách");
         private final String label; private final String group;
         Kind(String label, String group) { this.label = label; this.group = group; }
         public String getLabel() { return label; }

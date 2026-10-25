@@ -20,6 +20,7 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
               and c2.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
           and """ + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
     Page<vn.edu.hcmute.uteexpress.entity.CodSettlement> lateCash(@Param("deadline") LocalDateTime deadline, @Param("branchId") Long branchId, Pageable pageable);
+    /** "Chậm lấy" không tính đơn khách tự mang ra chi nhánh: không có Shipper nào phải đi lấy, đơn chỉ chờ khách tới quầy. */
     @Query("""
         select o from Order o where (
         (:kind = 'PAYMENT_ISSUE' and o.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED,
@@ -42,12 +43,9 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
             or (r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.DEST_HUB and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP and (:branchId is null or r.destBranch.id = :branchId)))))
         or (:kind = 'UNASSIGNED' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.shipper is null
             and not exists (select r2.id from OrderRoute r2 where r2.order = o))
-        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup)
-        or (:kind = 'LATE_DELIVERY' and o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
-            vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
-            and ((o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.STANDARD and o.createdAt <= :standard)
-              or (o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.EXPRESS and o.createdAt <= :express)
-              or (o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.SUPER_EXPRESS and o.createdAt <= :superExpress)))
+        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
+            and not exists (select counter.id from OrderRoute counter where counter.order = o
+                and counter.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
         or (:kind = 'RETRY_DUE' and (
         """ + vn.edu.hcmute.uteexpress.repository.OrderRepository.READY_RETRY + """
         ))
@@ -56,9 +54,17 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
             and h3.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and h3.previousStatus <> h3.status) >= :maxAttempts)
         ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
     Page<Order> alerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
-            @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,
-            @Param("superExpress") LocalDateTime superExpress, @Param("now") LocalDateTime now,
-            @Param("maxAttempts") int attempts, Pageable pageable);
+            @Param("now") LocalDateTime now, @Param("maxAttempts") int attempts, Pageable pageable);
+    /**
+     * Ứng viên "Quá hạn giao": đơn đang trên đường giao, tạo trước mốc hạn ngắn nhất. Hạn thật của từng đơn phụ thuộc
+     * thời gian dự kiến của tuyến (văn bản do Admin cấu hình) nên service xét tiếp từng đơn; xem DeliveryDeadlines.
+     */
+    @Query("""
+        select o from Order o where o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
+            vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
+          and o.createdAt <= :cutoff and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE
+          + " order by o.createdAt, o.id")
+    java.util.List<Order> deliveryCandidates(@Param("cutoff") LocalDateTime cutoff, @Param("branchId") Long branchId);
     @Query("""
         select new vn.edu.hcmute.uteexpress.dto.manager.ShipperPerformanceResponse(u.id, u.username, u.fullName,
           sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP then 1 else 0 end),

@@ -144,11 +144,12 @@
             <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
                 <span th:text="${method.displayName}">-</span>
                 <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước qua ví</span>
-                <span class="text-muted small" th:unless="${method.onlineWallet}">— trả tiền mặt khi nhận hàng</span>
+                <span class="text-muted small" th:unless="${method.onlineWallet}">— tiền mặt, Shipper thu lúc giao</span>
             </label>
         </div>
         <div class="ute-field-error small" th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}"></div>
         <div class="ute-field-error small" th:if="${#fields.hasErrors('paymentMethodSupported')}" th:errors="*{paymentMethodSupported}"></div>
+        <p class="form-text mb-0">COD ở UTEExpress là thu <strong>cước vận chuyển</strong> khi giao (người nhận trả). Hệ thống chưa nhận thu hộ tiền hàng.</p>
     </div>
     <div class="mb-4"></div>
 

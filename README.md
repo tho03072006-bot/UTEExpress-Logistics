@@ -106,6 +106,12 @@ tài khoản khách hàng/Shipper đăng nhập ở `/dang-nhap`, bị khóa 15 
 Hệ thống có 3 chi nhánh: **SGN** (TP. Hồ Chí Minh), **HAN** (Hà Nội), **DAD** (Đà Nẵng).
 Manager chỉ thấy đơn gửi đi hoặc giao tới chi nhánh của mình; Shipper chỉ nhận việc ở chi nhánh của mình; Admin xem mọi chi nhánh.
 
+Quy ước nghiệp vụ:
+- Địa danh theo bản đồ hành chính cũ (63 tỉnh/thành, cấp quận/huyện trước 01/07/2025).
+- **COD** là cước vận chuyển người nhận trả bằng tiền mặt lúc nhận hàng, **không phải thu hộ tiền hàng**.
+- Hạn giao của đơn là mốc trên của thời gian dự kiến ở trang Cước tuyến (ví dụ "2–3 ngày" là 72 giờ); quá mốc này đơn hiện ở cảnh báo Quá hạn giao.
+- Hàng không khai giá bị mất/hư hỏng được bồi thường tối đa 4 lần cước, đã gồm hoàn cước (Điều 25 Nghị định 47/2011/NĐ-CP); đơn COD chưa thu cước tối đa 3 lần.
+
 **Admin** – đăng nhập ở `/noi-bo/dang-nhap`
 
 | Tên đăng nhập | Mật khẩu | Phạm vi |

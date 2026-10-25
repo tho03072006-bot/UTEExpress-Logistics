@@ -16,18 +16,33 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
     private final Clock clock;
     private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
     private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
+    private final vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines;
     public OperationsOverviewServiceImpl(OperationsOverviewRepository data, OperationsPolicyService policies, StaffAccessPolicy access, Clock clock,
-            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope, vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
+            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope, vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes,
+            vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines) {
         this.data = data; this.policies = policies; this.access = access; this.clock = clock; this.scope = scope; this.routes = routes;
+        this.deadlines = deadlines;
     }
     public Page<Order> alerts(String actor, Alert alert, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
         if (alert == null) throw new IllegalArgumentException("Chọn nhóm cảnh báo hợp lệ.");
         Long branch = scope.of(actor, branchId);
         var policy = policies.current(); var now = LocalDateTime.now(clock);
-        return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now.minusHours(policy.getStandardHours()),
-                now.minusHours(policy.getExpressHours()), now.minusHours(policy.getSuperExpressHours()), now,
-                policy.getMaxDeliveryAttempts(), PageRequest.of(page, 20, Sort.by("createdAt", "id")));
+        var pageable = PageRequest.of(page, 20, Sort.by("createdAt", "id"));
+        if (alert == Alert.LATE_DELIVERY) return lateDeliveries(branch, policy, now, pageable);
+        return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now,
+                policy.getMaxDeliveryAttempts(), pageable);
+    }
+    /** Quá hạn giao theo hạn của từng tuyến; số đơn đang trên đường giao của một chi nhánh nhỏ nên lọc và phân trang tại đây. */
+    private Page<Order> lateDeliveries(Long branch, vn.edu.hcmute.uteexpress.entity.admin.OperationsPolicy policy, LocalDateTime now, Pageable pageable) {
+        var rules = deadlines.rules(policy);
+        var candidates = data.deliveryCandidates(now.minusHours(rules.shortest()), branch);
+        java.util.Map<Long, vn.edu.hcmute.uteexpress.entity.routing.OrderRoute> routeByOrder = new java.util.HashMap<>();
+        if (!candidates.isEmpty())
+            for (var route : routes.findWithAreasByOrderIds(candidates.stream().map(Order::getId).toList())) routeByOrder.put(route.getOrder().getId(), route);
+        var late = candidates.stream().filter(order -> !rules.due(order, routeByOrder.get(order.getId())).isAfter(now)).toList();
+        int from = (int) Math.min(pageable.getOffset(), late.size());
+        return new PageImpl<>(late.subList(from, Math.min(from + pageable.getPageSize(), late.size())), pageable, late.size());
     }
     public java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders) {
         var ids = orders.stream().map(Order::getId).toList();

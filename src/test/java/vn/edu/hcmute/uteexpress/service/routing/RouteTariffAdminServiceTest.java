@@ -51,6 +51,13 @@ class RouteTariffAdminServiceTest {
         tariff = new RouteTariff(tariff.getOriginBranch(), tariff.getOriginBranch(), ServiceType.STANDARD, BigDecimal.ZERO, "1–2 ngày"); lock();
         assertThrows(IllegalArgumentException.class, () -> service.update("admin", 3L, form())); verifyNoInteractions(audit);
     }
+    @Test void leadTimeMustStayReadableBecauseDeadlinesAreComputedFromIt() {
+        lock(); var form = form(); form.setLeadTimeText("Sớm nhất có thể");
+        var error = assertThrows(IllegalArgumentException.class, () -> service.update("admin", 3L, form));
+        assertTrue(error.getMessage().contains("Trong 4 giờ")); assertEquals("4–5 ngày", tariff.getLeadTimeText()); verifyNoInteractions(audit);
+        var readable = form(); readable.setLeadTimeText("3–4 ngày"); service.update("admin", 3L, readable);
+        assertEquals("3–4 ngày", tariff.getLeadTimeText());
+    }
     @Test void priceChangeIsLockedAndAudited() {
         lock(); service.update("admin", 3L, form()); assertEquals(new BigDecimal("30000"), tariff.getSurcharge());
         verify(tariffs).flush(); verify(audit).record(eq("admin"), eq("ROUTE_TARIFF_UPDATE"), eq("route-tariff:3"), contains("25000 -> 30000"));

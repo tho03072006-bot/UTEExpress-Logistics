@@ -39,8 +39,8 @@ class UteexpressApplicationTests {
     @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
     void paymentAlertQueryExecutesOnAivenWithoutWritingData() {
         var now=java.time.LocalDateTime.now();
-        var result=overview.alerts("PAYMENT_ISSUE",null,now.minusHours(24),now.minusDays(5),now.minusDays(2),
-                now.minusHours(4),now,3,org.springframework.data.domain.PageRequest.of(0,1));
+        var result=overview.alerts("PAYMENT_ISSUE",null,now.minusHours(24),now,3,org.springframework.data.domain.PageRequest.of(0,1));
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->overview.deliveryCandidates(now.minusHours(4),null));
         org.junit.jupiter.api.Assertions.assertTrue(result.getTotalElements()>=0);
         var ids=result.isEmpty()?java.util.List.of(-1L):result.map(vn.edu.hcmute.uteexpress.entity.Order::getId).getContent();
         org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->routes.idsAtDeliveryHub(ids,null));

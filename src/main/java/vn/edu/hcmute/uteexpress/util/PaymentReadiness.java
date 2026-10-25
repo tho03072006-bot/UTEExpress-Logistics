@@ -21,10 +21,27 @@ public final class PaymentReadiness {
                     || payment.getStatus() == OrderPayment.PaymentStatus.PAID);
     }
 
-    /** Bồi hoàn chỉ dựa trên cước đã thực thu hợp lệ; đơn miễn phí không phát sinh khoản có thể chi trả. */
+    /** Cước đã thực thu hợp lệ; đơn miễn phí không phát sinh khoản có thể hoàn. */
     public static boolean isRefundable(OrderPayment payment) {
         return isReady(payment) && payment.getStatus() == OrderPayment.PaymentStatus.PAID
                 && payment.getPaidAt() != null && payment.getAmount().signum() > 0;
+    }
+
+    /** Hàng không khai giá bị mất/hư hỏng: bồi thường tối đa 4 lần cước, đã gồm hoàn cước (Điều 25 Nghị định 47/2011/NĐ-CP). */
+    public static final int COMPENSATION_FEE_MULTIPLE = 4;
+    public static final String COMPENSATION_RULE = "Hàng không khai giá được bồi thường tối đa 4 lần cước, đã gồm hoàn cước đã thu "
+            + "(Điều 25 Nghị định 47/2011/NĐ-CP); đơn trả cước khi giao mà chưa thu cước thì tối đa 3 lần, vì không thu cước nữa.";
+
+    /**
+     * Mức bồi thường tối đa của đơn. Đã thu cước: 4 lần cước. Trả cước khi giao mà chưa thu (hàng mất/hỏng trước khi giao):
+     * 3 lần, để người gửi được bù như nhau dù đã trả cước hay chưa. Thiếu chứng từ, số liệu lệch hoặc đơn miễn cước: 0, cần tra soát trước.
+     */
+    public static BigDecimal compensationLimit(OrderPayment payment) {
+        if (!isReady(payment) || payment.getAmount().signum() <= 0) return BigDecimal.ZERO;
+        if (isRefundable(payment)) return payment.getAmount().multiply(BigDecimal.valueOf(COMPENSATION_FEE_MULTIPLE));
+        if (payment.getMethod() == OrderPayment.PaymentMethod.COD && payment.getStatus() == OrderPayment.PaymentStatus.UNPAID)
+            return payment.getAmount().multiply(BigDecimal.valueOf(COMPENSATION_FEE_MULTIPLE - 1));
+        return BigDecimal.ZERO;
     }
 
     /** Cước đã chốt trừ giảm giá phải đúng số cần thu; không tin riêng trạng thái PAID hoặc một số tiền dương. */

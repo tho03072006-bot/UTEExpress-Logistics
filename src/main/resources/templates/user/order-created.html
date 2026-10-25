@@ -45,7 +45,7 @@
                   th:text="${payment.status.displayName}">-</span>
         </p>
         <p th:if="${payment != null and payment.method.name() == 'COD'}" class="text-muted small mt-2 mb-0">
-            Shipper sẽ thu cước khi giao hàng thành công.
+            Shipper sẽ thu cước vận chuyển từ người nhận khi giao hàng thành công (không thu hộ tiền hàng).
         </p>
     </div>
 </div>

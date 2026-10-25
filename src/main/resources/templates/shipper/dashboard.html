@@ -22,7 +22,7 @@
         </div>
         <a class="sx-cash-card sx-tone-green" th:href="@{/shipper/doi-soat}">
             <span class="sx-kpi-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
-            <span class="sx-kpi-label">COD đang giữ</span>
+            <span class="sx-kpi-label">Cước COD đang giữ</span>
             <strong class="sx-cash-value"><th:block th:replace="~{fragments/components :: money(${codHeld.amount})}"></th:block></strong>
             <span class="sx-kpi-sub" th:text="${codHeld.hasPending()} ? |Chờ xác nhận ${#numbers.formatInteger(codHeld.pendingAmount, 1, 'POINT')} đ| : |${codHeld.count} đơn chưa nộp|"></span>
             <span class="sx-cash-link">Nộp tiền <i class="bi bi-arrow-right"></i></span>

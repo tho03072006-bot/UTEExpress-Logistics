@@ -60,6 +60,20 @@ class PaymentReadinessTest {
         payment.setTransactionRef("   "); assertFalse(PaymentReadiness.isRefundable(payment));
     }
 
+    @Test void compensationLimitIsFourTimesPaidFeeOrThreeTimesUncollectedCodFee() {
+        var payment = payment(); payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        assertEquals(new BigDecimal("72000"), PaymentReadiness.compensationLimit(payment), "Đã thu 18.000 đ: tối đa 4 lần, gồm hoàn cước");
+        payment = payment();
+        assertEquals(new BigDecimal("54000"), PaymentReadiness.compensationLimit(payment), "Trả cước khi giao chưa thu: tối đa 3 lần");
+        payment = payment(); payment.setMethod(OrderPayment.PaymentMethod.MOMO);
+        assertEquals(0, PaymentReadiness.compensationLimit(payment).signum(), "Ví chưa trả thì đơn chưa được giao đi, không có cơ sở bồi thường");
+        payment = payment(); payment.setAmount(new BigDecimal("20000"));
+        assertEquals(0, PaymentReadiness.compensationLimit(payment).signum(), "Số liệu lệch cước đã chốt phải tra soát trước");
+        payment = payment(); payment.setAmount(BigDecimal.ZERO); payment.setDiscountAmount(payment.getOrder().getShippingFee());
+        assertEquals(0, PaymentReadiness.compensationLimit(payment).signum(), "Đơn miễn cước");
+        assertEquals(0, PaymentReadiness.compensationLimit(null).signum());
+    }
+
     private OrderPayment payment() {
         var value = new OrderPayment(); value.setAmount(new BigDecimal("18000"));
         var order = new vn.edu.hcmute.uteexpress.entity.Order(); order.setShippingFee(value.getAmount()); value.setOrder(order);
