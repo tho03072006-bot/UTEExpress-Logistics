@@ -960,32 +960,23 @@ body.sx-app.shipper-role { --head-photo: url("../images/photos/parcel-center.jpg
 body.sx-app.staff-workspace { --head-photo: url("../images/photos/port-containers.jpg"); }
 body.sx-app .ute-page-head:is(.sx-photo-sgn, .sx-photo-han, .sx-photo-dad) { --head-photo: var(--city-photo); }
 body.sx-app .ute-page-head.sx-photo-dad { --head-photo-y: 30%; }
-/* Màn hình rộng: chữ | ảnh (mờ hai mép) | ô hình minh họa trên nền trơn, hình không đè lên ảnh */
+/* Màn hình rộng: chữ | hình minh họa ở giữa (không nền) | ảnh ở góc phải, mờ dần về phía hình */
 @media (min-width: 1200px) {
     body.sx-app .ute-page-head:not(.shipper-hero) {
-        --art-zone: 13rem;
+        --photo-w: 32%;
         padding-right: 50%;
         background:
-            linear-gradient(90deg, var(--app-card) 0%, var(--app-card) 47%, color-mix(in srgb, var(--app-card) 45%, transparent) 53%, transparent 58%,
-                transparent calc(100% - var(--art-zone) - 3rem), var(--app-card) calc(100% - var(--art-zone))),
-            var(--head-photo) right var(--art-zone) top var(--head-photo-y, 50%) / calc(53% - var(--art-zone)) auto no-repeat,
+            linear-gradient(90deg, var(--app-card) 0%, var(--app-card) calc(100% - var(--photo-w)),
+                color-mix(in srgb, var(--app-card) 45%, transparent) calc(100% - var(--photo-w) + 4%), transparent calc(100% - var(--photo-w) + 9%)),
+            var(--head-photo) right top var(--head-photo-y, 50%) / var(--photo-w) auto no-repeat,
             var(--app-card);
     }
-    /* Ô nền của hình minh họa: ánh màu thương hiệu, chấm bi, viền mảnh, bóng mềm */
-    body.sx-app .ute-page-head:not(.shipper-hero)::before {
-        z-index: 0; inset: 50% 1.25rem auto auto; width: 11rem; height: 7.75rem; border-radius: 1.1rem; transform: translateY(-50%);
-        border: 1px solid color-mix(in srgb, var(--app-primary) 18%, var(--app-border));
-        background:
-            radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--app-primary) 24%, transparent) 1px, transparent 1.6px) 0 0 / 12px 12px,
-            radial-gradient(circle at 88% 12%, rgba(139, 92, 246, .22), transparent 55%),
-            radial-gradient(circle at 10% 95%, rgba(45, 212, 191, .2), transparent 50%),
-            linear-gradient(150deg, color-mix(in srgb, var(--app-primary) 12%, var(--app-card)), var(--app-card));
-        box-shadow: 0 14px 30px rgba(15, 23, 42, .14);
-    }
+    body.sx-app .ute-page-head:not(.shipper-hero)::before { display: none; }
+    /* Hình minh họa nằm giữa vùng trống từ cuối chữ tới đầu ảnh */
     body.sx-app .ute-page-head:not(.shipper-hero)::after {
-        z-index: 1; inset: 50% 1.85rem auto auto; width: 9.8rem; height: 6.6rem; padding: 0; transform: translateY(-50%);
-        border: 0; border-radius: 0; background-color: transparent; background-position: center; -webkit-backdrop-filter: none; backdrop-filter: none;
-        box-shadow: none; filter: drop-shadow(0 8px 10px rgba(15, 23, 42, .18));
+        z-index: 1; inset: 50% auto auto calc(50% + (50% - var(--photo-w)) / 2); width: min(11rem, calc(50% - var(--photo-w) - 1rem)); height: 7.5rem; padding: 0;
+        transform: translate(-50%, -50%); border: 0; border-radius: 0; background-color: transparent; background-position: center; background-size: contain;
+        -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; filter: drop-shadow(0 8px 12px rgba(15, 23, 42, .14));
     }
 }
 
@@ -1034,10 +1025,10 @@ body.sx-app .ute-page-head.sx-photo-dad { --head-photo-y: 30%; }
 /* Người gửi đổi ảnh nền tiêu đề (user-photo.js): nút ở góc ảnh, bảng chọn nằm ngay trên dải ảnh */
 .sx-photo-btn, .sx-photo-menu { display: none; }
 @media (min-width: 1200px) {
-    .sx-photo-btn { position: absolute; z-index: 2; top: .75rem; right: calc(13rem + 3.25rem); display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .7rem; border: 1px solid rgba(255, 255, 255, .7); border-radius: 999px; background: rgba(15, 23, 42, .55); color: #FFFFFF; font-size: .78rem; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background-color .15s ease; }
+    .sx-photo-btn { position: absolute; z-index: 2; top: .75rem; right: .85rem; display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .7rem; border: 1px solid rgba(255, 255, 255, .7); border-radius: 999px; background: rgba(15, 23, 42, .55); color: #FFFFFF; font-size: .78rem; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background-color .15s ease; }
     .sx-photo-btn:hover, .sx-photo-btn[aria-expanded="true"] { background: rgba(15, 23, 42, .78); }
     .sx-photo-btn:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
-    .sx-photo-menu:not([hidden]) { position: absolute; z-index: 3; top: 3rem; right: calc(13rem + 3.25rem); display: flex; gap: .4rem; padding: .45rem; border-radius: .85rem; background: rgba(15, 23, 42, .72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 12px 28px rgba(15, 23, 42, .3); }
+    .sx-photo-menu:not([hidden]) { position: absolute; z-index: 3; top: 3rem; right: .85rem; display: flex; gap: .4rem; padding: .45rem; border-radius: .85rem; background: rgba(15, 23, 42, .72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 12px 28px rgba(15, 23, 42, .3); }
     .sx-photo-option { width: 4.25rem; height: 2.9rem; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: .55rem; background: #1E293B; }
     .sx-photo-option img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .sx-photo-option:hover { border-color: rgba(255, 255, 255, .6); }
