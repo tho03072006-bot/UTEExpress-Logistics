@@ -957,9 +957,12 @@ body.sx-app { --head-photo: var(--user-photo, url("../images/photos/user-post-of
 :root[data-user-photo="locker"] { --user-photo: url("../images/photos/user-parcel-locker.jpg"); }
 :root[data-user-photo="parcel-center"] { --user-photo: url("../images/photos/parcel-center.jpg"); }
 body.sx-app.shipper-role { --head-photo: url("../images/photos/parcel-center.jpg"); }
-body.sx-app.staff-workspace { --head-photo: url("../images/photos/port-containers.jpg"); }
+body.sx-app.staff-workspace { --head-photo: url("../images/photos/admin-datacenter.jpg"); }
+/* Manager: mọi trang dùng ảnh thành phố của chi nhánh mình (lớp sx-photo-* trên body); trang kho/chi nhánh theo kho đang xem */
+body.sx-app.staff-workspace:is(.sx-photo-sgn, .sx-photo-han, .sx-photo-dad),
 body.sx-app .ute-page-head:is(.sx-photo-sgn, .sx-photo-han, .sx-photo-dad) { --head-photo: var(--city-photo); }
-body.sx-app .ute-page-head.sx-photo-dad { --head-photo-y: 30%; }
+body.sx-app.sx-photo-dad, body.sx-app .ute-page-head.sx-photo-dad { --head-photo-y: 30%; }
+body.sx-app .ute-page-head:is(.sx-photo-sgn, .sx-photo-han) { --head-photo-y: 50%; }
 /* Màn hình rộng: chữ | hình minh họa ở giữa (không nền) | ảnh ở góc phải, mờ dần về phía hình */
 @media (min-width: 1200px) {
     body.sx-app .ute-page-head:not(.shipper-hero) {

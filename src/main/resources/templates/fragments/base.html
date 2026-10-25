@@ -73,7 +73,7 @@
     </script>
 </head>
 
-<body class="ute-body sx-app" th:classappend="${(useSidebar ? 'sx-side ' : '') + (isStaff ? 'staff-workspace' : '') + (isUser ? ' user-workspace' : '') + (isShipper ? ' shipper-role' : '')}">
+<body class="ute-body sx-app" th:classappend="${(useSidebar ? 'sx-side ' : '') + (isStaff ? 'staff-workspace' : '') + (isUser ? ' user-workspace' : '') + (isShipper ? ' shipper-role' : '') + (staffBranchPhoto != null ? ' sx-photo-' + staffBranchPhoto : '')}">
 
 <!-- ===================== Thanh trên cùng ===================== -->
 <header class="ute-topbar" th:classappend="${useSidebar} ? 'ute-topbar-with-sidebar' : ''">

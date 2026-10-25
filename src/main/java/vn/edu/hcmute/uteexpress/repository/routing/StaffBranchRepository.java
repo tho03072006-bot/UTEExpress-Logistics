@@ -9,6 +9,9 @@ import vn.edu.hcmute.uteexpress.entity.routing.StaffBranch;
 public interface StaffBranchRepository extends JpaRepository<StaffBranch, Long> {
     boolean existsByAssignedBy_Id(Long assignedById);
     Optional<StaffBranch> findByUser_Id(Long userId);
+    /** Mã chi nhánh của nhân sự theo tên đăng nhập (chọn ảnh tiêu đề trang theo chi nhánh). */
+    @org.springframework.data.jpa.repository.Query("select s.branch.code from StaffBranch s where s.user.username = :username")
+    Optional<String> findBranchCodeByUsername(@org.springframework.data.repository.query.Param("username") String username);
     /**
      * Điều kiện JPQL cho nhân sự có bí danh {@code u} và tham số {@code :branchId} (null = mọi chi nhánh).
      * Nhân sự chưa được gán chi nhánh hiện cho mọi chi nhánh tới khi chuyển dữ liệu, giống quy tắc của đơn cũ.
