@@ -943,3 +943,74 @@ body.sx-app::before {
 .sx-panel-head p { margin: 0; color: var(--app-muted); font-size: .88rem; }
 .sx-panel-head > img { flex: 0 0 auto; width: 9.5rem; height: auto; margin: -.5rem 0; filter: drop-shadow(0 8px 12px rgba(29, 39, 59, .14)); }
 @media (max-width: 575px) { .sx-panel-head > img { display: none; } .sx-panel-head { margin: -1.5rem -1.5rem 1.2rem; } }
+
+/* ==========================================================================
+   Ảnh thật: tiêu đề trang, kho và chi nhánh (nguồn ảnh: docs/IMAGE_SOURCES.md)
+   ========================================================================== */
+.sx-photo-sgn { --city-photo: url("../images/photos/branch-sgn.jpg"); }
+.sx-photo-han { --city-photo: url("../images/photos/branch-han.jpg"); }
+.sx-photo-dad { --city-photo: url("../images/photos/branch-dad.jpg"); }
+/* Màn hình rộng: ảnh mờ dần phía phải tiêu đề lấp khoảng trống giữa chữ và hình minh họa */
+@media (min-width: 1200px) {
+    body.sx-app .ute-page-head:not(.shipper-hero) {
+        --head-photo: url("../images/photos/parcel-center.jpg");
+        background:
+            linear-gradient(90deg, var(--app-card) 0%, var(--app-card) 50%, color-mix(in srgb, var(--app-card) 55%, transparent) 58%, transparent 68%),
+            var(--head-photo) right var(--head-photo-y, 50%) / 50% auto no-repeat,
+            var(--app-card);
+    }
+    body.sx-app.staff-workspace .ute-page-head:not(.shipper-hero) { --head-photo: url("../images/photos/port-containers.jpg"); }
+    body.sx-app .ute-page-head:is(.sx-art-warehouse, .sx-art-routetruck, .sx-art-dispatch, .sx-art-branch, .sx-art-calendar):not(.shipper-hero) { --head-photo: url("../images/photos/port-containers.jpg"); }
+    body.sx-app .ute-page-head:is(.sx-photo-sgn, .sx-photo-han, .sx-photo-dad):not(.shipper-hero) { --head-photo: var(--city-photo); }
+    body.sx-app .ute-page-head.sx-photo-dad:not(.shipper-hero) { --head-photo-y: 30%; }
+    /* Hình minh họa nằm đè góc dưới ảnh như nhãn dán; chữ không bao giờ chạm vào ảnh */
+    body.sx-app .ute-page-head:not(.shipper-hero) { padding-right: 52%; }
+    body.sx-app .ute-page-head:not(.shipper-hero)::after {
+        z-index: 1; top: 50%; right: 1.5rem; bottom: auto; width: 9.5rem; height: 6.75rem; padding: .5rem; transform: translateY(-50%);
+        border: 1px solid rgba(255, 255, 255, .75); border-radius: 1rem; background-color: color-mix(in srgb, var(--app-card) 88%, transparent);
+        background-origin: content-box; background-position: center; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .25); filter: none;
+    }
+}
+
+/* Kho chi nhánh: mỗi mục là một thẻ có biểu tượng và số đếm; mục trống gọn hai cột, mục có việc trải hết chiều ngang */
+.sx-hub-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+@media (min-width: 1200px) {
+    .sx-hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sx-hub-card:not(.is-empty) { grid-column: 1 / -1; }
+}
+.sx-hub-card { --tone: var(--sx-indigo); --tone-soft: var(--sx-indigo-soft); padding: 1.1rem 1.25rem; border: 1px solid var(--app-border); border-radius: var(--app-radius); background: var(--app-card); box-shadow: var(--app-shadow); transition: border-color .18s ease, box-shadow .18s ease; }
+.sx-hub-card:nth-child(4n+2) { --tone: var(--sx-amber); --tone-soft: var(--sx-amber-soft); }
+.sx-hub-card:nth-child(4n+3) { --tone: var(--sx-rose); --tone-soft: var(--sx-rose-soft); }
+.sx-hub-card:nth-child(4n+4) { --tone: var(--sx-teal); --tone-soft: var(--sx-teal-soft); }
+.sx-hub-card:hover { border-color: color-mix(in srgb, var(--tone) 40%, var(--app-border)); box-shadow: 0 10px 24px rgba(15, 23, 42, .07); }
+.sx-hub-card-head { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.sx-hub-card-head h3 { flex: 1 1 auto; min-width: 0; color: var(--app-ink); font-weight: 600; }
+.sx-hub-icon { display: grid; flex: 0 0 auto; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: .75rem; background: var(--tone-soft); color: var(--tone); font-size: 1.1rem; }
+.sx-hub-card-head .badge { min-width: 2rem; padding: .35rem .6rem; background: var(--app-soft); color: var(--app-muted); font-weight: 600; }
+.sx-hub-card:not(.is-empty) .sx-hub-card-head .badge { background: var(--tone); color: #FFFFFF; }
+.sx-hub-card.is-empty .sx-hub-card-head { margin-bottom: .5rem; }
+.sx-empty { display: flex; align-items: center; gap: .5rem; margin: 0 0 0 3.15rem; color: var(--app-muted); font-size: .88rem; }
+.sx-empty::before { content: "\2713"; display: grid; flex: 0 0 auto; place-items: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--sx-green-soft); color: var(--sx-green); font-size: .7rem; font-weight: 700; }
+.sx-app .sx-hub-card .ute-panel.sx-hub-inner { margin: 0 0 1rem; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.sx-app .sx-hub-card article.ute-panel.sx-hub-inner { padding: 1rem 1.1rem; border: 1px solid var(--app-border); border-radius: .75rem; background: var(--app-soft); }
+.sx-app .sx-hub-card .sx-hub-inner:last-child { margin-bottom: 0; }
+.sx-stat-link { margin-top: .35rem; color: #FFFFFF; font-size: .8rem; text-decoration: underline; }
+.sx-stat-link:hover { color: #FFFFFF; }
+
+/* Chi nhánh: thẻ có ảnh đặc trưng của thành phố */
+.sx-branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+.sx-branch-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--app-border); border-radius: var(--app-radius); background: var(--app-card); box-shadow: var(--app-shadow); transition: transform .18s ease, box-shadow .18s ease; }
+.sx-branch-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(15, 23, 42, .12); }
+.sx-branch-photo { position: relative; height: 11.5rem; background: var(--city-photo, linear-gradient(135deg, #0072BC, #4F46E5)) center / cover no-repeat; }
+.sx-branch-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, .6)); }
+.sx-branch-code { position: absolute; z-index: 1; left: 1.1rem; bottom: .8rem; color: #FFFFFF; font-size: 1.7rem; font-weight: 800; letter-spacing: .05em; text-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.sx-branch-state { position: absolute; z-index: 1; top: .8rem; right: .8rem; padding: .25rem .7rem; border-radius: 999px; background: rgba(16, 185, 129, .92); color: #FFFFFF; font-size: .75rem; font-weight: 600; }
+.sx-branch-card.is-paused .sx-branch-state { background: rgba(100, 116, 139, .92); }
+.sx-branch-card.is-paused .sx-branch-photo { filter: grayscale(.85); }
+.sx-branch-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: .45rem; padding: 1rem 1.15rem 1.2rem; }
+.sx-branch-body h2 { margin: 0 0 .1rem; color: var(--app-ink); font-weight: 700; }
+.sx-branch-body p { margin: 0; }
+.sx-branch-body p i { color: var(--app-primary); }
+.sx-branch-body .btn { align-self: flex-start; margin-top: auto; }
+@media (prefers-reduced-motion: reduce) { .sx-branch-card, .sx-branch-card:hover { transition: none; transform: none; } }
