@@ -15,7 +15,6 @@
                 <div class="staff-status-track" aria-hidden="true"><span th:style="|width:${status.percentage}%;background:var(--staff-chart-${status.tone})|"></span></div>
             </li>
         </ul>
-        <p class="staff-chart-note">Mỗi đơn thuộc một trạng thái. “Giao thất bại” chưa đồng nghĩa đã hoàn hàng; tỷ trọng này không phải tỷ lệ giao thành công.</p>
     </article>
     <article class="ute-panel staff-chart-card" aria-labelledby="newOrdersChartTitle">
         <div class="staff-chart-heading">
@@ -38,8 +37,8 @@
         </div>
         <div class="staff-chart-meta"><span><i class="staff-chart-key" aria-hidden="true"></i> Đơn tạo mới</span>
             <span th:text="|Cao nhất: ${#numbers.formatInteger(data.peakDailyOrders, 1, 'POINT')} đơn/ngày|"></span></div>
-        <p class="staff-chart-note">Theo ngày tạo đơn, không phải ngày giao hay doanh thu. Ngày không có đơn = 0; hôm nay chưa kết thúc. Giờ Việt Nam. Rê chuột lên cột để xem số đầy đủ (k = nghìn, tr = triệu).</p>
+        <p class="staff-chart-note">Theo ngày tạo đơn (k = nghìn, tr = triệu).</p>
     </article>
-    <p class="staff-charts-snapshot" th:text="|Số liệu lúc ${#temporals.format(data.generatedAt, 'HH:mm dd/MM/yyyy')} · Tải lại trang để cập nhật.|"></p>
+    <p class="staff-charts-snapshot" th:text="|Cập nhật lúc ${#temporals.format(data.generatedAt, 'HH:mm dd/MM/yyyy')}|"></p>
 </div>
 </body></html>

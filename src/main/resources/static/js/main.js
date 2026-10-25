@@ -164,7 +164,7 @@
             return;
         }
         Array.prototype.forEach.call(
-            document.querySelectorAll('.ute-stat-value'), animateCount);
+            document.querySelectorAll('.ute-stat-value, .sx-kpi-value, .staff-task > strong, .staff-chart-total > strong'), animateCount);
     });
 })();
 

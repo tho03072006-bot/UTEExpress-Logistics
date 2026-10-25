@@ -73,7 +73,21 @@
     </div>
 </div>
 
-<!-- TODO (TV1): them danh gia dich vu, ma giam gia... -->
+<div class="ute-panel mt-4 sx-recent-orders">
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+        <h3 class="h6 mb-0">Đơn gần đây</h3>
+        <a class="small" th:href="@{/nguoi-dung/don-hang}">Xem tất cả →</a>
+    </div>
+    <p class="text-muted mb-0" th:if="${recentOrders.empty}">Chưa có đơn nào. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn đầu tiên</a>.</p>
+    <a class="sx-recent-row" th:each="order : ${recentOrders}" th:href="@{'/nguoi-dung/don-hang/' + ${order.id}}">
+        <span class="sx-recent-code" th:text="${order.trackingCode}">-</span>
+        <span class="sx-recent-receiver" th:text="${order.receiverName}">-</span>
+        <span class="badge" th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}">
+            <th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block>
+        </span>
+        <span class="sx-recent-date" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy')}">-</span>
+    </a>
+</div>
 </section>
 
 </body>

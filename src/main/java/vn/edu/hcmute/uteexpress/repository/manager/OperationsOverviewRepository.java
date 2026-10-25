@@ -20,8 +20,9 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
               and c2.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
           and """ + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
     Page<vn.edu.hcmute.uteexpress.entity.CodSettlement> lateCash(@Param("deadline") LocalDateTime deadline, @Param("branchId") Long branchId, Pageable pageable);
-    @Query("""
-        select o from Order o where (
+    /** Điều kiện của từng nhóm cảnh báo cho đơn bí danh {@code o}; dùng chung cho trang danh sách và câu chỉ đếm. */
+    String ALERT_FILTER = """
+         (
         (:kind = 'PAYMENT_ISSUE' and o.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED,
             vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.RETURNED)
             and (not exists (select missing.id from OrderPayment missing where missing.order = o)
@@ -54,11 +55,18 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         or (:kind = 'MANY_FAILURES' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
             and (select count(h3.id) from OrderStatusHistory h3 where h3.order = o
             and h3.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED and h3.previousStatus <> h3.status) >= :maxAttempts)
-        ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+        ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE;
+    @Query("select o from Order o where " + ALERT_FILTER)
     Page<Order> alerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
             @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,
             @Param("superExpress") LocalDateTime superExpress, @Param("now") LocalDateTime now,
             @Param("maxAttempts") int attempts, Pageable pageable);
+    /** Chỉ đếm (trang tổng quan không cần danh sách đơn). */
+    @Query("select count(o) from Order o where " + ALERT_FILTER)
+    long countAlerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
+            @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,
+            @Param("superExpress") LocalDateTime superExpress, @Param("now") LocalDateTime now,
+            @Param("maxAttempts") int attempts);
     @Query("""
         select new vn.edu.hcmute.uteexpress.dto.manager.ShipperPerformanceResponse(u.id, u.username, u.fullName,
           sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP then 1 else 0 end),
@@ -76,11 +84,14 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         group by u.id, u.username, u.fullName order by u.username, u.id
         """)
     Page<ShipperPerformanceResponse> performance(@Param("branchId") Long branchId, Pageable pageable);
-    @Query("""
-        select c from OrderComplaint c join c.order o where c.status in (vn.edu.hcmute.uteexpress.entity.OrderComplaint.Status.OPEN,
+    String LATE_COMPLAINT_FILTER = """
+        c.status in (vn.edu.hcmute.uteexpress.entity.OrderComplaint.Status.OPEN,
           vn.edu.hcmute.uteexpress.entity.OrderComplaint.Status.IN_PROGRESS)
           and ((c.managerReply is null and c.createdAt <= :response) or c.createdAt <= :resolve)
-          and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+          and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE;
+    @Query("select c from OrderComplaint c join c.order o where " + LATE_COMPLAINT_FILTER)
     Page<vn.edu.hcmute.uteexpress.entity.OrderComplaint> lateComplaints(@Param("response") LocalDateTime response,
             @Param("resolve") LocalDateTime resolve, @Param("branchId") Long branchId, Pageable pageable);
+    @Query("select count(c) from OrderComplaint c join c.order o where " + LATE_COMPLAINT_FILTER)
+    long countLateComplaints(@Param("response") LocalDateTime response, @Param("resolve") LocalDateTime resolve, @Param("branchId") Long branchId);
 }

@@ -28,6 +28,7 @@ public class ManagerController {
     }
 
     @GetMapping("/trang-chu")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String dashboard(java.security.Principal actor, Model model) {
         model.addAttribute("summary", managerDashboardService.getSummary(actor.getName()));
         model.addAttribute("charts", charts.getOperationsCharts(actor.getName()));

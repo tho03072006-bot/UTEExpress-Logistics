@@ -12,7 +12,7 @@
 <label class="form-label" th:for="${path + '.secondaryAreaCodes'}">Khu vực phụ</label>
 <select class="form-select" th:field="*{__${path}__.secondaryAreaCodes}" multiple size="6" data-secondary-areas>
 <option th:each="a : ${areas}" th:value="${a.code}" th:attr="data-branch-id=${a.branchId}" th:text="|${a.branchCode} · ${a.name}|"></option></select>
-<p class="form-text">Giữ Ctrl để chọn nhiều khu vực. Khu vực giao nhận nội bộ được đặt tên theo địa bàn cũ.</p>
+<p class="form-text">Giữ Ctrl để chọn nhiều khu vực.</p>
 </div>
 <script th:src="@{/js/staff-branches.js}" defer></script>
 </fieldset></body></html>

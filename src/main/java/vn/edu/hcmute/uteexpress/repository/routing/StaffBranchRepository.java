@@ -16,4 +16,7 @@ public interface StaffBranchRepository extends JpaRepository<StaffBranch, Long> 
     String USER_SCOPE = " (:branchId is null or not exists (select sb0.id from StaffBranch sb0 where sb0.user = u)"
             + " or exists (select sb1.id from StaffBranch sb1 where sb1.user = u and sb1.branch.id = :branchId)) ";
     List<StaffBranch> findAllByBranch_Id(Long branchId);
+    /** Nhân sự của nhiều chi nhánh kèm tài khoản trong một truy vấn. */
+    @org.springframework.data.jpa.repository.Query("select s from StaffBranch s join fetch s.user where s.branch.id in :ids")
+    List<StaffBranch> findWithUserByBranchIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
 }

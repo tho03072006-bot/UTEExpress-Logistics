@@ -6,6 +6,11 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
     long countByActionAndDetailStartingWithAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
             String action, String prefix, java.time.LocalDateTime from, java.time.LocalDateTime to);
     Page<AuditEvent> findAllByOrderByCreatedAtDescIdDesc(Pageable pageable);
+    /** Chi tiết các bản ghi của một thao tác trong khoảng thời gian (đếm lượt phân công trong ngày cho cả trang). */
+    @org.springframework.data.jpa.repository.Query("select e.detail from AuditEvent e where e.action = :action and e.createdAt >= :from and e.createdAt < :to")
+    java.util.List<String> detailsBetween(@org.springframework.data.repository.query.Param("action") String action,
+            @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from,
+            @org.springframework.data.repository.query.Param("to") java.time.LocalDateTime to);
     @org.springframework.data.jpa.repository.Query("""
         select e from AuditEvent e where (:operator = '' or e.actor = :operator)
         and (:category = 'ALL'

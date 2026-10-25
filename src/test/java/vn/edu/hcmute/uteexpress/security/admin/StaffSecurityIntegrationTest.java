@@ -298,7 +298,7 @@ class StaffSecurityIntegrationTest {
             var html = mvc.perform(get(path).param("actor","someone-else").with(authentication(auth(admin))))
                     .andExpect(status().isOk()).andExpect(content().string(containsString("Trạng thái đơn hàng")))
                     .andExpect(content().string(containsString("Đơn mới trong 14 ngày")))
-                    .andExpect(content().string(containsString("không phải tỷ lệ giao thành công")))
+                    .andExpect(content().string(containsString("Theo ngày tạo đơn")))
                     .andReturn().getResponse().getContentAsString();
             // Chỉ kiểm tra dữ liệu biểu đồ; token CSRF ngẫu nhiên ở phần khác có thể chứa các chuỗi này.
             int chartStart = html.indexOf("class=\"staff-dashboard-charts\"");

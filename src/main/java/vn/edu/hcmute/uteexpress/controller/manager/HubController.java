@@ -16,6 +16,7 @@ public class HubController {
     public HubController(HubService hub) { this.hub = hub; }
 
     @GetMapping
+    @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String overview(@RequestParam(required = false) Long branchId, Authentication auth, Model model) {
         model.addAttribute("hub", hub.overview(auth.getName(), branchId));
         return "manager/hub";

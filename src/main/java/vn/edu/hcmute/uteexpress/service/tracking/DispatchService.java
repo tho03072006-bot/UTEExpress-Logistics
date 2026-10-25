@@ -43,9 +43,7 @@ public class DispatchService {
     public Page<Order> pending(String actor, Long branchId, int page) { return routing.pending(access.internal(actor), branchId, page); }
     public List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return routing.branches(access.internal(actor)); }
     public Map<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>> suggestions(String actor, List<Order> orders) {
-        var manager = access.internal(actor); var result = new LinkedHashMap<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>>();
-        for (var order : orders) result.put(order.getId(), routing.candidates(manager, order));
-        return result;
+        return routing.candidates(access.internal(actor), orders);
     }
     public List<String> unassigned(String actor, Long branchId) { return routing.unassigned(access.internal(actor), branchId); }
     public Page<AppUser> shippers(String actor, int page) {

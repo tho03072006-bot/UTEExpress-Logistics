@@ -40,6 +40,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByShipperAndStatus(AppUser shipper, Order.OrderStatus status);
     long countByShipper_IdAndStatusIn(Long shipperId, java.util.Collection<Order.OrderStatus> statuses);
+    /** Cặp [mã shipper, số đơn] theo trạng thái cho nhiều shipper một lần; shipper không có đơn thì không có dòng. */
+    @Query("select o.shipper.id, count(o) from Order o where o.shipper.id in :ids and o.status in :statuses group by o.shipper.id")
+    List<Object[]> countByShipperIds(@Param("ids") java.util.Collection<Long> ids,
+            @Param("statuses") java.util.Collection<Order.OrderStatus> statuses);
 
     /** Đếm đơn của Shipper theo nhiều trạng thái trong một truy vấn (thay vì mỗi trạng thái một câu). */
     @Query("""
@@ -191,6 +195,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                      Pageable pageable);
 
     List<Order> findBySender(AppUser sender);
+    long countBySender_Username(String username);
+    List<Order> findTop5BySender_UsernameOrderByCreatedAtDescIdDesc(String username);
 
     Optional<Order> findByIdAndShipper(Long id, AppUser shipper);
 

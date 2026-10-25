@@ -20,6 +20,7 @@ public class DispatchController {
         this.service = service; this.workspace = workspace; this.bulk = bulk;
     }
     @GetMapping
+    @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String list(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int shipperPage, @RequestParam(required = false) Long branchId, Authentication auth, Model model) {
         var orders = service.pending(auth.getName(), branchId, page);

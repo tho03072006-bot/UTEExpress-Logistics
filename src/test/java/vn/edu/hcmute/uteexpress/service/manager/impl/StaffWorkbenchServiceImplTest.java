@@ -69,8 +69,8 @@ class StaffWorkbenchServiceImplTest {
         assertFalse(csv.contains("receiverName")); assertFalse(csv.contains("phone"));
     }
     @Test void queuesUseSharedPoliciesAndRealTotals() {
-        when(overview.alerts(anyString(), any(), eq(0))).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(new Order())));
-        when(overview.lateComplaints(anyString(), eq(0))).thenReturn(Page.empty());
+        when(overview.alertCount(anyString(), any())).thenReturn(1L);
+        when(overview.lateComplaintCount(anyString())).thenReturn(0L);
         var queues = service.getWorkQueues("manager01"); assertEquals(6, queues.size());
         assertEquals(1, queues.get(0).count()); assertEquals(0, queues.get(5).count());
     }

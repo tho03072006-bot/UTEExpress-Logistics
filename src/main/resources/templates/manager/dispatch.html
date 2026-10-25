@@ -8,16 +8,15 @@
 <ul class="ute-panel" th:if="${remaining != null and !remaining.empty}"><li th:each="item : ${remaining}" th:text="${item}"></li></ul>
 <form method="get" th:action="@{/manager/phan-cong}" class="d-flex gap-2 mb-3" sec:authorize="hasRole('ADMIN')">
 <label for="branchId">Chi nhánh</label><select id="branchId" name="branchId" class="form-select w-auto"><option value="">Tất cả chi nhánh</option><option th:each="branch : ${branches}" th:value="${branch.id}" th:selected="${branch.id == branchId}" th:text="|${branch.code} · ${branch.name}|"></option></select><button class="btn btn-outline-primary">Lọc</button></form>
-<p class="text-muted">Đơn cũ chưa có tuyến và nhân sự chưa có chi nhánh cần được chuyển dữ liệu trước khi phân công.</p>
-<form method="post" th:action="@{/manager/phan-cong/hang-loat}" class="mb-3" th:unless="${orders.empty}">
-<input type="hidden" name="branchId" th:if="${branchId != null}" th:value="${branchId}"><button class="btn btn-primary">Phân công tất cả theo gợi ý</button><span class="text-muted ms-2">Chỉ đơn chưa có Shipper; ưu tiên đơn cũ trước.</span></form>
+<form method="post" th:action="@{/manager/phan-cong/hang-loat}" class="d-flex flex-wrap align-items-center gap-2 mb-3" th:unless="${orders.empty}">
+<input type="hidden" name="branchId" th:if="${branchId != null}" th:value="${branchId}"><button class="btn btn-primary">Phân công tất cả theo gợi ý</button><span class="text-muted small">Chỉ đơn chưa có Shipper, đơn cũ trước.</span></form>
 <div class="ute-panel text-muted" th:if="${orders.empty}">Không có đơn chờ lấy hoặc chờ giao tại kho nhận thuộc chi nhánh của bạn.</div>
 <article class="ute-panel mb-3" th:each="order : ${orders.content}" th:with="payment=${money.get(order.id)},choices=${suggestions.get(order.id)}" th:attr="data-tracking-code=${order.trackingCode},data-updated-at=${order.updatedAt}">
-<div class="d-flex justify-content-between flex-wrap gap-2"><strong th:text="${order.trackingCode}"></strong><span class="text-muted" th:text="${order.shipper == null ? 'Chưa phân công' : 'Hiện tại: ' + order.shipper.username}"></span></div>
-<p class="mt-2" th:text="|Lấy: ${order.senderAddress}|"></p><p th:text="|Giao: ${order.receiverAddress}|"></p>
+<div class="d-flex justify-content-between flex-wrap gap-2"><strong th:text="${order.trackingCode}"></strong><span class="text-muted small" th:text="${order.shipper == null ? 'Chưa phân công' : 'Hiện tại: ' + order.shipper.username}"></span></div>
+<dl class="sx-dispatch-meta"><div><dt>Lấy</dt><dd th:text="${order.senderAddress}"></dd></div><div><dt>Giao</dt><dd th:text="${order.receiverAddress}"></dd></div>
+<div th:if="${payment.available}"><dt>Thanh toán</dt><dd th:text="|${payment.method.displayName} · ${payment.status.displayName}|"></dd></div></dl>
 <p class="ute-field-error" th:unless="${payment.fulfillmentReady}">Chưa phân công được: đơn chưa thanh toán ví hoặc thiếu thông tin cước.</p>
-<p th:if="${payment.available}" th:text="|${payment.method.displayName} · ${payment.status.displayName}|"></p>
-<p class="text-muted" th:if="${choices.empty}">Hết shipper còn sức chứa hoặc chưa có Shipper hợp lệ khác trong chi nhánh.</p>
+<p class="text-muted small" th:if="${choices.empty}">Không còn Shipper phù hợp trong chi nhánh.</p>
 <form class="row g-3 align-items-end" method="post" th:action="@{/manager/phan-cong}" data-dispatch-form>
 <input type="hidden" name="trackingCode" th:value="${order.trackingCode}"><input type="hidden" name="expectedShipperId" th:value="${order.shipper == null ? 0 : order.shipper.id}"><input type="hidden" name="expectedUpdatedAt" th:value="${order.updatedAt}">
 <div class="col-lg-5"><label class="form-label" th:for="${'shipper-' + order.id}">Shipper (theo thứ tự gợi ý)</label><select name="shipperId" th:id="${'shipper-' + order.id}" class="form-select" required>

@@ -11,7 +11,7 @@
 <form th:if="${complaint == null and viewer == 'customer'}" class="ute-panel sx-cx-new" method="post" enctype="multipart/form-data"
       th:action="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}">
     <div class="sx-cx-new-head"><span class="sx-cx-icon"><i class="bi bi-chat-square-text"></i></span>
-        <div><h3 class="h5 mb-1">Gửi khiếu nại cho vận đơn này</h3><p class="text-muted mb-0">Viết ngắn gọn cũng được. Sau khi gửi, bạn có thể nhắn tiếp bất cứ lúc nào.</p></div></div>
+        <div><h3 class="h5 mb-1">Gửi khiếu nại cho vận đơn này</h3></div></div>
     <div class="mb-3"><label for="subject" class="form-label">Tiêu đề</label>
         <input id="subject" name="subject" th:value="${subject}" class="form-control" maxlength="100" required placeholder="Ví dụ: Giao chậm, hàng bị móp…"></div>
     <div class="mb-3"><label for="description" class="form-label">Nội dung vấn đề</label>

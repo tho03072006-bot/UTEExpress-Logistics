@@ -1,7 +1,7 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Thông tin tài khoản - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head"><div><h1>Thông tin tài khoản của tôi</h1><p>Tài khoản nội bộ được cấp. Liên hệ Admin khi cần cập nhật thông tin hoặc khôi phục mật khẩu; không dùng đăng ký OTP.</p></div></div>
+<div class="ute-page-head"><div><h1>Thông tin tài khoản của tôi</h1><p>Thông tin tài khoản nội bộ của bạn.</p></div></div>
 <div class="row g-3"><div class="col-xl-8"><div class="ute-panel p-4">
 <h2 class="h6 mb-3">Hồ sơ nhân viên · chỉ xem</h2>
 <dl class="row mb-0">
@@ -12,7 +12,7 @@
 <dt class="col-sm-4">Vai trò được cấp</dt><dd class="col-sm-8" th:text="${profile.role.name() == 'ADMIN' ? 'Admin · Quản trị hệ thống' : 'Manager · Quản lý vận hành'}"></dd>
 <dt class="col-sm-4">Ngày cấp tài khoản</dt><dd class="col-sm-8" th:text="${profile.issuedAt == null ? 'Chưa có thông tin' : #temporals.format(profile.issuedAt, 'dd/MM/yyyy HH:mm')}"></dd>
 </dl></div></div><div class="col-xl-4"><div class="ute-panel p-4 h-100"><h2 class="h6">Bảo vệ tài khoản</h2>
-<p class="small text-muted">Không chia sẻ mật khẩu hoặc tài khoản. Đổi mật khẩu khi nghi ngờ bị lộ; nhờ Admin thu hồi truy cập khi cần đăng xuất trên mọi máy.</p>
+
 <a class="btn btn-primary btn-sm" th:href="@{/noi-bo/doi-mat-khau}">Đổi mật khẩu của tôi</a>
 </div></div></div>
 </section></body></html>

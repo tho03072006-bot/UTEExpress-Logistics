@@ -40,6 +40,18 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         var ids = orders.stream().filter(o -> o.getStatus() == Order.OrderStatus.FAILED).map(Order::getId).toList();
         return ids.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(routes.idsAtDeliveryHub(ids, branch));
     }
+    public long alertCount(String actor, Alert alert) {
+        access.requireOperator(actor);
+        if (alert == null) throw new IllegalArgumentException("Chọn nhóm cảnh báo hợp lệ.");
+        var policy = policies.current(); var now = LocalDateTime.now(clock);
+        return data.countAlerts(alert.name(), scope.of(actor, null), now.minusHours(policy.getPickupHours()), now.minusHours(policy.getStandardHours()),
+                now.minusHours(policy.getExpressHours()), now.minusHours(policy.getSuperExpressHours()), now, policy.getMaxDeliveryAttempts());
+    }
+    public long lateComplaintCount(String actor) {
+        access.requireOperator(actor);
+        var policy = policies.current(); var now = LocalDateTime.now(clock);
+        return data.countLateComplaints(now.minusHours(policy.getComplaintResponseHours()), now.minusHours(policy.getComplaintResolveHours()), scope.of(actor, null));
+    }
     public Page<OrderComplaint> lateComplaints(String actor, int page) {
         access.requireOperator(actor); access.validatePage(page);
         var policy = policies.current(); var now = LocalDateTime.now(clock);

@@ -7,11 +7,14 @@ public interface OperationsOverviewService {
     /** branchId null: Admin xem mọi chi nhánh, Manager xem chi nhánh được giao. */
     Page<Order> alerts(String actor, Alert alert, Long branchId, int page);
     default Page<Order> alerts(String actor, Alert alert, int page) { return alerts(actor, alert, null, page); }
+    /** Số đơn của nhóm cảnh báo trong phạm vi chi nhánh, chỉ đếm (cho bảng hàng đợi). */
+    long alertCount(String actor, Alert alert);
     /** Đơn nào trong danh sách là khách tự mang hàng ra chi nhánh. */
     java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders);
     java.util.Set<Long> deliveryHubOrderIds(String actor, java.util.Collection<Order> orders);
     java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor);
     Page<OrderComplaint> lateComplaints(String actor, int page);
+    long lateComplaintCount(String actor);
     Page<CodSettlement> lateCash(String actor, int page);
     /** Shipper của chi nhánh (Manager) hoặc chi nhánh Admin chọn; null là mọi chi nhánh với Admin. */
     Page<ShipperPerformanceResponse> performance(String actor, Long branchId, int page);

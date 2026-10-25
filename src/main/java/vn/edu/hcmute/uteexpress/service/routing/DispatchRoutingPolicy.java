@@ -43,7 +43,7 @@ public class DispatchRoutingPolicy {
             if (requested != null && !branches.existsById(requested)) throw new IllegalArgumentException("Không tìm thấy chi nhánh.");
             return requested;
         }
-        Long assigned = staff.findByUser_Id(actor.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
+        Long assigned = vn.edu.hcmute.uteexpress.service.tracking.LogisticsAccess.findBranch(staff, actor.getId()).map(s -> s.getBranch().getId()).orElse(-1L);
         if (requested != null && !requested.equals(assigned)) throw new AccessDeniedException("Bạn chỉ được điều phối chi nhánh được giao.");
         return assigned;
     }
@@ -67,9 +67,9 @@ public class DispatchRoutingPolicy {
         boolean delivery = route.getStage() == OrderRoute.Stage.DEST_HUB && order.getStatus() == Order.OrderStatus.PICKED_UP;
         if (!pickup && !delivery) throw new IllegalArgumentException("Chỉ phân công đơn chờ lấy hoặc chờ giao tại kho nhận.");
     }
-    public void requireManager(AppUser actor, OrderRoute route) {
-        Long id = scope(actor, null);
-        if (id != null && !id.equals(branch(route).getId())) throw new AccessDeniedException("Bạn không được phân công chặng ở chi nhánh khác.");
+    public void requireManager(AppUser actor, OrderRoute route) { requireManager(scope(actor, null), route); }
+    private void requireManager(Long scope, OrderRoute route) {
+        if (scope != null && !scope.equals(branch(route).getId())) throw new AccessDeniedException("Bạn không được phân công chặng ở chi nhánh khác.");
     }
     public long load(Long shipperId) { return orders.countByShipper_IdAndStatusIn(shipperId, ACTIVE); }
     public void requireShipper(AppUser shipper, OrderRoute route) {
@@ -80,32 +80,76 @@ public class DispatchRoutingPolicy {
         if (load(shipper.getId()) >= policies.current().getMaxActiveOrders()) throw new IllegalArgumentException("Shipper đã đủ số đơn tối đa đang giữ.");
     }
     public List<AppUser> branchShippers(Long branchId) {
-        return staff.findAllByBranch_Id(branchId).stream().map(StaffBranch::getUser)
+        return staff.findWithUserByBranchIds(List.of(branchId)).stream().map(StaffBranch::getUser)
                 .filter(u -> u.getRole() == AppUser.Role.SHIPPER).sorted(Comparator.comparing(AppUser::getId)).toList();
     }
-    public List<Candidate> candidates(AppUser actor, Order order) {
-        var route = route(order); requireStage(route); requireManager(actor, route);
-        var area = route.getStage() == OrderRoute.Stage.PICKUP ? route.getPickupArea() : route.getDeliveryArea();
-        var adjacent = new HashSet<String>();
-        neighbors.findAllById_AreaCode(area.getAreaCode()).forEach(n -> adjacent.add(n.getNeighbor().getAreaCode()));
-        int cap = policies.current().getMaxActiveOrders(); var today = LocalDate.now(clock).atStartOfDay();
-        var result = new ArrayList<Candidate>();
-        for (var user : branchShippers(branch(route).getId())) {
-            if (!user.isEnabled() || user.isLockedByAdmin() || (order.getShipper() != null && user.getId().equals(order.getShipper().getId()))) continue;
-            long load = load(user.getId()); if (load >= cap) continue;
-            var assigned = zones.findAllByShipper_Id(user.getId()).stream()
-                    .filter(z -> z.getArea().getBranch().getId().equals(branch(route).getId())).toList();
-            int rank = rank(area.getAreaCode(), adjacent, assigned);
-            String label = switch (rank) { case 0 -> "khu vực chính"; case 1 -> "khu vực phụ"; case 2 -> "khu vực lân cận"; default -> "cùng chi nhánh"; };
-            String zoneText = assigned.stream().sorted(Comparator.comparing(ShipperZone::isPrimary).reversed())
-                    .map(z -> z.getArea().getAreaName() + (z.isPrimary() ? " (chính)" : " (phụ)")).collect(java.util.stream.Collectors.joining(", "));
-            long daily = audit.countByActionAndDetailStartingWithAndCreatedAtGreaterThanEqualAndCreatedAtLessThan("ORDER_ASSIGN", "Shipper " + user.getId() + "; ", today, today.plusDays(1));
-            result.add(new Candidate(user.getId(), user.getUsername(), user.getFullName(), load, cap, daily, rank, zoneText,
-                    "Gợi ý hệ thống: " + area.getAreaName() + ", " + label + ", đang giữ " + load + "/" + cap + " đơn."));
+    public List<Candidate> candidates(AppUser actor, Order order) { return candidates(actor, List.of(order)).get(order.getId()); }
+    /**
+     * Gợi ý cho cả trang đơn: tuyến, shipper, số đơn đang giữ, khu vực và lượt phân công hôm nay đều đọc theo lô
+     * (vài truy vấn cho cả trang thay vì mỗi đơn × mỗi shipper ba truy vấn). Thứ tự xếp hạng như khi xét từng đơn.
+     */
+    public Map<Long, List<Candidate>> candidates(AppUser actor, List<Order> list) {
+        var result = new LinkedHashMap<Long, List<Candidate>>();
+        if (list.isEmpty()) return result;
+        var routeByOrder = new HashMap<Long, OrderRoute>();
+        routes.findWithAreasByOrderIds(list.stream().map(Order::getId).toList()).forEach(r -> routeByOrder.put(r.getOrder().getId(), r));
+        Long scope = scope(actor, null);
+        for (var order : list) {
+            var route = routeByOrder.get(order.getId());
+            if (route == null) throw new IllegalArgumentException("Đơn cũ chưa có khu vực và tuyến. Cần chuyển dữ liệu trước khi phân công.");
+            requireStage(route); requireManager(scope, route);
         }
-        result.sort(Comparator.comparingInt(Candidate::rank).thenComparingLong(Candidate::activeOrders)
-                .thenComparingLong(Candidate::assignedToday).thenComparing(Candidate::id));
+        var shippersByBranch = new HashMap<Long, List<AppUser>>();
+        staff.findWithUserByBranchIds(routeByOrder.values().stream().map(r -> branch(r).getId()).collect(java.util.stream.Collectors.toSet()))
+                .stream().filter(s -> s.getUser().getRole() == AppUser.Role.SHIPPER)
+                .forEach(s -> shippersByBranch.computeIfAbsent(s.getBranch().getId(), k -> new ArrayList<>()).add(s.getUser()));
+        shippersByBranch.values().forEach(users -> users.sort(Comparator.comparing(AppUser::getId)));
+        var shipperIds = shippersByBranch.values().stream().flatMap(List::stream).map(AppUser::getId).toList();
+        var loads = new HashMap<Long, Long>(); var zonesByShipper = new HashMap<Long, List<ShipperZone>>();
+        if (!shipperIds.isEmpty()) {
+            orders.countByShipperIds(shipperIds, ACTIVE).forEach(row -> loads.put((Long) row[0], (Long) row[1]));
+            zones.findWithAreaByShipperIds(shipperIds).stream().sorted(Comparator.comparing(ShipperZone::getId))
+                    .forEach(z -> zonesByShipper.computeIfAbsent(z.getShipper().getId(), k -> new ArrayList<>()).add(z));
+        }
+        var adjacentByArea = new HashMap<String, Set<String>>();
+        neighbors.neighborCodes(routeByOrder.values().stream().map(r -> area(r).getAreaCode()).collect(java.util.stream.Collectors.toSet()))
+                .forEach(row -> adjacentByArea.computeIfAbsent((String) row[0], k -> new HashSet<>()).add((String) row[1]));
+        int cap = policies.current().getMaxActiveOrders(); var today = LocalDate.now(clock).atStartOfDay();
+        var assignedToday = assignedToday(audit.detailsBetween("ORDER_ASSIGN", today, today.plusDays(1)));
+        for (var order : list) {
+            var route = routeByOrder.get(order.getId()); var area = area(route); Long branchId = branch(route).getId();
+            var adjacent = adjacentByArea.getOrDefault(area.getAreaCode(), Set.of());
+            var candidates = new ArrayList<Candidate>();
+            for (var user : shippersByBranch.getOrDefault(branchId, List.of())) {
+                if (!user.isEnabled() || user.isLockedByAdmin() || (order.getShipper() != null && user.getId().equals(order.getShipper().getId()))) continue;
+                long load = loads.getOrDefault(user.getId(), 0L); if (load >= cap) continue;
+                var assigned = zonesByShipper.getOrDefault(user.getId(), List.of()).stream()
+                        .filter(z -> z.getArea().getBranch().getId().equals(branchId)).toList();
+                int rank = rank(area.getAreaCode(), adjacent, assigned);
+                String label = switch (rank) { case 0 -> "khu vực chính"; case 1 -> "khu vực phụ"; case 2 -> "khu vực lân cận"; default -> "cùng chi nhánh"; };
+                String zoneText = assigned.stream().sorted(Comparator.comparing(ShipperZone::isPrimary).reversed())
+                        .map(z -> z.getArea().getAreaName() + (z.isPrimary() ? " (chính)" : " (phụ)")).collect(java.util.stream.Collectors.joining(", "));
+                candidates.add(new Candidate(user.getId(), user.getUsername(), user.getFullName(), load, cap,
+                        assignedToday.getOrDefault(String.valueOf(user.getId()), 0L), rank, zoneText,
+                        "Gợi ý hệ thống: " + area.getAreaName() + ", " + label + ", đang giữ " + load + "/" + cap + " đơn."));
+            }
+            candidates.sort(Comparator.comparingInt(Candidate::rank).thenComparingLong(Candidate::activeOrders)
+                    .thenComparingLong(Candidate::assignedToday).thenComparing(Candidate::id));
+            result.put(order.getId(), candidates);
+        }
         return result;
+    }
+    private static ProvinceArea area(OrderRoute route) {
+        return route.getStage() == OrderRoute.Stage.PICKUP ? route.getPickupArea() : route.getDeliveryArea();
+    }
+    /** Đếm lượt phân công theo shipper từ chi tiết nhật ký dạng "Shipper {id}; {lý do}". */
+    static Map<String, Long> assignedToday(List<String> details) {
+        var counts = new HashMap<String, Long>();
+        for (var detail : details) {
+            int end = detail == null || !detail.startsWith("Shipper ") ? -1 : detail.indexOf("; ");
+            if (end > 8) counts.merge(detail.substring(8, end), 1L, Long::sum);
+        }
+        return counts;
     }
     static int rank(String code, Set<String> adjacent, List<ShipperZone> zones) {
         return zones.stream().mapToInt(z -> z.getArea().getAreaCode().equals(code) ? (z.isPrimary() ? 0 : 1)
