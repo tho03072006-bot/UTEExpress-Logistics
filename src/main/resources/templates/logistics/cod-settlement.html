@@ -3,8 +3,8 @@
 <head><title th:text="|Phiếu nộp tiền #${settlement.id} - UTEExpress|"></title></head><body>
 <section class="shipper-workspace" th:with="staff=${viewer == 'staff'}, st=${settlement.status.name()}">
 <th:block th:if="${staff}"><nav th:replace="~{admin/navigation :: navigation}"></nav></th:block>
-<a class="shipper-back" th:href="${staff} ? @{/manager/doi-soat-cod} : @{/shipper/doi-soat}"><i class="bi bi-arrow-left"></i> <span th:text="${staff} ? 'Về danh sách đối soát' : 'Về trang nộp tiền COD'"></span></a>
-<header class="shipper-hero"><div><span class="shipper-eyebrow"><i class="bi bi-receipt"></i> PHIẾU NỘP TIỀN COD</span><h2 th:text="|Phiếu #${settlement.id}|"></h2>
+<a class="shipper-back" th:href="${staff} ? @{/manager/doi-soat-cod} : @{/shipper/doi-soat}"><i class="bi bi-arrow-left"></i> <span th:text="${staff} ? 'Về danh sách đối soát' : 'Về trang nộp cước COD'"></span></a>
+<header class="shipper-hero"><div><span class="shipper-eyebrow"><i class="bi bi-receipt"></i> PHIẾU NỘP CƯỚC COD</span><h2 th:text="|Phiếu #${settlement.id}|"></h2>
         <strong class="sx-cod-hero-amount"><th:block th:replace="~{fragments/components :: money(${settlement.declaredAmount})}"></th:block></strong>
         <div class="sx-hero-stats"><span class="sx-hero-chip"><i class="bi bi-person-badge"></i> <span th:text="${settlement.shipper.fullName != null ? settlement.shipper.fullName : settlement.shipper.username}"></span></span>
             <span class="sx-hero-chip"><i class="bi bi-receipt"></i> <span th:text="|${settlement.orderCount} đơn|"></span></span>

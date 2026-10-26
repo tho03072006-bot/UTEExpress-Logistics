@@ -8,7 +8,8 @@
 <div class="mb-3"><label class="form-label" for="surcharge">Phụ phí tuyến (đ)</label>
 <input class="form-control" th:field="*{surcharge}" type="number" min="0" max="100000000" step="1" required th:readonly="${tariff.originBranch.id == tariff.destBranch.id}">
 <p class="form-text">Phụ phí tuyến nội tỉnh luôn bằng 0; khoảng cách được tính riêng.</p></div>
-<div class="mb-3"><label class="form-label" for="leadTimeText">Thời gian dự kiến</label><input class="form-control" th:field="*{leadTimeText}" required maxlength="100"></div>
+<div class="mb-3"><label class="form-label" for="leadTimeText">Thời gian dự kiến</label><input class="form-control" th:field="*{leadTimeText}" required maxlength="100" aria-describedby="leadTimeHelp">
+<p class="form-text" id="leadTimeHelp">Ghi theo dạng "Trong 4 giờ", "Trong ngày", "2 ngày" hoặc "2–3 ngày". Mốc trên là hạn giao: quá mốc này đơn hiện ở cảnh báo Quá hạn giao.</p></div>
 <div class="mb-3"><label class="form-label" for="reason">Lý do thay đổi</label><input class="form-control" th:field="*{reason}" required minlength="5" maxlength="200"></div>
 <button class="btn btn-primary" type="submit">Lưu biểu giá</button> <a class="btn btn-outline-secondary" th:href="@{/admin/cuoc-tuyen}">Hủy</a>
 </form></div></section></body></html>

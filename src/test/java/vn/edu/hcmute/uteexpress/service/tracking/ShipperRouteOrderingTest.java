@@ -59,12 +59,30 @@ class ShipperRouteOrderingTest {
 
     @Test void urgencyFollowsServiceAppointmentAndOperationsPolicy() {
         var policy = new OperationsPolicy(); // mặc định: lấy 24 giờ, Tiêu chuẩn 120 giờ, Nhanh 48 giờ
-        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.SUPER_EXPRESS, 1), false, false, policy, NOW));
-        assertEquals(1, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 1), false, true, policy, NOW), "Đến hẹn giao lại");
-        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 100), false, false, policy, NOW), "Đã dùng hơn 75% của 120 giờ");
-        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.STANDARD, 50), false, false, policy, NOW));
-        assertEquals(2, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 20), true, false, policy, NOW), "Chờ lấy dùng hạn lấy hàng 24 giờ");
-        assertEquals(3, ShipperRouteService.urgency(order(Order.ServiceType.EXPRESS, 10), true, false, policy, NOW));
+        int standard = vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines.policyHours(policy, Order.ServiceType.STANDARD);
+        assertEquals(1, sinceCreated(order(Order.ServiceType.SUPER_EXPRESS, 1), false, policy.getSuperExpressHours()));
+        assertEquals(1, sinceCreated(order(Order.ServiceType.STANDARD, 1), true, standard), "Đến hẹn giao lại");
+        assertEquals(2, sinceCreated(order(Order.ServiceType.STANDARD, 100), false, standard), "Đã dùng hơn 75% của 120 giờ");
+        assertEquals(3, sinceCreated(order(Order.ServiceType.STANDARD, 50), false, standard));
+        assertEquals(2, sinceCreated(order(Order.ServiceType.EXPRESS, 20), false, policy.getPickupHours()), "Chờ lấy dùng hạn lấy hàng 24 giờ");
+        assertEquals(3, sinceCreated(order(Order.ServiceType.EXPRESS, 10), false, policy.getPickupHours()));
+    }
+
+    @Test void urgencyUsesRouteLeadTimeWhenKnown() {
+        // Tiêu chuẩn nội tỉnh hứa "1–2 ngày" = 48 giờ: 40 giờ đã quá 75%, dù theo 120 giờ của chính sách thì còn sớm.
+        assertEquals(2, sinceCreated(order(Order.ServiceType.STANDARD, 40), false, 48));
+        assertEquals(3, sinceCreated(order(Order.ServiceType.STANDARD, 40), false, 120));
+    }
+
+    @Test void deliveryUrgencyCountsFromPickupNotFromCreation() {
+        // Tạo 40 giờ trước nhưng mới lấy hàng 10 giờ trước: hạn 48 giờ mới dùng 21%, chưa gấp.
+        var order = order(Order.ServiceType.STANDARD, 40);
+        assertEquals(3, ShipperRouteService.urgency(order, false, NOW.minusHours(10), 48, NOW));
+        assertEquals(2, ShipperRouteService.urgency(order, false, NOW.minusHours(37), 48, NOW));
+    }
+
+    private static int sinceCreated(Order order, boolean due, int hours) {
+        return ShipperRouteService.urgency(order, due, order.getCreatedAt(), hours, NOW);
     }
 
     @Test void firstLegStartsFromHubAddressWhenKnown() {

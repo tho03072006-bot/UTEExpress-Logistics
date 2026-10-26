@@ -25,6 +25,11 @@
         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
             <i class="bi bi-printer"></i> In vận đơn
         </button>
+        <!-- Nhan dan len kien (kho A6): chi in khoi .ute-print-label, xem @media print trong style.css -->
+        <button type="button" class="btn btn-outline-secondary"
+                onclick="document.body.classList.add('ute-label-print');window.print();document.body.classList.remove('ute-label-print')">
+            <i class="bi bi-upc-scan"></i> In nhãn A6
+        </button>
         <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Về danh sách đơn
         </a>
@@ -38,6 +43,29 @@
     <div class="ute-print-note">
         Phiếu gửi hàng &middot; In lúc
         <span data-realtime-volatile th:text="${#temporals.format(#temporals.createNow(), 'HH:mm dd/MM/yyyy')}">--</span>
+    </div>
+</div>
+
+<!-- Nhan dan len kien kho A6: an tren man hinh, chi hien khi bam "In nhan A6". Den trang de may in nhiet doc ro. -->
+<div class="ute-print-label" aria-hidden="true">
+    <div class="ute-label-head"><strong>UTEExpress</strong><span th:text="${order.serviceType.displayName}">Tiêu chuẩn</span></div>
+    <div class="ute-label-code">
+        <img th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="" width="96" height="96">
+        <div><div class="ute-label-tracking" th:text="${order.trackingCode}">UTE00000000</div>
+            <div class="ute-label-route" th:if="${route != null}"
+                 th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh · ${route.originName}|">-</div></div>
+    </div>
+    <div class="ute-label-to"><span class="ute-label-tag">Người nhận</span>
+        <div class="ute-label-name" th:text="|${order.receiverName} · ${order.receiverPhone}|">-</div>
+        <div th:text="${order.receiverAddress}">-</div></div>
+    <div class="ute-label-from"><span class="ute-label-tag">Người gửi</span>
+        <div th:text="${order.sender != null and order.sender.phone != null} ? |${order.senderName} · ${order.sender.phone}| : ${order.senderName}">-</div>
+        <div th:text="${order.senderAddress}">-</div></div>
+    <div class="ute-label-foot">
+        <span th:text="|${order.weightKg} kg · Tạo ${#temporals.format(order.createdAt, 'dd/MM/yyyy')}|">-</span>
+        <strong th:if="${collection.state.name() == 'COD_DUE'}"
+                th:text="|Thu cước người nhận: ${#numbers.formatInteger(collection.amount, 1, 'POINT')} đ|">-</strong>
+        <strong th:unless="${collection.state.name() == 'COD_DUE'}" th:text="${collection.message}">-</strong>
     </div>
 </div>
 
@@ -142,19 +170,21 @@
             </div>
         </div>
 
+        <div class="alert alert-warning" role="alert" th:if="${collection.state.name() == 'REVIEW'}">Thông tin cước hoặc biên nhận chưa đầy đủ. Liên hệ Manager để tra soát trước khi thanh toán hoặc thu tiền.</div>
         <div class="ute-panel mb-3" th:if="${payment != null}">
             <h5 class="mb-3">Thanh toán</h5>
             <div class="row g-3">
                 <div class="col-sm-6">
                     <div class="ute-profile-label">Hình thức</div>
-                    <div class="ute-profile-value" th:text="${payment.method.displayName}">-</div>
+                    <div class="ute-profile-value" th:text="${payment.method == null ? 'Chưa xác định' : payment.method.displayName}">-</div>
                 </div>
                 <div class="col-sm-6">
                     <div class="ute-profile-label">Tình trạng</div>
                     <div>
-                        <span class="badge"
+                        <span class="badge" th:if="${collection.state.name() != 'REVIEW'}"
                               th:classappend="${'badge-payment-' + #strings.toLowerCase(payment.status.name())}"
                               th:text="${payment.status.displayName}">-</span>
+                        <span class="badge bg-warning text-dark" th:if="${collection.state.name() == 'REVIEW'}">Cần tra soát</span>
                     </div>
                 </div>
                 <div class="col-12" th:if="${payment.hasDiscount()}">
@@ -184,11 +214,7 @@
 
         <!-- Các nút hành động, chỉ hiện đúng nút dùng được với trạng thái hiện tại -->
         <div class="d-flex flex-wrap gap-2">
-            <a th:if="${payment != null and payment.status.name() == 'UNPAID'
-                       and payment.method.onlineWallet
-                       and order.status.name() != 'CANCELLED'
-                       and order.status.name() != 'DELIVERED'
-                       and order.status.name() != 'RETURNED'}"
+            <a th:if="${collection.state.name() == 'WALLET_PENDING' or collection.state.name() == 'LEGACY_WALLET'}"
                th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}" class="btn btn-primary">
                 <i class="bi bi-credit-card"></i> Thanh toán
             </a>

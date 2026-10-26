@@ -10,13 +10,20 @@ import vn.edu.hcmute.uteexpress.entity.UserProfileDetail;
 /** Form "Thông tin cá nhân" ở trang tài khoản của người gửi và Shipper. Mọi trường đều không bắt buộc. */
 public class ProfileDetailForm {
 
-    /** Gợi ý tỉnh/thành (34 đơn vị hành chính cấp tỉnh); ô nhập vẫn cho gõ tự do. */
+    /**
+     * Gợi ý tỉnh/thành theo bản đồ hành chính cũ (63 tỉnh/thành, trước 01/07/2025), thống nhất với khu vực giao nhận
+     * và chi nhánh của hệ thống; ô nhập vẫn cho gõ tự do.
+     */
     public static final List<String> PROVINCES = List.of(
-            "Hà Nội", "TP. Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ", "Huế",
-            "An Giang", "Bắc Ninh", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Điện Biên", "Đồng Nai", "Đồng Tháp",
-            "Gia Lai", "Hà Tĩnh", "Hưng Yên", "Khánh Hòa", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai",
-            "Nghệ An", "Ninh Bình", "Phú Thọ", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sơn La",
-            "Tây Ninh", "Thái Nguyên", "Thanh Hóa", "Tuyên Quang", "Vĩnh Long");
+            "Hà Nội", "TP. Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ",
+            "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định",
+            "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên",
+            "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
+            "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn",
+            "Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên",
+            "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
+            "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
+            "Vĩnh Long", "Vĩnh Phúc", "Yên Bái");
 
     @PastOrPresent(message = "Ngày sinh không được ở tương lai")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

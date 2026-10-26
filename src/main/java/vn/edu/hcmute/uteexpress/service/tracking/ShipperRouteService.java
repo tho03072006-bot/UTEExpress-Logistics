@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmute.uteexpress.dto.tracking.ShipperRoute;
 import vn.edu.hcmute.uteexpress.entity.Order;
 import vn.edu.hcmute.uteexpress.entity.OrderStatusHistory;
-import vn.edu.hcmute.uteexpress.entity.admin.OperationsPolicy;
 import vn.edu.hcmute.uteexpress.entity.routing.ProvinceArea;
 import vn.edu.hcmute.uteexpress.repository.*;
 import vn.edu.hcmute.uteexpress.service.routing.RouteDistance;
@@ -18,7 +17,7 @@ import vn.edu.hcmute.uteexpress.service.routing.RouteDistance;
 /**
  * Gom công việc hôm nay thành lộ trình nhiều điểm (B6).
  * Đơn chờ lấy dùng địa chỉ người gửi, đơn đang xử lý dùng địa chỉ người nhận; cùng địa chỉ thì gộp một điểm.
- * Thứ tự: chia nhóm độ gấp (1. Hỏa tốc hoặc đến hẹn giao/lấy lại; 2. sắp quá hạn theo Chính sách vận hành;
+ * Thứ tự: chia nhóm độ gấp (1. Hỏa tốc hoặc đến hẹn giao/lấy lại; 2. sắp quá hạn: hạn lấy theo Chính sách vận hành, hạn giao theo tuyến;
  * 3. còn lại), trong từng nhóm đi điểm gần nhất trước (Haversine giữa tâm khu vực), xuất phát từ kho chi nhánh
  * của shipper; nhóm sau đi tiếp từ điểm cuối của nhóm trước. Không dùng địa chỉ nhà shipper, không gọi API bản đồ trả phí.
  * Đơn cũ chưa có tuyến chi nhánh giữ thứ tự cũ và xếp cuối.
@@ -40,14 +39,16 @@ public class ShipperRouteService {
     private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
     private final vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository staffBranches;
     private final vn.edu.hcmute.uteexpress.repository.routing.ProvinceAreaRepository areas;
+    private final vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines;
 
     public ShipperRouteService(LogisticsAccess access, OrderRepository orders, OrderStatusHistoryRepository history, Clock clock,
             vn.edu.hcmute.uteexpress.service.admin.OperationsPolicyService policies,
             vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes,
             vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository staffBranches,
-            vn.edu.hcmute.uteexpress.repository.routing.ProvinceAreaRepository areas) {
+            vn.edu.hcmute.uteexpress.repository.routing.ProvinceAreaRepository areas,
+            vn.edu.hcmute.uteexpress.service.routing.DeliveryDeadlines deadlines) {
         this.access = access; this.orders = orders; this.history = history; this.clock = clock;
-        this.policies = policies; this.routes = routes; this.staffBranches = staffBranches; this.areas = areas;
+        this.policies = policies; this.routes = routes; this.staffBranches = staffBranches; this.areas = areas; this.deadlines = deadlines;
     }
 
     /** Một điểm dừng chờ xếp: thứ tự cũ, nhóm độ gấp (1 gấp nhất), tâm khu vực (null = đơn cũ chưa có tuyến). */
@@ -74,15 +75,15 @@ public class ShipperRouteService {
         return result;
     }
 
-    /** Nhóm độ gấp của một đơn theo B6. */
-    static int urgency(Order order, boolean pickup, boolean due, OperationsPolicy policy, LocalDateTime now) {
+    /**
+     * Nhóm độ gấp của một đơn theo B6. since và hours là mốc bắt đầu và thời hạn của việc đang làm: lúc tạo đơn và hạn lấy
+     * trong Chính sách vận hành với đơn chờ lấy; lúc lấy hàng và hạn giao theo tuyến (DeliveryDeadlines) với đơn đang giao.
+     */
+    static int urgency(Order order, boolean due, LocalDateTime since, int hours, LocalDateTime now) {
         if (due || order.getServiceType() == Order.ServiceType.SUPER_EXPRESS) return 1;
-        if (order.getCreatedAt() == null) return 3;
-        int hours = pickup ? policy.getPickupHours() : switch (order.getServiceType() == null ? Order.ServiceType.STANDARD : order.getServiceType()) {
-            case STANDARD -> policy.getStandardHours(); case EXPRESS -> policy.getExpressHours(); case SUPER_EXPRESS -> policy.getSuperExpressHours();
-        };
+        if (since == null) return 3;
         // "Sắp quá hạn": đã dùng từ 75% thời hạn trở lên (kể cả đã quá hạn).
-        var warnFrom = order.getCreatedAt().plusMinutes(Math.round(hours * 60 * 0.75));
+        var warnFrom = since.plusMinutes(Math.round(hours * 60 * 0.75));
         return now.isBefore(warnFrom) ? 3 : 2;
     }
 
@@ -104,6 +105,8 @@ public class ShipperRouteService {
         Map<Long, vn.edu.hcmute.uteexpress.entity.routing.OrderRoute> routeByOrder = new HashMap<>();
         if (!ids.isEmpty()) for (var route : routes.findWithAreasByOrderIds(ids)) routeByOrder.put(route.getOrder().getId(), route);
         var policy = policies.current();
+        var rules = deadlines.rules(policy);
+        var pickedUp = deadlines.pickupTimes(ids);
         Map<String, List<ShipperRoute.Task>> grouped = new LinkedHashMap<>();
         Map<String, String> labels = new HashMap<>();
         Map<String, Integer> groupOf = new HashMap<>();
@@ -120,8 +123,10 @@ public class ShipperRouteService {
                     pickup, pickup ? order.getSenderName() : order.getReceiverName(),
                     pickup ? order.getSender().getPhone() : order.getReceiverPhone(), isDue));
             // Điểm dừng lấy nhóm gấp nhất trong các đơn của nó; tọa độ theo khu vực lấy (chờ lấy) hoặc khu vực giao.
-            groupOf.merge(key, urgency(order, pickup, isDue, policy, now), Math::min);
             var route = routeByOrder.get(order.getId());
+            int hours = pickup ? policy.getPickupHours() : rules.hours(order, route);
+            var since = pickup ? order.getCreatedAt() : pickedUp.getOrDefault(order.getId(), order.getCreatedAt());
+            groupOf.merge(key, urgency(order, isDue, since, hours, now), Math::min);
             if (route != null) areaOf.putIfAbsent(key, pickup ? route.getPickupArea() : route.getDeliveryArea());
         }
         var hub = staffBranches.findByUser_Id(shipper.getId()).map(staff -> staff.getBranch()).orElse(null);

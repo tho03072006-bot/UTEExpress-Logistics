@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
-<head><title>Nộp tiền COD - UTEExpress</title></head><body>
+<head><title>Nộp cước COD - UTEExpress</title></head><body>
 <section class="shipper-workspace">
-<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Tiền COD đang giữ</h2>
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Cước COD đang giữ</h2>
         <strong class="sx-cod-hero-amount"><th:block th:replace="~{fragments/components :: money(${held.amount})}"></th:block></strong>
         <div class="sx-hero-stats"><span class="sx-hero-chip"><i class="bi bi-receipt"></i> <span th:text="|${held.count} đơn chưa nộp|"></span></span>
             <span class="sx-hero-chip" th:if="${held.hasPending()}"><i class="bi bi-hourglass-split"></i> <span th:text="|Chờ xác nhận ${#numbers.formatInteger(held.pendingAmount, 1, 'POINT')} đ|"></span></span></div>

@@ -48,6 +48,14 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
             order by h.id
             """)
     java.util.List<OrderStatusHistory> failureEntries(@org.springframework.data.repository.query.Param("ids") java.util.List<Long> ids);
+    /** Lúc đơn rời "Chờ lấy hàng" lần đầu (Shipper lấy hàng hoặc kho nhận tại quầy), mỗi dòng là [id đơn, thời điểm]. */
+    @org.springframework.data.jpa.repository.Query("""
+            select h.order.id, min(h.occurredAt) from OrderStatusHistory h where h.order.id in :ids
+              and h.previousStatus = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
+              and h.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP
+            group by h.order.id
+            """)
+    java.util.List<Object[]> firstPickupTimes(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
 
     @org.springframework.data.jpa.repository.Query("""
             select count(h.id) from OrderStatusHistory h where h.order = :order and h.failureReason is not null

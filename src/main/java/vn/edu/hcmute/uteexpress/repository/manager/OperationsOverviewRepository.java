@@ -20,7 +20,12 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
               and c2.status = vn.edu.hcmute.uteexpress.entity.admin.OperationsCase.Status.COMPLETED)))
           and """ + vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.USER_SCOPE)
     Page<vn.edu.hcmute.uteexpress.entity.CodSettlement> lateCash(@Param("deadline") LocalDateTime deadline, @Param("branchId") Long branchId, Pageable pageable);
-    /** Điều kiện của từng nhóm cảnh báo cho đơn bí danh {@code o}; dùng chung cho trang danh sách và câu chỉ đếm. */
+    /**
+     * Điều kiện của từng nhóm cảnh báo cho đơn bí danh {@code o}; dùng chung cho trang danh sách và câu chỉ đếm.
+     * "Chậm lấy" không tính đơn khách tự mang ra chi nhánh: không có Shipper nào phải đi lấy, đơn chỉ chờ khách tới quầy.
+     * Các đơn đó, khi quá cùng hạn lấy hàng mà khách chưa mang tới, nằm ở nhóm riêng "Chờ khách mang tới quá hạn".
+     * "Quá hạn giao" không nằm ở đây: hạn phụ thuộc từng tuyến nên service tính riêng (deliveryCandidates + DeliveryDeadlines).
+     */
     String ALERT_FILTER = """
          (
         (:kind = 'PAYMENT_ISSUE' and o.status not in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED,
@@ -43,12 +48,12 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
             or (r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.DEST_HUB and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP and (:branchId is null or r.destBranch.id = :branchId)))))
         or (:kind = 'UNASSIGNED' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.shipper is null
             and not exists (select r2.id from OrderRoute r2 where r2.order = o))
-        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup)
-        or (:kind = 'LATE_DELIVERY' and o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
-            vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
-            and ((o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.STANDARD and o.createdAt <= :standard)
-              or (o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.EXPRESS and o.createdAt <= :express)
-              or (o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.SUPER_EXPRESS and o.createdAt <= :superExpress)))
+        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
+            and not exists (select counter.id from OrderRoute counter where counter.order = o
+                and counter.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
+        or (:kind = 'DROP_OFF_WAITING' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
+            and exists (select waiting.id from OrderRoute waiting where waiting.order = o
+                and waiting.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
         or (:kind = 'RETRY_DUE' and (
         """ + vn.edu.hcmute.uteexpress.repository.OrderRepository.READY_RETRY + """
         ))
@@ -58,15 +63,21 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE;
     @Query("select o from Order o where " + ALERT_FILTER)
     Page<Order> alerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
-            @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,
-            @Param("superExpress") LocalDateTime superExpress, @Param("now") LocalDateTime now,
-            @Param("maxAttempts") int attempts, Pageable pageable);
+            @Param("now") LocalDateTime now, @Param("maxAttempts") int attempts, Pageable pageable);
     /** Chỉ đếm (trang tổng quan không cần danh sách đơn). */
     @Query("select count(o) from Order o where " + ALERT_FILTER)
     long countAlerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
-            @Param("standard") LocalDateTime standard, @Param("express") LocalDateTime express,
-            @Param("superExpress") LocalDateTime superExpress, @Param("now") LocalDateTime now,
-            @Param("maxAttempts") int attempts);
+            @Param("now") LocalDateTime now, @Param("maxAttempts") int attempts);
+    /**
+     * Ứng viên "Quá hạn giao": đơn đang trên đường giao, tạo trước mốc hạn ngắn nhất. Hạn thật của từng đơn phụ thuộc
+     * thời gian dự kiến của tuyến (văn bản do Admin cấu hình) nên service xét tiếp từng đơn; xem DeliveryDeadlines.
+     */
+    @Query("""
+        select o from Order o where o.status in (vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP,
+            vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED)
+          and o.createdAt <= :cutoff and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE
+          + " order by o.createdAt, o.id")
+    java.util.List<Order> deliveryCandidates(@Param("cutoff") LocalDateTime cutoff, @Param("branchId") Long branchId);
     @Query("""
         select new vn.edu.hcmute.uteexpress.dto.manager.ShipperPerformanceResponse(u.id, u.username, u.fullName,
           sum(case when o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP then 1 else 0 end),

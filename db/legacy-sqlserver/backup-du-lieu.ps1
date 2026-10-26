@@ -13,10 +13,10 @@
 
     CACH DUNG
       # Sao luu database tren may minh (dang nhap bang tai khoan Windows)
-      .\db\backup-du-lieu.ps1
+      .\db\legacy-sqlserver\backup-du-lieu.ps1
 
       # Sao luu database chung tren MonsterASP
-      .\db\backup-du-lieu.ps1 -Server "HOSTNAME_REMOTE" -Database "TEN_DB" `
+      .\db\legacy-sqlserver\backup-du-lieu.ps1 -Server "HOSTNAME_REMOTE" -Database "TEN_DB" `
                               -User "LOGIN" -Password "MAT_KHAU"
 
       # Do nguoc file backup vao database tren may minh
@@ -39,7 +39,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($OutDir)) {
-    $OutDir = Join-Path $PSScriptRoot "backup"
+    # Script nam trong db/legacy-sqlserver; ban sao van ghi vao db/backup/ (da co trong .gitignore vi chua du lieu that).
+    $OutDir = Join-Path (Split-Path $PSScriptRoot -Parent) "backup"
 }
 if (-not (Test-Path $OutDir)) {
     New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
@@ -172,7 +173,7 @@ $outFile = Join-Path $OutDir "uteexpress_data_$timestamp.sql"
 
 $lines = [System.Collections.ArrayList] @()
 [void] $lines.Add("/*")
-[void] $lines.Add(" * UTEExpress - ban sao DU LIEU, sinh tu dong boi db/backup-du-lieu.ps1")
+[void] $lines.Add(" * UTEExpress - ban sao DU LIEU, sinh tu dong boi db/legacy-sqlserver/backup-du-lieu.ps1")
 [void] $lines.Add(" * Nguon : $Server / $Database")
 [void] $lines.Add(" * Luc   : $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')")
 [void] $lines.Add(" *")

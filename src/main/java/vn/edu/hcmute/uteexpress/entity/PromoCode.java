@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  *
  * MÀN HÌNH TẠO/SỬA MÃ LÀ PHẦN CỦA TV3 (Manager - quản lý khuyến mãi). Bảng này đã có đủ
  * cột cho màn hình đó, TV3 chỉ cần viết CRUD lên trên, không phải sửa lại entity.
- * Trong lúc chờ, dữ liệu mẫu nạp bằng db/03_seed_ma_giam_gia.sql.
+ * Dữ liệu mẫu (UTE10, FREESHIP15, ...) nạp bằng db/mysql/01_seed_du_lieu_mau.sql.
  */
 @Entity
 @Table(name = "promo_code")

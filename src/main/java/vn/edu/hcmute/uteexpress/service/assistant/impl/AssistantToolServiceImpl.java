@@ -271,7 +271,9 @@ public class AssistantToolServiceImpl implements AssistantToolService {
         current.put("max_delivery_attempts",policy.getMaxDeliveryAttempts()).put("pickup_target_hours",policy.getPickupHours());
         current.put("standard_target_hours",policy.getStandardHours()).put("express_target_hours",policy.getExpressHours()).put("super_express_target_hours",policy.getSuperExpressHours());
         current.put("drop_off_discount_vnd",policy.getDropOffDiscount()).put("max_active_orders_per_shipper",policy.getMaxActiveOrders());
-        current.put("note","Mục tiêu vận hành, không phải lịch hẹn/ETA cam kết của đơn. Điều kiện giao lại phải tra từng đơn bằng lookup_order.");
+        current.put("note","Mục tiêu vận hành, không phải lịch hẹn/ETA cam kết của đơn. Ba hạn giao theo dịch vụ chỉ áp cho đơn cũ chưa có tuyến; "
+                + "đơn có tuyến chi nhánh lấy hạn theo thời gian dự kiến của tuyến (lead_time của lookup_order/estimate_fee). "
+                + "Điều kiện giao lại phải tra từng đơn bằng lookup_order.");
         return new ToolOutput(data,List.of(),null);
     }
     private ObjectNode base() { return mapper.createObjectNode().put("ok",true).put("checked_at",clock.instant().toString()); }

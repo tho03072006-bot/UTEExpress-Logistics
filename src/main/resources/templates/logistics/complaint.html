@@ -101,10 +101,12 @@
                 <button class="btn btn-outline-primary w-100"><i class="bi bi-person-check"></i> Nhận xử lý</button></form>
             <!-- B8: Admin là người duyệt chi tiền nên không lập phiếu tiền; server cũng chặn. -->
             <a class="btn btn-outline-secondary w-100" th:if="${canRequestCompensation}"
-               th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}"><i class="bi bi-cash-stack"></i> Đề xuất bồi hoàn cước</a>
-            <p class="small text-muted mb-0 mt-2" th:if="${complaint.status.name() != 'REJECTED' and orderPaid}" sec:authorize="hasRole('ADMIN')">Phiếu tiền do Manager lập, Admin duyệt.</p>
-            <p class="small text-muted mb-0 mt-2" th:if="${!orderPaid}">Cước chưa thực thu, bằng 0 hoặc số tiền/chứng từ chưa hợp lệ. Cần tra soát thanh toán trước khi bồi hoàn.</p>
-            <p class="small text-muted mb-0 mt-2" th:if="${orderPaid and complaint.status.name() != 'REJECTED' and !canRequestCompensation}" sec:authorize="!hasRole('ADMIN')">Đã có đề xuất bồi hoàn đang chờ, đã duyệt hoặc hoàn tất. Kiểm tra trong Hồ sơ vận hành.</p>
+               th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}"><i class="bi bi-cash-stack"></i> Đề xuất bồi thường</a>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED'}">Bồi thường tối đa
+                <strong><span th:replace="~{fragments/components :: money(${compensationLimit})}"></span></strong>: 4 lần cước nếu đã thu cước, 3 lần nếu đơn trả cước khi giao chưa thu (Nghị định 47/2011/NĐ-CP, hàng không khai giá).</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${complaint.status.name() != 'REJECTED' and compensable}" sec:authorize="hasRole('ADMIN')">Phiếu tiền do Manager lập, Admin duyệt.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!compensable}">Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch). Cần tra soát thanh toán trước khi bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and !canRequestCompensation}" sec:authorize="!hasRole('ADMIN')">Đã có đề xuất bồi thường đang chờ, đã duyệt hoặc hoàn tất. Kiểm tra trong Hồ sơ vận hành.</p>
         </div>
     </aside>
 </div>

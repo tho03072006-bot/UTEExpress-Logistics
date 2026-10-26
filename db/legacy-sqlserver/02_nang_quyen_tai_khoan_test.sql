@@ -23,7 +23,7 @@
  *   4. Dang xuat roi dang nhap lai - role chi duoc doc luc dang nhap.
  *
  * CACH CHAY:
- *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -C -i db/02_nang_quyen_tai_khoan_test.sql
+ *   sqlcmd -S "localhost,1433" -U sa -P <mat_khau> -d uteexpress -C -i db/legacy-sqlserver/02_nang_quyen_tai_khoan_test.sql
  *   Hoac mo file nay bang SSMS, chon database uteexpress roi bam Execute.
  *
  * LUU Y BAO MAT: script nay CO Y khong chua mat khau va khong chua chuoi bam BCrypt nao.

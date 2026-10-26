@@ -34,6 +34,9 @@ public class RouteTariffAdminService {
         boolean local = Objects.equals(tariff.getOriginBranch().getId(), tariff.getDestBranch().getId());
         if (local && form.getSurcharge().signum() != 0) throw new IllegalArgumentException("Nội tỉnh chỉ tính phụ phí khoảng cách; phụ phí tuyến phải bằng 0.");
         if (!local && tariff.getServiceType() == ServiceType.SUPER_EXPRESS) throw new IllegalArgumentException("Không hỗ trợ Hỏa tốc liên tỉnh.");
+        // Hạn giao và cảnh báo "Quá hạn giao" đọc số giờ từ đây (DeliveryDeadlines), nên chỉ nhận dạng đọc được.
+        if (LeadTimes.hours(form.getLeadTimeText()).isEmpty())
+            throw new IllegalArgumentException("Thời gian dự kiến phải có dạng " + LeadTimes.FORMAT_HINT + ", tối đa 30 ngày.");
         if (tariff.getSurcharge().compareTo(form.getSurcharge()) == 0 && tariff.getLeadTimeText().equals(form.getLeadTimeText()))
             throw new IllegalArgumentException("Chưa có thay đổi biểu giá.");
         String detail = tariff.getOriginBranch().getCode() + " -> " + tariff.getDestBranch().getCode() + "; "

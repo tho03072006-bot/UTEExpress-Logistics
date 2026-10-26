@@ -13,12 +13,18 @@ import vn.edu.hcmute.uteexpress.service.routing.HubService;
 @RequestMapping("/manager/kho")
 public class HubController {
     private final HubService hub;
-    public HubController(HubService hub) { this.hub = hub; }
+    private final vn.edu.hcmute.uteexpress.service.manager.OperationsOverviewService overview;
+    public HubController(HubService hub, vn.edu.hcmute.uteexpress.service.manager.OperationsOverviewService overview) {
+        this.hub = hub; this.overview = overview;
+    }
 
     @GetMapping
     @org.springframework.transaction.annotation.Transactional(readOnly = true) // một giao dịch cho cả trang
     public String overview(@RequestParam(required = false) Long branchId, Authentication auth, Model model) {
-        model.addAttribute("hub", hub.overview(auth.getName(), branchId));
+        var view = hub.overview(auth.getName(), branchId);
+        model.addAttribute("hub", view);
+        model.addAttribute("waiting", overview.dropOffWaiting(view.dropOffs()));
+        model.addAttribute("compensatedIds", overview.compensatedOrderIds(view.missing().stream().map(i -> i.getOrder().getId()).toList()));
         return "manager/hub";
     }
 

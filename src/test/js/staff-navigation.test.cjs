@@ -10,7 +10,7 @@ function createNav() {
     const input = {value:'', listeners:{}, addEventListener(type, listener) {this.listeners[type] = listener;}};
     const empty = {hidden:true};
     const links = [['Tổng quan vận hành','/manager/trang-chu', null], ['Tra soát đơn hàng','/manager/don-hang', groups[0]],
-        ['Chi tiết đơn','/manager/don-hang/chi-tiet', groups[0]], ['Đối soát cước thu hộ','/manager/doi-soat-cod',groups[1]]]
+        ['Chi tiết đơn','/manager/don-hang/chi-tiet', groups[0]], ['Đối soát cước COD','/manager/doi-soat-cod',groups[1]]]
         .map(([textContent, pathname, group]) => {
             const classes = new Set();
             const link = {textContent, pathname, hidden:false, classList:{add:name=>classes.add(name)}, classes, attributes:{},

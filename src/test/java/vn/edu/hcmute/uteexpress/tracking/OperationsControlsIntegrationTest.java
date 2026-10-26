@@ -260,7 +260,7 @@ class OperationsControlsIntegrationTest {
         var payment = paid(); payment.setAmount(new BigDecimal("20000")); payments.flush();
         var complaint = complaints.saveAndFlush(new OrderComplaint(order, "Cước cần tra soát", "Số tiền không khớp cước đã chốt", null, NOW));
         mvc.perform(get("/manager/khieu-nai/" + complaint.getId()).with(authentication(auth(managerAccount))))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi thường"))));
         assertThrows(IllegalArgumentException.class, () -> cases.prepare(manager.getUsername(), OperationsCase.Kind.COMPENSATION, complaint.getId()));
     }
     @Test void missingWalletReceiptCannotCreateCompensationEvenIfPaidFlagIsSet() {
@@ -334,11 +334,11 @@ class OperationsControlsIntegrationTest {
         Long id = cases.request(manager.getUsername(), request(OperationsCase.Kind.COMPENSATION, complaint.getId(), complaint.getRevision(), BigDecimal.TEN, null), image());
         String path = "/manager/khieu-nai/" + complaint.getId();
         mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi thường"))));
         var record = cases.view(admin.getUsername(), id);
         cases.review(admin.getUsername(), id, new OperationsReviewRequest(record.getRevision(), false, "Từ chối đề xuất để kiểm tra lại"));
         mvc.perform(get(path).with(authentication(auth(managerAccount)))).andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi thường")));
     }
     @Test void approvedCompensationPreventsContradictoryComplaintRejection() {
         paid(); var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Đề nghị hoàn cước","Kiểm thử chống trạng thái mâu thuẫn",null,NOW));
@@ -438,24 +438,46 @@ class OperationsControlsIntegrationTest {
         assertThrows(IllegalArgumentException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.CASH_SUPPLEMENT,
                 settlement.getId(),settlement.getRevision(),BigDecimal.ONE,null),null));
     }
-    @Test void refundIsLimitedToPaidShippingFeeNotMerchandiseValue() {
-        paid(); var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Yêu cầu bồi hoàn cước","Nội dung kiểm thử khiếu nại",null,NOW));
-        assertThrows(IllegalArgumentException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,
-                complaint.getId(),complaint.getRevision(),new BigDecimal("18001"),null),image()));
+    @Test void compensationForPaidFeeIsCappedAtFourTimesTheFee() {
+        // Nghị định 47/2011/NĐ-CP, Điều 25: hàng không khai giá bồi thường tối đa 4 lần cước, đã gồm hoàn cước 18.000 đ.
+        paid(); var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Mất hàng khi vận chuyển","Nội dung kiểm thử khiếu nại",null,NOW));
+        var error=assertThrows(IllegalArgumentException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,
+                complaint.getId(),complaint.getRevision(),new BigDecimal("72001"),null),image()));
+        assertTrue(error.getMessage().contains("Nghị định 47/2011") && error.getMessage().contains("72.000 đ"), error.getMessage());
+        assertEquals(0, caseRepository.count());
+        Long id=cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,complaint.getId(),complaint.getRevision(),new BigDecimal("72000"),null),image());
+        assertEquals(new BigDecimal("72000"), cases.view(admin.getUsername(),id).getAmount());
     }
-    @Test void unpaidOrderHasNoCompensationOption() throws Exception {
-        var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Yêu cầu bồi hoàn cước","Đơn chưa thanh toán",null,NOW));
-        var error=assertThrows(IllegalArgumentException.class,()->cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()));
-        assertTrue(error.getMessage().contains("chưa thanh toán"));
+    @Test void unpaidCodOrderLostBeforeDeliveryIsCompensatedUpToThreeTimesTheFee() throws Exception {
+        // Đơn trả cước khi giao chưa thu cước: không thu cước nữa nên bồi thường tối đa 3 lần, người gửi được bù như đơn đã trả.
+        var unpaid=new OrderPayment(); unpaid.setOrder(order); unpaid.setAmount(new BigDecimal("18000"));
+        unpaid.setMethod(OrderPayment.PaymentMethod.COD); unpaid.setStatus(OrderPayment.PaymentStatus.UNPAID); payments.saveAndFlush(unpaid);
+        var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Mất hàng trước khi giao","Kiện thất lạc trên chuyến trung chuyển",null,NOW));
+        assertEquals(OperationsCase.Kind.COMPENSATION, cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()).kind());
         mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))));
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi thường")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("54.000 đ")));
+        assertThrows(IllegalArgumentException.class,()->cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,
+                complaint.getId(),complaint.getRevision(),new BigDecimal("54001"),null),image()));
+        Long id=cases.request(manager.getUsername(),request(OperationsCase.Kind.COMPENSATION,complaint.getId(),complaint.getRevision(),new BigDecimal("54000"),null),image());
+        var record=cases.view(admin.getUsername(),id);
+        cases.review(admin.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Đủ hồ sơ thất lạc"));
+        assertEquals(OperationsCase.Status.APPROVED, cases.view(admin.getUsername(),id).getStatus());
+        assertEquals(OrderPayment.PaymentStatus.UNPAID, payments.findByOrder(order).orElseThrow().getStatus(), "Duyệt bồi thường không tự ghi là đã thu cước");
+    }
+    @Test void orderWithoutPaymentHasNoCompensationOption() throws Exception {
+        var complaint=complaints.saveAndFlush(new OrderComplaint(order,"Yêu cầu bồi thường","Đơn chưa có thanh toán",null,NOW));
+        var error=assertThrows(IllegalArgumentException.class,()->cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()));
+        assertTrue(error.getMessage().contains("chưa có thanh toán hợp lệ"));
+        mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi thường"))));
         paid();
         assertEquals(OperationsCase.Kind.COMPENSATION, cases.prepare(manager.getUsername(),OperationsCase.Kind.COMPENSATION,complaint.getId()).kind());
         // B8: Manager có nút đề xuất; Admin (người duyệt chi tiền) chỉ thấy ghi chú, không có nút.
         mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(managerAccount))))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước")));
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đề xuất bồi thường")));
         mvc.perform(get("/manager/khieu-nai/"+complaint.getId()).with(authentication(auth(adminAccount))))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi hoàn cước"))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đề xuất bồi thường"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Phiếu tiền do Manager lập, Admin duyệt.")));
     }
     @Test void invalidUploadAndIncompleteReturnDoNotFinishOrder() {

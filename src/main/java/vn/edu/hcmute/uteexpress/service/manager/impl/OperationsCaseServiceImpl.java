@@ -156,12 +156,11 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                     && record.getAmount().compareTo(record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT
                         ? outstanding(record.getSettlement()) : refundable(record.getSettlement())) <= 0;
             case COMPENSATION -> record.getComplaint().getStatus() != OrderComplaint.Status.REJECTED
-                    && hasRefundableAmount(record.getOrder(), record.getAmount());
+                    && withinCompensationLimit(record.getOrder(), record.getAmount());
         };
     }
-    private boolean hasRefundableAmount(Order order, BigDecimal amount) {
-        return isPositiveMoney(amount) && payments.findByOrder(order).filter(vn.edu.hcmute.uteexpress.util.PaymentReadiness::isRefundable)
-                .filter(p -> amount.compareTo(p.getAmount()) <= 0).isPresent();
+    private boolean withinCompensationLimit(Order order, BigDecimal amount) {
+        return isPositiveMoney(amount) && amount.compareTo(compensationLimit(order)) <= 0;
     }
     public boolean canComplete(String actor, Long id) {
         var record = view(actor, id);
@@ -171,14 +170,14 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 && !actor.equals(record.getCreatedBy())
                 && (record.getKind() != OperationsCase.Kind.COMPENSATION
                     || (record.getComplaint().getStatus() != OrderComplaint.Status.REJECTED
-                        && hasRefundableAmount(record.getOrder(), record.getAmount())));
+                        && withinCompensationLimit(record.getOrder(), record.getAmount())));
     }
     public boolean canRequestCompensation(String actor, Long complaintId) {
         access.requireOperator(actor); access.validateId(complaintId);
         var complaint = complaints.findById(complaintId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
         requireBranch(actor, complaint.getOrder(), null);
         return !scope.isAdmin(actor) && complaint.getStatus() != OrderComplaint.Status.REJECTED
-                && isPaid(complaint.getOrder()) && !hasCompensationCase(complaint);
+                && compensationLimit(complaint.getOrder()).signum() > 0 && !hasCompensationCase(complaint);
     }
     private boolean hasCompensationCase(OrderComplaint complaint) {
         return cases.existsByComplaintAndKindAndStatusIn(complaint, OperationsCase.Kind.COMPENSATION,
@@ -206,9 +205,9 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 var complaint = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
                 requireBranch(actor, complaint.getOrder(), null);
                 if (complaint.getStatus() == OrderComplaint.Status.REJECTED || hasCompensationCase(complaint))
-                    throw new IllegalArgumentException("Khiếu nại đã từ chối hoặc đã có đề xuất bồi hoàn đang chờ/đã duyệt/đã hoàn tất.");
-                if (!isPaid(complaint.getOrder()))
-                    throw new IllegalArgumentException("Cước chưa thanh toán hoặc số tiền/chứng từ chưa hợp lệ; cần tra soát trước khi lập phiếu bồi hoàn.");
+                    throw new IllegalArgumentException("Khiếu nại đã từ chối hoặc đã có đề xuất bồi thường đang chờ/đã duyệt/đã hoàn tất.");
+                if (compensationLimit(complaint.getOrder()).signum() <= 0)
+                    throw new IllegalArgumentException("Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch); cần tra soát trước khi lập phiếu bồi thường.");
                 revision = complaint.getRevision();
             }
             default -> throw new IllegalArgumentException("Loại hồ sơ không hợp lệ.");
@@ -491,11 +490,15 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         var payment = payments.findByOrder(order).orElseThrow(() -> new IllegalArgumentException("Đơn chưa có thanh toán."));
         // Các bước ghi đã khóa đơn: đọc lại/khóa cả thanh toán, không duyệt theo snapshot nạp trước khi chờ khóa.
         entityManager.refresh(payment, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-        if (!vn.edu.hcmute.uteexpress.util.PaymentReadiness.isRefundable(payment) || amount.compareTo(payment.getAmount()) > 0)
-            throw new IllegalArgumentException("Chỉ bồi hoàn cước thực thu có số tiền/chứng từ hợp lệ, không vượt cước đã trả; không bồi hoàn giá trị hàng hóa.");
+        var limit = vn.edu.hcmute.uteexpress.util.PaymentReadiness.compensationLimit(payment);
+        if (limit.signum() <= 0) throw new IllegalArgumentException("Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch); cần tra soát trước khi bồi thường.");
+        if (amount.compareTo(limit) > 0) throw new IllegalArgumentException(vn.edu.hcmute.uteexpress.util.PaymentReadiness.COMPENSATION_RULE
+                + " Mức tối đa của đơn này là " + String.format(java.util.Locale.ROOT, "%,d", limit.longValueExact()).replace(',', '.') + " đ.");
     }
-    public boolean isPaid(Order order) {
-        return order != null && payments.findByOrder(order).map(vn.edu.hcmute.uteexpress.util.PaymentReadiness::isRefundable).orElse(false);
+    /** Mức bồi thường tối đa của đơn (0 nếu chưa có thanh toán hợp lệ); xem PaymentReadiness.compensationLimit. */
+    public BigDecimal compensationLimit(Order order) {
+        return order == null ? BigDecimal.ZERO : payments.findByOrder(order)
+                .map(vn.edu.hcmute.uteexpress.util.PaymentReadiness::compensationLimit).orElse(BigDecimal.ZERO);
     }
     private boolean isFinancial(OperationsCase record) {
         return record.getKind() == OperationsCase.Kind.CASH_SUPPLEMENT || record.getKind() == OperationsCase.Kind.CASH_REFUND

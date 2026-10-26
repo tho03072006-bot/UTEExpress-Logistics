@@ -695,6 +695,12 @@ class StaffSecurityIntegrationTest {
         verify(branchAdmin).update(eq("admin01"), eq(1L), any());
     }
 
+    @Test void deniedPostLandsOnTheAccessDeniedPageInsteadOfMethodNotAllowed() throws Exception {
+        // accessDeniedHandler forward nguyên phương thức POST tới /noi-bo/tu-choi; trang phải nhận POST, không trả 405.
+        mvc.perform(post("/noi-bo/tu-choi").with(authentication(auth(manager))).with(csrf()))
+            .andExpect(status().isForbidden()).andExpect(content().string(containsString("phiên làm việc đã hết hạn")));
+        mvc.perform(get("/noi-bo/tu-choi")).andExpect(status().isForbidden());
+    }
     private StaffAccount account(Long id, String name, AppUser.Role role) {
         AppUser user = new AppUser(name, encoder.encode("OriginalPass@2026"), name + "@example.com");
         user.setRole(role); user.setEnabled(true); user.setFullName("Nhân sự thử nghiệm");

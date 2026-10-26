@@ -165,8 +165,11 @@ public class OrderExtrasController {
             model.addAttribute("canRequestCompensation", operations.canRequestCompensation(auth.getName(), complaint.getId()));
         }
         model.addAttribute("statuses", OrderComplaint.Status.values());
-        // Đơn chưa thanh toán thì không có lựa chọn lập phiếu bồi hoàn cước.
-        model.addAttribute("orderPaid", payments.findByOrder(order).map(vn.edu.hcmute.uteexpress.util.PaymentReadiness::isRefundable).orElse(false));
+        // Mức bồi thường tối đa theo cước (0: thanh toán chưa hợp lệ, không có lựa chọn lập phiếu bồi thường).
+        var compensationLimit = payments.findByOrder(order).map(vn.edu.hcmute.uteexpress.util.PaymentReadiness::compensationLimit)
+                .orElse(java.math.BigDecimal.ZERO);
+        model.addAttribute("compensationLimit", compensationLimit);
+        model.addAttribute("compensable", compensationLimit.signum() > 0);
         // Khiếu nại thường hỏi về lúc giao, nên kèm ảnh và chữ ký giao hàng để đối chiếu.
         model.addAttribute("deliveryProof", deliveryProofs.findViewableByOrder(order).orElse(null));
         model.addAttribute("proofBase", (viewer.equals("staff") ? "/manager/don-hang/"

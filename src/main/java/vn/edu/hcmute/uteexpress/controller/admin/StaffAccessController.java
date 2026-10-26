@@ -20,10 +20,15 @@ public class StaffAccessController {
     @GetMapping("/dang-nhap")
     public String showLogin() { return "admin/login"; }
 
-    @GetMapping("/tu-choi")
+    /**
+     * Đích forward của accessDeniedHandler. Nhận mọi phương thức: thao tác POST bị chặn được forward tới đây với nguyên
+     * phương thức POST, nếu chỉ nhận GET thì người dùng thấy lỗi 405 thay cho trang từ chối.
+     */
+    @RequestMapping("/tu-choi")
     public String showAccessDenied(HttpServletResponse response, Model model) {
         response.setStatus(403);
-        model.addAttribute("error", "Bạn không có quyền truy cập chức năng này. Chức năng cấp tài khoản và phân quyền chỉ dành cho Admin.");
+        model.addAttribute("error", "Bạn không có quyền thực hiện chức năng này, hoặc phiên làm việc đã hết hạn. "
+                + "Hãy tải lại trang rồi thử lại; chức năng quản trị chỉ dành cho Admin.");
         return "admin/error";
     }
 

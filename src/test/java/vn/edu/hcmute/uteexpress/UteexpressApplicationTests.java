@@ -11,6 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class UteexpressApplicationTests {
     @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.OrderRepository userOrders;
+
+    @jakarta.persistence.PersistenceContext
+    jakarta.persistence.EntityManager entityManager;
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void escapedUserOrderSearchExecutesOnAivenWithoutReadingAnotherCustomersOrders() {
+        var nonexistent = entityManager.getReference(vn.edu.hcmute.uteexpress.entity.AppUser.class, -1L);
+        org.junit.jupiter.api.Assertions.assertTrue(userOrders.searchOrdersOfSender(nonexistent, null, "!%!_",
+                org.springframework.data.domain.PageRequest.of(0, 1)).isEmpty());
+    }
+    @org.springframework.beans.factory.annotation.Autowired
     vn.edu.hcmute.uteexpress.repository.admin.AuditEventRepository auditEvents;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -39,8 +51,8 @@ class UteexpressApplicationTests {
     @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
     void paymentAlertQueryExecutesOnAivenWithoutWritingData() {
         var now=java.time.LocalDateTime.now();
-        var result=overview.alerts("PAYMENT_ISSUE",null,now.minusHours(24),now.minusDays(5),now.minusDays(2),
-                now.minusHours(4),now,3,org.springframework.data.domain.PageRequest.of(0,1));
+        var result=overview.alerts("PAYMENT_ISSUE",null,now.minusHours(24),now,3,org.springframework.data.domain.PageRequest.of(0,1));
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->overview.deliveryCandidates(now.minusHours(4),null));
         org.junit.jupiter.api.Assertions.assertTrue(result.getTotalElements()>=0);
         var ids=result.isEmpty()?java.util.List.of(-1L):result.map(vn.edu.hcmute.uteexpress.entity.Order::getId).getContent();
         org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->routes.idsAtDeliveryHub(ids,null));
