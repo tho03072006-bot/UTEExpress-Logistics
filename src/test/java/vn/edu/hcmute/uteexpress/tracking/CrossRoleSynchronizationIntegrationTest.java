@@ -313,6 +313,57 @@ class CrossRoleSynchronizationIntegrationTest {
         assertTrue(overview.alerts(manager.getUsername(), OperationsOverviewService.Alert.PAYMENT_ISSUE, 0).isEmpty());
     }
 
+    @Test void alertsBranchFilterAlsoScopesSecondaryComplaintAndCashPanels() throws Exception {
+        var branches=context.getBean(vn.edu.hcmute.uteexpress.repository.routing.BranchRepository.class);
+        var sgn=branches.findByCode("SGN").orElseThrow(); var han=branches.findByCode("HAN").orElseThrow();
+        var areas=context.getBean(vn.edu.hcmute.uteexpress.repository.routing.ProvinceAreaRepository.class);
+        var area=areas.findAllByBranch_IdOrderByAreaName(han.getId()).get(0);
+        var otherOrder=new Order(); otherOrder.setSender(otherCustomer); otherOrder.setTrackingCode("UTESYNC-HAN");
+        otherOrder.setShippingFee(new BigDecimal("18000")); orders.saveAndFlush(otherOrder);
+        em.persist(new vn.edu.hcmute.uteexpress.entity.routing.OrderRoute(otherOrder,area,area));
+        context.getBean(vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository.class)
+                .findByUser_Id(otherShipper.getId()).orElseThrow().assign(han,admin,NOW);
+        var local=complaints.save(new OrderComplaint(order,"Khiếu nại SGN cần phản hồi","Kiểm thử phạm vi SGN",null,NOW.minusDays(20)));
+        var foreign=complaints.save(new OrderComplaint(otherOrder,"Khiếu nại HAN cần phản hồi","Kiểm thử phạm vi HAN",null,NOW.minusDays(20)));
+        var localCash=settlements.save(new CodSettlement(shipper,1,new BigDecimal("18000"),BigDecimal.ZERO,"Phiếu SGN",NOW.minusDays(8)));
+        var foreignCash=settlements.save(new CodSettlement(otherShipper,1,new BigDecimal("18000"),BigDecimal.ZERO,"Phiếu HAN",NOW.minusDays(8)));
+        localCash.review(admin,true,"Xác nhận thiếu tiền",NOW.minusDays(8)); foreignCash.review(admin,true,"Xác nhận thiếu tiền",NOW.minusDays(8)); em.flush();
+        var localModel=mvc.perform(get("/manager/canh-bao").param("branchId",sgn.getId().toString())
+                .with(authentication(auth(adminAccount)))).andExpect(status().isOk()).andReturn().getModelAndView().getModel();
+        assertEquals(List.of(local),((org.springframework.data.domain.Page<?>)localModel.get("lateComplaints")).getContent());
+        assertEquals(List.of(localCash),((org.springframework.data.domain.Page<?>)localModel.get("lateCash")).getContent());
+        var foreignModel=mvc.perform(get("/manager/canh-bao").param("branchId",han.getId().toString())
+                .with(authentication(auth(adminAccount)))).andExpect(status().isOk()).andReturn().getModelAndView().getModel();
+        assertEquals(List.of(foreign),((org.springframework.data.domain.Page<?>)foreignModel.get("lateComplaints")).getContent());
+        assertEquals(List.of(foreignCash),((org.springframework.data.domain.Page<?>)foreignModel.get("lateCash")).getContent());
+        mvc.perform(get("/manager/canh-bao").param("branchId",han.getId().toString())
+                .with(authentication(auth(managerAccount)))).andExpect(status().isForbidden());
+    }
+
+    @Test void secondaryAlertsHaveIndependentPaginationAndValidatePageNumbers() throws Exception {
+        var branch=context.getBean(vn.edu.hcmute.uteexpress.repository.routing.BranchRepository.class).findByCode("SGN").orElseThrow();
+        for(int i=0;i<11;i++) {
+            var shipment=new Order(); shipment.setSender(customer); shipment.setTrackingCode("UTESYNC-ALERT-"+i);
+            shipment.setShippingFee(new BigDecimal("18000")); orders.save(shipment);
+            vn.edu.hcmute.uteexpress.support.RoutingFixtures.route(context,shipment);
+            complaints.save(new OrderComplaint(shipment,"Khiếu nại quá hạn "+i,"Kiểm thử phân trang độc lập",null,NOW.minusDays(20)));
+            var cash=new CodSettlement(shipper,1,new BigDecimal("18000"),BigDecimal.ZERO,"Phiếu thiếu tiền "+i,NOW.minusDays(8));
+            cash.review(admin,true,"Xác nhận thiếu tiền",NOW.minusDays(8)); settlements.save(cash);
+        }
+        em.flush();
+        var model=mvc.perform(get("/manager/canh-bao").param("branchId",branch.getId().toString())
+                .param("complaintPage","1").param("cashPage","1").with(authentication(auth(adminAccount))))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel();
+        var lateComplaints=(org.springframework.data.domain.Page<?>)model.get("lateComplaints");
+        var lateCash=(org.springframework.data.domain.Page<?>)model.get("lateCash");
+        assertEquals(1,lateComplaints.getNumber()); assertEquals(1,lateComplaints.getNumberOfElements());
+        assertEquals(1,lateCash.getNumber()); assertEquals(1,lateCash.getNumberOfElements());
+        assertEquals(0,((org.springframework.data.domain.Page<?>)model.get("orders")).getNumber());
+        for(var param:List.of("complaintPage","cashPage")) for(var invalid:List.of("-1","10001","100001","abc"))
+            mvc.perform(get("/manager/canh-bao").param(param,invalid).with(authentication(auth(adminAccount))))
+                    .andExpect(status().isBadRequest());
+    }
+
     private AppUser account(String username, AppUser.Role role) {
         var value = new AppUser(username, "test-only-hash", username + "@test.invalid");
         value.setEnabled(true); value.setRole(role); value.setFullName("Tài khoản kiểm thử");

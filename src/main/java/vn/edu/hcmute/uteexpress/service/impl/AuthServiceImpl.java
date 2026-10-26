@@ -33,16 +33,19 @@ public class AuthServiceImpl implements AuthService {
     private final MailFromNameSetter mailFromNameSetter;
     private final OtpPolicy otpPolicy;
     private final vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges;
+    private final jakarta.persistence.EntityManager entityManager;
 
     public AuthServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
                             JavaMailSender mailSender, MailFromNameSetter mailFromNameSetter, OtpPolicy otpPolicy,
-                            vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges) {
+                            vn.edu.hcmute.uteexpress.repository.EmailChangeRequestRepository emailChanges,
+                            jakarta.persistence.EntityManager entityManager) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
         this.mailFromNameSetter = mailFromNameSetter;
         this.otpPolicy = otpPolicy;
         this.emailChanges=emailChanges;
+        this.entityManager=entityManager;
     }
 
     @Override
@@ -74,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public boolean verifyOtp(String username, String otpCode) {
         if (username == null || username.length() > 50) return false;
-        Optional<AppUser> found = appUserRepository.findLockedByUsername(username.strip());
+        Optional<AppUser> found = appUserRepository.findLockedByUsername(username.strip()).map(this::refreshLocked);
         if (found.isEmpty() || found.get().isEnabled() || !allowsPublicOtp(found.get())) {
             return false;
         }
@@ -95,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void sendPasswordResetOtp(String email) {
         email = PublicAccountValidation.email(email); PublicAccountValidation.requireEmail(email);
-        Optional<AppUser> found = appUserRepository.findLockedByEmail(email);
+        Optional<AppUser> found = appUserRepository.findLockedByEmail(email).map(this::refreshLocked);
 
         if (found.isEmpty()) {
             // Khong bao loi ra man hinh - xem giai thich o AuthService. Chi ghi log de nguoi
@@ -124,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
     public boolean resetPassword(String email, String otpCode, String newRawPassword) {
         email = PublicAccountValidation.email(email); PublicAccountValidation.requireEmail(email);
         PublicAccountValidation.requirePassword(newRawPassword);
-        Optional<AppUser> found = appUserRepository.findLockedByEmail(email);
+        Optional<AppUser> found = appUserRepository.findLockedByEmail(email).map(this::refreshLocked);
         if (found.isEmpty()) {
             return false;
         }
@@ -156,11 +159,17 @@ public class AuthServiceImpl implements AuthService {
     @Override @Transactional
     public void resendRegistrationOtp(String username) {
         if(username==null || !username.strip().matches(PublicAccountValidation.USERNAME)) return;
-        var found=appUserRepository.findLockedByUsername(username.strip());
+        var found=appUserRepository.findLockedByUsername(username.strip()).map(this::refreshLocked);
         if(found.isEmpty() || found.get().isEnabled() || !allowsPublicOtp(found.get())) return;
         var user=found.get(); String otp=generateOtp();
         otpPolicy.reserveSend(user); otpPolicy.issue(user,otp); appUserRepository.save(user);
         sendOtpEmail(user.getEmail(),otp,"Mã xác thực đăng ký","kích hoạt tài khoản");
+    }
+
+    /** OSIV/advice có thể đã đọc tài khoản trước khi request khác dùng OTP hoặc khóa tài khoản. */
+    private AppUser refreshLocked(AppUser user) {
+        entityManager.refresh(user, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return user;
     }
 
     private boolean allowsPublicOtp(AppUser user) {

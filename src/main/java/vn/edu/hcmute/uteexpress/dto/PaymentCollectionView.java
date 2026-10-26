@@ -22,10 +22,11 @@ public record PaymentCollectionView(State state, BigDecimal amount, String messa
         if (order.getStatus() == Order.OrderStatus.CANCELLED || order.getStatus() == Order.OrderStatus.RETURNED)
             return new PaymentCollectionView(State.CLOSED, null, "Đơn đã hủy/hoàn · không thu cước");
         if (order.getStatus() == Order.OrderStatus.DELIVERED) return review();
-        if (amount.signum() == 0) return free();
+        if (amount.signum() == 0 && payment.getMethod() == OrderPayment.PaymentMethod.COD) return free();
         return switch (payment.getMethod()) {
             case COD -> new PaymentCollectionView(State.COD_DUE, amount, "Thu cước người nhận");
-            case MOMO -> new PaymentCollectionView(State.WALLET_PENDING, amount, "MoMo chưa thanh toán · không thu tiền mặt");
+            case MOMO -> new PaymentCollectionView(State.WALLET_PENDING, amount, amount.signum() == 0
+                    ? "Miễn cước · chờ xác nhận MoMo" : "MoMo chưa thanh toán · không thu tiền mặt");
             case VNPAY -> new PaymentCollectionView(State.LEGACY_WALLET, amount, "Ví cũ chưa thanh toán · cần chuyển sang MoMo");
         };
     }

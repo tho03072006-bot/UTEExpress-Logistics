@@ -21,14 +21,16 @@ public class OperationsController {
     public OperationsController(OperationsOverviewService overview, OperationsCaseService cases) { this.overview = overview; this.cases = cases; }
     @GetMapping("/canh-bao") @Transactional(readOnly = true)
     public String alerts(@RequestParam(defaultValue = "UNASSIGNED") OperationsOverviewService.Alert alert,
-            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page, Authentication auth, Model model) {
+            @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int complaintPage, @RequestParam(defaultValue = "0") int cashPage,
+            Authentication auth, Model model) {
         var orders = overview.alerts(auth.getName(), alert, branchId, page);
         model.addAttribute("orders", orders);
         model.addAttribute("dropOffIds", overview.dropOffOrderIds(orders.getContent()));
         model.addAttribute("deliveryHubIds", overview.deliveryHubOrderIds(auth.getName(), orders.getContent()));
         model.addAttribute("branches", overview.branches(auth.getName())); model.addAttribute("branchId", branchId);
-        model.addAttribute("lateComplaints", overview.lateComplaints(auth.getName(), 0));
-        model.addAttribute("lateCash", overview.lateCash(auth.getName(), 0));
+        model.addAttribute("lateComplaints", overview.lateComplaints(auth.getName(), branchId, complaintPage));
+        model.addAttribute("lateCash", overview.lateCash(auth.getName(), branchId, cashPage));
         model.addAttribute("alerts", OperationsOverviewService.Alert.values()); model.addAttribute("selected", alert);
         return "manager/operations-alerts";
     }

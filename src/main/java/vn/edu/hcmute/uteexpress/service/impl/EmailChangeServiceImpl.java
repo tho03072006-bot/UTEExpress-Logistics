@@ -181,6 +181,8 @@ public class EmailChangeServiceImpl implements EmailChangeService {
     private AppUser requireLockedUser(String username) {
         var user = appUserRepository.findLockedByUsername(username)
             .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
+        // Khóa truy vấn không thay thế dữ liệu AppUser đã được advice/OSIV đọc từ trước.
+        entityManager.refresh(user, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if (!user.isEnabled() || user.isLockedByAdmin() || user.getRole() != AppUser.Role.USER)
             throw new org.springframework.security.access.AccessDeniedException("Tài khoản không được đổi email.");
         return user;

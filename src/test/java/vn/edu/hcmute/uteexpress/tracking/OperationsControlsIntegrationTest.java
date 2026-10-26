@@ -393,6 +393,12 @@ class OperationsControlsIntegrationTest {
         var payment=paid();payment.setMethod(OrderPayment.PaymentMethod.MOMO);payment.setTransactionRef(null);payments.saveAndFlush(payment);
         assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.PAYMENT_ISSUE,0).getContent().contains(order));
     }
+    @Test void paidCashWithoutTimestampIsBlockedAndListedForReview() {
+        var payment=paid(); payment.setPaidAt(null); payments.saveAndFlush(payment);
+        assertFalse(vn.edu.hcmute.uteexpress.util.PaymentReadiness.isReady(payment));
+        assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.PAYMENT_ISSUE,0).getContent().contains(order));
+    }
+
     @Test void alertsExcludeDeliveredAndCannotBeClearedByNoteUpdate() {
         assertTrue(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.LATE_DELIVERY,0).getContent().contains(order));
         order.setUpdatedAt(NOW);orders.flush();
