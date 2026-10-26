@@ -206,9 +206,9 @@ public class UserOrderController {
                                 Authentication authentication, Model model) {
         String username = authentication.getName();
 
-        // Don moi nhat len dau. page am (nguoi dung sua tay tren URL) thi kep ve trang dau.
-        Pageable pageable = PageRequest.of(Math.max(page, 0), ORDERS_PER_PAGE,
-                Sort.by(Sort.Direction.DESC, "createdAt"));
+        // Sắp xếp ổn định kể cả nhiều đơn có cùng thời điểm tạo; URL sai bị từ chối thay vì sửa ngầm.
+        Pageable pageable = PageRequest.of(page, ORDERS_PER_PAGE,
+                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         Page<Order> orderPage = orderService.searchOrdersOfUser(username, status, keyword, pageable);
 
         model.addAttribute("orderPage", orderPage);

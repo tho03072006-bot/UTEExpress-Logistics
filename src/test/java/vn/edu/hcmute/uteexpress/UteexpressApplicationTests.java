@@ -11,6 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class UteexpressApplicationTests {
     @org.springframework.beans.factory.annotation.Autowired
+    vn.edu.hcmute.uteexpress.repository.OrderRepository userOrders;
+
+    @jakarta.persistence.PersistenceContext
+    jakarta.persistence.EntityManager entityManager;
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void escapedUserOrderSearchExecutesOnAivenWithoutReadingAnotherCustomersOrders() {
+        var nonexistent = entityManager.getReference(vn.edu.hcmute.uteexpress.entity.AppUser.class, -1L);
+        org.junit.jupiter.api.Assertions.assertTrue(userOrders.searchOrdersOfSender(nonexistent, null, "!%!_",
+                org.springframework.data.domain.PageRequest.of(0, 1)).isEmpty());
+    }
+    @org.springframework.beans.factory.annotation.Autowired
     vn.edu.hcmute.uteexpress.repository.admin.AuditEventRepository auditEvents;
 
     @org.springframework.beans.factory.annotation.Autowired

@@ -185,9 +185,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             where o.sender = :sender
               and (:status is null or o.status = :status)
               and (:keyword is null
-                   or lower(o.trackingCode) like lower(concat('%', :keyword, '%'))
-                   or lower(o.receiverName) like lower(concat('%', :keyword, '%'))
-                   or o.receiverPhone like concat('%', :keyword, '%'))
+                     or lower(o.trackingCode) like lower(concat('%', :keyword, '%')) escape '!'
+                     or lower(o.receiverName) like lower(concat('%', :keyword, '%')) escape '!'
+                     or o.receiverPhone like concat('%', :keyword, '%') escape '!')
             """)
     Page<Order> searchOrdersOfSender(@Param("sender") AppUser sender,
                                      @Param("status") Order.OrderStatus status,

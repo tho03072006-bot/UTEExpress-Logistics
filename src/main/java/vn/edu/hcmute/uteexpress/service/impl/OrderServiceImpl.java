@@ -106,11 +106,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Page<Order> searchOrdersOfUser(String username, Order.OrderStatus statusFilter,
                                           String keyword, Pageable pageable) {
+        if (pageable == null || pageable.isUnpaged() || pageable.getPageSize() < 1 || pageable.getPageSize() > 100)
+            throw new IllegalArgumentException("Mỗi trang từ 1–100 đơn.");
+        vn.edu.hcmute.uteexpress.service.tracking.LogisticsInput.page(pageable.getPageNumber());
+        if (keyword != null && (keyword.length() > 100 || keyword.codePoints().anyMatch(Character::isISOControl)))
+            throw new IllegalArgumentException("Từ khóa tối đa 100 ký tự, không chứa ký tự điều khiển.");
         AppUser sender = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay nguoi dung: " + username));
+        if (sender.getRole() != AppUser.Role.USER || !sender.isEnabled() || sender.isLockedByAdmin())
+            throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được xem đơn của mình.");
 
         // O tim kiem de trong thi coi nhu khong tim, khong phai tim chuoi rong.
-        String trimmed = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        String trimmed = (keyword == null || keyword.isBlank()) ? null : keyword.strip().replace("!", "!!").replace("%", "!%").replace("_", "!_");
         return orderRepository.searchOrdersOfSender(sender, statusFilter, trimmed, pageable);
     }
 

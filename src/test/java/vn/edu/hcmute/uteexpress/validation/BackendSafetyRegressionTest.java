@@ -295,6 +295,24 @@ class BackendSafetyRegressionTest {
         verifyNoInteractions(geocoder);
     }
 
+    @Test void userSearchTreatsPercentAndUnderscoreAsLiteralCharactersAndKeepsOwnership() {
+        var literal=form();literal.setReceiverName("Người Nhận Riêng");var matching=orderService.createOrder(literal,customer.getUsername());
+        var ordinary=form();ordinary.setReceiverName("Người Khác");orderService.createOrder(ordinary,customer.getUsername());
+        var other=account(AppUser.Role.USER);var foreign=form(other);foreign.setReceiverName(literal.getReceiverName());orderService.createOrder(foreign,other.getUsername());
+        var page=orderService.searchOrdersOfUser(customer.getUsername(),null,"%_",org.springframework.data.domain.PageRequest.of(0,10));
+        assertTrue(page.isEmpty(), "Ký tự LIKE không được biến thành điều kiện khớp mọi đơn");
+        var own=orderService.searchOrdersOfUser(customer.getUsername(),null,"Nhận Riêng",org.springframework.data.domain.PageRequest.of(0,10));
+        assertEquals(List.of(matching.getId()),own.stream().map(Order::getId).toList());
+    }
+    @Test void userSearchRejectsOverlongControlAndOversizedPaginationInputs() throws Exception {
+        for(String keyword:List.of("x".repeat(101),"abc\u0000xyz","abc\nxyz")) {
+            assertThrows(IllegalArgumentException.class,()->orderService.searchOrdersOfUser(customer.getUsername(),null,keyword,org.springframework.data.domain.PageRequest.of(0,10)));
+            mvc.perform(get("/nguoi-dung/don-hang").with(user(customer.getUsername()).roles("USER")).param("keyword",keyword)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(get("/nguoi-dung/don-hang").with(user(customer.getUsername()).roles("USER")).param("page","-1")).andExpect(status().isBadRequest());
+        mvc.perform(get("/nguoi-dung/don-hang").with(user(customer.getUsername()).roles("USER")).param("page","2147483647")).andExpect(status().isBadRequest());
+        assertThrows(IllegalArgumentException.class,()->orderService.searchOrdersOfUser(customer.getUsername(),null,null,org.springframework.data.domain.PageRequest.of(0,101)));
+    }
     @Test void anotherAccountsCartIsNeverResolvedOrConfirmed() {
         var draft=drafts.addDraft(form(),customer.getUsername()); var other=account(AppUser.Role.USER);
         clearInvocations(geocoder);
