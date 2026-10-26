@@ -42,6 +42,17 @@ class UteexpressApplicationTests {
     }
 
     @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    void tariffScheduleIntervalsRemainUnambiguousOnAivenWithoutWritingData() {
+        long overlaps=entityManager.createQuery("""
+                select count(a) from ShippingTariffVersion a, ShippingTariffVersion b
+                where a.id < b.id and a.serviceType = b.serviceType and a.cancelled = false and b.cancelled = false
+                  and a.startsAt < b.endsAt and b.startsAt < a.endsAt
+                """,Long.class).getSingleResult();
+        org.junit.jupiter.api.Assertions.assertEquals(0L,overlaps,
+                "Có lịch cước chồng thời gian trên Aiven; cần đối chiếu lịch trước khi áp giá, không tự chọn một bản.");
+    }
+
+    @Test @org.springframework.transaction.annotation.Transactional(readOnly = true)
     void complaintConversationPagingQueriesExecuteOnAivenWithoutWritingData() {
         org.junit.jupiter.api.Assertions.assertEquals(0L, complaintActivities.countByComplaintId(-1L));
         org.junit.jupiter.api.Assertions.assertTrue(complaintActivities.findByComplaintIdOrderByCreatedAtAscIdAsc(-1L,
