@@ -239,7 +239,9 @@ public class UserOrderController {
         model.addAttribute("order", order);
         model.addAttribute("timeline", orderService.buildTimeline(order));
         model.addAttribute("route", routing.summary(order).orElse(null));
-        model.addAttribute("payment", orderPaymentService.findByOrder(order).orElse(null));
+        var payment = orderPaymentService.findByOrder(order).orElse(null);
+        model.addAttribute("payment", payment);
+        model.addAttribute("collection", vn.edu.hcmute.uteexpress.dto.PaymentCollectionView.from(order, payment));
         model.addAttribute("review", serviceReviewService.findByOrderId(order.getId()).orElse(null));
         // Ảnh và chữ ký Shipper lưu khi giao; đơn chưa giao thì chưa có, trang tự ẩn khối này.
         model.addAttribute("deliveryProof", deliveryProofService.findViewableByOrder(order).orElse(null));

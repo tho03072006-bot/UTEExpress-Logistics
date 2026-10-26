@@ -313,6 +313,28 @@ class BackendSafetyRegressionTest {
         mvc.perform(get("/nguoi-dung/don-hang").with(user(customer.getUsername()).roles("USER")).param("page","2147483647")).andExpect(status().isBadRequest());
         assertThrows(IllegalArgumentException.class,()->orderService.searchOrdersOfUser(customer.getUsername(),null,null,org.springframework.data.domain.PageRequest.of(0,101)));
     }
+    @Test void labelDoesNotDescribeMissingPaymentAsNoMoneyDue() throws Exception {
+        var order=orderService.createOrder(form(),customer.getUsername());payments.delete(payments.findByOrder(order).orElseThrow());payments.flush();
+        mvc.perform(get("/nguoi-dung/don-hang/"+order.getId()).with(user(customer.getUsername()).roles("USER")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Chưa xác định cước")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Không thu tiền khi giao"))));
+    }
+    @Test void labelAndPaymentBadgeDoNotTreatAnInvalidWalletReceiptAsPaid() throws Exception {
+        var request=form();request.setPaymentMethod(OrderPayment.PaymentMethod.MOMO);var order=orderService.createOrder(request,customer.getUsername());
+        var payment=payments.findByOrder(order).orElseThrow();payment.setStatus(OrderPayment.PaymentStatus.PAID);payments.saveAndFlush(payment);
+        mvc.perform(get("/nguoi-dung/don-hang/"+order.getId()).with(user(customer.getUsername()).roles("USER")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Chưa xác định cước")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("badge-payment-paid"))));
+    }
+    @Test void labelClearlyStatesPendingWalletAndDoesNotCollectCashForCancelledOrders() throws Exception {
+        var request=form();request.setPaymentMethod(OrderPayment.PaymentMethod.MOMO);var wallet=orderService.createOrder(request,customer.getUsername());
+        mvc.perform(get("/nguoi-dung/don-hang/"+wallet.getId()).with(user(customer.getUsername()).roles("USER")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("MoMo chưa thanh toán")));
+        var cash=orderService.createOrder(form(),customer.getUsername());orderService.cancelOrder(cash.getId(),customer.getUsername());
+        mvc.perform(get("/nguoi-dung/don-hang/"+cash.getId()).with(user(customer.getUsername()).roles("USER")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Thu cước người nhận:"))));
+    }
+
     @Test void anotherAccountsCartIsNeverResolvedOrConfirmed() {
         var draft=drafts.addDraft(form(),customer.getUsername()); var other=account(AppUser.Role.USER);
         clearInvocations(geocoder);
