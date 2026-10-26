@@ -35,9 +35,9 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
                     and (o.shippingFee is null or o.shippingFee < 0 or payment.amount is null or payment.amount < 0
                         or coalesce(payment.discountAmount,0) < 0 or coalesce(payment.discountAmount,0) > o.shippingFee
                         or payment.amount <> o.shippingFee - coalesce(payment.discountAmount,0)
-                        or (payment.method = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.MOMO
-                            and payment.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
-                            and (payment.paidAt is null or payment.transactionRef is null or trim(payment.transactionRef) = ''))
+                        or (payment.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
+                            and (payment.paidAt is null or (payment.method = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.MOMO
+                                and (payment.transactionRef is null or trim(payment.transactionRef) = ''))))
                         or (payment.method in (vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.MOMO,
                         vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentMethod.VNPAY)
                         and payment.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.UNPAID)))))

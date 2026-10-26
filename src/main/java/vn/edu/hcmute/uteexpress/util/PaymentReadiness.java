@@ -54,7 +54,9 @@ public final class PaymentReadiness {
     }
 
     public static boolean hasRequiredReceipt(OrderPayment payment) {
-        return payment != null && (payment.getMethod() != OrderPayment.PaymentMethod.MOMO
+        return payment != null
+                && (payment.getStatus() != OrderPayment.PaymentStatus.PAID || payment.getPaidAt() != null)
+                && (payment.getMethod() != OrderPayment.PaymentMethod.MOMO
                 || (payment.getPaidAt() != null && payment.getTransactionRef() != null && !payment.getTransactionRef().isBlank()));
     }
 }

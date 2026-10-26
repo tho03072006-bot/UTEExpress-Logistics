@@ -52,6 +52,19 @@ class PaymentCollectionViewTest {
         var payment=payment();payment.setAmount(BigDecimal.ZERO);payment.setDiscountAmount(payment.getOrder().getShippingFee());
         var view=PaymentCollectionView.from(payment.getOrder(),payment);assertEquals(FREE,view.state());assertEquals(BigDecimal.ZERO,view.amount());
     }
+    @Test void zeroAmountWalletStillNeedsItsExistingConfirmationFlow() {
+        var payment=payment(); payment.setAmount(BigDecimal.ZERO); payment.setDiscountAmount(payment.getOrder().getShippingFee());
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO);
+        var view=PaymentCollectionView.from(payment.getOrder(),payment);
+        assertEquals(WALLET_PENDING,view.state()); assertEquals(0,view.amount().signum());
+        assertTrue(view.message().contains("xác nhận"));
+        payment.setMethod(OrderPayment.PaymentMethod.VNPAY);
+        assertEquals(LEGACY_WALLET,PaymentCollectionView.from(payment.getOrder(),payment).state());
+        payment.setMethod(OrderPayment.PaymentMethod.MOMO); payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        payment.setPaidAt(LocalDateTime.now()); payment.setTransactionRef("SIM-MOMO-ZERO");
+        assertEquals(FREE,PaymentCollectionView.from(payment.getOrder(),payment).state());
+    }
+
     @Test void anotherOrdersPaymentOrMissingMethodCannotBeUsedForTheLabel() {
         var payment=payment();assertEquals(REVIEW,PaymentCollectionView.from(payment().getOrder(),payment).state());
         payment.setMethod(null);assertEquals(REVIEW,PaymentCollectionView.from(payment.getOrder(),payment).state());
