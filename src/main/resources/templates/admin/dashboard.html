@@ -4,20 +4,29 @@
 <head><title>Quản trị hệ thống - UTEExpress</title></head>
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head sx-art-server"><div><span class="badge text-bg-dark">ADMIN · Cấp quản trị hệ thống</span>
-<h1 class="h2 mt-3">Quản trị và kiểm soát truy cập</h1>
-<p>Quản lý tài khoản 4 vai trò và dùng mọi chức năng của Manager.</p></div></div>
+<header class="staff-page-heading">
+<div><div class="staff-eyebrow"><span class="staff-role-tag">ADMIN</span><span>Không gian quản trị</span></div>
+<h1>Tổng quan hệ thống</h1><p>Kiểm soát tài khoản, cấu hình và hoạt động trên toàn bộ chi nhánh.</p></div>
+<div class="staff-heading-actions"><a class="btn btn-outline-secondary" th:href="@{/admin/nhat-ky}"><i class="bi bi-clock-history" aria-hidden="true"></i> Nhật ký quản trị</a>
+<a class="btn btn-primary" th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people" aria-hidden="true"></i> Quản lý tài khoản</a></div>
+</header>
+<div class="staff-scope-line"><span><i class="bi bi-globe2" aria-hidden="true"></i> Tất cả chi nhánh</span><span class="staff-scope-snapshot"><span th:text="|Tổng quan lúc ${#temporals.format(charts.generatedAt, 'HH:mm · dd/MM/yyyy')}|"></span><a class="staff-refresh-link" th:href="@{/admin/trang-chu}"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Làm mới</a></span></div>
+<div class="staff-metrics" aria-label="Chỉ số toàn hệ thống">
+<article class="staff-metric"><div class="staff-metric-label"><span>Tổng tài khoản</span><i class="bi bi-people" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.totalUsers, 1, 'POINT')}">0</strong><small>Admin, Manager, User và Shipper</small></article>
+<article class="staff-metric"><div class="staff-metric-label"><span>Tài khoản Shipper</span><i class="bi bi-person-badge" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.totalShippers, 1, 'POINT')}">0</strong><small>Tất cả tài khoản có vai trò Shipper</small></article>
+<article class="staff-metric"><div class="staff-metric-label"><span>Tổng đơn hàng</span><i class="bi bi-box-seam" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.totalOrders, 1, 'POINT')}">0</strong><small>Toàn bộ trạng thái và thời gian</small></article>
+<article class="staff-metric staff-metric-attention"><div class="staff-metric-label"><span>Đơn chờ lấy</span><i class="bi bi-hourglass-split" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.pendingOrders, 1, 'POINT')}">0</strong><small>Trạng thái chờ lấy hàng hiện tại</small></article>
+</div>
+<div class="staff-section-head"><div><span class="staff-eyebrow">QUẢN TRỊ</span><h2>Kiểm soát và cấu hình</h2></div><span class="staff-section-caption">Chức năng dành riêng cho Admin</span></div>
+<div class="staff-action-grid">
+<a class="staff-action-card staff-action-featured" th:href="@{/admin/quan-ly-tai-khoan}"><span class="staff-action-icon"><i class="bi bi-people" aria-hidden="true"></i></span><div><h3>Tài khoản &amp; phân quyền</h3><p>Thêm, sửa, khóa, xóa và cấp lại mật khẩu theo điều kiện.</p><span class="staff-action-label">Quản lý 4 vai trò <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
+<a class="staff-action-card" th:href="@{/admin/an-toan-truy-cap}"><span class="staff-action-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span><div><h3>An toàn truy cập</h3><p>Kiểm tra quyền, thu hồi phiên và token khi cần.</p><span class="staff-action-label">Kiểm tra truy cập <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
+<a class="staff-action-card" th:href="@{/admin/chinh-sach-van-hanh}"><span class="staff-action-icon"><i class="bi bi-sliders" aria-hidden="true"></i></span><div><h3>Chính sách vận hành</h3><p>Cấu hình giới hạn giao lại và thời hạn xử lý.</p><span class="staff-action-label">Xem chính sách <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
+</div>
+<div class="staff-section-head"><div><span class="staff-eyebrow">VẬN HÀNH</span><h2>Nhịp độ toàn hệ thống</h2></div><a class="staff-text-link" th:href="@{/manager/bao-cao}">Báo cáo chi tiết <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></div>
 <div th:replace="~{fragments/staff-dashboard-charts :: charts(${charts})}"></div>
-<div class="row g-3 mb-4"><div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div>
-<h2 class="h5">Quản lý cả 4 vai trò</h2><p>Thêm, sửa, khóa và cấp lại mật khẩu.</p>
-<a class="btn btn-dark" th:href="@{/admin/quan-ly-tai-khoan}">Quản lý tài khoản</a></div>
-<img th:src="@{/images/shipper/team-accounts.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div>
-<div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div><h2 class="h5">Giám sát vận hành</h2>
-<p><strong th:text="${summary.totalOrders}">0</strong> đơn hàng · <strong th:text="${summary.pendingOrders}">0</strong> đơn chờ lấy.</p>
-<a class="btn btn-outline-primary" th:href="@{/manager/trang-chu}">Mở khu Manager</a></div>
-<img th:src="@{/images/shipper/dispatch-hub.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div></div>
-<div class="ute-panel p-4 mb-3 sx-panel-art"><div><h2 class="h5">An toàn truy cập</h2><p class="small text-muted">Thu hồi phiên và token khi nghi ngờ lộ thông tin.</p><a class="btn btn-outline-primary" th:href="@{/admin/an-toan-truy-cap}">Kiểm tra quyền truy cập</a></div><img th:src="@{/images/shipper/secure-lock.svg}" alt="" aria-hidden="true" width="168" height="112"></div>
-<details class="ute-panel p-4 sx-fold"><summary class="h5 mb-0">Phân quyền Manager và Admin</summary>
+<div class="staff-tool-strip"><div><i class="bi bi-buildings" aria-hidden="true"></i><span>Công cụ quản trị khác</span></div><nav aria-label="Công cụ quản trị nhanh"><a th:href="@{/admin/chi-nhanh}">Chi nhánh và kho</a><a th:href="@{/admin/bang-cuoc}">Bảng cước</a><a th:href="@{/admin/cuoc-tuyen}">Phụ phí tuyến</a><a th:href="@{/manager/trang-chu}">Khu vận hành <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></nav></div>
+<details class="staff-disclosure staff-permissions"><summary><span><i class="bi bi-person-lock" aria-hidden="true"></i> Phân quyền Manager và Admin</span><small>Xem phạm vi và điều kiện thao tác</small></summary><div>
 <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Chức năng</th><th>Manager</th><th>Admin</th></tr></thead><tbody>
 <tr><td>Xem tổng quan, tra soát đơn, cảnh báo, khiếu nại, đối soát, báo cáo</td><td>Có, chỉ đơn gửi đi hoặc giao tới chi nhánh mình</td><td>Có, mọi chi nhánh và lọc theo chi nhánh</td></tr>
 <tr><td>Kho chi nhánh: nhận hàng tại quầy, xếp chuyến, xuất kho, nhận chuyến</td><td>Có, chỉ kho chi nhánh mình</td><td>Có, chọn kho</td></tr>
@@ -35,7 +44,7 @@
 <tr><td>Cấp tài khoản, thay đổi quyền, khóa/mở, cấp lại mật khẩu nội bộ</td><td>Không</td><td>Có, trừ tự thay đổi quyền/trạng thái</td></tr>
 <tr><td>Thêm/sửa/xóa tài khoản cả 4 vai trò</td><td>Không</td><td>Có; xóa chỉ khi chưa có dữ liệu liên kết</td></tr>
 <tr><td>Tự thay đổi quyền/trạng thái, tự xóa hoặc xóa nhật ký</td><td>Không</td><td>Không</td></tr>
-</tbody></table></div></details>
+</tbody></table></div></div></details>
 </section></body>
 </html>
 

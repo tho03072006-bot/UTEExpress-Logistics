@@ -5,32 +5,17 @@
 <span sec:authorize="hasRole('ADMIN')" class="badge text-bg-dark">ADMIN · Quản trị hệ thống</span>
 <span sec:authorize="hasRole('MANAGER')" class="badge text-bg-primary">MANAGER · Quản lý vận hành</span>
 </nav>
-<nav th:fragment="sidebar" class="staff-nav" aria-label="Chức năng nội bộ">
-<div class="staff-nav-heading">ĐIỀU HÀNH UTEEXPRESS</div>
-<a th:href="@{/manager/trang-chu}"><i class="bi bi-grid-1x2"></i> Tổng quan vận hành</a>
-<label class="staff-menu-search">Tìm chức năng<input type="search" class="form-control form-control-sm" placeholder="Ví dụ: đối soát…" maxlength="60" data-staff-menu-search></label>
-<p class="small text-muted px-2" data-staff-menu-empty hidden>Không tìm thấy chức năng.</p>
-<details open><summary>Đơn hàng &amp; điều phối</summary><div>
-<a th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
-<a th:href="@{/manager/tra-cuu-hang-loat}"><i class="bi bi-list-check"></i> Tra cứu nhiều vận đơn</a>
-<a th:href="@{/manager/phan-cong}"><i class="bi bi-truck"></i> Phân công Shipper</a>
-<a th:href="@{/manager/kho}"><i class="bi bi-buildings"></i> Kho và chuyến trung chuyển</a>
-<a th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-circle"></i> Cảnh báo cần xử lý</a>
-<a th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ vận hành</a>
-</div></details>
-<details open><summary>Chăm sóc &amp; tài chính</summary><div>
-<a th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-left-text"></i> Khiếu nại</a>
-<a th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát cước COD</a>
-<a th:href="@{/manager/khuyen-mai}"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
-</div></details>
-<details><summary>Báo cáo &amp; giá cước</summary><div>
-<a th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart"></i> Báo cáo vận hành</a>
-<a th:href="@{/manager/hieu-suat-shipper}"><i class="bi bi-graph-up"></i> Hiệu suất Shipper</a>
-<a th:href="@{/manager/bang-cuoc}"><i class="bi bi-receipt"></i> Xem bảng cước</a>
-<a th:href="@{/manager/lich-cuoc}"><i class="bi bi-calendar3"></i> Lịch cước</a>
-</div></details>
-<details sec:authorize="hasRole('ADMIN')"><summary>Quản trị · Chỉ Admin</summary><div>
-<a th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Tổng quan quản trị</a>
+<nav th:fragment="sidebar" class="staff-nav" aria-label="Chức năng nội bộ" th:attr="data-staff-role=${#authorization.expression('hasRole(''ADMIN'')') ? 'ADMIN' : 'MANAGER'}">
+<div class="staff-nav-role"><span class="staff-role-icon"><i class="bi" th:classappend="${#authorization.expression('hasRole(''ADMIN'')')} ? 'bi-shield-lock' : 'bi-building'" aria-hidden="true"></i></span><div>
+<strong sec:authorize="hasRole('ADMIN')">Quản trị hệ thống</strong><strong sec:authorize="hasRole('MANAGER')">Quản lý vận hành</strong>
+<small sec:authorize="hasRole('ADMIN')">Toàn bộ chi nhánh</small><small sec:authorize="hasRole('MANAGER')">Chi nhánh được phân công</small>
+</div></div>
+<label class="staff-menu-search"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Tìm chức năng</span><input type="search" class="form-control form-control-sm" placeholder="Tìm chức năng…" maxlength="60" data-staff-menu-search></label>
+<p class="staff-menu-empty" role="status" data-staff-menu-empty hidden>Không tìm thấy chức năng. Thử từ khóa khác hoặc nhấn Esc để xóa tìm kiếm.</p>
+<div class="staff-nav-heading">KHÔNG GIAN LÀM VIỆC</div>
+<a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/trang-chu}"><i class="bi bi-grid-1x2" aria-hidden="true"></i> Tổng quan quản trị</a>
+<a th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2" aria-hidden="true"></i> Tổng quan vận hành</a>
+<details sec:authorize="hasRole('ADMIN')" data-staff-group="administration" open><summary><i class="bi bi-shield-lock" aria-hidden="true"></i> Quản trị hệ thống</summary><div>
 <a th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people"></i> Tài khoản · 4 vai trò</a>
 <a th:href="@{/admin/chi-nhanh}"><i class="bi bi-building"></i> Chi nhánh và kho</a>
 <a th:href="@{/admin/chinh-sach-van-hanh}"><i class="bi bi-sliders"></i> Chính sách vận hành</a>
@@ -39,10 +24,29 @@
 <a th:href="@{/admin/an-toan-truy-cap}"><i class="bi bi-shield-check"></i> An toàn truy cập</a>
 <a th:href="@{/admin/nhat-ky}"><i class="bi bi-journal-text"></i> Nhật ký quản trị</a>
 </div></details>
-<details><summary>Tài khoản của tôi</summary><div>
+<details data-staff-group="operations" th:open="${!#authorization.expression('hasRole(''ADMIN'')')}"><summary><i class="bi bi-box-seam" aria-hidden="true"></i> Đơn hàng &amp; điều phối</summary><div>
+<a th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
+<a th:href="@{/manager/tra-cuu-hang-loat}"><i class="bi bi-list-check"></i> Tra cứu nhiều vận đơn</a>
+<a th:href="@{/manager/phan-cong}"><i class="bi bi-truck"></i> Phân công Shipper</a>
+<a th:href="@{/manager/kho}"><i class="bi bi-buildings"></i> Kho và chuyến trung chuyển</a>
+<a th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-circle"></i> Cảnh báo cần xử lý</a>
+<a th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ vận hành</a>
+</div></details>
+<details data-staff-group="finance"><summary><i class="bi bi-wallet2" aria-hidden="true"></i> Chăm sóc &amp; tài chính</summary><div>
+<a th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-left-text"></i> Khiếu nại</a>
+<a th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát cước COD</a>
+<a th:href="@{/manager/khuyen-mai}"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
+</div></details>
+<details data-staff-group="reports"><summary><i class="bi bi-bar-chart" aria-hidden="true"></i> Báo cáo &amp; giá cước</summary><div>
+<a th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart"></i> Báo cáo vận hành</a>
+<a th:href="@{/manager/hieu-suat-shipper}"><i class="bi bi-graph-up"></i> Hiệu suất Shipper</a>
+<a th:href="@{/manager/bang-cuoc}"><i class="bi bi-receipt"></i> Xem bảng cước</a>
+<a th:href="@{/manager/lich-cuoc}"><i class="bi bi-calendar3"></i> Lịch cước</a>
+</div></details>
+<details data-staff-group="account"><summary><i class="bi bi-person-circle" aria-hidden="true"></i> Tài khoản của tôi</summary><div>
 <a th:href="@{/noi-bo/tai-khoan}"><i class="bi bi-person-badge"></i> Thông tin tài khoản</a>
 <a th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
 </div></details>
-
+<p class="staff-nav-foot"><i class="bi bi-shield-check" aria-hidden="true"></i> Truy cập theo quyền được cấp</p>
 </nav>
 </body></html>
