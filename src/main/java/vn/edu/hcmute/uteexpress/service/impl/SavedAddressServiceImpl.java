@@ -26,14 +26,17 @@ public class SavedAddressServiceImpl implements SavedAddressService {
     private final AppUserRepository appUserRepository;
     private final jakarta.validation.Validator validator;
     private final vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing;
+    private final jakarta.persistence.EntityManager entityManager;
 
     public SavedAddressServiceImpl(SavedAddressRepository savedAddressRepository,
                                    AppUserRepository appUserRepository,jakarta.validation.Validator validator,
-                                   vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing) {
+                                   vn.edu.hcmute.uteexpress.service.routing.SavedAddressRoutingService routing,
+                                   jakarta.persistence.EntityManager entityManager) {
         this.savedAddressRepository = savedAddressRepository;
         this.appUserRepository = appUserRepository;
         this.validator=validator;
         this.routing=routing;
+        this.entityManager=entityManager;
     }
 
     @Override
@@ -165,6 +168,7 @@ public class SavedAddressServiceImpl implements SavedAddressService {
     }
     private AppUser requireLockedUser(String username) {
         var user=appUserRepository.findLockedByUsername(username).orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        entityManager.refresh(user, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if(!user.isEnabled() || user.isLockedByAdmin() || user.getRole()!=AppUser.Role.USER)
             throw new org.springframework.security.access.AccessDeniedException("Chỉ người gửi đang hoạt động được thay đổi sổ địa chỉ.");
         return user;
