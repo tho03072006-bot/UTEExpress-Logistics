@@ -18,13 +18,16 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final PasswordEncoder passwordEncoder;
     private final EmailChangeService emailChangeService;
     private final jakarta.validation.Validator validator;
+    private final jakarta.persistence.EntityManager entityManager;
 
     public UserProfileServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-                                  EmailChangeService emailChangeService,jakarta.validation.Validator validator) {
+                                  EmailChangeService emailChangeService,jakarta.validation.Validator validator,
+                                  jakarta.persistence.EntityManager entityManager) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailChangeService = emailChangeService;
         this.validator=validator;
+        this.entityManager=entityManager;
     }
 
     @Override
@@ -39,6 +42,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         var errors=validator.validate(form);if(!errors.isEmpty())throw new IllegalStateException(errors.iterator().next().getMessage());
         AppUser appUser = appUserRepository.findLockedByUsername(username)
             .orElseThrow(()->new IllegalStateException("Không tìm thấy tài khoản."));
+        entityManager.refresh(appUser, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if(!appUser.isEnabled() || appUser.isLockedByAdmin() || (appUser.getRole()!=AppUser.Role.USER && appUser.getRole()!=AppUser.Role.SHIPPER))
             throw new org.springframework.security.access.AccessDeniedException("Tài khoản không được cập nhật ở khu vực này.");
         String newEmail = form.getEmail().trim();
@@ -64,6 +68,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         vn.edu.hcmute.uteexpress.validation.PublicAccountValidation.requirePassword(form.getNewPassword());
         AppUser appUser = appUserRepository.findLockedByUsername(username)
             .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản đang đăng nhập."));
+        entityManager.refresh(appUser, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         if(!appUser.isEnabled() || appUser.isLockedByAdmin() || (appUser.getRole()!=AppUser.Role.USER && appUser.getRole()!=AppUser.Role.SHIPPER))
             throw new org.springframework.security.access.AccessDeniedException("Tài khoản không được đổi mật khẩu ở khu vực này.");
 
