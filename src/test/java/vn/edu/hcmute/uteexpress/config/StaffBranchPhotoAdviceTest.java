@@ -37,6 +37,15 @@ class StaffBranchPhotoAdviceTest {
         assertNull(advice.staffBranchPhoto(null, request));
         verifyNoInteractions(provider, repository);
     }
+    @Test void switchingManagerWithinTheSameSessionDoesNotReuseAnotherAccountsBranch() {
+        when(provider.getIfAvailable()).thenReturn(repository);
+        when(repository.findBranchCodeByUsername("manager_han")).thenReturn(Optional.of("HAN"));
+        when(repository.findBranchCodeByUsername("manager_sgn")).thenReturn(Optional.of("SGN"));
+        var request=new MockHttpServletRequest();request.getSession(true);
+        assertEquals("han",advice.staffBranchPhoto(user("manager_han","ROLE_MANAGER"),request));
+        assertEquals("sgn",advice.staffBranchPhoto(user("manager_sgn","ROLE_MANAGER"),request));
+        verify(repository).findBranchCodeByUsername("manager_sgn");
+    }
 
     @Test void managerWithoutBranchOrUnsafeCodeOrDatabaseErrorFallsBackToDefaultPhoto() {
         when(provider.getIfAvailable()).thenReturn(repository);

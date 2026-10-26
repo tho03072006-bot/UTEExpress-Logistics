@@ -16,6 +16,7 @@ import vn.edu.hcmute.uteexpress.repository.routing.StaffBranchRepository;
 @ControllerAdvice
 public class StaffBranchPhotoAdvice {
     static final String SESSION_KEY = "ute.staffBranchPhoto";
+    private static final String OWNER_KEY = SESSION_KEY + ".owner";
     private final ObjectProvider<StaffBranchRepository> staffBranches;
 
     public StaffBranchPhotoAdvice(ObjectProvider<StaffBranchRepository> staffBranches) {
@@ -27,7 +28,8 @@ public class StaffBranchPhotoAdvice {
         if (authentication == null || !authentication.isAuthenticated() || !hasRole(authentication, "ROLE_MANAGER")
                 || hasRole(authentication, "ROLE_ADMIN")) return null;
         var session = request.getSession(false);
-        if (session != null && session.getAttribute(SESSION_KEY) instanceof String cached) return cached.isEmpty() ? null : cached;
+        if (session != null && authentication.getName().equals(session.getAttribute(OWNER_KEY))
+                && session.getAttribute(SESSION_KEY) instanceof String cached) return cached.isEmpty() ? null : cached;
         var repository = staffBranches.getIfAvailable();
         if (repository == null) return null;
         String code;
@@ -37,7 +39,7 @@ public class StaffBranchPhotoAdvice {
         } catch (RuntimeException ex) {
             return null;
         }
-        if (session != null) session.setAttribute(SESSION_KEY, code);
+        if (session != null) { session.setAttribute(SESSION_KEY, code); session.setAttribute(OWNER_KEY, authentication.getName()); }
         return code.isEmpty() ? null : code;
     }
 

@@ -99,6 +99,7 @@
         // Nếu so cả chúng, mỗi lần polling sẽ đóng form vừa mở dù dữ liệu nghiệp vụ chưa thay đổi.
         copy.querySelectorAll("details[open]").forEach(element => element.removeAttribute("open"));
         copy.querySelectorAll(".sx-count-hint").forEach(element => element.remove());
+        copy.querySelectorAll("[data-realtime-client]").forEach(element => element.remove());
         copy.querySelectorAll("[data-sx-schedule]").forEach(input => {
             input.removeAttribute("min"); input.removeAttribute("max"); input.classList.remove("is-invalid");
         });
