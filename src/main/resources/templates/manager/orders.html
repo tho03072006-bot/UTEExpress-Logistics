@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
-<head><title>Tra soát đơn toàn hệ thống - UTEExpress</title></head>
+<head><title>Tra soát đơn hàng - UTEExpress</title></head>
 <body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head sx-art-orders"><div><h1 class="h3">Tra soát đơn hàng toàn hệ thống</h1><p>Mặc định 30 ngày gần nhất, tối đa 366 ngày.</p></div></div>
+<div class="ute-page-head sx-art-orders"><div><h1 class="h3">Tra soát đơn hàng</h1><p>Mặc định 30 ngày gần nhất, tối đa 366 ngày. Dữ liệu theo phạm vi được cấp.</p></div></div>
 <th:block th:replace="~{fragments/branch-filter :: note(${branches})}"></th:block>
 <form method="get" th:action="@{/manager/don-hang}" class="ute-panel p-3 row g-3 mb-4">
 <div th:replace="~{fragments/branch-filter :: select(${branches}, ${branchId})}"></div>
