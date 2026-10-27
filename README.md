@@ -110,42 +110,44 @@ Quy ước nghiệp vụ:
 - Địa danh theo bản đồ hành chính cũ (63 tỉnh/thành, cấp quận/huyện trước 01/07/2025).
 - **COD** là cước vận chuyển người nhận trả bằng tiền mặt lúc nhận hàng, **không phải thu hộ tiền hàng**.
 - Hạn giao của đơn là mốc trên của thời gian dự kiến ở trang Cước tuyến (ví dụ "2–3 ngày" là 72 giờ); quá mốc này đơn hiện ở cảnh báo Quá hạn giao.
-- Hàng không khai giá bị mất/hư hỏng được bồi thường tối đa 4 lần cước, đã gồm hoàn cước (Điều 25 Nghị định 47/2011/NĐ-CP); đơn COD chưa thu cước tối đa 3 lần.
+- Hàng không khai giá bị mất/hư hỏng được bồi thường tối đa 4 lần cước, đã gồm hoàn cước (Điều 25 Nghị định 47/2011/NĐ-CP); đơn COD chưa thu cước tối đa 3 lần. Đơn chưa được lấy hàng hoặc đã hủy chỉ hoàn lại cước đã thu.
+
+Mật khẩu tài khoản demo do chủ repo cung cấp riêng; không lưu trong Git.
 
 **Admin** – đăng nhập ở `/noi-bo/dang-nhap`
 
-| Tên đăng nhập | Mật khẩu | Phạm vi |
-|---|---|---|
-| `admin` | `Admin@123456` | Cả 3 chi nhánh |
+| Tên đăng nhập | Phạm vi |
+|---|---|
+| `admin` | Cả 3 chi nhánh |
 
 **Manager** – đăng nhập ở `/noi-bo/dang-nhap`
 
-| Chi nhánh | Tên đăng nhập | Mật khẩu |
-|---|---|---|
-| SGN – TP. Hồ Chí Minh | `manager_sgn` | `Manager@123456` |
-| HAN – Hà Nội | `manager_han` | `Manager@123456` |
-| DAD – Đà Nẵng | `manager_dad` | `Manager@123456` |
+| Chi nhánh | Tên đăng nhập |
+|---|---|
+| SGN – TP. Hồ Chí Minh | `manager_sgn` |
+| HAN – Hà Nội | `manager_han` |
+| DAD – Đà Nẵng | `manager_dad` |
 
 **Shipper** – đăng nhập ở `/dang-nhap`
 
-| Chi nhánh | Tên đăng nhập | Mật khẩu |
-|---|---|---|
-| SGN – TP. Hồ Chí Minh | `shipper_sgn1` | `123456` |
-| SGN – TP. Hồ Chí Minh | `shipper_sgn2` | `123456` |
-| HAN – Hà Nội | `shipper_han1` | `123456` |
-| HAN – Hà Nội | `shipper_han2` | `Shipper@123456` |
-| DAD – Đà Nẵng | `shipper_dad1` | `Shipper@123456` |
+| Chi nhánh | Tên đăng nhập |
+|---|---|
+| SGN – TP. Hồ Chí Minh | `shipper_sgn1` |
+| SGN – TP. Hồ Chí Minh | `shipper_sgn2` |
+| HAN – Hà Nội | `shipper_han1` |
+| HAN – Hà Nội | `shipper_han2` |
+| DAD – Đà Nẵng | `shipper_dad1` |
 
 Tên đăng nhập nội bộ theo mẫu `vaitro_chinhanh[số]`. Ngày 24/10/2026 đã đổi `manager1` → `manager_sgn`, `shipper1` → `shipper_sgn1`,
 `shipper2` → `shipper_sgn2`, `shipper3` → `shipper_han1` (công cụ `tool/database/RenameAivenBranchAccounts`); nhật ký cũ vẫn ghi tên cũ.
 
 **Người gửi (USER, không thuộc chi nhánh)** – đăng nhập ở `/dang-nhap`
 
-| Tên đăng nhập | Mật khẩu | Ghi chú |
-|---|---|---|
-| `thotest`, `huongshop`, `minhstore`, `lanboutique` | `123456` | Có sẵn đơn hàng để demo |
-| `newuser1` | `123456` | |
-| `chuakichhoat` | `123456` | Chưa kích hoạt OTP, dùng thử ca đăng nhập bị từ chối |
+| Tên đăng nhập | Ghi chú |
+|---|---|
+| `thotest`, `huongshop`, `minhstore`, `lanboutique` | Có sẵn đơn hàng để demo |
+| `newuser1` | |
+| `chuakichhoat` | Chưa kích hoạt OTP, dùng thử ca đăng nhập bị từ chối |
 
 Mã giảm giá: `UTE10` (giảm 10%), `FREESHIP15` (giảm 15.000đ cho đơn từ 30.000đ),
 `HETHAN` (đã hết hạn), `DATAT` (đã tắt) — hai mã sau dùng để thử ca lỗi.
@@ -201,3 +203,5 @@ và không kết nối Aiven. PR có dấu ✗ đỏ nghĩa là build hoặc tes
 ## Tài liệu chi tiết
 
 `SETUP.md` — hướng dẫn cài đặt đầy đủ hơn, kèm cách xử lý các lỗi thường gặp.
+
+[Báo cáo rà soát ngày 27/10/2026](docs/BAO_CAO_TONG_THE_2026_10_27.md) — các lỗi đã sửa, ma trận kiểm thử 5 vai trò, trợ lý, khiếu nại, kết quả migration và những phần chưa nghiệm thu trực tiếp. Full test tại mốc báo cáo: 1.625 test Java và 116 test JavaScript, không failure/error/skipped.

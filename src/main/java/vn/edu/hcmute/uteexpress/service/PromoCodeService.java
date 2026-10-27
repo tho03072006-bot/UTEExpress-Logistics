@@ -27,6 +27,9 @@ public interface PromoCodeService {
     /** Tang so luot da dung sau khi don duoc tao thanh cong. */
     void markUsed(PromoCode promoCode);
 
+    /** Trả lại một lượt dùng khi đơn đã áp mã bị hủy trước khi lấy hàng (đơn không được phục vụ thì không tính lượt). */
+    void releaseUsage(PromoCode promoCode);
+
     /** Tra ma neu ton tai, khong nem loi - dung cho cho chi can hien thi. */
     Optional<PromoCode> findByCode(String code);
 }

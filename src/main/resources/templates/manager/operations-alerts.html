@@ -1,6 +1,8 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Cảnh báo vận hành - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-page-head sx-art-alert"><div><h1 class="h3">Đơn cần xử lý</h1><p>Đơn chậm, lỗi thanh toán và khiếu nại quá hạn.</p></div></div>
+<div class="alert alert-light border" role="status" th:if="${message}" th:text="${message}"></div>
+<div class="ute-field-error mb-3" role="alert" th:if="${error}" th:text="${error}"></div>
 <form method="get" th:action="@{/manager/canh-bao}" class="d-flex flex-wrap gap-2 align-items-end mb-2" th:if="${branches.size() > 1}">
 <input type="hidden" name="alert" th:value="${selected}">
 <div><label class="form-label small mb-0" for="branchId">Chi nhánh</label>
@@ -17,7 +19,9 @@
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='DROP_OFF_WAITING',branchId=${branchId})}">Chờ khách mang tới quá hạn</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='LATE_DELIVERY',branchId=${branchId})}">Quá hạn giao</a>
 <a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='RETRY_DUE',branchId=${branchId})}">Đến hẹn giao lại</a>
-<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='MANY_FAILURES',branchId=${branchId})}">Thất bại nhiều lần</a></div>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='MANY_FAILURES',branchId=${branchId})}">Thất bại nhiều lần</a>
+<a class="btn btn-outline-primary" th:href="@{/manager/canh-bao(alert='HELD',branchId=${branchId})}">Shipper đang giữ, chưa giao</a></div>
+<p class="small text-muted" th:if="${selected.name() == 'HELD'}">Đơn đã lấy hàng chưa đi giao, hoặc vừa giao thất bại. Khi Shipper đang giữ nghỉ ca/nghỉ việc, thu hồi và giao cho Shipper khác cùng chi nhánh.</p>
 <p class="alert alert-warning" th:if="${selected.name() == 'PAYMENT_ISSUE'}">Đơn ví chưa thanh toán cần người gửi hoàn tất thanh toán. Nếu cước, giảm giá hoặc biên nhận không khớp, liên hệ Admin để tra soát; không yêu cầu trả lại lần nữa khi chưa đối chiếu giao dịch. Không tự sửa SQL thành PAID, không thu tiền mặt thay ví.</p>
 <div class="table-responsive"><table class="table"><thead><tr><th>Vận đơn</th><th>Người nhận</th><th>Tạo lúc</th><th>Xử lý</th><th th:if="${selected.name() == 'PAYMENT_ISSUE'}">Người gửi cần liên hệ</th></tr></thead><tbody>
 <tr th:each="o : ${orders}"><td th:text="${o.trackingCode}"></td><td th:text="${o.receiverName}"></td><td th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}"></td><td>
@@ -26,6 +30,26 @@
 <a th:if="${o.status.name() == 'PICKED_UP' and o.shipper == null}" th:href="@{/manager/phan-cong(branchId=${branchId})}">Phân công giao</a>
 <span th:if="${o.status.name() == 'FAILED' and deliveryHubIds.contains(o.id)}"><a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETRY',targetId=${o.id})}">Giao lại</a> · <a th:href="@{/manager/ho-so-van-hanh/tao(kind='RETURN',targetId=${o.id})}">Đề nghị hoàn</a></span>
 <span th:if="${o.status.name() == 'FAILED' and !deliveryHubIds.contains(o.id)}" class="text-muted">Kho phụ trách chặng giao xử lý hồ sơ.</span>
+<details class="mt-1" th:if="${reclaimOptions.containsKey(o.id)}"><summary th:text="|Chuyển Shipper khác (đang giữ: ${o.shipper.fullName != null ? o.shipper.fullName : o.shipper.username})|">Chuyển Shipper khác</summary>
+<form method="post" th:action="@{/manager/canh-bao/thu-hoi}" class="d-flex flex-wrap gap-2 mt-1 align-items-end">
+<input type="hidden" name="trackingCode" th:value="${o.trackingCode}"><input type="hidden" name="expectedShipperId" th:value="${o.shipper.id}">
+<input type="hidden" name="expectedUpdatedAt" th:value="${o.updatedAt}"><input type="hidden" name="alert" th:value="${selected}">
+<input type="hidden" name="branchId" th:value="${branchId}" th:if="${branchId != null}">
+<div><label class="form-label small mb-0" th:for="|reclaim-shipper-${o.id}|">Giao cho</label>
+<select class="form-select form-select-sm" name="shipperId" th:id="|reclaim-shipper-${o.id}|" required>
+<option th:each="c : ${reclaimOptions[o.id]}" th:value="${c.id}" th:text="|${c.fullName != null ? c.fullName : c.username} · đang giữ ${c.activeOrders}/${c.capacity}|"></option></select></div>
+<div><label class="form-label small mb-0" th:for="|reclaim-note-${o.id}|">Lý do</label>
+<input class="form-control form-control-sm" name="note" th:id="|reclaim-note-${o.id}|" required minlength="5" maxlength="350" placeholder="Shipper đang giữ nghỉ ca, hàng đã về bưu cục"></div>
+<button class="btn btn-sm btn-outline-primary" th:disabled="${#lists.isEmpty(reclaimOptions[o.id])}">Thu hồi và giao</button></form>
+<p class="small text-muted mb-0" th:if="${#lists.isEmpty(reclaimOptions[o.id])}">Chi nhánh chưa có Shipper khác đang hoạt động và còn sức chứa để nhận đơn.</p></details>
+<details class="mt-1" th:if="${cancelableIds.contains(o.id)}"><summary>Hủy đơn</summary>
+<form method="post" th:action="@{/manager/canh-bao/huy-don}" class="d-flex flex-wrap gap-2 mt-1 align-items-end"
+      th:attr="data-ute-confirm=|Hủy vận đơn ${o.trackingCode}? Người gửi sẽ nhận email báo; đơn đã trả ví được mở yêu cầu hoàn tiền.|">
+<input type="hidden" name="orderId" th:value="${o.id}"><input type="hidden" name="revision" th:value="${o.revision}">
+<input type="hidden" name="alert" th:value="${selected}"><input type="hidden" name="branchId" th:value="${branchId}" th:if="${branchId != null}">
+<div><label class="form-label small mb-0" th:for="|cancel-reason-${o.id}|">Lý do hủy</label>
+<input class="form-control form-control-sm" name="reason" th:id="|cancel-reason-${o.id}|" required minlength="10" maxlength="300" placeholder="Lấy hàng thất bại 3 lần, không liên lạc được người gửi"></div>
+<button class="btn btn-sm btn-outline-secondary">Hủy đơn</button></form></details>
 </td><td th:if="${selected.name() == 'PAYMENT_ISSUE'}"><span th:text="${o.senderName}"></span><br><span th:text="${o.sender.email}"></span></td></tr><tr th:if="${orders.empty}"><td colspan="5">Không có đơn trong nhóm này.</td></tr></tbody></table></div>
 <div class="d-flex gap-3"><a th:if="${orders.hasPrevious()}" th:href="@{/manager/canh-bao(alert=${selected},branchId=${branchId},page=${orders.number-1},complaintPage=${lateComplaints.number},cashPage=${lateCash.number})}">Trang trước</a><span th:text="|${orders.totalElements} đơn|"></span><a th:if="${orders.hasNext()}" th:href="@{/manager/canh-bao(alert=${selected},branchId=${branchId},page=${orders.number+1},complaintPage=${lateComplaints.number},cashPage=${lateCash.number})}">Trang sau</a></div>
 <h2 id="khieu-nai-qua-han" class="h5 mt-4">Khiếu nại quá hạn phản hồi/giải quyết</h2><p th:if="${lateComplaints.empty}">Không có hồ sơ quá hạn.</p>

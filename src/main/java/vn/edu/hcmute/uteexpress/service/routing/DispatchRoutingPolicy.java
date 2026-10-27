@@ -67,17 +67,43 @@ public class DispatchRoutingPolicy {
         boolean delivery = route.getStage() == OrderRoute.Stage.DEST_HUB && order.getStatus() == Order.OrderStatus.PICKED_UP;
         if (!pickup && !delivery) throw new IllegalArgumentException("Chỉ phân công đơn chờ lấy hoặc chờ giao tại kho nhận.");
     }
+    /**
+     * Đơn đang có Shipper giữ nhưng chưa đi giao (kể cả đã phân công từ kho nhận), hoặc vừa giao thất bại.
+     * Manager được thu hồi để giao cho Shipper khác khi người đang giữ nghỉ ca/nghỉ việc. Đơn đang trên đường giao thì không.
+     */
+    public boolean isReclaimable(OrderRoute route) {
+        Order order = route.getOrder();
+        if (order.getShipper() == null || route.isReturnLeg()) return false;
+        return (order.getStatus() == Order.OrderStatus.PICKED_UP
+                && ((route.getStage() == OrderRoute.Stage.PICKUP && !route.isDropOff()) || route.getStage() == OrderRoute.Stage.LAST_MILE))
+                || (order.getStatus() == Order.OrderStatus.FAILED && route.getStage() == OrderRoute.Stage.LAST_MILE);
+    }
+    public void requireReclaimable(OrderRoute route) {
+        if (!isReclaimable(route)) throw new IllegalArgumentException(
+                "Chỉ thu hồi đơn đã lấy hàng mà chưa đi giao, hoặc đơn vừa giao thất bại. Đơn đang trên đường giao thì chờ Shipper báo kết quả.");
+    }
     public void requireManager(AppUser actor, OrderRoute route) { requireManager(scope(actor, null), route); }
+    /** Không ném lỗi: dùng để chỉ hiện thao tác cho đúng Manager phụ trách chặng hiện tại (Admin luôn được). */
+    public boolean canManage(AppUser actor, OrderRoute route) {
+        Long scope = scope(actor, null);
+        return scope == null || scope.equals(branch(route).getId());
+    }
+    public java.util.Optional<OrderRoute> routeIfPresent(Order order) { return routes.findByOrder_Id(order.getId()); }
+    public int capacity() { return policies.current().getMaxActiveOrders(); }
     private void requireManager(Long scope, OrderRoute route) {
         if (scope != null && !scope.equals(branch(route).getId())) throw new AccessDeniedException("Bạn không được phân công chặng ở chi nhánh khác.");
     }
     public long load(Long shipperId) { return orders.countByShipper_IdAndStatusIn(shipperId, ACTIVE); }
+    /** Bên gọi khóa Shipper trước đơn để phân công và giao lại không cùng dùng chỗ trống cuối. */
+    public void requireCapacity(AppUser shipper) {
+        if (load(shipper.getId()) >= capacity()) throw new IllegalArgumentException("Shipper đã đủ số đơn tối đa đang giữ.");
+    }
     public void requireShipper(AppUser shipper, OrderRoute route) {
         if (!shipper.isEnabled() || shipper.isLockedByAdmin() || shipper.getRole() != AppUser.Role.SHIPPER)
             throw new IllegalArgumentException("Hãy chọn Shipper đang hoạt động.");
         Long branchId = staff.findByUser_Id(shipper.getId()).map(s -> s.getBranch().getId()).orElse(null);
         if (!branch(route).getId().equals(branchId)) throw new IllegalArgumentException("Shipper phải thuộc đúng chi nhánh của chặng.");
-        if (load(shipper.getId()) >= policies.current().getMaxActiveOrders()) throw new IllegalArgumentException("Shipper đã đủ số đơn tối đa đang giữ.");
+        requireCapacity(shipper);
     }
     public List<AppUser> branchShippers(Long branchId) {
         return staff.findWithUserByBranchIds(List.of(branchId)).stream().map(StaffBranch::getUser)

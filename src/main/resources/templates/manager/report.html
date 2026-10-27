@@ -13,7 +13,7 @@
 <button class="btn btn-primary">Xem báo cáo</button><a class="btn btn-outline-primary" th:href="@{/manager/bao-cao/csv(from=${report.from},to=${report.to},branchId=${branchId})}">Tải CSV tổng hợp</a></form>
 <div class="row g-3 mb-4"><div class="col-md-4"><div class="ute-panel p-4"><div>Tổng đơn tạo trong khoảng</div><strong class="h3" th:text="${report.totalOrders}"></strong></div></div>
 <div class="col-md-4"><div class="ute-panel p-4"><div>Tỷ lệ giao thành công</div><strong class="h3" th:text="|${report.completionRate}%|"></strong><p class="small text-muted mb-0">Đã giao / (đã giao + hoàn).</p></div></div>
-<div class="col-md-4"><div class="ute-panel p-4"><div>Cước đã thanh toán trong khoảng</div><strong class="h3" th:text="|${#numbers.formatDecimal(report.paidShippingFees, 1, 'POINT', 0, 'COMMA')} đ|"></strong><p class="small text-muted mb-0">Đã trừ khuyến mãi.</p></div></div></div>
+<div class="col-md-4"><div class="ute-panel p-4"><div>Cước đã thanh toán trong khoảng</div><strong class="h3" th:text="|${#numbers.formatDecimal(report.paidShippingFees, 1, 'POINT', 0, 'COMMA')} đ|"></strong><p class="small text-muted mb-0">Đã trừ khuyến mãi, không tính đơn đã hủy. Đơn liên tỉnh tính cho chi nhánh gửi.</p></div></div></div>
 <div class="table-responsive"><table class="table"><thead><tr><th>Trạng thái hiện tại của đơn tạo trong khoảng</th><th>Số đơn</th></tr></thead>
 <tbody><tr th:each="row : ${report.counts}"><td th:text="${statusLabels[row.key]}"></td><td th:text="${row.value}"></td></tr></tbody></table></div>
 

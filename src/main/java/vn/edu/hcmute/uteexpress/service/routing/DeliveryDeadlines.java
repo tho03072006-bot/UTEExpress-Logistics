@@ -65,6 +65,15 @@ public class DeliveryDeadlines {
             LocalDateTime start = pickedUpAt != null ? pickedUpAt : order.getCreatedAt();
             return start == null ? null : start.plusHours(hours(order, route));
         }
+        /**
+         * Hạn lấy hàng của đơn Hỏa tốc: không thể hứa giao trong 4 giờ nếu để cả ngày mới lấy, nên hạn lấy không quá thời gian
+         * giao đã hứa (ngắn nhất trong các tuyến Hỏa tốc) và cũng không quá hạn lấy chung của Chính sách vận hành.
+         */
+        public int superExpressPickupHours() {
+            int promised = routeHours.entrySet().stream().filter(e -> e.getKey().service() == Order.ServiceType.SUPER_EXPRESS)
+                    .mapToInt(Map.Entry::getValue).min().orElse(policy.getSuperExpressHours());
+            return Math.min(policy.getPickupHours(), promised);
+        }
         /** Hạn ngắn nhất trong mọi tuyến và dịch vụ, để lọc sơ bộ ở cơ sở dữ liệu trước khi xét từng đơn. */
         public int shortest() {
             int min = Math.min(policy.getStandardHours(), Math.min(policy.getExpressHours(), policy.getSuperExpressHours()));

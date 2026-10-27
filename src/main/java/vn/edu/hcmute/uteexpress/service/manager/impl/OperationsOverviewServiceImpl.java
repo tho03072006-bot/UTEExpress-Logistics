@@ -34,8 +34,8 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         var policy = policies.current(); var now = LocalDateTime.now(clock);
         var pageable = PageRequest.of(page, 20, Sort.by("createdAt", "id"));
         if (alert == Alert.LATE_DELIVERY) return lateDeliveries(branch, policy, now, pageable);
-        return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now,
-                policy.getMaxDeliveryAttempts(), pageable);
+        return data.alerts(alert.name(), branch, now.minusHours(policy.getPickupHours()),
+                now.minusHours(deadlines.rules(policy).superExpressPickupHours()), now, policy.getMaxDeliveryAttempts(), pageable);
     }
     /**
      * Quá hạn giao theo hạn của từng tuyến, tính từ lúc lấy hàng; số đơn đang trên đường giao của một chi nhánh nhỏ nên lọc
@@ -86,7 +86,8 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         Long branch = scope.of(actor, null);
         // "Quá hạn giao" đếm theo hạn từng tuyến như trang danh sách, để số trên bảng hàng đợi khớp số đơn khi mở ra.
         if (alert == Alert.LATE_DELIVERY) return lateDeliveries(branch, policy, now, PageRequest.of(0, 1)).getTotalElements();
-        return data.countAlerts(alert.name(), branch, now.minusHours(policy.getPickupHours()), now, policy.getMaxDeliveryAttempts());
+        return data.countAlerts(alert.name(), branch, now.minusHours(policy.getPickupHours()),
+                now.minusHours(deadlines.rules(policy).superExpressPickupHours()), now, policy.getMaxDeliveryAttempts());
     }
     public long lateComplaintCount(String actor) {
         access.requireOperator(actor);
