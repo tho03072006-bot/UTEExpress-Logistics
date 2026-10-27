@@ -44,6 +44,16 @@ class PaymentReadinessTest {
         assertFalse(ShipperMoneyView.from(payment).isFulfillmentReady());
     }
 
+    @ParameterizedTest @org.junit.jupiter.params.provider.EnumSource(OrderPayment.PaymentMethod.class)
+    void everyPaidMethodNeedsACollectionTimestamp(OrderPayment.PaymentMethod method) {
+        var payment=payment(); payment.setMethod(method); payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        payment.setPaidAt(null);
+        assertFalse(PaymentReadiness.isReady(payment));
+        assertFalse(ShipperMoneyView.from(payment).isFulfillmentReady());
+        assertEquals(vn.edu.hcmute.uteexpress.dto.PaymentCollectionView.State.REVIEW,
+                vn.edu.hcmute.uteexpress.dto.PaymentCollectionView.from(payment.getOrder(),payment).state());
+    }
+
     @Test void compensationNeedsActuallyPaidPositiveAndConsistentAmount() {
         var payment = payment(); assertFalse(PaymentReadiness.isRefundable(payment));
         payment.setStatus(OrderPayment.PaymentStatus.PAID); assertTrue(PaymentReadiness.isRefundable(payment));

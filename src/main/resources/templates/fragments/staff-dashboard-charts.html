@@ -3,7 +3,7 @@
 <div th:fragment="charts(data)" class="staff-dashboard-charts" aria-label="Biểu đồ tổng quan vận hành">
     <article class="ute-panel staff-chart-card" aria-labelledby="orderStatusChartTitle">
         <div class="staff-chart-heading">
-            <div><h2 id="orderStatusChartTitle">Trạng thái đơn hàng</h2><p>Tất cả đơn · trạng thái hiện tại</p></div>
+            <div><h2 id="orderStatusChartTitle">Trạng thái đơn hàng</h2><p>Phạm vi được cấp · trạng thái hiện tại</p></div>
             <span class="staff-chart-total"><strong th:text="${#numbers.formatInteger(data.totalOrders, 1, 'POINT')}">0</strong> đơn</span>
         </div>
         <p th:if="${data.totalOrders == 0}" class="staff-chart-empty">Chưa có đơn hàng để thống kê trạng thái.</p>

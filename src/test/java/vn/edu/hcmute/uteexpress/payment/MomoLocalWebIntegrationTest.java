@@ -101,6 +101,44 @@ class MomoLocalWebIntegrationTest {
         mvc.perform(get("/api/payments/momo/" + order.getId() + "/status").with(user(principal)))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_EXPIRED"));
     }
+    @Test void gatewayNeverCallsAnIncompleteReceiptPaid() throws Exception {
+        payment.setStatus(OrderPayment.PaymentStatus.PAID); payments.flush();
+        mvc.perform(get("/nguoi-dung/thanh-toan/" + order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Thông tin thanh toán cần tra soát")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("<h5>Đã thanh toán</h5>"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-momo-payment"))));
+        assertEquals(OrderPayment.PaymentStatus.PAID,payment.getStatus()); assertNull(payment.getPaidAt());
+    }
+
+    @Test void gatewayNeverCallsAMismatchedSnapshotPaid() throws Exception {
+        payment.setStatus(OrderPayment.PaymentStatus.PAID); payment.setPaidAt(java.time.LocalDateTime.now());
+        payment.setTransactionRef("SIM-MOMO-TEST"); payment.setAmount(new BigDecimal("18001")); payments.flush();
+        mvc.perform(get("/nguoi-dung/thanh-toan/" + order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Thông tin thanh toán cần tra soát")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("<h5>Đã thanh toán</h5>"))));
+    }
+
+    @Test void verifiedReceiptRemainsVisibleAndCannotCreateAnotherQr() throws Exception {
+        payment.setStatus(OrderPayment.PaymentStatus.PAID); payment.setPaidAt(java.time.LocalDateTime.now());
+        payment.setTransactionRef("SIM-MOMO-TEST"); payments.flush();
+        mvc.perform(get("/nguoi-dung/thanh-toan/" + order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<h5>Đã thanh toán</h5>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SIM-MOMO-TEST")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-momo-payment"))));
+    }
+
+    @Test void fullyDiscountedWalletDoesNotHideItsConfirmationAction() throws Exception {
+        payment.setAmount(BigDecimal.ZERO); payment.setDiscountAmount(order.getShippingFee()); payments.flush();
+        mvc.perform(get("/nguoi-dung/don-hang/"+order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/nguoi-dung/thanh-toan/"+order.getId()+"\"")));
+        mvc.perform(get("/nguoi-dung/thanh-toan/"+order.getId()).with(user(new PublicAccountPrincipal(owner))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("data-momo-payment")));
+    }
+
     @Test void newOrderDtoRejectsVnpayButAcceptsCodAndMomo() {
         var request = new vn.edu.hcmute.uteexpress.dto.OrderCreateRequest(); request.setPaymentMethod(OrderPayment.PaymentMethod.VNPAY);
         assertFalse(request.isPaymentMethodSupported()); request.setPaymentMethod(OrderPayment.PaymentMethod.MOMO); assertTrue(request.isPaymentMethodSupported());

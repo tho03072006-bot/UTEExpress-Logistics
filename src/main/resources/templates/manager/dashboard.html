@@ -1,28 +1,35 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
 <head><title>Tổng quan vận hành - UTEExpress</title></head><body><section>
 <nav th:replace="~{admin/navigation :: navigation}"></nav>
-<div class="ute-page-head sx-art-monitor"><div><h1>Tổng quan vận hành</h1>
-<p>Việc cần xử lý và số liệu vận hành hôm nay.</p></div></div>
-<div class="row g-3 mb-3">
-<div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tổng đơn hàng</span><span class="ute-stat-value" th:text="${summary.totalOrders}">0</span></div></div>
-<div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Đơn chờ lấy</span><span class="ute-stat-value" th:text="${summary.pendingOrders}">0</span></div></div>
-<div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tài khoản Shipper</span><span class="ute-stat-value" th:text="${summary.totalShippers}">0</span></div></div>
-<div class="col-6 col-xl-3"><div class="ute-stat"><span class="ute-stat-label">Tổng tài khoản</span><span class="ute-stat-value" th:text="${summary.totalUsers}">0</span></div></div>
+<header class="staff-page-heading">
+<div><div class="staff-eyebrow"><span class="staff-role-tag" sec:authorize="hasRole('MANAGER')">MANAGER</span><span class="staff-role-tag" sec:authorize="hasRole('ADMIN')">ADMIN</span><span>Không gian vận hành</span></div>
+<h1>Tổng quan vận hành</h1><p>Theo dõi đơn hàng, ưu tiên công việc và điều phối giao nhận.</p></div>
+<div class="staff-heading-actions"><a class="btn btn-outline-secondary" th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart" aria-hidden="true"></i> Xem báo cáo</a><a class="btn btn-primary" th:href="@{/manager/phan-cong}"><i class="bi bi-truck" aria-hidden="true"></i> Phân công Shipper</a></div>
+</header>
+<div class="staff-scope-line"><span><i class="bi bi-building" aria-hidden="true"></i><th:block sec:authorize="hasRole('MANAGER')">Đơn gửi đi hoặc giao tới chi nhánh được phân công</th:block><th:block sec:authorize="hasRole('ADMIN')">Tất cả chi nhánh</th:block></span><span class="staff-scope-snapshot"><span th:text="|Tổng quan lúc ${#temporals.format(charts.generatedAt, 'HH:mm · dd/MM/yyyy')}|"></span><a class="staff-refresh-link" th:href="@{/manager/trang-chu}"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Làm mới</a></span></div>
+<div class="staff-metrics" aria-label="Chỉ số trong phạm vi được cấp">
+<article class="staff-metric"><div class="staff-metric-label"><span>Tổng đơn hàng</span><i class="bi bi-box-seam" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.totalOrders, 1, 'POINT')}">0</strong><small>Tất cả trạng thái trong phạm vi được cấp</small></article>
+<article class="staff-metric staff-metric-attention"><div class="staff-metric-label"><span>Đơn chờ lấy</span><i class="bi bi-hourglass-split" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.pendingOrders, 1, 'POINT')}">0</strong><small>Chờ Shipper đến lấy hàng</small></article>
+<article class="staff-metric"><div class="staff-metric-label"><span>Đơn mới · 14 ngày</span><i class="bi bi-calendar3" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(charts.totalNewOrders, 1, 'POINT')}">0</strong><small>Từ <span th:text="${#temporals.format(charts.fromDate, 'dd/MM')}"></span> đến <span th:text="${#temporals.format(charts.toDate, 'dd/MM')}"></span></small></article>
+<article class="staff-metric"><div class="staff-metric-label"><span>Tài khoản Shipper</span><i class="bi bi-person-badge" aria-hidden="true"></i></div><strong th:text="${#numbers.formatInteger(summary.totalShippers, 1, 'POINT')}">0</strong><small>Tài khoản trong phạm vi được cấp</small></article>
 </div>
-<div th:replace="~{fragments/staff-dashboard-charts :: charts(${charts})}"></div>
-<div class="staff-section-head"><h2>Cần chú ý</h2><a class="small" th:href="@{/manager/canh-bao}">Mở tất cả cảnh báo →</a></div>
-<div class="staff-task-grid" data-tracking-refresh-region="staff-work-queues">
-<a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index < 3}" th:href="@{${queue.path}}">
-<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span></a>
+<div class="staff-section-head"><div><h2>Công việc cần chú ý</h2><span class="staff-section-caption">Hàng đợi tự cập nhật khi bạn đang xem trang.</span></div><a class="staff-text-link" th:href="@{/manager/canh-bao}">Tất cả cảnh báo <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></div>
+<div class="staff-task-grid" data-realtime-region="staff-work-queues">
+<a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index < 3}" th:href="@{${queue.path}}" th:classappend="${queue.count > 0} ? 'has-work' : 'is-clear'">
+<span class="staff-task-top"><i class="bi" th:classappend="${state.index == 0 ? 'bi-person-plus' : (state.index == 1 ? 'bi-clock-history' : 'bi-credit-card')}" aria-hidden="true"></i><span th:text="${queue.count > 0 ? 'Cần xử lý' : 'Không có tồn đọng'}"></span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></span>
+<strong th:text="${#numbers.formatInteger(queue.count, 1, 'POINT')}">0</strong><span class="staff-task-name" th:text="${queue.label}"></span><small th:text="${queue.description}"></small></a>
 </div>
-<details class="staff-disclosure"><summary>Các hàng đợi khác · giao hàng, giao lại và khiếu nại</summary><div class="staff-task-grid">
-<a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index >= 3}" th:href="@{${queue.path}}">
-<strong th:text="${queue.count}">0</strong><span th:text="${queue.label}"></span></a>
+<details class="staff-disclosure staff-queue-disclosure"><summary><span><i class="bi bi-list-check" aria-hidden="true"></i> Hàng đợi khác</span><span class="staff-queue-counts" data-realtime-region="staff-other-queue-counts"><span th:each="queue, state : ${queues}" th:if="${state.index >= 3}" class="staff-queue-count" th:classappend="${queue.count > 0} ? 'has-work'" th:text="|${queue.label}: ${#numbers.formatInteger(queue.count, 1, 'POINT')}|"></span></span></summary><div class="staff-task-grid" data-realtime-region="staff-other-work-queues">
+<a class="staff-task" th:each="queue, state : ${queues}" th:if="${state.index >= 3}" th:href="@{${queue.path}}" th:classappend="${queue.count > 0} ? 'has-work' : 'is-clear'">
+<strong th:text="${#numbers.formatInteger(queue.count, 1, 'POINT')}">0</strong><span class="staff-task-name" th:text="${queue.label}"></span><small th:text="${queue.description}"></small></a>
 </div></details>
-<div class="staff-section-head"><h2>Công cụ thường dùng</h2></div>
-<div class="row g-3">
-<div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div><h3 class="h6">Tra cứu nhiều vận đơn</h3><p class="small text-muted">Tối đa 10 mã mỗi lần, xuất được CSV.</p><a class="btn btn-primary btn-sm" th:href="@{/manager/tra-cuu-hang-loat}">Tra cứu danh sách</a></div><img th:src="@{/images/shipper/track-radar.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div>
-<div class="col-md-6"><div class="ute-panel p-4 h-100 sx-panel-art"><div><h3 class="h6">Điều phối &amp; báo cáo</h3><p class="small text-muted">Phân công theo tình trạng đơn; theo dõi hiệu suất và số liệu vận hành.</p><a class="btn btn-outline-primary btn-sm" th:href="@{/manager/phan-cong}">Phân công</a><a class="btn btn-link btn-sm" th:href="@{/manager/bao-cao}">Báo cáo</a></div><img th:src="@{/images/shipper/report-board.svg}" alt="" aria-hidden="true" width="168" height="112"></div></div>
+<div class="staff-section-head"><div><h2>Nhịp độ giao nhận</h2></div><a class="staff-text-link" th:href="@{/manager/hieu-suat-shipper}">Hiệu suất Shipper <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></div>
+<div th:replace="~{fragments/staff-dashboard-charts :: charts(${charts})}"></div>
+<div class="staff-section-head"><div><h2>Công cụ thường dùng</h2></div><span class="staff-section-caption">Các chức năng khác có trong menu bên trái</span></div>
+<div class="staff-action-grid staff-tools-grid">
+<a class="staff-action-card" th:href="@{/manager/tra-cuu-hang-loat}"><span class="staff-action-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span><div><h3>Tra cứu nhiều vận đơn</h3><p>Tối đa 10 mã mỗi lần, hỗ trợ xuất CSV.</p><span class="staff-action-label">Tra cứu danh sách <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
+<a class="staff-action-card" th:href="@{/manager/kho}"><span class="staff-action-icon"><i class="bi bi-buildings" aria-hidden="true"></i></span><div><h3>Kho &amp; trung chuyển</h3><p>Nhận hàng, xếp chuyến và theo dõi bàn giao.</p><span class="staff-action-label">Mở kho <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
+<a class="staff-action-card" th:href="@{/manager/doi-soat-cod}"><span class="staff-action-icon"><i class="bi bi-cash-coin" aria-hidden="true"></i></span><div><h3>Đối soát cước COD</h3><p>Đối chiếu khoản thu và phiếu nộp tiền.</p><span class="staff-action-label">Mở đối soát <i class="bi bi-arrow-right" aria-hidden="true"></i></span></div></a>
 </div>
 </section></body></html>

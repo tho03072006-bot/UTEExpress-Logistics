@@ -17,9 +17,11 @@ public interface OperationsOverviewService {
     java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders);
     java.util.Set<Long> deliveryHubOrderIds(String actor, java.util.Collection<Order> orders);
     java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor);
-    Page<OrderComplaint> lateComplaints(String actor, int page);
+    Page<OrderComplaint> lateComplaints(String actor, Long branchId, int page);
+    default Page<OrderComplaint> lateComplaints(String actor, int page) { return lateComplaints(actor, null, page); }
     long lateComplaintCount(String actor);
-    Page<CodSettlement> lateCash(String actor, int page);
+    Page<CodSettlement> lateCash(String actor, Long branchId, int page);
+    default Page<CodSettlement> lateCash(String actor, int page) { return lateCash(actor, null, page); }
     /** Shipper của chi nhánh (Manager) hoặc chi nhánh Admin chọn; null là mọi chi nhánh với Admin. */
     Page<ShipperPerformanceResponse> performance(String actor, Long branchId, int page);
     default Page<ShipperPerformanceResponse> performance(String actor, int page) { return performance(actor, null, page); }

@@ -7,23 +7,27 @@
 <a class="btn btn-primary align-self-start" th:href="@{/admin/quan-ly-tai-khoan/tao}">Thêm tài khoản</a></div>
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
-<form th:action="@{/admin/quan-ly-tai-khoan}" method="get" class="d-flex gap-2 mb-3 align-items-end">
+<form th:action="@{/admin/quan-ly-tai-khoan}" method="get" class="staff-list-toolbar">
+<span class="staff-list-total"><strong th:text="${#numbers.formatInteger(accounts.totalElements, 1, 'POINT')}">0</strong> tài khoản phù hợp</span>
 <div><label for="filterRole" class="form-label">Lọc vai trò</label><select name="role" id="filterRole" class="form-select">
 <option value="">Tất cả vai trò</option><option th:each="role : ${roles}" th:value="${role}" th:text="${role}" th:selected="${role == selectedRole}"></option></select></div>
-<button class="btn btn-outline-primary" type="submit">Lọc</button></form>
-<p th:if="${accounts.empty}" class="ute-panel p-4">Không có tài khoản trong trang này.</p>
-<div th:each="account : ${accounts.content}" class="ute-panel p-4 mb-3">
-<div class="d-flex flex-wrap gap-2 align-items-center"><h2 class="h5 mb-0" th:text="${account.username}"></h2>
-<span class="badge text-bg-primary" th:text="${account.role}"></span>
-<span class="badge" th:classappend="${account.active} ? 'text-bg-success' : 'text-bg-warning'" th:text="${account.active} ? 'Hoạt động' : (${account.lockedByAdmin} ? 'Admin đã khóa' : 'Ngừng hoạt động')"></span></div>
-<p class="mt-2 mb-1"><span th:text="${account.fullName}"></span> · <span th:text="${account.email}"></span> · <span th:text="${account.phone}"></span></p>
-
-<div th:if="${account.username != #authentication.name}" class="d-flex flex-wrap gap-2">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/sua(id=${account.id})}">Chỉnh sửa</a>
-<a th:if="${account.active}" class="btn btn-outline-secondary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/mat-khau(id=${account.id})}">Cấp lại mật khẩu</a>
-<a class="btn btn-outline-danger btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/xoa(id=${account.id})}">Xóa có xác nhận</a></div>
-<p th:if="${account.username == #authentication.name}" class="small text-muted mb-0">Tài khoản đang đăng nhập.</p></div>
-<nav class="d-flex align-items-center gap-3" aria-label="Phân trang tài khoản">
+<button class="btn btn-outline-primary" type="submit">Lọc</button><a th:if="${selectedRole != null}" class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan}">Bỏ lọc</a></form>
+<div class="ute-panel staff-account-list"><div class="table-responsive"><table class="table staff-account-table align-middle">
+<caption class="visually-hidden">Danh sách tài khoản theo vai trò đã lọc. Xóa tài khoản yêu cầu xác nhận ở bước tiếp theo.</caption>
+<thead><tr><th scope="col">Tài khoản</th><th scope="col">Liên hệ</th><th scope="col">Vai trò</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+<tbody><tr th:if="${accounts.empty}"><td colspan="5" class="staff-table-empty"><i class="bi bi-people" aria-hidden="true"></i> Không có tài khoản trong trang này.<a class="staff-text-link d-block mt-2" th:href="@{/admin/quan-ly-tai-khoan}">Xem tất cả tài khoản</a></td></tr>
+<tr th:each="account : ${accounts.content}">
+<td><strong class="staff-account-name" th:text="${account.username}"></strong><span class="staff-account-sub" th:text="${account.fullName}"></span></td>
+<td><span class="staff-account-email" th:text="${account.email}"></span><span class="staff-account-sub" th:text="${account.phone}"></span></td>
+<td><span class="staff-account-role" th:attr="data-account-role=${account.role}" th:text="${account.role}"></span></td>
+<td><span class="staff-account-status" th:classappend="${account.active} ? 'is-active' : 'is-inactive'" th:text="${account.active} ? 'Hoạt động' : (${account.lockedByAdmin} ? 'Admin đã khóa' : 'Ngừng hoạt động')"></span></td>
+<td><div th:if="${account.username != #authentication.name}" class="staff-row-actions">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/sua(id=${account.id})}" th:attr="aria-label=|Chỉnh sửa tài khoản ${account.username}|">Chỉnh sửa</a>
+<a th:if="${account.active}" class="btn btn-outline-secondary btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/mat-khau(id=${account.id})}" th:attr="aria-label=|Cấp lại mật khẩu cho ${account.username}|">Cấp lại mật khẩu</a>
+<a class="btn btn-outline-danger btn-sm" th:href="@{/admin/quan-ly-tai-khoan/{id}/xoa(id=${account.id})}" th:attr="aria-label=|Mở xác nhận xóa tài khoản ${account.username}|">Xóa có xác nhận</a></div>
+<span th:if="${account.username == #authentication.name}" class="staff-account-self"><i class="bi bi-person-check" aria-hidden="true"></i> Tài khoản đang đăng nhập</span></td></tr>
+</tbody></table></div></div>
+<nav class="d-flex flex-wrap align-items-center gap-3 mt-3" aria-label="Phân trang tài khoản">
 <a th:if="${accounts.hasPrevious()}" class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan(page=${accounts.number - 1},role=${selectedRole})}">Trang trước</a>
 <span th:text="|Trang ${accounts.number + 1} · ${accounts.totalElements} tài khoản|"></span>
 <a th:if="${accounts.hasNext()}" class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan(page=${accounts.number + 1},role=${selectedRole})}">Trang sau</a></nav>

@@ -94,17 +94,17 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         var policy = policies.current(); var now = LocalDateTime.now(clock);
         return data.countLateComplaints(now.minusHours(policy.getComplaintResponseHours()), now.minusHours(policy.getComplaintResolveHours()), scope.of(actor, null));
     }
-    public Page<OrderComplaint> lateComplaints(String actor, int page) {
+    public Page<OrderComplaint> lateComplaints(String actor, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
         var policy = policies.current(); var now = LocalDateTime.now(clock);
         return data.lateComplaints(now.minusHours(policy.getComplaintResponseHours()), now.minusHours(policy.getComplaintResolveHours()),
-                scope.of(actor, null), PageRequest.of(page, 10, Sort.by("createdAt", "id")));
+                scope.of(actor, branchId), PageRequest.of(page, 10, Sort.by("createdAt", "id")));
     }
     public Page<ShipperPerformanceResponse> performance(String actor, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page); return data.performance(scope.of(actor, branchId), PageRequest.of(page, 20));
     }
-    public Page<CodSettlement> lateCash(String actor, int page) {
+    public Page<CodSettlement> lateCash(String actor, Long branchId, int page) {
         access.requireOperator(actor); access.validatePage(page);
-        return data.lateCash(LocalDateTime.now(clock).minusDays(7), scope.of(actor, null), PageRequest.of(page, 10, Sort.by("reviewedAt", "id")));
+        return data.lateCash(LocalDateTime.now(clock).minusDays(7), scope.of(actor, branchId), PageRequest.of(page, 10, Sort.by("reviewedAt", "id")));
     }
 }

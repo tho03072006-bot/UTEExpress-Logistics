@@ -95,12 +95,17 @@
             <i class="bi bi-search" aria-hidden="true"></i>
             <input type="search" name="keyword" maxlength="100" placeholder="Tìm mã đơn, tên, SĐT…" aria-label="Tìm đơn được phân công" autocomplete="off">
         </form>
-        <form th:unless="${isShipper}" class="sx-top-search d-none d-lg-flex" th:action="@{/tra-cuu}" method="get" role="search">
+        <form th:if="${isStaff}" class="sx-top-search d-none d-lg-flex" th:action="@{/manager/don-hang}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="tracking" maxlength="20" pattern="[A-Za-z0-9-]{1,20}" placeholder="Tìm mã vận đơn trong 30 ngày…" aria-label="Tra soát mã vận đơn trong phạm vi được cấp, 30 ngày gần nhất" autocomplete="off">
+        </form>
+        <form th:if="${!isShipper and !isStaff}" class="sx-top-search d-none d-lg-flex" th:action="@{/tra-cuu}" method="get" role="search">
             <i class="bi bi-search" aria-hidden="true"></i>
             <input type="search" name="trackingCode" maxlength="40" placeholder="Tra cứu mã vận đơn…" aria-label="Tra cứu mã vận đơn" autocomplete="off">
         </form>
 
         <nav class="ute-topbar-nav">
+            <span th:if="${isStaff}" class="staff-topbar-scope"><i class="bi bi-building" aria-hidden="true"></i><span th:text="${isAdmin ? 'Toàn hệ thống' : 'Vận hành chi nhánh'}"></span></span>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{${homeUrl}}">Trang chủ</a>
             <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
             <a class="ute-topbar-link d-none d-lg-inline" th:href="@{/uoc-tinh-cuoc}">Ước tính cước</a>
@@ -117,7 +122,7 @@
                 <i class="bi bi-bell-fill"></i><span class="sx-bell-dot" data-notification-count hidden>0</span>
             </a>
             <a th:if="${isStaff}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{/noi-bo/tai-khoan}" aria-label="Xem thông tin tài khoản của tôi">
-                <span class="sx-avatar sx-avatar-xs" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</span><span th:text="${displayName ?: #authentication.name}">staff</span>
+                <span class="sx-avatar sx-avatar-xs" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</span><span class="staff-topbar-account"><span th:text="${displayName ?: #authentication.name}">staff</span><small th:text="${roleName}"></small></span>
             </a>
             <!-- Người gửi / Shipper: ảnh đại diện + tên, bấm để mở trang tài khoản. Phiên đã biết là chưa có ảnh (-1) thì khỏi tải. -->
             <a th:if="${accountUrl != null}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{${accountUrl}}" aria-label="Tài khoản của tôi">

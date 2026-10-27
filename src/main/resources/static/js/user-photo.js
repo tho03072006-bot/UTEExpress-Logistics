@@ -7,6 +7,7 @@
     'use strict';
     var KEY = 'ute-user-photo';
     var DEFAULT_ID = 'post-office';
+    var mounts = new WeakMap();
     var PHOTOS = [
         { id: 'post-office', label: 'Bưu điện Sài Gòn', file: 'user-post-office.jpg' },
         { id: 'post-boxes', label: 'Hòm thư Bưu điện Hà Nội', file: 'user-post-boxes.jpg' },
@@ -37,6 +38,9 @@
     function mount(doc, storage) {
         var head = doc.querySelector('.ute-page-head:not(.shipper-hero)');
         var css = doc.querySelector('link[href*="/css/ute-app.css"]');
+        var previous = mounts.get(doc);
+        if (previous && previous.head === head) return;
+        if (previous) { previous.dispose(); mounts.delete(doc); }
         if (!head || !css) return;
         // Đường dẫn ảnh tính từ file CSS để đúng cả khi app chạy dưới context path khác "/".
         var folder = new URL('../images/photos/', css.href).href;
@@ -44,11 +48,13 @@
         var button = doc.createElement('button');
         button.type = 'button';
         button.className = 'sx-photo-btn';
+        button.setAttribute('data-realtime-client', '');
         button.setAttribute('aria-expanded', 'false');
         button.innerHTML = '<i class="bi bi-image" aria-hidden="true"></i> Đổi ảnh nền';
 
         var menu = doc.createElement('div');
         menu.className = 'sx-photo-menu';
+        menu.setAttribute('data-realtime-client', '');
         menu.hidden = true;
         menu.setAttribute('role', 'group');
         menu.setAttribute('aria-label', 'Chọn ảnh nền tiêu đề');
@@ -85,22 +91,30 @@
             toggle(false);
             button.focus();
         });
-        doc.addEventListener('keydown', function (event) {
+        function onKey(event) {
             if (event.key === 'Escape' && !menu.hidden) { toggle(false); button.focus(); }
-        });
-        doc.addEventListener('click', function (event) {
+        }
+        function onClick(event) {
             if (!menu.hidden && !menu.contains(event.target) && event.target !== button && !button.contains(event.target)) toggle(false);
-        });
+        }
+        doc.addEventListener('keydown', onKey);
+        doc.addEventListener('click', onClick);
         head.appendChild(button);
         head.appendChild(menu);
+        mounts.set(doc, {head:head,dispose:function () {
+            doc.removeEventListener('keydown', onKey); doc.removeEventListener('click', onClick);
+            button.remove(); menu.remove();
+        }});
     }
 
     if (root.document) {
-        root.document.addEventListener('DOMContentLoaded', function () {
+        function initialize() {
             var storage;
             try { storage = root.localStorage; } catch (e) { storage = null; }
             mount(root.document, storage || { getItem: function () { return null; }, setItem: function () { } });
-        });
+        }
+        root.document.addEventListener('DOMContentLoaded', initialize);
+        root.document.addEventListener('ute:regions-updated', initialize);
     }
     if (typeof module !== 'undefined') module.exports = { PHOTOS: PHOTOS, current: current, apply: apply };
 })(typeof window !== 'undefined' ? window : globalThis);

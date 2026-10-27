@@ -282,7 +282,8 @@ class StaffSecurityIntegrationTest {
     @Test void adminInheritsManagerAccessAndRendersBothDashboards() throws Exception {
         mvc.perform(get("/admin/trang-chu").with(authentication(auth(admin))))
                 .andExpect(status().isOk()).andExpect(view().name("admin/dashboard"))
-                .andExpect(content().string(containsString("Quản trị và kiểm soát truy cập")));
+                .andExpect(content().string(containsString("Tổng quan hệ thống")))
+                .andExpect(content().string(containsString("href=\"/admin/quan-ly-tai-khoan\"")));
         mvc.perform(get("/manager/trang-chu").with(authentication(auth(admin))))
                 .andExpect(status().isOk()).andExpect(view().name("manager/dashboard"));
     }
@@ -290,7 +291,22 @@ class StaffSecurityIntegrationTest {
     @Test void managerDashboardDoesNotShowAdminAccountLink() throws Exception {
         mvc.perform(get("/manager/trang-chu").with(authentication(auth(manager))))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString("href=\"/admin/tai-khoan\""))));
+                .andExpect(content().string(not(containsString("href=\"/admin/tai-khoan\""))))
+                .andExpect(content().string(not(containsString("href=\"/admin/quan-ly-tai-khoan\""))))
+                .andExpect(content().string(not(containsString("href=\"/admin/chinh-sach-van-hanh\""))))
+                .andExpect(content().string(containsString("action=\"/manager/don-hang\"")))
+                .andExpect(content().string(containsString("name=\"tracking\"")));
+    }
+
+    @Test void managerWorkQueuesKeepSecondaryCountsVisibleAndUseSharedRefreshMechanism() throws Exception {
+        mvc.perform(get("/manager/trang-chu").param("actor", "admin01").with(authentication(auth(manager))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-realtime-region=\"staff-work-queues\"")))
+                .andExpect(content().string(containsString("data-realtime-region=\"staff-other-queue-counts\"")))
+                .andExpect(content().string(containsString("data-realtime-region=\"staff-other-work-queues\"")))
+                .andExpect(content().string(containsString("Chậm giao hàng: 4")))
+                .andExpect(content().string(not(containsString("data-tracking-refresh-region"))));
+        verify(workbench).getWorkQueues("manager01");
     }
 
     @Test void bothDashboardsRenderOnlyTwoNecessaryChartsUsingAuthenticatedActor() throws Exception {
