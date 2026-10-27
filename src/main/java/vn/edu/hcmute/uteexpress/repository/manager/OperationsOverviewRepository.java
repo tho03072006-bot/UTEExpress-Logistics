@@ -24,6 +24,7 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
      * Điều kiện của từng nhóm cảnh báo cho đơn bí danh {@code o}; dùng chung cho trang danh sách và câu chỉ đếm.
      * "Chậm lấy" không tính đơn khách tự mang ra chi nhánh: không có Shipper nào phải đi lấy, đơn chỉ chờ khách tới quầy.
      * Các đơn đó, khi quá cùng hạn lấy hàng mà khách chưa mang tới, nằm ở nhóm riêng "Chờ khách mang tới quá hạn".
+     * Đơn Hỏa tốc có hạn lấy ngắn hơn ({@code :superExpressPickup}, xem DeliveryDeadlines.Rules.superExpressPickupHours).
      * "Quá hạn giao" không nằm ở đây: hạn phụ thuộc từng tuyến nên service tính riêng (deliveryCandidates + DeliveryDeadlines).
      */
     String ALERT_FILTER = """
@@ -48,12 +49,22 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
             or (r.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.DEST_HUB and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP and (:branchId is null or r.destBranch.id = :branchId)))))
         or (:kind = 'UNASSIGNED' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.shipper is null
             and not exists (select r2.id from OrderRoute r2 where r2.order = o))
-        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
+        or (:kind = 'LATE_PICKUP' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP
+            and (o.createdAt <= :pickup or (o.serviceType = vn.edu.hcmute.uteexpress.entity.Order.ServiceType.SUPER_EXPRESS
+                and o.createdAt <= :superExpressPickup))
             and not exists (select counter.id from OrderRoute counter where counter.order = o
                 and counter.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
         or (:kind = 'DROP_OFF_WAITING' and o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP and o.createdAt <= :pickup
             and exists (select waiting.id from OrderRoute waiting where waiting.order = o
                 and waiting.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.DROP_OFF))
+        or (:kind = 'HELD' and o.shipper is not null and exists (select held.id from OrderRoute held where held.order = o
+            and held.returnLeg = false and (
+              (o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP
+                and ((held.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.PICKUP
+                    and held.pickupMode = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.COURIER)
+                  or held.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE))
+              or (o.status = vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.FAILED
+                and held.stage = vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE))))
         or (:kind = 'RETRY_DUE' and (
         """ + vn.edu.hcmute.uteexpress.repository.OrderRepository.READY_RETRY + """
         ))
@@ -63,11 +74,13 @@ public interface OperationsOverviewRepository extends JpaRepository<Order, Long>
         ) and """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE;
     @Query("select o from Order o where " + ALERT_FILTER)
     Page<Order> alerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
-            @Param("now") LocalDateTime now, @Param("maxAttempts") int attempts, Pageable pageable);
+            @Param("superExpressPickup") LocalDateTime superExpressPickup, @Param("now") LocalDateTime now,
+            @Param("maxAttempts") int attempts, Pageable pageable);
     /** Chỉ đếm (trang tổng quan không cần danh sách đơn). */
     @Query("select count(o) from Order o where " + ALERT_FILTER)
     long countAlerts(@Param("kind") String kind, @Param("branchId") Long branchId, @Param("pickup") LocalDateTime pickup,
-            @Param("now") LocalDateTime now, @Param("maxAttempts") int attempts);
+            @Param("superExpressPickup") LocalDateTime superExpressPickup, @Param("now") LocalDateTime now,
+            @Param("maxAttempts") int attempts);
     /**
      * Ứng viên "Quá hạn giao": đơn đang trên đường giao, tạo trước mốc hạn ngắn nhất. Hạn thật của từng đơn phụ thuộc
      * thời gian dự kiến của tuyến (văn bản do Admin cấu hình) nên service xét tiếp từng đơn; xem DeliveryDeadlines.

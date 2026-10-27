@@ -29,8 +29,9 @@ public class PaymentController {
             if (orderId <= 0) throw new IllegalArgumentException("Mã đơn không hợp lệ.");
             var payment = payments.findOwnedPayment(orderId, authentication.getName());
             model.addAttribute("payment", payment); model.addAttribute("order", payment.getOrder());
-            if (payment.getMethod() == OrderPayment.PaymentMethod.MOMO
-                    && payment.getStatus() == OrderPayment.PaymentStatus.UNPAID && !WalletPaymentRules.isClosed(payment.getOrder())) {
+            var collection = vn.edu.hcmute.uteexpress.dto.PaymentCollectionView.from(payment.getOrder(), payment);
+            model.addAttribute("collection", collection);
+            if (collection.state() == vn.edu.hcmute.uteexpress.dto.PaymentCollectionView.State.WALLET_PENDING) {
                 try {
                     model.addAttribute("checkout", momo.createCheckout(orderId, authentication.getName()));
                     // Render Free có thể đang ngủ: đánh thức ở nền ngay khi hiện QR, trước lúc khách kịp quét.

@@ -92,6 +92,21 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     }
 
     @Override
+    public void releaseUsage(PromoCode promoCode) {
+        if (promoCode == null || promoCode.getId() == null) {
+            return;
+        }
+        // Khóa dòng mã như lúc tạo đơn để hai thao tác cùng lúc không đếm sai lượt.
+        var locked = promoCodeRepository.lockById(promoCode.getId()).orElse(null);
+        if (locked == null || locked.getUsedCount() <= 0) {
+            return;
+        }
+        locked.setUsedCount(locked.getUsedCount() - 1);
+        locked.setUpdatedAt(LocalDateTime.now());
+        promoCodeRepository.save(locked);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<PromoCode> findByCode(String code) {
         if (code == null || code.isBlank()) {

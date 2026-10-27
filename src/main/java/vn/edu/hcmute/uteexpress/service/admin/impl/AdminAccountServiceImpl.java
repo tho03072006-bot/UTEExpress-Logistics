@@ -78,7 +78,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         }
         if (user.getRole() == AppUser.Role.SHIPPER && !form.getActive()
                 && users.countUnfinishedAssignments(id, unfinishedStatuses()) > 0) {
-            throw new IllegalArgumentException("Shipper còn đơn chưa hoàn tất. Cần xử lý/điều phối các đơn đó trước khi khóa.");
+            throw new IllegalArgumentException("Shipper còn đơn chưa hoàn tất. Thu hồi các đơn đó ở Cảnh báo → \"Shipper đang giữ, chưa giao\" "
+                    + "(đơn đang trên đường giao thì chờ Shipper báo kết quả), hoặc phân công lại đơn chờ lấy, rồi mới khóa.");
         }
         var account = internalAccount(locked, user);
         protectLastAdmin(locked, user, form.getActive() && profile.getRole() == AppUser.Role.ADMIN);

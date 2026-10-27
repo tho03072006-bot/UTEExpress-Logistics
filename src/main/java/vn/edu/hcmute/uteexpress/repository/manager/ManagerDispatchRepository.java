@@ -30,11 +30,19 @@ public interface ManagerDispatchRepository extends JpaRepository<Order, Long> {
     List<StatusCount> countStatuses(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to, @Param("branchId") Long branchId);
     interface StatusCount { Order.OrderStatus getStatus(); long getTotal(); }
 
+    /**
+     * Doanh thu cước đã thu. Đơn đã hủy không tính (tiền đã trả ví nằm chờ hoàn, không phải doanh thu).
+     * Đơn liên tỉnh tính cho chi nhánh gửi (nơi nhận đơn), không tính cả hai đầu, để cộng các chi nhánh không bị gấp đôi;
+     * đơn cũ chưa có tuyến vẫn hiện ở mọi chi nhánh theo quy tắc chuyển tiếp.
+     */
     @Query("""
         select coalesce(sum(p.amount), 0) from OrderPayment p join p.order o
         where p.status = vn.edu.hcmute.uteexpress.entity.OrderPayment.PaymentStatus.PAID
-        and p.paidAt >= :from and p.paidAt < :to and
-        """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+        and o.status <> vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED
+        and p.paidAt >= :from and p.paidAt < :to
+        and (:branchId is null or not exists (select r0.id from OrderRoute r0 where r0.order = o)
+          or exists (select r1.id from OrderRoute r1 where r1.order = o and r1.originBranch.id = :branchId))
+        """)
     java.math.BigDecimal sumPaidFees(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to, @Param("branchId") Long branchId);
 }
 

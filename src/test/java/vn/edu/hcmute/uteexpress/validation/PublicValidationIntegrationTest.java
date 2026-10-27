@@ -260,6 +260,124 @@ class PublicValidationIntegrationTest {
             assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
         } finally { context.close(); }
     }
+    @ParameterizedTest @ValueSource(strings={"EMAIL_CHANGE","PASSWORD_RESET","REGISTRATION"})
+    void preloadedAccountCannotBypassSharedOtpSendCooldown(String flow) {
+        if(flow.equals("REGISTRATION")) { customer.setEnabled(false); users.saveAndFlush(customer); }
+        Runnable send=switch(flow) {
+            case "EMAIL_CHANGE" -> ()->emailChanges.requestChange(customer.getUsername(),"cooldown"+customer.getId()+"@test.invalid");
+            case "PASSWORD_RESET" -> ()->auth.sendPasswordResetOtp(customer.getEmail());
+            default -> ()->auth.resendRegistrationOtp(customer.getUsername());
+        };
+        withPreloadedAccount(send,()->assertThrows(IllegalStateException.class,send::run));
+        assertEquals(1,users.findById(customer.getId()).orElseThrow().getOtpSendCount());
+        verify(mail,times(1)).send(any(SimpleMailMessage.class));
+    }
+    @Test void preloadedAccountCannotUseAnAlreadyConsumedPasswordResetCode() {
+        auth.sendPasswordResetOtp(customer.getEmail());
+        String code=users.findById(customer.getId()).orElseThrow().getOtpCode();
+        withPreloadedAccount(()->assertTrue(auth.resetPassword(customer.getEmail(),code,"FirstReplacement123")),
+                ()->assertFalse(auth.resetPassword(customer.getEmail(),code,"SecondReplacement123")));
+        assertTrue(encoder.matches("FirstReplacement123",users.findById(customer.getId()).orElseThrow().getPassword()));
+    }
+    @Test void preloadedAccountCannotUseAResetCodeAfterFiveCommittedFailures() {
+        auth.sendPasswordResetOtp(customer.getEmail());
+        String code=users.findById(customer.getId()).orElseThrow().getOtpCode();
+        withPreloadedAccount(()->{
+            for(int i=0;i<5;i++) assertFalse(auth.resetPassword(customer.getEmail(),wrong(code),"Replacement123"));
+        },()->assertFalse(auth.resetPassword(customer.getEmail(),code,"Replacement123")));
+        assertTrue(encoder.matches("OriginalPass123",users.findById(customer.getId()).orElseThrow().getPassword()));
+    }
+    @ParameterizedTest @ValueSource(strings={"CONFIRM_EMAIL","UPDATE_PROFILE","CHANGE_PASSWORD"})
+    void preloadedAccountCannotMutateAfterAdminLocksIt(String action) {
+        emailChanges.requestChange(customer.getUsername(),"locked"+customer.getId()+"@test.invalid");
+        String code=emailChanges.findPending(customer.getUsername()).orElseThrow().getOtpCode();
+        Runnable mutation=switch(action) {
+            case "CONFIRM_EMAIL" -> ()->emailChanges.confirm(customer.getUsername(),code);
+            case "UPDATE_PROFILE" -> ()->profiles.updateProfile(customer.getUsername(),ProfileUpdateRequest.from(customer));
+            default -> ()->profiles.changePassword(customer.getUsername(),passwordChange("OriginalPass123","Replacement123"));
+        };
+        withPreloadedAccount(()->{
+            var locked=users.findById(customer.getId()).orElseThrow();
+            locked.setEnabled(false); locked.setLockedByAdmin(true); users.saveAndFlush(locked);
+        },()->assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                mutation::run));
+        var locked=users.findById(customer.getId()).orElseThrow();
+        assertEquals(customer.getEmail(),locked.getEmail()); assertFalse(locked.isEnabled()); assertTrue(locked.isLockedByAdmin());
+    }
+    @Test void preloadedAccountMustValidateCurrentPasswordAgainstLatestCommittedPassword() {
+        withPreloadedAccount(()->profiles.changePassword(customer.getUsername(),passwordChange("OriginalPass123","FirstReplacement123")),
+                ()->assertThrows(IllegalStateException.class,
+                        ()->profiles.changePassword(customer.getUsername(),passwordChange("OriginalPass123","SecondReplacement123"))));
+        assertTrue(encoder.matches("FirstReplacement123",users.findById(customer.getId()).orElseThrow().getPassword()));
+    }
+    @Test void nestedEmailChallengeLocksPreserveLegitimateProfileAndPasswordUpdates() {
+        var form=ProfileUpdateRequest.from(customer); form.setFullName("Tên Mới Hợp Lệ"); form.setPhone("0912345678");
+        form.setEmail("profile"+customer.getId()+"@test.invalid");
+        assertTrue(profiles.updateProfile(customer.getUsername(),form));
+        var updated=users.findById(customer.getId()).orElseThrow();
+        assertEquals(form.getFullName(),updated.getFullName()); assertEquals(form.getPhone(),updated.getPhone());
+        assertEquals(customer.getEmail(),updated.getEmail()); assertTrue(emailChanges.findPending(customer.getUsername()).isPresent());
+        profiles.changePassword(customer.getUsername(),passwordChange("OriginalPass123","Replacement123"));
+        updated=users.findById(customer.getId()).orElseThrow();
+        assertTrue(encoder.matches("Replacement123",updated.getPassword())); assertEquals(1,updated.getAccessVersion());
+        assertTrue(emailChanges.findPending(customer.getUsername()).isEmpty());
+    }
+    private PasswordChangeRequest passwordChange(String current,String replacement) {
+        var form=new PasswordChangeRequest(); form.setCurrentPassword(current); form.setNewPassword(replacement); form.setConfirmPassword(replacement); return form;
+    }
+    @ParameterizedTest @ValueSource(strings={"CREATE","UPDATE","DELETE","DEFAULT"})
+    void preloadedAccountCannotMutateSavedAddressesAfterAdminLocksIt(String action) {
+        var original=addresses.create(address("Địa chỉ gốc",SavedAddress.AddressType.SENDER),customer.getUsername());
+        Runnable mutation=switch(action) {
+            case "CREATE" -> ()->addresses.create(address("Địa chỉ mới",SavedAddress.AddressType.SENDER),customer.getUsername());
+            case "UPDATE" -> ()->addresses.update(original.getId(),address("Địa chỉ sửa",SavedAddress.AddressType.SENDER),customer.getUsername());
+            case "DELETE" -> ()->addresses.delete(original.getId(),customer.getUsername());
+            default -> ()->addresses.markAsDefault(original.getId(),customer.getUsername());
+        };
+        withPreloadedAccount(()->{
+            var locked=users.findById(customer.getId()).orElseThrow();locked.setEnabled(false);locked.setLockedByAdmin(true);users.saveAndFlush(locked);
+        },()->assertThrows(org.springframework.security.access.AccessDeniedException.class,mutation::run));
+        assertEquals(1,addresses.countOfUser(customer.getUsername()));
+        assertEquals("Địa chỉ gốc",addresses.findOwned(original.getId(),customer.getUsername()).getLabel());
+    }
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"USER,DETAILS","SHIPPER,DETAILS","USER,NOTIFICATIONS","SHIPPER,NOTIFICATIONS",
+            "USER,AVATAR_UPLOAD","SHIPPER,AVATAR_UPLOAD","USER,AVATAR_REMOVE","SHIPPER,AVATAR_REMOVE"})
+    void preloadedPublicProfileCannotMutateAfterAdminLocksIt(AppUser.Role role,String action) {
+        customer.setRole(role);users.saveAndFlush(customer);
+        var accountProfile=context.getBean(vn.edu.hcmute.uteexpress.service.profile.AccountProfileService.class);
+        var form=new vn.edu.hcmute.uteexpress.dto.profile.ProfileDetailForm();form.setBio("Hồ sơ hợp lệ");
+        var avatar=new org.springframework.mock.web.MockMultipartFile("avatar","avatar.png","image/png",
+                context.getBean(vn.edu.hcmute.uteexpress.service.tracking.ShipmentQrService.class).generate("UTEPROFILE01"));
+        Runnable mutation=switch(action) {
+            case "DETAILS" -> ()->accountProfile.updateDetails(customer.getUsername(),form);
+            case "NOTIFICATIONS" -> ()->accountProfile.updateNotifications(customer.getUsername(),false);
+            case "AVATAR_UPLOAD" -> ()->accountProfile.updateAvatar(customer.getUsername(),avatar);
+            default -> ()->accountProfile.removeAvatar(customer.getUsername());
+        };
+        withPreloadedAccount(()->{
+            var locked=users.findById(customer.getId()).orElseThrow();locked.setEnabled(false);locked.setLockedByAdmin(true);users.saveAndFlush(locked);
+        },()->assertThrows(org.springframework.security.access.AccessDeniedException.class,mutation::run));
+        assertTrue(context.getBean(UserProfileDetailRepository.class).findByUser(customer).isEmpty());
+    }
+    @Test void profileServiceRejectsInvalidDetailsBeforeWritingOrTruncatingUserInput() {
+        var accountProfile=context.getBean(vn.edu.hcmute.uteexpress.service.profile.AccountProfileService.class);
+        assertThrows(IllegalArgumentException.class,()->accountProfile.updateDetails(customer.getUsername(),null));
+        var form=new vn.edu.hcmute.uteexpress.dto.profile.ProfileDetailForm();form.setBio("x".repeat(161));
+        assertThrows(IllegalArgumentException.class,()->accountProfile.updateDetails(customer.getUsername(),form));
+        assertTrue(context.getBean(UserProfileDetailRepository.class).findByUser(customer).isEmpty());
+    }
+    /** Mô phỏng advice/OSIV đã đọc tài khoản trước khi một request khác commit. */
+    private void withPreloadedAccount(Runnable competingRequest,Runnable cachedRequest) {
+        var context=entityManagers.createEntityManager();
+        try {
+            context.getTransaction().begin(); context.find(AppUser.class,customer.getId()); context.getTransaction().commit();
+            competingRequest.run();
+            org.springframework.transaction.support.TransactionSynchronizationManager.bindResource(entityManagers,new org.springframework.orm.jpa.EntityManagerHolder(context));
+            try { cachedRequest.run(); }
+            finally { org.springframework.transaction.support.TransactionSynchronizationManager.unbindResource(entityManagers); }
+        } finally { context.close(); }
+    }
     @Test void resetOtpIsInvalidatedAfterFiveFailuresAndNotRevivedByServiceRecreation(){
         auth.sendPasswordResetOtp(customer.getEmail());String code=users.findById(customer.getId()).orElseThrow().getOtpCode();
         for(int i=0;i<5;i++) assertFalse(auth.resetPassword(customer.getEmail(),wrong(code),"Replacement123"));

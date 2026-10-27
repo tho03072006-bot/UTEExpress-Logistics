@@ -62,8 +62,9 @@ class PaymentReadinessTest {
 
     @Test void compensationLimitIsFourTimesPaidFeeOrThreeTimesUncollectedCodFee() {
         var payment = payment(); payment.setStatus(OrderPayment.PaymentStatus.PAID);
+        payment.getOrder().setStatus(vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.DELIVERED);
         assertEquals(new BigDecimal("72000"), PaymentReadiness.compensationLimit(payment), "Đã thu 18.000 đ: tối đa 4 lần, gồm hoàn cước");
-        payment = payment();
+        payment = payment(); payment.getOrder().setStatus(vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PICKED_UP);
         assertEquals(new BigDecimal("54000"), PaymentReadiness.compensationLimit(payment), "Trả cước khi giao chưa thu: tối đa 3 lần");
         payment = payment(); payment.setMethod(OrderPayment.PaymentMethod.MOMO);
         assertEquals(0, PaymentReadiness.compensationLimit(payment).signum(), "Ví chưa trả thì đơn chưa được giao đi, không có cơ sở bồi thường");
@@ -72,6 +73,20 @@ class PaymentReadinessTest {
         payment = payment(); payment.setAmount(BigDecimal.ZERO); payment.setDiscountAmount(payment.getOrder().getShippingFee());
         assertEquals(0, PaymentReadiness.compensationLimit(payment).signum(), "Đơn miễn cước");
         assertEquals(0, PaymentReadiness.compensationLimit(null).signum());
+    }
+
+    @Test void goodsNeverPickedUpOnlyGetThePaidFeeBack() {
+        for (var status : new vn.edu.hcmute.uteexpress.entity.Order.OrderStatus[]{
+                vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.PENDING_PICKUP, vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.CANCELLED}) {
+            var paidWallet = payment(); paidWallet.setMethod(OrderPayment.PaymentMethod.MOMO); paidWallet.setStatus(OrderPayment.PaymentStatus.PAID);
+            paidWallet.getOrder().setStatus(status);
+            assertEquals(new BigDecimal("18000"), PaymentReadiness.compensationLimit(paidWallet), status + ": chỉ hoàn lại 18.000 đ đã trả");
+            var unpaidCod = payment(); unpaidCod.getOrder().setStatus(status);
+            assertEquals(0, PaymentReadiness.compensationLimit(unpaidCod).signum(), status + ": chưa thu cước thì không có gì để hoàn");
+            assertTrue(PaymentReadiness.neverInCustody(unpaidCod.getOrder()));
+        }
+        var inTransit = payment(); inTransit.getOrder().setStatus(vn.edu.hcmute.uteexpress.entity.Order.OrderStatus.IN_TRANSIT);
+        assertFalse(PaymentReadiness.neverInCustody(inTransit.getOrder()));
     }
 
     private OrderPayment payment() {

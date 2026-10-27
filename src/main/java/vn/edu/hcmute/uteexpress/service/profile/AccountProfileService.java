@@ -86,14 +86,18 @@ public class AccountProfileService {
     private final CloudMediaStorageService storage;
     private final CloudMediaGateway gateway;
     private final Clock clock;
+    private final jakarta.persistence.EntityManager entityManager;
+    private final jakarta.validation.Validator validator;
 
     private final vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews;
 
     public AccountProfileService(AppUserRepository users, UserProfileDetailRepository details, OrderRepository orders,
             SavedAddressRepository addresses, CloudMediaStorageService storage, CloudMediaGateway gateway, Clock clock,
-            vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews) {
+            vn.edu.hcmute.uteexpress.repository.ServiceReviewRepository reviews,
+            jakarta.persistence.EntityManager entityManager, jakarta.validation.Validator validator) {
         this.users = users; this.details = details; this.orders = orders; this.addresses = addresses;
         this.storage = storage; this.gateway = gateway; this.clock = clock; this.reviews = reviews;
+        this.entityManager=entityManager; this.validator=validator;
     }
 
     @Transactional(readOnly = true)
@@ -115,10 +119,13 @@ public class AccountProfileService {
 
     @Transactional
     public void updateDetails(String username, ProfileDetailForm form) {
+        if (form == null) throw new IllegalArgumentException("Thiếu thông tin cá nhân.");
+        var errors=validator.validate(form);
+        if (!errors.isEmpty()) throw new IllegalArgumentException(errors.iterator().next().getMessage());
         LocalDate birthDate = form.getBirthDate();
         if (birthDate != null && (birthDate.isBefore(EARLIEST_BIRTH_DATE) || birthDate.isAfter(LocalDate.now(clock))))
             throw new IllegalArgumentException("Ngày sinh phải từ năm 1900 đến hôm nay.");
-        UserProfileDetail detail = detailOf(account(username));
+        UserProfileDetail detail = detailOf(lockedAccount(username));
         detail.changeDetails(birthDate, form.getGender(), clean(form.getBio(), 160), clean(form.getProvince(), 60),
                 clean(form.getAddressLine(), 200), LocalDateTime.now(clock));
         details.save(detail);
@@ -127,7 +134,7 @@ public class AccountProfileService {
     /** Lưu ảnh mới lên Cloudinary; ảnh cũ chỉ bị xóa sau khi lưu database thành công. */
     @Transactional
     public void updateAvatar(String username, MultipartFile file) {
-        UserProfileDetail detail = detailOf(account(username));
+        UserProfileDetail detail = detailOf(lockedAccount(username));
         String previous = detail.getAvatarAsset();
         detail.changeAvatar(storage.store(MediaPurpose.AVATAR, file), LocalDateTime.now(clock));
         details.save(detail);
@@ -136,7 +143,7 @@ public class AccountProfileService {
 
     @Transactional
     public void removeAvatar(String username) {
-        AppUser user = account(username);
+        AppUser user = lockedAccount(username);
         details.findByUser(user).filter(UserProfileDetail::hasAvatar).ifPresent(detail -> {
             String previous = detail.getAvatarAsset();
             detail.changeAvatar(null, LocalDateTime.now(clock));
@@ -147,7 +154,7 @@ public class AccountProfileService {
 
     @Transactional
     public void updateNotifications(String username, boolean notifyOrderEmail) {
-        UserProfileDetail detail = detailOf(account(username));
+        UserProfileDetail detail = detailOf(lockedAccount(username));
         detail.changeNotifications(notifyOrderEmail, LocalDateTime.now(clock));
         details.save(detail);
     }
@@ -172,6 +179,20 @@ public class AccountProfileService {
     private AppUser account(String username) {
         AppUser user = users.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
+        return requirePublicAccount(user);
+    }
+
+    /** Khóa tài khoản trước hồ sơ để ngăn tạo hồ sơ trùng và dùng trạng thái cũ của advice/OSIV. */
+    private AppUser lockedAccount(String username) {
+        var user=users.findLockedByUsername(username)
+                .orElseThrow(()->new IllegalArgumentException("Không tìm thấy tài khoản."));
+        entityManager.refresh(user,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return requirePublicAccount(user);
+    }
+
+    private AppUser requirePublicAccount(AppUser user) {
+        if (!user.isEnabled() || user.isLockedByAdmin())
+            throw new org.springframework.security.access.AccessDeniedException("Tài khoản đã bị khóa hoặc chưa kích hoạt.");
         if (user.getRole() != Role.USER && user.getRole() != Role.SHIPPER)
             throw new IllegalArgumentException("Trang này chỉ dành cho người gửi và Shipper.");
         return user;

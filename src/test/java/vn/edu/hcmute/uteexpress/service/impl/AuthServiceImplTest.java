@@ -52,7 +52,8 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 appUserRepository, passwordEncoder, mailSender,
                 new MailFromNameSetter("UTEExpress", "uteexpress@example.com"),
-                new vn.edu.hcmute.uteexpress.security.OtpPolicy(java.time.Clock.systemDefaultZone()),emailChanges);
+                new vn.edu.hcmute.uteexpress.security.OtpPolicy(java.time.Clock.systemDefaultZone()),emailChanges,
+                org.mockito.Mockito.mock(jakarta.persistence.EntityManager.class));
         org.mockito.Mockito.lenient().when(appUserRepository.findLockedByUsername(org.mockito.ArgumentMatchers.anyString()))
             .thenAnswer(call -> appUserRepository.findByUsername(call.getArgument(0)));
         org.mockito.Mockito.lenient().when(appUserRepository.findLockedByEmail(org.mockito.ArgumentMatchers.anyString()))

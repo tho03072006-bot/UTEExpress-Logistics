@@ -3,8 +3,11 @@ import org.springframework.data.domain.Page;
 import vn.edu.hcmute.uteexpress.entity.*;
 import vn.edu.hcmute.uteexpress.dto.manager.ShipperPerformanceResponse;
 public interface OperationsOverviewService {
-    /** DROP_OFF_WAITING: đơn khách tự mang ra chi nhánh mà quá hạn lấy hàng vẫn chưa mang tới (không tính vào "Chậm lấy"). */
-    enum Alert { UNASSIGNED, LATE_PICKUP, LATE_DELIVERY, RETRY_DUE, MANY_FAILURES, PAYMENT_ISSUE, DROP_OFF_WAITING }
+    /**
+     * DROP_OFF_WAITING: đơn khách tự mang ra chi nhánh mà quá hạn lấy hàng vẫn chưa mang tới (không tính vào "Chậm lấy").
+     * HELD: đơn Shipper đang giữ mà chưa đi giao (đã lấy hàng hoặc vừa giao thất bại), tức các đơn Manager thu hồi được.
+     */
+    enum Alert { UNASSIGNED, LATE_PICKUP, LATE_DELIVERY, RETRY_DUE, MANY_FAILURES, PAYMENT_ISSUE, DROP_OFF_WAITING, HELD }
     /** branchId null: Admin xem mọi chi nhánh, Manager xem chi nhánh được giao. */
     Page<Order> alerts(String actor, Alert alert, Long branchId, int page);
     default Page<Order> alerts(String actor, Alert alert, int page) { return alerts(actor, alert, null, page); }

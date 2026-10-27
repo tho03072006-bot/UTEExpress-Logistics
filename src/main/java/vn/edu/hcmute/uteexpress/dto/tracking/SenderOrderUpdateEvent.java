@@ -24,7 +24,8 @@ public record SenderOrderUpdateEvent(String email, String recipientName, String 
         AT_DEST_HUB("đã tới kho nhận", "Vận đơn đã tới kho chi nhánh nhận, chờ shipper giao."),
         RECEIVED_AT_COUNTER("đã nhận tại quầy", "Chi nhánh đã nhận hàng bạn mang tới quầy."),
         RETURN_IN_LINEHAUL("hàng hoàn đang trung chuyển", "Hàng hoàn đang trên chuyến trung chuyển về chi nhánh gửi."),
-        RETURN_AT_ORIGIN_HUB("hàng hoàn đã về chi nhánh gửi", "Hàng hoàn đã về kho chi nhánh gửi, chi nhánh sẽ liên hệ trả hàng cho bạn.");
+        RETURN_AT_ORIGIN_HUB("hàng hoàn đã về chi nhánh gửi", "Hàng hoàn đã về kho chi nhánh gửi, chi nhánh sẽ liên hệ trả hàng cho bạn."),
+        CANCELLED_BY_BRANCH("đã bị chi nhánh hủy", "Chi nhánh đã hủy vận đơn trước khi lấy hàng. Nếu đã thanh toán ví, chi nhánh sẽ hoàn lại cước.");
         private final String subject;
         private final String headline;
         Kind(String subject, String headline) { this.subject = subject; this.headline = headline; }

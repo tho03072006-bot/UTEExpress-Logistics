@@ -106,7 +106,7 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Order updateStatus(
             Long orderId,
             String shipperUsername,
@@ -115,10 +115,11 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Order updateStatus(Long orderId, String shipperUsername, Order.OrderStatus newStatus,
             DeliveryFailureReason failureReason, String note, LocalDateTime nextAttemptAt) {
-        AppUser shipper = findShipper(shipperUsername);
+        // Cùng thứ tự khóa với phân công: Shipper trước đơn. Đọc tải mới sau khi chờ khóa.
+        AppUser shipper = findShipper(shipperUsername, newStatus == Order.OrderStatus.IN_TRANSIT);
 
         Order order = orderRepository
                 .findLockedByIdAndShipper(orderId, shipper)
@@ -336,8 +337,12 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     private AppUser findShipper(String shipperUsername) {
-        AppUser shipper = LogisticsAccess
-                .findUser(appUserRepository, shipperUsername)
+        return findShipper(shipperUsername, false);
+    }
+
+    private AppUser findShipper(String shipperUsername, boolean forUpdate) {
+        AppUser shipper = (forUpdate ? appUserRepository.findLockedByUsername(shipperUsername)
+                : LogisticsAccess.findUser(appUserRepository, shipperUsername))
                 .orElseThrow(() -> new IllegalStateException(
                         "Không tìm thấy tài khoản Shipper."));
 

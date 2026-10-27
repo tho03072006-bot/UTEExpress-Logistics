@@ -15,6 +15,7 @@ import vn.edu.hcmute.uteexpress.repository.*;
 import vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository;
 import vn.edu.hcmute.uteexpress.service.admin.*;
 import vn.edu.hcmute.uteexpress.service.manager.OperationsCaseService;
+import vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy;
 import vn.edu.hcmute.uteexpress.service.tracking.*;
 
 @Service @Transactional(readOnly = true)
@@ -39,6 +40,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
     private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     private final vn.edu.hcmute.uteexpress.service.routing.BranchScope scope;
     private final vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes;
+    private final DispatchRoutingPolicy routing;
     public OperationsCaseServiceImpl(OperationsCaseRepository cases, OrderRepository orders,
             CodSettlementRepository settlements, OrderComplaintRepository complaints, OrderPaymentRepository payments,
             OrderStatusHistoryRepository history, OperationsPolicyService policies, StaffAccessPolicy access,
@@ -46,7 +48,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             jakarta.persistence.EntityManager entityManager, org.springframework.context.ApplicationEventPublisher events,
             vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud,
             vn.edu.hcmute.uteexpress.service.routing.BranchScope scope,
-            vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes) {
+            vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository routes, DispatchRoutingPolicy routing) {
         this.cases = cases; this.orders = orders; this.settlements = settlements; this.complaints = complaints;
         this.payments = payments; this.history = history; this.policies = policies; this.access = access;
         this.logistics = logistics; this.images = images; this.audit = audit; this.clock = clock;
@@ -55,6 +57,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         this.cloud = cloud;
         this.scope = scope;
         this.routes = routes;
+        this.routing = routing;
     }
     /** Tuyến liên tỉnh của đơn (null với đơn nội tỉnh hoặc đơn cũ chưa có tuyến): hoàn hàng phải đi chuyến trung chuyển ngược (B9). */
     private vn.edu.hcmute.uteexpress.entity.routing.OrderRoute interprovincialRoute(Order order) {
@@ -207,7 +210,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
                 if (complaint.getStatus() == OrderComplaint.Status.REJECTED || hasCompensationCase(complaint))
                     throw new IllegalArgumentException("Khiếu nại đã từ chối hoặc đã có đề xuất bồi thường đang chờ/đã duyệt/đã hoàn tất.");
                 if (compensationLimit(complaint.getOrder()).signum() <= 0)
-                    throw new IllegalArgumentException("Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch); cần tra soát trước khi lập phiếu bồi thường.");
+                    throw new IllegalArgumentException(noCompensation(complaint.getOrder()));
                 revision = complaint.getRevision();
             }
             default -> throw new IllegalArgumentException("Loại hồ sơ không hợp lệ.");
@@ -436,6 +439,7 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
             throw new IllegalArgumentException("Hoàn hàng cần hồ sơ duyệt và ảnh bàn giao người gửi tại khu Manager.");
         if (order.getStatus() == Order.OrderStatus.FAILED && status == Order.OrderStatus.IN_TRANSIT) {
             if (!canRetry(order)) throw new IllegalArgumentException("Chưa tới lịch, đã hết số lần giao hoặc đang chờ duyệt/hoàn hàng.");
+            routing.requireCapacity(actor);
             for (var record : cases.findByOrderAndKindAndStatus(order, OperationsCase.Kind.RETRY, OperationsCase.Status.APPROVED)) {
                 record.complete("Giao lại bởi " + shipper, null, LocalDateTime.now(clock)); cases.saveAndFlush(record);
                 audit.record(shipper, "RETRY_START", "operations-case:" + record.getId(), "Bắt đầu lượt giao lại đã được duyệt.");
@@ -491,9 +495,14 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         // Các bước ghi đã khóa đơn: đọc lại/khóa cả thanh toán, không duyệt theo snapshot nạp trước khi chờ khóa.
         entityManager.refresh(payment, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         var limit = vn.edu.hcmute.uteexpress.util.PaymentReadiness.compensationLimit(payment);
-        if (limit.signum() <= 0) throw new IllegalArgumentException("Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch); cần tra soát trước khi bồi thường.");
+        if (limit.signum() <= 0) throw new IllegalArgumentException(noCompensation(order));
         if (amount.compareTo(limit) > 0) throw new IllegalArgumentException(vn.edu.hcmute.uteexpress.util.PaymentReadiness.COMPENSATION_RULE
                 + " Mức tối đa của đơn này là " + String.format(java.util.Locale.ROOT, "%,d", limit.longValueExact()).replace(',', '.') + " đ.");
+    }
+    private static String noCompensation(Order order) {
+        return vn.edu.hcmute.uteexpress.util.PaymentReadiness.neverInCustody(order)
+                ? "Hàng chưa được lấy và chưa thu cước nên không có khoản nào để hoàn hoặc bồi thường."
+                : "Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch); cần tra soát trước khi lập phiếu bồi thường.";
     }
     /** Mức bồi thường tối đa của đơn (0 nếu chưa có thanh toán hợp lệ); xem PaymentReadiness.compensationLimit. */
     public BigDecimal compensationLimit(Order order) {

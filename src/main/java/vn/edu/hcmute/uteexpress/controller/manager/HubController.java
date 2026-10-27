@@ -85,7 +85,7 @@ public class HubController {
             @RequestParam(required = false) Long branchId, Authentication auth, RedirectAttributes flash) {
         try {
             int missing = hub.arrive(auth.getName(), id, revision, sealCode, received, note);
-            flash.addFlashAttribute("message", missing == 0 ? "Đã nhận đủ kiện vào kho. Các đơn đã sẵn sàng phân công giao."
+            flash.addFlashAttribute("message", missing == 0 ? "Đã nhận đủ kiện vào kho."
                     : "Đã nhận chuyến, ghi thiếu " + missing + " kiện. Kiện thiếu nằm ở mục chờ nhận bổ sung.");
         } catch (IllegalArgumentException | IllegalStateException ex) {
             flash.addFlashAttribute("error", ex.getMessage());

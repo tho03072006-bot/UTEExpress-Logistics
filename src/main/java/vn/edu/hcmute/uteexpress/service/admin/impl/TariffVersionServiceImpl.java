@@ -24,10 +24,15 @@ public class TariffVersionServiceImpl implements TariffVersionService {
         access.requireOperator(actor); access.validatePage(page);
         return versions.findAllByOrderByStartsAtDescIdDesc(PageRequest.of(page, 20));
     }
-    @Transactional public void schedule(String actor, TariffScheduleRequest form) {
+    // Sau khi chờ khóa cước gốc, phải thấy lịch request trước vừa commit, không dùng read view cũ của InnoDB.
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void schedule(String actor, TariffScheduleRequest form) {
         access.requireAdmin(actor); access.validate(form);
         String reason = LogisticsInput.text(form.reason(), 5, 500, "Lý do");
         LocalDateTime now = LocalDateTime.now(clock);
+        if (form.startsAt().getSecond() != 0 || form.startsAt().getNano() != 0
+                || form.endsAt().getSecond() != 0 || form.endsAt().getNano() != 0)
+            throw new IllegalArgumentException("Thời gian lịch cước phải theo phút, không nhập phần giây hoặc phần thập phân.");
         if (form.startsAt().isBefore(now.plusMinutes(1)) || !form.endsAt().isAfter(form.startsAt())
                 || form.endsAt().isAfter(now.plusYears(2)) || form.baseFee().signum() + form.feePerKg().signum() == 0)
             throw new IllegalArgumentException("Giá không đồng thời bằng 0; lịch bắt đầu sau ít nhất 1 phút, kết thúc sau bắt đầu và trong 2 năm.");
