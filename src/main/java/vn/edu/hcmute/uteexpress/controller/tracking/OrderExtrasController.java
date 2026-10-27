@@ -170,6 +170,7 @@ public class OrderExtrasController {
                 .orElse(java.math.BigDecimal.ZERO);
         model.addAttribute("compensationLimit", compensationLimit);
         model.addAttribute("compensable", compensationLimit.signum() > 0);
+        model.addAttribute("refundOnly", vn.edu.hcmute.uteexpress.util.PaymentReadiness.neverInCustody(order));
         // Khiếu nại thường hỏi về lúc giao, nên kèm ảnh và chữ ký giao hàng để đối chiếu.
         model.addAttribute("deliveryProof", deliveryProofs.findViewableByOrder(order).orElse(null));
         model.addAttribute("proofBase", (viewer.equals("staff") ? "/manager/don-hang/"

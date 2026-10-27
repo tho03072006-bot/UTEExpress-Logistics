@@ -35,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private final org.springframework.context.ApplicationEventPublisher events;
     private final vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing;
     private final OrderCreationWriter creationWriter;
+    private final vn.edu.hcmute.uteexpress.service.OrderCancellationEffects cancellation;
 
     public OrderServiceImpl(OrderRepository orderRepository, AppUserRepository appUserRepository,
                             SavedAddressService savedAddressService,
@@ -43,7 +44,9 @@ public class OrderServiceImpl implements OrderService {
                             vn.edu.hcmute.uteexpress.service.admin.ShippingTariffService tariffService,
                             org.springframework.context.ApplicationEventPublisher events,
                             vn.edu.hcmute.uteexpress.service.routing.OrderRoutingService routing,
-                            OrderCreationWriter creationWriter) {
+                            OrderCreationWriter creationWriter,
+                            vn.edu.hcmute.uteexpress.service.OrderCancellationEffects cancellation) {
+        this.cancellation = cancellation;
         this.orderRepository = orderRepository;
         this.appUserRepository = appUserRepository;
         this.savedAddressService = savedAddressService;
@@ -289,6 +292,8 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.setUpdatedAt(java.time.LocalDateTime.now(clock));
         orderRepository.save(order);
+        // Trả lại lượt mã giảm giá; đã trả ví thì mở yêu cầu hoàn tiền (xem OrderCancellationEffects).
+        cancellation.afterCancel(order, username);
         history.save(new vn.edu.hcmute.uteexpress.entity.OrderStatusHistory(order, order.getSender(),
                 Order.OrderStatus.PENDING_PICKUP, Order.OrderStatus.CANCELLED, null,
                 "Người gửi hủy vận đơn trước khi lấy hàng.", null, java.time.LocalDateTime.now(clock)));

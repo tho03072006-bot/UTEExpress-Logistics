@@ -101,27 +101,74 @@ public class DispatchService {
         var selected = choices.get(0);
         assignLocked(order, users.findById(selected.id()).orElseThrow(), selected.reason(), manager);
     }
+    /**
+     * Thu hồi đơn từ Shipper đang giữ (nghỉ ca, nghỉ việc, ốm) và giao cho Shipper khác cùng chi nhánh: chỉ khi đã lấy hàng mà
+     * chưa đi giao, hoặc vừa giao thất bại (xem DispatchRoutingPolicy.isReclaimable). Cùng cách khóa và kiểm tra như phân công.
+     */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void reclaim(String code, Long shipperId, long expectedShipperId, LocalDateTime expectedUpdatedAt,
+            String note, String actor) {
+        AppUser manager = access.internal(actor);
+        String reason = LogisticsInput.text(note, 5, 350, "Lý do thu hồi");
+        if (shipperId == null || shipperId <= 0 || expectedShipperId <= 0) throw new IllegalArgumentException("Mã Shipper không hợp lệ.");
+        var shipper = users.lockById(shipperId).filter(u -> u.isEnabled() && !u.isLockedByAdmin() && u.getRole() == AppUser.Role.SHIPPER)
+                .orElseThrow(() -> new IllegalArgumentException("Hãy chọn Shipper đang hoạt động."));
+        var order = orders.findLockedByTrackingCode(code).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        long current = order.getShipper() == null ? 0 : order.getShipper().getId();
+        if (current != expectedShipperId || expectedUpdatedAt == null || !expectedUpdatedAt.equals(order.getUpdatedAt()))
+            throw new IllegalArgumentException("Vận đơn đã thay đổi. Hãy tải lại trang trước khi thu hồi.");
+        if (current == shipperId) throw new IllegalArgumentException("Hãy chọn Shipper khác Shipper đang giữ đơn.");
+        payments.requireReadyForFulfillment(order);
+        var route = routing.route(order); routing.requireReclaimable(route); routing.requireManager(manager, route);
+        routing.requireShipper(shipper, route);
+        var previous = order.getShipper();
+        route.reassignHolder(shipper);
+        handOver(order, shipper, manager, "Thu hồi từ " + name(previous) + ", chuyển cho " + name(shipper) + ". " + reason,
+                "ORDER_REASSIGN", "Shipper " + previous.getId() + " -> " + shipper.getId() + "; " + reason);
+    }
+    /** Shipper cùng chi nhánh có thể nhận đơn thu hồi (đang hoạt động, khác người đang giữ), kèm số đơn đang giữ; đơn không thu hồi được thì rỗng. */
+    public Map<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>> reclaimOptions(String actor, List<Order> list) {
+        var manager = access.internal(actor);
+        var result = new LinkedHashMap<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>>();
+        int capacity = routing.capacity();
+        for (var order : list) {
+            var route = routing.routeIfPresent(order).orElse(null);
+            if (route == null || !routing.isReclaimable(route) || !routing.canManage(manager, route)) continue;
+            var options = routing.branchShippers(routing.branch(route).getId()).stream()
+                    .filter(u -> u.isEnabled() && !u.isLockedByAdmin() && !u.getId().equals(order.getShipper().getId()))
+                    .map(u -> new vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate(u.getId(), u.getUsername(),
+                            u.getFullName(), routing.load(u.getId()), capacity, 0, 0, "", "Thu hồi"))
+                    .filter(candidate -> candidate.activeOrders() < capacity)
+                    .toList();
+            result.put(order.getId(), options);
+        }
+        return result;
+    }
+    private static String name(AppUser user) { return user.getFullName() == null ? user.getUsername() : user.getFullName(); }
     private void assignLocked(Order order, AppUser shipper, String reason, AppUser manager) {
         var route = routing.route(order); routing.requireStage(route); routing.requireManager(manager, route);
         routing.requireShipper(shipper, route);
         if (order.getShipper() != null && order.getShipper().getId().equals(shipper.getId()))
             throw new IllegalArgumentException("Đơn đã được phân công cho Shipper này.");
         route.assignShipper(shipper);
+        handOver(order, shipper, manager, "Phân công cho " + name(shipper) + ". " + reason,
+                "ORDER_ASSIGN", "Shipper " + shipper.getId() + "; " + reason);
+    }
+    /** Ghi Shipper mới cho đơn, lịch sử, thông báo cho Shipper mới (thông báo cũ của đơn bị gỡ) và nhật ký. */
+    private void handOver(Order order, AppUser shipper, AppUser manager, String historyNote, String auditAction, String auditDetail) {
         String actor = manager.getUsername();
         LocalDateTime now = LocalDateTime.now(clock);
         notifications.dismissPreviousAssignment(order, now);
         order.setShipper(shipper);
         order.setUpdatedAt(now);
         orders.save(order);
-        history.save(new OrderStatusHistory(order, manager, order.getStatus(), order.getStatus(), null,
-                "Phân công cho " + (shipper.getFullName() == null ? shipper.getUsername() : shipper.getFullName())
-                        + ". " + reason, null, now));
+        history.save(new OrderStatusHistory(order, manager, order.getStatus(), order.getStatus(), null, historyNote, null, now));
         var notification = notifications.findByOrderAndRecipient(order, shipper).orElseGet(ShipperNotification::new);
         notification.assign(order, shipper, now);
         notifications.saveAndFlush(notification);
         events.publishEvent(new ShipperNotificationEvent(shipper.getUsername(), notification.getId(), order.getTrackingCode()));
         events.publishEvent(new vn.edu.hcmute.uteexpress.dto.tracking.OrderStatusChangedEvent(
                 order.getId(), order.getTrackingCode(), order.getStatus().name(), now));
-        audit.record(actor, "ORDER_ASSIGN", "order:" + order.getId(), "Shipper " + shipper.getId() + "; " + reason);
+        audit.record(actor, auditAction, "order:" + order.getId(), auditDetail);
     }
 }

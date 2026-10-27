@@ -19,6 +19,7 @@ public class OrderComplaintService {
     private final LogisticsAccess access;
     private final ShipmentImageService images;
     private final Clock clock;
+    private final jakarta.persistence.EntityManager entityManager;
     private final vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud;
     private final vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities;
     private final vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases;
@@ -28,10 +29,11 @@ public class OrderComplaintService {
             vn.edu.hcmute.uteexpress.repository.admin.ComplaintActivityRepository activities,
             vn.edu.hcmute.uteexpress.repository.admin.OperationsCaseRepository cases,
             vn.edu.hcmute.uteexpress.service.media.CloudMediaStorageService cloud,
-            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope) {
+            vn.edu.hcmute.uteexpress.service.routing.BranchScope scope, jakarta.persistence.EntityManager entityManager) {
         this.orders = orders; this.complaints = complaints; this.access = access; this.images = images; this.clock = clock;
         this.activities = activities; this.cases = cases;
         this.cloud = cloud; this.scope = scope;
+        this.entityManager = entityManager;
     }
     public Optional<OrderComplaint> forOrder(Order order, String username) {
         access.checkOrder(order, username);
@@ -61,7 +63,7 @@ public class OrderComplaintService {
     }
     public java.util.List<vn.edu.hcmute.uteexpress.entity.routing.Branch> branches(String actor) { return scope.branches(actor);
     }
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void create(Long orderId, String username, String subject, String description, MultipartFile image) {
         AppUser customer = access.customer(username);
         String title = LogisticsInput.text(subject, 1, 100, "Tiêu đề");
@@ -76,6 +78,24 @@ public class OrderComplaintService {
         complaints.save(complaint);
         activity(complaint, username, "CREATE", body);
     }
+    /**
+     * Đơn đã trả ví bị hủy trước khi lấy hàng: mở hồ sơ khiếu nại thay người gửi (hoặc mở lại hồ sơ đang có) để Manager lập
+     * phiếu hoàn cước đã thu và Admin duyệt chi trả, theo đúng luồng tiền hai người đã có. Gọi trong giao dịch hủy đơn.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void openRefundRequest(Order order, java.math.BigDecimal amount, String actor) {
+        String paid = String.format(java.util.Locale.ROOT, "%,d", amount.longValue()).replace(',', '.') + " đ";
+        String note = "Đơn đã hủy trước khi lấy hàng nhưng đã thanh toán ví " + paid + ". Cần hoàn lại cước đã thu cho người gửi.";
+        var now = LocalDateTime.now(clock);
+        var existing = complaints.findByOrder(order);
+        OrderComplaint complaint;
+        if (existing.isPresent()) {
+            complaint = existing.get();
+            if (complaint.getStatus().isClosed()) complaint.reopen(now); else complaint.touch(now);
+        } else complaint = new OrderComplaint(order, "Hoàn tiền đơn đã hủy", note, null, now);
+        complaints.saveAndFlush(complaint);
+        activity(complaint, actor, existing.isPresent() ? "CUSTOMER_MESSAGE" : "CREATE", note);
+    }
     public byte[] readImage(Long id,String actor) {
         var complaint = view(id,actor);
         if (!complaint.isHasImage()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
@@ -83,7 +103,7 @@ public class OrderComplaintService {
                 org.springframework.http.HttpStatus.NOT_FOUND,"Ảnh cũ chưa được chuyển lên cloud chung.");
         return cloud.read(complaint.getImageAsset(),vn.edu.hcmute.uteexpress.service.media.MediaPurpose.COMPLAINT).bytes();
     }
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void respond(Long id, String actor, long revision, OrderComplaint.Status status, String reply) {
         var manager = access.internal(actor);
         var complaint = lockedComplaint(id, actor);
@@ -101,7 +121,7 @@ public class OrderComplaintService {
         complaints.saveAndFlush(complaint);
         activity(complaint, actor, "RESPOND", reply);
     }
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void supplement(Long id, String username, long revision, String note) {
         access.shipper(username);
         var complaint = lockedComplaint(id, username);
@@ -110,7 +130,8 @@ public class OrderComplaintService {
         complaints.saveAndFlush(complaint);
         activity(complaint, username, "SUPPLEMENT", note);
     }
-    @Transactional public void claim(Long id, String actor, long revision) {
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void claim(Long id, String actor, long revision) {
         var manager = access.internal(actor); var complaint = lockedComplaint(id, actor); checkRevision(complaint, revision);
         if (complaint.getHandledBy() != null && complaint.getHandledBy().getId().equals(manager.getId()))
             throw new IllegalArgumentException("Bạn đang phụ trách hồ sơ này; không cần nhận xử lý lại.");
@@ -123,7 +144,7 @@ public class OrderComplaintService {
      * Người gửi nhắn tiếp vào hồ sơ, không giới hạn số lần. Hồ sơ đã kết thúc thì được mở lại để Manager xử lý tiếp;
      * khoản bồi hoàn đã duyệt (nếu có) giữ nguyên.
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void customerMessage(Long id, String username, String message) {
         AppUser customer = access.customer(username);
         var complaint = lockedComplaint(id, username);
@@ -147,7 +168,12 @@ public class OrderComplaintService {
                 LogisticsInput.text(message, 1, 2000, "Nội dung"), LocalDateTime.now(clock)));
     }
     private OrderComplaint lockedComplaint(Long id, String actor) {
-        var complaint = complaints.lockById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+        var existing = complaints.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại."));
+        // Khóa đơn trước hồ sơ, cùng thứ tự với hủy đơn và đề xuất bồi thường. Dữ liệu OSIV có thể đã cũ.
+        var order = orders.findLockedById(existing.getOrder().getId()).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vận đơn."));
+        entityManager.refresh(order, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        var complaint = existing;
+        entityManager.refresh(complaint, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         access.checkOrder(complaint.getOrder(), actor);
         return complaint;
     }

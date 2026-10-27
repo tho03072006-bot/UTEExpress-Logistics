@@ -261,7 +261,7 @@ public class AssistantChatServiceImpl implements AssistantChatService {
     static String redact(String value) {
         return value.replaceAll("(?i)gsk_[a-z0-9_-]{16,}","[khóa đã ẩn]")
                 .replaceAll("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}","[email đã ẩn]")
-                .replaceAll("(?<![\\p{L}\\p{N}])(?:\\+84|0)[0-9]{9}(?![\\p{L}\\p{N}])","[điện thoại đã ẩn]")
+                .replaceAll("(?<![\\p{L}\\p{N}])(?:\\+84(?:[ .-]?\\(0\\))?|0)(?:[ .-]?[0-9]){9}(?![\\p{L}\\p{N}])","[điện thoại đã ẩn]")
                 .replaceAll("(?iu)(mật khẩu|password|otp|api[ _-]?key)\\s*[:=]\\s*\\S+","$1: [đã ẩn]");
     }
     private void ensureSessionOwner(Authentication auth,AssistantAccessService.Actor actor,HttpSession session,Conversation current) {

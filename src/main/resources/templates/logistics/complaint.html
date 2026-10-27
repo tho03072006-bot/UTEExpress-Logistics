@@ -23,7 +23,7 @@
 <div class="ute-panel sx-cx-empty" th:if="${complaint == null and viewer != 'customer'}"><i class="bi bi-inbox"></i><p class="mb-0">Người gửi chưa có khiếu nại cho vận đơn này.</p></div>
 
 <div th:if="${complaint != null}" class="sx-cx-grid"
-     th:with="statusTone=${complaint.status.name() == 'RESOLVED'} ? 'sx-tone-green' : (${complaint.status.name() == 'REJECTED'} ? 'sx-tone-rose' : (${complaint.status.name() == 'IN_PROGRESS'} ? 'sx-tone-cyan' : 'sx-tone-amber'))">
+     th:with="statusTone=${complaint.status.closed} ? 'sx-tone-slate' : 'sx-tone-blue'">
     <!-- Cột trái: hội thoại -->
     <article class="ute-panel sx-cx-chat" id="tin-nhan">
         <header class="sx-cx-chat-head"><div><span class="text-muted small">Chủ đề</span><h3 class="h5 mb-0" th:text="${complaint.subject}"></h3></div>
@@ -102,10 +102,13 @@
             <!-- B8: Admin là người duyệt chi tiền nên không lập phiếu tiền; server cũng chặn. -->
             <a class="btn btn-outline-secondary w-100" th:if="${canRequestCompensation}"
                th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}"><i class="bi bi-cash-stack"></i> Đề xuất bồi thường</a>
-            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED'}">Bồi thường tối đa
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and !refundOnly}">Bồi thường tối đa
                 <strong><span th:replace="~{fragments/components :: money(${compensationLimit})}"></span></strong>: 4 lần cước nếu đã thu cước, 3 lần nếu đơn trả cước khi giao chưa thu (Nghị định 47/2011/NĐ-CP, hàng không khai giá).</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and refundOnly}">Hoàn tối đa
+                <strong><span th:replace="~{fragments/components :: money(${compensationLimit})}"></span></strong>: hàng chưa được lấy (đơn chờ lấy hoặc đã hủy) nên chỉ hoàn lại cước đã thu, không bồi thường.</p>
             <p class="small text-muted mb-0 mt-2" th:if="${complaint.status.name() != 'REJECTED' and compensable}" sec:authorize="hasRole('ADMIN')">Phiếu tiền do Manager lập, Admin duyệt.</p>
-            <p class="small text-muted mb-0 mt-2" th:if="${!compensable}">Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch). Cần tra soát thanh toán trước khi bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!compensable and refundOnly}">Hàng chưa được lấy và chưa thu cước: không có khoản nào để hoàn hoặc bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!compensable and !refundOnly}">Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch). Cần tra soát thanh toán trước khi bồi thường.</p>
             <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and !canRequestCompensation}" sec:authorize="!hasRole('ADMIN')">Đã có đề xuất bồi thường đang chờ, đã duyệt hoặc hoàn tất. Kiểm tra trong Hồ sơ vận hành.</p>
         </div>
     </aside>

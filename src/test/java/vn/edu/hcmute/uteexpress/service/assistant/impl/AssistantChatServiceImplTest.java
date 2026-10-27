@@ -79,6 +79,21 @@ class AssistantChatServiceImplTest {
         assertFalse(value.contains("user@example.com")); assertFalse(value.contains("0901234567"));
         assertFalse(value.contains("123456")); assertFalse(value.contains("password=abc")); assertFalse(value.contains("gsk_"));
     }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"0901 234 567","0901.234.567","0901-234-567","+84 901 234 567","+84-901-234-567","+84(0)901234567"})
+    void formattedPhoneIsRedactedBeforeProvider(String phone) {
+        doAnswer(call -> {
+            String context=call.getArgument(0).toString();
+            assertFalse(context.contains(phone));
+            assertTrue(context.contains("[điện thoại đã ẩn]"));
+            return answer("Bạn có thể xem thông tin giao hàng trên trang chi tiết đơn.");
+        }).when(ai).complete(any(),any(),any(),anyInt());
+        assertEquals(200,chat.sendMessage(auth,session,request("Liên hệ "+phone+" để giao hàng")).status());
+        verify(ai).complete(any(),any(),any(),anyInt());
+    }
+    @Test void redactionPreservesTrackingCodeAndQuotedFee() {
+        assertEquals("UTE0901234567 có cước 43.000 đ",AssistantChatServiceImpl.redact("UTE0901234567 có cước 43.000 đ"));
+    }
     @Test void missingConfigurationProducesErrorNotCannedAiAnswer() {
         var unset=new AssistantConfig.Settings(true,"CHANGE_ME","openai/gpt-oss-20b",18,1600,10);
         chat=new AssistantChatServiceImpl(access,tools,ai,new AssistantRateGuard(clock,unset),unset,mapper,clock);

@@ -127,8 +127,11 @@ class TrackingServiceImplTest {
         AppUser shipper = createShipper();
         Order order = createOrder(shipper, currentStatus);
 
-        when(appUserRepository.findByUsername("nguyentai"))
-                .thenReturn(Optional.of(shipper));
+        if (newStatus == Order.OrderStatus.IN_TRANSIT) {
+            when(appUserRepository.findLockedByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        } else {
+            when(appUserRepository.findByUsername("nguyentai")).thenReturn(Optional.of(shipper));
+        }
         when(orderRepository.findLockedByIdAndShipper(1L, shipper))
                 .thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
@@ -309,7 +312,7 @@ class TrackingServiceImplTest {
     void interprovincialPickupLegCannotStartDelivery() {
         AppUser shipper = createShipper();
         Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
-        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(appUserRepository.findLockedByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
         when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
         var route = route(order, "SGN", "HAN");
         when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route));
@@ -324,12 +327,15 @@ class TrackingServiceImplTest {
     void intraprovincialDeliveryMovesRouteToLastMile() {
         AppUser shipper = createShipper();
         Order order = createOrder(shipper, Order.OrderStatus.PICKED_UP);
-        when(appUserRepository.findByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
+        when(appUserRepository.findLockedByUsername("nguyentai")).thenReturn(java.util.Optional.of(shipper));
         when(orderRepository.findLockedByIdAndShipper(1L, shipper)).thenReturn(java.util.Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         var route = route(order, "SGN", "SGN");
         when(routes.findByOrder_Id(1L)).thenReturn(java.util.Optional.of(route));
         trackingService.updateStatus(1L, "nguyentai", Order.OrderStatus.IN_TRANSIT);
+        var locks = org.mockito.Mockito.inOrder(appUserRepository, orderRepository);
+        locks.verify(appUserRepository).findLockedByUsername("nguyentai");
+        locks.verify(orderRepository).findLockedByIdAndShipper(1L, shipper);
         assertEquals(vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.Stage.LAST_MILE, route.getStage());
         assertEquals(Order.OrderStatus.IN_TRANSIT, order.getStatus());
     }

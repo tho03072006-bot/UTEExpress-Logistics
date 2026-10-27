@@ -15,10 +15,10 @@
 <hr><div class="d-flex justify-content-between align-items-center gap-3"><span>Tổng thanh toán</span><strong class="fs-4 text-nowrap"><span th:if="${collection.state.name() == 'REVIEW'}">Cần tra soát</span><th:block th:if="${collection.state.name() != 'REVIEW'}"><span th:replace="~{fragments/components :: money(${payment.amount})}"></span></th:block></strong></div>
 <p class="small text-muted mt-4 mb-0">Đơn MoMo phải thanh toán trước khi điều phối/giao hàng. Đơn COD được thu cước khi giao thành công.</p></div></div></div>
 <div class="col-lg-7"><div class="card"><div class="card-body p-4 text-center">
-<div th:if="${collection.state.name() == 'PAID'}" class="alert alert-success mb-0" role="status"><h5>Đã thanh toán</h5><p class="small text-break" th:text="${payment.transactionRef}"></p><span th:text="${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span></div>
-<div th:if="${collection.state.name() == 'REVIEW'}" class="alert alert-warning mb-0" role="alert"><h5>Thông tin thanh toán cần tra soát</h5><p class="small mb-0">Cước hoặc biên nhận chưa đầy đủ hay không khớp. Liên hệ Manager để kiểm tra trước khi thanh toán hoặc thu tiền.</p></div>
+<div th:if="${collection.state.name() == 'PAID'}" class="alert alert-light border mb-0" role="status"><h5>Đã thanh toán</h5><p class="small text-break" th:text="${payment.transactionRef}"></p><span th:text="${#temporals.format(payment.paidAt, 'HH:mm dd/MM/yyyy')}"></span></div>
+<div th:if="${collection.state.name() == 'REVIEW'}" class="alert alert-light border mb-0" role="alert"><h5>Thông tin thanh toán cần tra soát</h5><p class="small mb-0">Cước hoặc biên nhận chưa đầy đủ hay không khớp. Liên hệ Manager để kiểm tra trước khi thanh toán hoặc thu tiền.</p></div>
 <div th:if="${collection.state.name() == 'FREE'}" class="alert alert-info mb-0" role="status"><h5>Miễn cước</h5><p class="small mb-0">Không thu tiền cho đơn hàng này.</p></div>
-<div th:if="${checkoutError}" class="alert alert-warning" th:text="${checkoutError}" role="alert"></div>
+<div th:if="${checkoutError}" class="alert alert-light border" th:text="${checkoutError}" role="alert"></div>
 <div th:if="${checkout != null}" data-momo-payment th:attr="data-status-url=@{/api/payments/momo/{id}/status(id=${order.id})},data-expires=${checkout.expiresAt}">
 <p th:if="${momoStartup != null}" class="small sx-momo-render" role="status" aria-live="polite" data-momo-render-status th:attr="data-state=${momoStartup.state}" th:text="${momoStartup.message}"></p>
 <h5>Quét QR để thanh toán mô phỏng</h5><p class="small text-muted">Dùng camera điện thoại quét mã bên dưới để mở ví MoMo mô phỏng.</p>

@@ -18,7 +18,12 @@ import vn.edu.hcmute.uteexpress.service.manager.*;
 public class OperationsController {
     private final OperationsOverviewService overview;
     private final OperationsCaseService cases;
-    public OperationsController(OperationsOverviewService overview, OperationsCaseService cases) { this.overview = overview; this.cases = cases; }
+    private final StaffOrderCancellationService cancellation;
+    private final vn.edu.hcmute.uteexpress.service.tracking.DispatchService dispatch;
+    public OperationsController(OperationsOverviewService overview, OperationsCaseService cases,
+            StaffOrderCancellationService cancellation, vn.edu.hcmute.uteexpress.service.tracking.DispatchService dispatch) {
+        this.overview = overview; this.cases = cases; this.cancellation = cancellation; this.dispatch = dispatch;
+    }
     @GetMapping("/canh-bao") @Transactional(readOnly = true)
     public String alerts(@RequestParam(defaultValue = "UNASSIGNED") OperationsOverviewService.Alert alert,
             @RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page,
@@ -26,6 +31,8 @@ public class OperationsController {
             Authentication auth, Model model) {
         var orders = overview.alerts(auth.getName(), alert, branchId, page);
         model.addAttribute("orders", orders);
+        model.addAttribute("cancelableIds", cancellation.cancelable(auth.getName(), orders.getContent()));
+        model.addAttribute("reclaimOptions", dispatch.reclaimOptions(auth.getName(), orders.getContent()));
         model.addAttribute("dropOffIds", overview.dropOffOrderIds(orders.getContent()));
         model.addAttribute("deliveryHubIds", overview.deliveryHubOrderIds(auth.getName(), orders.getContent()));
         model.addAttribute("branches", overview.branches(auth.getName())); model.addAttribute("branchId", branchId);
@@ -33,6 +40,32 @@ public class OperationsController {
         model.addAttribute("lateCash", overview.lateCash(auth.getName(), branchId, cashPage));
         model.addAttribute("alerts", OperationsOverviewService.Alert.values()); model.addAttribute("selected", alert);
         return "manager/operations-alerts";
+    }
+    /** Hủy đơn chưa lấy hàng không xử lý tiếp được (xem StaffOrderCancellationService); quay lại đúng nhóm cảnh báo đang xem. */
+    @PostMapping("/canh-bao/huy-don")
+    public String cancel(@RequestParam Long orderId, @RequestParam long revision, @RequestParam String reason,
+            @RequestParam(required = false) OperationsOverviewService.Alert alert, @RequestParam(required = false) Long branchId,
+            Authentication auth, RedirectAttributes flash) {
+        try { cancellation.cancel(auth.getName(), orderId, revision, reason); flash.addFlashAttribute("message", "Đã hủy vận đơn và báo người gửi."); }
+        catch (IllegalArgumentException | vn.edu.hcmute.uteexpress.exception.StaffConflictException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return backToAlerts(alert, branchId, flash);
+    }
+    /** Thu hồi đơn từ Shipper đang giữ và giao cho Shipper khác cùng chi nhánh (xem DispatchService.reclaim). */
+    @PostMapping("/canh-bao/thu-hoi")
+    public String reclaim(@RequestParam String trackingCode, @RequestParam Long shipperId, @RequestParam long expectedShipperId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+            java.time.LocalDateTime expectedUpdatedAt, @RequestParam String note,
+            @RequestParam(required = false) OperationsOverviewService.Alert alert, @RequestParam(required = false) Long branchId,
+            Authentication auth, RedirectAttributes flash) {
+        try { dispatch.reclaim(trackingCode, shipperId, expectedShipperId, expectedUpdatedAt, note, auth.getName());
+            flash.addFlashAttribute("message", "Đã thu hồi đơn " + trackingCode + " và giao cho Shipper mới."); }
+        catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return backToAlerts(alert, branchId, flash);
+    }
+    private static String backToAlerts(OperationsOverviewService.Alert alert, Long branchId, RedirectAttributes flash) {
+        if (alert != null) flash.addAttribute("alert", alert.name());
+        if (branchId != null) flash.addAttribute("branchId", branchId);
+        return "redirect:/manager/canh-bao";
     }
     @GetMapping("/hieu-suat-shipper") @Transactional(readOnly = true)
     public String performance(@RequestParam(required = false) Long branchId, @RequestParam(defaultValue = "0") int page,
