@@ -47,6 +47,18 @@ class StaffBranchPhotoAdviceTest {
         verify(repository).findBranchCodeByUsername("manager_sgn");
     }
 
+    @Test void changingManagerWithinTheSameSessionDoesNotReuseThePreviousBranch() {
+        when(provider.getIfAvailable()).thenReturn(repository);
+        when(repository.findBranchCodeByUsername("manager_sgn")).thenReturn(Optional.of("SGN"));
+        when(repository.findBranchCodeByUsername("manager_han")).thenReturn(Optional.of("HAN"));
+        var request = new MockHttpServletRequest(); request.getSession(true);
+        assertEquals("sgn", advice.staffBranchPhoto(user("manager_sgn", "ROLE_MANAGER"), request));
+        assertEquals("han", advice.staffBranchPhoto(user("manager_han", "ROLE_MANAGER"), request));
+        assertEquals("han", advice.staffBranchPhoto(user("manager_han", "ROLE_MANAGER"), request));
+        verify(repository, times(1)).findBranchCodeByUsername("manager_sgn");
+        verify(repository, times(1)).findBranchCodeByUsername("manager_han");
+    }
+
     @Test void managerWithoutBranchOrUnsafeCodeOrDatabaseErrorFallsBackToDefaultPhoto() {
         when(provider.getIfAvailable()).thenReturn(repository);
         when(repository.findBranchCodeByUsername("m1")).thenReturn(Optional.empty());

@@ -7,7 +7,8 @@
 <input type="hidden" th:field="*{revision}"><div class="row g-3">
 <div class="col-md-4"><label for="maxActiveOrders">Số đơn tối đa mỗi Shipper đang giữ (1–100)</label><input id="maxActiveOrders" class="form-control" type="number" th:field="*{maxActiveOrders}" min="1" max="100" required><div class="ute-field-error" th:errors="*{maxActiveOrders}"></div></div>
 <div class="col-md-4"><label for="dropOffDiscount">Giảm khi tự mang ra chi nhánh (đồng, 0–20.000)</label><input id="dropOffDiscount" class="form-control" type="number" th:field="*{dropOffDiscount}" min="0" max="20000" step="1000" required><div class="ute-field-error" th:errors="*{dropOffDiscount}"></div></div>
-<div class="col-md-4"><label for="pickupHours">Hạn lấy hàng (giờ, 1–168)</label><input id="pickupHours" class="form-control" type="number" th:field="*{pickupHours}" min="1" max="168" required></div>
+<div class="col-md-4"><label for="pickupHours">Hạn lấy hàng (giờ, 1–168)</label><input id="pickupHours" class="form-control" type="number" th:field="*{pickupHours}" min="1" max="168" required aria-describedby="pickupHoursHelp">
+<p class="form-text mb-0" id="pickupHoursHelp">Đơn Hỏa tốc phải lấy trong thời gian hứa giao của tuyến Hỏa tốc (hiện "Trong 4 giờ") nếu ngắn hơn hạn này.</p></div>
 <details class="col-12" th:open="${#fields.hasErrors('standardHours') or #fields.hasErrors('expressHours') or #fields.hasErrors('superExpressHours')}">
 <summary>Hạn giao cho đơn cũ chưa có tuyến chi nhánh</summary>
 <p class="form-text mt-1">Ba hạn này chỉ áp cho đơn tạo trước khi có chi nhánh. Đơn có tuyến lấy hạn theo thời gian dự kiến ở trang <a th:href="@{/admin/cuoc-tuyen}">Cước tuyến</a>, tính từ lúc lấy hàng, đúng như đã báo khách.</p>

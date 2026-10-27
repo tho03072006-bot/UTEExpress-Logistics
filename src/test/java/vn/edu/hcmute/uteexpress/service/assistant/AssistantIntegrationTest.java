@@ -51,6 +51,7 @@ class AssistantIntegrationTest {
     @Autowired OperationsPolicyService policies;
     @Autowired vn.edu.hcmute.uteexpress.service.routing.RouteQuoteService routeQuotes;
     @Autowired EntityManager em;
+    @Autowired org.springframework.context.ApplicationContext application;
     @MockBean AssistantAiGateway ai;
     AppUser customer,otherCustomer,shipper,otherShipper;
     Order own,foreign;
@@ -140,6 +141,32 @@ class AssistantIntegrationTest {
             assertFalse(tools.execute(name,mapper.createObjectNode(),auth(customer)).data().path("ok").asBoolean());
         assertFalse(tools.execute("lookup_order",mapper.createObjectNode().put("tracking_code",own.getTrackingCode()).put("username",otherCustomer.getUsername()),auth(customer)).data().path("ok").asBoolean());
         assertEquals(before,orders.count()); assertEquals(Order.OrderStatus.PENDING_PICKUP,own.getStatus());
+    }
+    static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> allBranchQuotes() {
+        var result=new java.util.ArrayList<org.junit.jupiter.params.provider.Arguments>();
+        for(String from:java.util.List.of("SGN","HAN","DAD")) for(String to:java.util.List.of("SGN","HAN","DAD"))
+            for(Order.ServiceType service:Order.ServiceType.values()) for(var mode:vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode.values())
+                result.add(org.junit.jupiter.params.provider.Arguments.of(from,to,service,mode));
+        return result.stream();
+    }
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.MethodSource("allBranchQuotes")
+    void assistantQuotesMatchCustomerQuoteForEveryRouteServiceAndPickupMode(String from,String to,Order.ServiceType service,
+            vn.edu.hcmute.uteexpress.entity.routing.OrderRoute.PickupMode mode) {
+        vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(application);
+        var catalog=application.getBean(vn.edu.hcmute.uteexpress.service.routing.RoutingCatalogService.class);
+        var origin=catalog.branches().stream().filter(b->b.getCode().equals(from)).findFirst().orElseThrow();
+        var destination=catalog.branches().stream().filter(b->b.getCode().equals(to)).findFirst().orElseThrow();
+        var data=tools.execute("estimate_fee",fee(2,from,to).put("service_type",service.name()).put("pickup_mode",mode.name()),auth(customer)).data();
+        if(!from.equals(to) && service==Order.ServiceType.SUPER_EXPRESS) {
+            assertFalse(data.path("ok").asBoolean());
+            assertThrows(IllegalArgumentException.class,()->routeQuotes.quote(service,2,origin.getHubAreaCode(),destination.getHubAreaCode(),mode));
+        } else {
+            assertTrue(data.path("ok").asBoolean(),data.toString());assertEquals(1,data.path("quotes").size());
+            var expected=routeQuotes.quote(service,2,origin.getHubAreaCode(),destination.getHubAreaCode(),mode);
+            assertEquals(0,expected.total().compareTo(data.path("quotes").get(0).path("total_vnd").decimalValue()));
+            assertEquals(expected.leadTimeText(),data.path("quotes").get(0).path("lead_time").asText());
+        }
+        verifyNoInteractions(ai);
     }
     @Test void policyAndTariffComeFromCurrentBusinessServices(@Autowired org.springframework.context.ApplicationContext context) {
         vn.edu.hcmute.uteexpress.support.RoutingFixtures.seedH2(context);

@@ -16,6 +16,7 @@ import vn.edu.hcmute.uteexpress.repository.AppUserRepository;
 @ControllerAdvice(annotations = Controller.class)
 public class DisplayNameAdvice {
     public static final String SESSION_KEY = "displayName";
+    private static final String SESSION_USER_KEY = "displayNameUser";
 
     private final AppUserRepository users;
 
@@ -26,10 +27,12 @@ public class DisplayNameAdvice {
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) return null;
         var session = request.getSession(false);
         if (session == null) return null;
-        if (session.getAttribute(SESSION_KEY) instanceof String cached) return cached;
+        if (authentication.getName().equals(session.getAttribute(SESSION_USER_KEY))
+                && session.getAttribute(SESSION_KEY) instanceof String cached) return cached;
         String name = users.findByUsername(authentication.getName()).map(AppUser::getFullName)
                 .filter(full -> full != null && !full.isBlank()).map(String::strip).orElse(authentication.getName());
         session.setAttribute(SESSION_KEY, name);
+        session.setAttribute(SESSION_USER_KEY, authentication.getName());
         return name;
     }
 }

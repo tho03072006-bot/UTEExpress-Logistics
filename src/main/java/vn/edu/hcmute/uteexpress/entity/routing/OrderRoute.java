@@ -86,6 +86,15 @@ public class OrderRoute {
             deliveryShipper = shipper; stage = Stage.LAST_MILE;
         } else throw new IllegalArgumentException("Giai đoạn tuyến không cho phép phân công.");
     }
+    /**
+     * Thu hồi đơn từ Shipper đang giữ và giao cho Shipper khác: đã lấy hàng chưa đi giao (chặng lấy), hoặc vừa giao thất bại
+     * (chặng giao). Người đã lấy hàng giữ nguyên trong pickupShipper; Shipper mới là người đi giao (nội tỉnh) hoặc mang vào kho (liên tỉnh).
+     */
+    public void reassignHolder(AppUser shipper) {
+        if (stage == Stage.PICKUP) { if (!isInterprovincial()) deliveryShipper = shipper; }
+        else if (stage == Stage.LAST_MILE && !returnLeg) deliveryShipper = shipper;
+        else throw new IllegalArgumentException("Giai đoạn tuyến không cho phép thu hồi đơn.");
+    }
     /** Đơn nội tỉnh: shipper vừa lấy hàng bắt đầu đi giao, không qua kho. */
     public void startLastMile() {
         if (stage != Stage.PICKUP || isInterprovincial()) throw new IllegalStateException("Chỉ đơn nội tỉnh mới đi giao thẳng sau khi lấy hàng.");
