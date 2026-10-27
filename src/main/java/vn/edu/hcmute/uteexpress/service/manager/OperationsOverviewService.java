@@ -13,6 +13,8 @@ public interface OperationsOverviewService {
     default Page<Order> alerts(String actor, Alert alert, int page) { return alerts(actor, alert, null, page); }
     /** Số đơn của nhóm cảnh báo trong phạm vi chi nhánh, chỉ đếm (cho bảng hàng đợi). */
     long alertCount(String actor, Alert alert);
+    /** Số đơn của nhiều nhóm cảnh báo trong một lượt (bảng hàng đợi trang tổng quan); khớp {@link #alertCount}. */
+    java.util.Map<Alert, Long> alertCounts(String actor, java.util.Collection<Alert> alerts);
     /** Đơn nào trong danh sách là khách tự mang hàng ra chi nhánh. */
     java.util.Set<Long> dropOffOrderIds(java.util.Collection<Order> orders);
     java.util.Set<Long> deliveryHubOrderIds(String actor, java.util.Collection<Order> orders);

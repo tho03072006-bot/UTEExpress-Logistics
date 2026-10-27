@@ -39,13 +39,25 @@ public class StaffAccessPolicy {
         var attributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
         if (!(attributes instanceof org.springframework.web.context.request.ServletRequestAttributes servlet)
                 || !"GET".equalsIgnoreCase(servlet.getRequest().getMethod())) return accounts.findByUserUsername(actor);
-        String key = StaffAccessPolicy.class.getName() + ":" + actor;
+        String key = requestKey(actor);
         var scope = org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
         var cached = attributes.getAttribute(key, scope);
         if (cached instanceof java.util.Optional<?> found) return (java.util.Optional<vn.edu.hcmute.uteexpress.entity.admin.StaffAccount>) found;
         var loaded = accounts.findByUserUsername(actor);
         attributes.setAttribute(key, loaded, scope);
         return loaded;
+    }
+
+    /** Khóa request chứa tài khoản nội bộ đã đọc trong lượt GET này (StaffSessionFilter đặt sẵn khi kiểm tra phiên). */
+    public static String requestKey(String actor) { return StaffAccessPolicy.class.getName() + ":" + actor; }
+    /** Tài khoản nội bộ đã đọc trong lượt GET hiện tại, hoặc null nếu chưa có / không phải GET (khi đó phải đọc DB). */
+    @SuppressWarnings("unchecked")
+    public static java.util.Optional<vn.edu.hcmute.uteexpress.entity.admin.StaffAccount> readInThisGet(String actor) {
+        var attributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (!(attributes instanceof org.springframework.web.context.request.ServletRequestAttributes servlet)
+                || !"GET".equalsIgnoreCase(servlet.getRequest().getMethod())) return null;
+        var cached = attributes.getAttribute(requestKey(actor), org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST);
+        return cached instanceof java.util.Optional<?> found ? (java.util.Optional<vn.edu.hcmute.uteexpress.entity.admin.StaffAccount>) found : null;
     }
 
     public void validate(Object form) {

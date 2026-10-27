@@ -93,7 +93,7 @@ public class ShipperWorkspaceService {
                 result.deliveryCounts().merge(id, 1L, Long::sum);
             }
         }
-        for (var order : visible) if (operations.canRetry(order)) result.retryable().add(order.getId());
+        result.retryable().addAll(operations.retryableIds(visible));
         return result;
     }
     public LocalDateTime now() { return LocalDateTime.now(clock); }

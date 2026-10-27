@@ -33,10 +33,14 @@ public class DeliveryDeadlines {
 
     /** Chụp biểu giá tuyến hiện hành một lần cho cả danh sách đơn. */
     public Rules rules(OperationsPolicy policy) {
-        Map<Key, Integer> routeHours = new HashMap<>();
-        for (var tariff : tariffs.findAll()) LeadTimes.hours(tariff.getLeadTimeText()).ifPresent(hours -> routeHours.put(
-                new Key(tariff.getOriginBranch().getId(), tariff.getDestBranch().getId(), tariff.getServiceType()), hours));
-        return new Rules(policy, Map.copyOf(routeHours));
+        // Trang tổng quan đếm nhiều nhóm cảnh báo trong một giao dịch: chỉ đọc bảng cước tuyến một lần.
+        Map<Key, Integer> routeHours = vn.edu.hcmute.uteexpress.service.tracking.TransactionCache.get("route-lead-hours", () -> {
+            Map<Key, Integer> hoursByRoute = new HashMap<>();
+            for (var tariff : tariffs.findAll()) LeadTimes.hours(tariff.getLeadTimeText()).ifPresent(hours -> hoursByRoute.put(
+                    new Key(tariff.getOriginBranch().getId(), tariff.getDestBranch().getId(), tariff.getServiceType()), hours));
+            return Map.copyOf(hoursByRoute);
+        });
+        return new Rules(policy, routeHours);
     }
 
     /** Lúc lấy hàng (hoặc nhận tại quầy) của từng đơn; đơn chưa có mốc này không nằm trong kết quả. */

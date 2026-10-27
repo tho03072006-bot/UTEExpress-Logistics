@@ -63,6 +63,10 @@ public interface OperationsCaseRepository extends JpaRepository<OperationsCase, 
     List<OperationsCase> findByOrderAndKindAndStatus(Order order, OperationsCase.Kind kind, OperationsCase.Status status);
     boolean existsByOrderAndStatusIn(Order order, Collection<OperationsCase.Status> statuses);
     boolean existsByOrderAndKindAndStatusIn(Order order, OperationsCase.Kind kind, Collection<OperationsCase.Status> statuses);
+    /** Hồ sơ theo loại của nhiều đơn trong một truy vấn (xét giao lại cho cả trang danh sách). */
+    @org.springframework.data.jpa.repository.Query("select c from OperationsCase c where c.order.id in :ids and c.kind in :kinds order by c.id")
+    List<OperationsCase> findByOrderIdsAndKinds(@org.springframework.data.repository.query.Param("ids") Collection<Long> ids,
+            @org.springframework.data.repository.query.Param("kinds") Collection<OperationsCase.Kind> kinds);
     boolean existsByComplaintAndKindAndStatusIn(OrderComplaint complaint, OperationsCase.Kind kind, Collection<OperationsCase.Status> statuses);
     @Query("select coalesce(sum(c.amount), 0) from OperationsCase c where c.settlement = :settlement and c.kind = :kind and c.status in :statuses")
     BigDecimal sumAmounts(@Param("settlement") CodSettlement settlement, @Param("kind") OperationsCase.Kind kind,

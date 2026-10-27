@@ -132,8 +132,10 @@ class OperationsControlsIntegrationTest {
         long completedRevision = record.getRevision();
         assertThrows(StaffConflictException.class,()->cases.complete(manager.getUsername(),id,completedRevision,"Người gửi nhận lại",image()));
     }
+    /** Bản xét theo lô cho cả trang (retryableIds) phải cho cùng kết quả với canRetry từng đơn. */
+    private void sameRetry() { assertEquals(cases.canRetry(order), cases.retryableIds(java.util.List.of(order, order)).contains(order.getId())); }
     @Test void pendingReturnBlocksRetryAndShipperCannotMarkReturnedDirectly() {
-        newReturn(); assertFalse(cases.canRetry(order));
+        newReturn(); assertFalse(cases.canRetry(order)); sameRetry();
         assertThrows(IllegalArgumentException.class,()->cases.beforeStatusChange(order,shipper.getUsername(),Order.OrderStatus.RETURNED));
     }
     @Test void duplicateReturnAndStaleTargetAreRejected() {
@@ -143,11 +145,11 @@ class OperationsControlsIntegrationTest {
     @Test void retryUsesScheduleAndOneExtraApprovalOnly() {
         for (int i=0;i<3;i++) history.save(new OrderStatusHistory(order,shipper,Order.OrderStatus.IN_TRANSIT,Order.OrderStatus.FAILED,
                 DeliveryFailureReason.CUSTOMER_ABSENT,"Khách không có mặt",null,NOW.minusHours(4-i)));
-        history.flush(); assertFalse(cases.canRetry(order));
+        history.flush(); assertFalse(cases.canRetry(order)); sameRetry();
         Long id=cases.request(manager.getUsername(),request(OperationsCase.Kind.RETRY,order.getId(),order.getRevision(),null,NOW.plusHours(1)),null);
         var record=cases.view(admin.getUsername(),id);
         cases.review(admin.getUsername(),id,new OperationsReviewRequest(record.getRevision(),true,"Duyệt ngoại lệ thêm một lần"));
-        assertFalse(cases.canRetry(order)); clock.at(NOW.plusHours(2)); assertTrue(cases.canRetry(order));
+        assertFalse(cases.canRetry(order)); sameRetry(); clock.at(NOW.plusHours(2)); assertTrue(cases.canRetry(order)); sameRetry();
         var retryPayment = new OrderPayment(); retryPayment.setOrder(order); retryPayment.setAmount(new BigDecimal("18000"));
         retryPayment.setMethod(OrderPayment.PaymentMethod.COD); retryPayment.setStatus(OrderPayment.PaymentStatus.UNPAID); payments.saveAndFlush(retryPayment);
         tracking.updateStatus(order.getId(),shipper.getUsername(),Order.OrderStatus.IN_TRANSIT);
@@ -376,7 +378,7 @@ class OperationsControlsIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đã kết thúc")));
     }
     @Test void failedOrderWithoutAppointmentNeedsManagerCaseInsteadOfUnscheduledRetry() {
-        assertFalse(cases.canRetry(order));
+        assertFalse(cases.canRetry(order)); sameRetry();
         assertFalse(overview.alerts(manager.getUsername(),OperationsOverviewService.Alert.RETRY_DUE,0).stream().anyMatch(o -> o.getId().equals(order.getId())));
     }
     @Test void policyServerValidationAndStaleForm() {

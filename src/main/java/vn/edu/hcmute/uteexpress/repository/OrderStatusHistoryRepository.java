@@ -1,5 +1,6 @@
 package vn.edu.hcmute.uteexpress.repository;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -78,6 +79,14 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
     /** Chỉ đếm lần chuyển vào trạng thái; nhật ký di chuyển/ghi chú giữ nguyên trạng thái không phải một lượt giao. */
     @org.springframework.data.jpa.repository.Query("select count(h) from OrderStatusHistory h where h.order = :order and h.status = :status and h.previousStatus <> h.status")
     long countByOrderAndStatus(Order order, Order.OrderStatus status);
+    /** Số mục lịch sử theo trạng thái của nhiều đơn: cặp [mã đơn, số mục]; đơn không có mục nào thì không có dòng. */
+    @org.springframework.data.jpa.repository.Query("select h.order.id, count(h) from OrderStatusHistory h where h.order.id in :ids and h.status = :status group by h.order.id")
+    List<Object[]> countByOrderIdsAndStatus(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids,
+            @org.springframework.data.repository.query.Param("status") Order.OrderStatus status);
+    /** Các lần chuyển sang một trạng thái (khác trạng thái trước) của nhiều đơn, mới nhất trước; bản ghi đầu của mỗi đơn là lần gần nhất. */
+    @org.springframework.data.jpa.repository.Query("select h from OrderStatusHistory h where h.order.id in :ids and h.status = :status and h.previousStatus <> :status order by h.occurredAt desc, h.id desc")
+    List<OrderStatusHistory> transitionsInto(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids,
+            @org.springframework.data.repository.query.Param("status") Order.OrderStatus status);
     Optional<OrderStatusHistory> findFirstByOrderAndStatusAndPreviousStatusNotOrderByOccurredAtDescIdDesc(
             Order order, Order.OrderStatus status, Order.OrderStatus previousStatus);
     Optional<OrderStatusHistory> findFirstByOrderAndStatusOrderByOccurredAtDescIdDesc(Order order, Order.OrderStatus status);

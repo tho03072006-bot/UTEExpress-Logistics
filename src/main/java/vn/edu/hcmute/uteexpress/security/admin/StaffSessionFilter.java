@@ -42,6 +42,9 @@ public class StaffSessionFilter extends OncePerRequestFilter {
             if (account.isEmpty() || !principal.matchesAccount(account.get())) {
                 expire(request, response); return;
             }
+            // Trang xem (GET) dùng lại tài khoản vừa kiểm tra cho các bước kiểm quyền sau, không đọc lại DB (~100 ms mỗi câu).
+            if ("GET".equalsIgnoreCase(request.getMethod()))
+                request.setAttribute(vn.edu.hcmute.uteexpress.service.admin.StaffAccessPolicy.requestKey(principal.getUsername()), account);
             if (account.get().isPasswordChangeRequired()
                     && !path.equals("/noi-bo/doi-mat-khau") && !path.equals("/noi-bo/dang-xuat")) {
                 response.sendRedirect(request.getContextPath() + "/noi-bo/doi-mat-khau");

@@ -426,6 +426,34 @@ public class OperationsCaseServiceImpl implements OperationsCaseService {
         return !cases.existsByOrderAndKindAndStatusIn(order, OperationsCase.Kind.RETRY, List.of(OperationsCase.Status.REQUESTED))
                 && history.countByOrderAndStatus(order, Order.OrderStatus.FAILED) < policies.current().getMaxDeliveryAttempts();
     }
+    public java.util.Set<Long> retryableIds(java.util.Collection<Order> list) {
+        var failed = list.stream().filter(order -> order.getStatus() == Order.OrderStatus.FAILED).toList();
+        var result = new java.util.HashSet<Long>();
+        if (failed.isEmpty()) return result;
+        // Một đơn (trang chi tiết): canRetry thường dừng sớm sau 1-2 truy vấn, ít hơn 3 truy vấn theo lô.
+        if (failed.size() == 1) { if (canRetry(failed.get(0))) result.add(failed.get(0).getId()); return result; }
+        var ids = failed.stream().map(Order::getId).distinct().toList();
+        // Ba truy vấn cho cả trang (hồ sơ, lần thất bại gần nhất, số lần thất bại) thay vì 4-5 truy vấn mỗi đơn; điều kiện như canRetry.
+        var byOrder = new java.util.HashMap<Long, List<OperationsCase>>();
+        for (var record : cases.findByOrderIdsAndKinds(ids, List.of(OperationsCase.Kind.RETURN, OperationsCase.Kind.RETRY)))
+            byOrder.computeIfAbsent(record.getOrder().getId(), id -> new java.util.ArrayList<>()).add(record);
+        var latest = new java.util.HashMap<Long, OrderStatusHistory>();
+        for (var entry : history.transitionsInto(ids, Order.OrderStatus.FAILED)) latest.putIfAbsent(entry.getOrder().getId(), entry);
+        var failures = new java.util.HashMap<Long, Long>();
+        for (Object[] row : history.countByOrderIdsAndStatus(ids, Order.OrderStatus.FAILED)) failures.put((Long) row[0], (Long) row[1]);
+        var now = LocalDateTime.now(clock); int maxAttempts = policies.current().getMaxDeliveryAttempts();
+        for (Long id : ids) {
+            var records = byOrder.getOrDefault(id, List.of());
+            if (records.stream().anyMatch(c -> c.getKind() == OperationsCase.Kind.RETURN && ACTIVE.contains(c.getStatus()))) continue;
+            var approved = records.stream().filter(c -> c.getKind() == OperationsCase.Kind.RETRY && c.getStatus() == OperationsCase.Status.APPROVED).findFirst();
+            if (approved.isPresent()) { if (!approved.get().getNextAttemptAt().isAfter(now)) result.add(id); continue; }
+            var last = latest.get(id);
+            if (last == null || last.getNextAttemptAt() == null || last.getNextAttemptAt().isAfter(now)) continue;
+            boolean requested = records.stream().anyMatch(c -> c.getKind() == OperationsCase.Kind.RETRY && c.getStatus() == OperationsCase.Status.REQUESTED);
+            if (!requested && failures.getOrDefault(id, 0L) < maxAttempts) result.add(id);
+        }
+        return result;
+    }
     public BigDecimal refundable(CodSettlement settlement) {
         if (settlement.getStatus() != CodSettlement.Status.CONFIRMED) return BigDecimal.ZERO;
         return settlement.getDeclaredAmount().subtract(settlement.getTotalAmount())

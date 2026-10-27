@@ -89,6 +89,20 @@ public class DispatchRoutingPolicy {
         return scope == null || scope.equals(branch(route).getId());
     }
     public java.util.Optional<OrderRoute> routeIfPresent(Order order) { return routes.findByOrder_Id(order.getId()); }
+    /** Tuyến của cả danh sách đơn trong một truy vấn (trang danh sách); đơn cũ chưa có tuyến không nằm trong kết quả. */
+    public Map<Long, OrderRoute> routesOf(java.util.Collection<Order> list) {
+        var ids = list.stream().map(Order::getId).filter(java.util.Objects::nonNull).distinct().toList();
+        var result = new HashMap<Long, OrderRoute>();
+        if (!ids.isEmpty()) routes.findWithAreasByOrderIds(ids).forEach(route -> result.put(route.getOrder().getId(), route));
+        return result;
+    }
+    /** Số đơn đang giữ của nhiều Shipper trong một truy vấn; Shipper không có đơn nào trả 0. */
+    public Map<Long, Long> loads(java.util.Collection<Long> shipperIds) {
+        var result = new HashMap<Long, Long>();
+        shipperIds.forEach(id -> result.put(id, 0L));
+        if (!shipperIds.isEmpty()) orders.countByShipperIds(shipperIds, ACTIVE).forEach(row -> result.put((Long) row[0], (Long) row[1]));
+        return result;
+    }
     public int capacity() { return policies.current().getMaxActiveOrders(); }
     private void requireManager(Long scope, OrderRoute route) {
         if (scope != null && !scope.equals(branch(route).getId())) throw new AccessDeniedException("Bạn không được phân công chặng ở chi nhánh khác.");

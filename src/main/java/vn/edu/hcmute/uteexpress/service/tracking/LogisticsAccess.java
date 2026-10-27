@@ -30,7 +30,10 @@ public class LogisticsAccess {
     public AppUser shipper(String username) { return requireRole(username, AppUser.Role.SHIPPER); }
     public AppUser customer(String username) { return requireRole(username, AppUser.Role.USER); }
     public AppUser internal(String username) {
-        var account = TransactionCache.get("staff:" + username, () -> staff.findByUserUsername(username))
+        var account = TransactionCache.get("staff:" + username, () -> {
+                    var read = vn.edu.hcmute.uteexpress.service.admin.StaffAccessPolicy.readInThisGet(username);
+                    return read != null ? read : staff.findByUserUsername(username);
+                })
                 .orElseThrow(LogisticsAccess::denied);
         var user = account.getUser();
         if (!account.isActive() || !user.isEnabled() || user.isLockedByAdmin() || account.isPasswordChangeRequired()

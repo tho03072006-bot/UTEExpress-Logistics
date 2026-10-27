@@ -29,5 +29,7 @@ public interface OperationsCaseService {
     BigDecimal outstanding(CodSettlement settlement);
     BigDecimal refundable(CodSettlement settlement);
     boolean canRetry(Order order);
+    /** Như {@link #canRetry} cho cả danh sách đơn với vài truy vấn chung; trả mã các đơn được giao lại. */
+    java.util.Set<Long> retryableIds(java.util.Collection<Order> orders);
     void beforeStatusChange(Order order, String shipper, Order.OrderStatus status);
 }

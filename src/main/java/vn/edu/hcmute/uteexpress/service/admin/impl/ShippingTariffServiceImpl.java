@@ -35,12 +35,22 @@ public class ShippingTariffServiceImpl implements ShippingTariffService {
     }
     @Override @Transactional(readOnly = true)
     public List<vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse> currentTariffs() {
-        return java.util.Arrays.stream(Order.ServiceType.values()).map(this::currentTariff).toList();
+        // Hai truy vấn cho cả bảng (giá gốc + phiên bản đang hiệu lực) thay vì hai truy vấn cho mỗi dịch vụ.
+        var base = new java.util.EnumMap<Order.ServiceType, ShippingTariff>(Order.ServiceType.class);
+        tariffs.findAll().forEach(tariff -> base.put(tariff.getServiceType(), tariff));
+        var active = new java.util.EnumMap<Order.ServiceType, List<vn.edu.hcmute.uteexpress.entity.admin.ShippingTariffVersion>>(Order.ServiceType.class);
+        versions.activeAt(LocalDateTime.now(clock)).forEach(version ->
+                active.computeIfAbsent(version.getServiceType(), type -> new java.util.ArrayList<>()).add(version));
+        return java.util.Arrays.stream(Order.ServiceType.values())
+                .map(type -> currentTariff(type, java.util.Optional.ofNullable(base.get(type)), active.getOrDefault(type, List.of()))).toList();
     }
     private vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse currentTariff(Order.ServiceType serviceType) {
-        ShippingTariff tariff = tariffs.findByServiceType(serviceType)
+        return currentTariff(serviceType, tariffs.findByServiceType(serviceType), versions.active(serviceType, LocalDateTime.now(clock)));
+    }
+    private vn.edu.hcmute.uteexpress.dto.CurrentTariffResponse currentTariff(Order.ServiceType serviceType, java.util.Optional<ShippingTariff> configured,
+            List<vn.edu.hcmute.uteexpress.entity.admin.ShippingTariffVersion> active) {
+        ShippingTariff tariff = configured
             .orElseThrow(() -> new IllegalStateException("Chưa cấu hình cước cho dịch vụ này. Liên hệ Admin."));
-        var active = versions.active(serviceType, LocalDateTime.now(clock));
         if (active.size() > 1) throw new IllegalStateException("Lịch cước bị trùng. Liên hệ Admin, không tự chọn giá.");
         BigDecimal base = active.isEmpty() ? tariff.getBaseFee() : active.get(0).getBaseFee();
         BigDecimal perKg = active.isEmpty() ? tariff.getFeePerKg() : active.get(0).getFeePerKg();

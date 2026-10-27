@@ -47,10 +47,11 @@ public class StaffOrderCancellationService {
     public java.util.Set<Long> cancelable(String actor, java.util.Collection<Order> list) {
         var staff = access.internal(actor);
         var result = new java.util.HashSet<Long>();
-        for (var order : list) {
-            if (order.getStatus() != Order.OrderStatus.PENDING_PICKUP) continue;
-            var route = routing.routeIfPresent(order);
-            if (route.isEmpty() || routing.canManage(staff, route.get())) result.add(order.getId());
+        var pending = list.stream().filter(order -> order.getStatus() == Order.OrderStatus.PENDING_PICKUP).toList();
+        var routeByOrder = routing.routesOf(pending); // một truy vấn cho cả trang
+        for (var order : pending) {
+            var route = routeByOrder.get(order.getId());
+            if (route == null || routing.canManage(staff, route)) result.add(order.getId());
         }
         return result;
     }

@@ -69,7 +69,11 @@ class StaffWorkbenchServiceImplTest {
         assertFalse(csv.contains("receiverName")); assertFalse(csv.contains("phone"));
     }
     @Test void queuesUseSharedPoliciesAndRealTotals() {
-        when(overview.alertCount(anyString(), any())).thenReturn(1L);
+        when(overview.alertCounts(anyString(), any())).thenAnswer(call -> {
+            var counts = new java.util.EnumMap<OperationsOverviewService.Alert, Long>(OperationsOverviewService.Alert.class);
+            for (var alert : (java.util.Collection<OperationsOverviewService.Alert>) call.getArgument(1)) counts.put(alert, 1L);
+            return counts;
+        });
         when(overview.lateComplaintCount(anyString())).thenReturn(0L);
         var queues = service.getWorkQueues("manager01"); assertEquals(6, queues.size());
         assertEquals(1, queues.get(0).count()); assertEquals(0, queues.get(5).count());

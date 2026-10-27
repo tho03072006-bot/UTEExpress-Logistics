@@ -176,6 +176,15 @@ class DispatchRecoveryIntegrationTest {
         assertEquals(OrderRoute.Stage.LAST_MILE, changed.getStage());
     }
 
+    @Test void combinedAlertCountsMatchEachSingleCount() {
+        assignedAtDestination(); assignedCounterOrder();
+        var all = java.util.List.of(OperationsOverviewService.Alert.values());
+        for (var manager : java.util.List.of(managerSgn.getUsername(), managerHan.getUsername())) {
+            var counts = overview.alertCounts(manager, all);
+            for (var alert : all) assertEquals(overview.alertCount(manager, alert), counts.get(alert), manager + " " + alert);
+        }
+    }
+
     @Test void managerCanSeeAndReassignAnOrderFromTheHeldAlertsPage() throws Exception {
         long before = overview.alertCount(managerSgn.getUsername(), OperationsOverviewService.Alert.HELD);
         var order = assignedCounterOrder();

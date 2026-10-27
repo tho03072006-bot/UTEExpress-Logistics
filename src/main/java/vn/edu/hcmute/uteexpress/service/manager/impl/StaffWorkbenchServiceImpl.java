@@ -26,18 +26,21 @@ public class StaffWorkbenchServiceImpl implements StaffWorkbenchService {
 
     public List<WorkQueueResponse> getWorkQueues(String actor) {
         access.requireOperator(actor);
+        var counts = overview.alertCounts(actor, List.of(OperationsOverviewService.Alert.UNASSIGNED, OperationsOverviewService.Alert.LATE_PICKUP,
+                OperationsOverviewService.Alert.PAYMENT_ISSUE, OperationsOverviewService.Alert.LATE_DELIVERY, OperationsOverviewService.Alert.RETRY_DUE));
         return List.of(
-            createQueue(actor, OperationsOverviewService.Alert.UNASSIGNED, "Chưa có Shipper", "Phân công sau khi kiểm tra thanh toán."),
-            createQueue(actor, OperationsOverviewService.Alert.LATE_PICKUP, "Chậm lấy hàng", "Theo thời hạn trong chính sách vận hành."),
-            createQueue(actor, OperationsOverviewService.Alert.PAYMENT_ISSUE, "Cần kiểm tra thanh toán", "Không tự đánh dấu ví đã trả tiền."),
-            createQueue(actor, OperationsOverviewService.Alert.LATE_DELIVERY, "Chậm giao hàng", "Đối chiếu dịch vụ và trạng thái thực tế."),
-            createQueue(actor, OperationsOverviewService.Alert.RETRY_DUE, "Đến lịch giao lại", "Chỉ các hồ sơ đã đủ điều kiện."),
+            createQueue(counts, OperationsOverviewService.Alert.UNASSIGNED, "Chưa có Shipper", "Phân công sau khi kiểm tra thanh toán."),
+            createQueue(counts, OperationsOverviewService.Alert.LATE_PICKUP, "Chậm lấy hàng", "Theo thời hạn trong chính sách vận hành."),
+            createQueue(counts, OperationsOverviewService.Alert.PAYMENT_ISSUE, "Cần kiểm tra thanh toán", "Không tự đánh dấu ví đã trả tiền."),
+            createQueue(counts, OperationsOverviewService.Alert.LATE_DELIVERY, "Chậm giao hàng", "Đối chiếu dịch vụ và trạng thái thực tế."),
+            createQueue(counts, OperationsOverviewService.Alert.RETRY_DUE, "Đến lịch giao lại", "Chỉ các hồ sơ đã đủ điều kiện."),
             new WorkQueueResponse("Khiếu nại quá hạn", overview.lateComplaintCount(actor),
                 "/manager/canh-bao#khieu-nai-qua-han", "Ưu tiên phản hồi và xử lý theo chính sách."));
     }
 
-    private WorkQueueResponse createQueue(String actor, OperationsOverviewService.Alert alert, String label, String description) {
-        return new WorkQueueResponse(label, overview.alertCount(actor, alert),
+    private WorkQueueResponse createQueue(java.util.Map<OperationsOverviewService.Alert, Long> counts, OperationsOverviewService.Alert alert,
+            String label, String description) {
+        return new WorkQueueResponse(label, counts.getOrDefault(alert, 0L),
                 "/manager/canh-bao?alert=" + alert.name(), description);
     }
 

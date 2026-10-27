@@ -131,13 +131,20 @@ public class DispatchService {
         var manager = access.internal(actor);
         var result = new LinkedHashMap<Long, List<vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate>>();
         int capacity = routing.capacity();
+        // Đọc tuyến, Shipper theo chi nhánh và số đơn đang giữ theo lô cho cả trang thay vì từng đơn.
+        var routeByOrder = routing.routesOf(list);
+        var shippersByBranch = new HashMap<Long, List<AppUser>>();
+        var loads = new HashMap<Long, Long>();
         for (var order : list) {
-            var route = routing.routeIfPresent(order).orElse(null);
+            var route = routeByOrder.get(order.getId());
             if (route == null || !routing.isReclaimable(route) || !routing.canManage(manager, route)) continue;
-            var options = routing.branchShippers(routing.branch(route).getId()).stream()
+            var shippers = shippersByBranch.computeIfAbsent(routing.branch(route).getId(), routing::branchShippers);
+            var missing = shippers.stream().map(AppUser::getId).filter(id -> !loads.containsKey(id)).toList();
+            if (!missing.isEmpty()) loads.putAll(routing.loads(missing));
+            var options = shippers.stream()
                     .filter(u -> u.isEnabled() && !u.isLockedByAdmin() && !u.getId().equals(order.getShipper().getId()))
                     .map(u -> new vn.edu.hcmute.uteexpress.service.routing.DispatchRoutingPolicy.Candidate(u.getId(), u.getUsername(),
-                            u.getFullName(), routing.load(u.getId()), capacity, 0, 0, "", "Thu hồi"))
+                            u.getFullName(), loads.getOrDefault(u.getId(), 0L), capacity, 0, 0, "", "Thu hồi"))
                     .filter(candidate -> candidate.activeOrders() < capacity)
                     .toList();
             result.put(order.getId(), options);

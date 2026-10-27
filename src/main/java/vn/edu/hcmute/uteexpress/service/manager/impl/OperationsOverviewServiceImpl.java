@@ -10,6 +10,9 @@ import vn.edu.hcmute.uteexpress.service.admin.*;
 import vn.edu.hcmute.uteexpress.service.manager.OperationsOverviewService;
 @Service @Transactional(readOnly = true)
 public class OperationsOverviewServiceImpl implements OperationsOverviewService {
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
+    /** Câu đếm gộp theo từng tổ hợp nhóm cảnh báo, dựng một lần rồi dùng lại. */
+    private static final java.util.Map<java.util.List<Alert>, String> COUNT_QUERIES = new java.util.concurrent.ConcurrentHashMap<>();
     private final OperationsOverviewRepository data;
     private final OperationsPolicyService policies;
     private final StaffAccessPolicy access;
@@ -88,6 +91,30 @@ public class OperationsOverviewServiceImpl implements OperationsOverviewService 
         if (alert == Alert.LATE_DELIVERY) return lateDeliveries(branch, policy, now, PageRequest.of(0, 1)).getTotalElements();
         return data.countAlerts(alert.name(), branch, now.minusHours(policy.getPickupHours()),
                 now.minusHours(deadlines.rules(policy).superExpressPickupHours()), now, policy.getMaxDeliveryAttempts());
+    }
+    public java.util.Map<Alert, Long> alertCounts(String actor, java.util.Collection<Alert> alerts) {
+        access.requireOperator(actor);
+        if (alerts == null || alerts.isEmpty() || alerts.stream().anyMatch(java.util.Objects::isNull)) throw new IllegalArgumentException("Chọn nhóm cảnh báo hợp lệ.");
+        var policy = policies.current(); var now = LocalDateTime.now(clock);
+        Long branch = scope.of(actor, null);
+        var result = new java.util.EnumMap<Alert, Long>(Alert.class);
+        if (alerts.contains(Alert.LATE_DELIVERY))
+            result.put(Alert.LATE_DELIVERY, lateDeliveries(branch, policy, now, PageRequest.of(0, 1)).getTotalElements());
+        var grouped = alerts.stream().filter(alert -> alert != Alert.LATE_DELIVERY).distinct().sorted().toList();
+        if (grouped.isEmpty()) return result;
+        // Một câu SQL đếm mọi nhóm (mỗi nhóm một cột sum(case ...)) thay vì một câu mỗi nhóm; cùng điều kiện ALERT_FILTER
+        // như trang danh sách nên số đếm khớp. Mã nhóm là hằng enum ghép vào câu, không lấy từ dữ liệu người dùng.
+        String jpql = COUNT_QUERIES.computeIfAbsent(grouped, kinds -> "select " + kinds.stream()
+                .map(kind -> "sum(case when (" + OperationsOverviewRepository.ALERT_FILTER.replace(":kind", "'" + kind.name() + "'") + ") then 1 else 0 end)")
+                .collect(java.util.stream.Collectors.joining(", ")) + " from Order o");
+        var query = entityManager.createQuery(jpql)
+                .setParameter("branchId", branch).setParameter("pickup", now.minusHours(policy.getPickupHours()))
+                .setParameter("superExpressPickup", now.minusHours(deadlines.rules(policy).superExpressPickupHours()))
+                .setParameter("now", now).setParameter("maxAttempts", policy.getMaxDeliveryAttempts());
+        Object single = query.getSingleResult();
+        Object[] row = single instanceof Object[] values ? values : new Object[] { single };
+        for (int i = 0; i < grouped.size(); i++) result.put(grouped.get(i), row[i] == null ? 0L : ((Number) row[i]).longValue());
+        return result;
     }
     public long lateComplaintCount(String actor) {
         access.requireOperator(actor);
