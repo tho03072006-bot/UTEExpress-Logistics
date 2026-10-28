@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="charts(data)" class="staff-dashboard-charts" aria-label="Biểu đồ tổng quan vận hành">
+    <article class="ute-panel staff-chart-card" aria-labelledby="orderStatusChartTitle">
+        <div class="staff-chart-heading">
+            <div><h2 id="orderStatusChartTitle">Trạng thái đơn hàng</h2><p>Phạm vi được cấp · trạng thái hiện tại</p></div>
+            <span class="staff-chart-total"><strong th:text="${#numbers.formatInteger(data.totalOrders, 1, 'POINT')}">0</strong> đơn</span>
+        </div>
+        <p th:if="${data.totalOrders == 0}" class="staff-chart-empty">Chưa có đơn hàng để thống kê trạng thái.</p>
+        <ul th:if="${data.totalOrders > 0}" class="staff-status-chart" aria-label="Số đơn và tỷ trọng theo trạng thái">
+            <li th:each="status : ${data.orderStatuses}">
+                <div class="staff-status-label"><span th:text="${status.label}"></span>
+                    <span><strong th:text="${#numbers.formatInteger(status.count, 1, 'POINT')}">0</strong>
+                        <small th:text="|${#numbers.formatDecimal(status.percentage, 1, 1, 'COMMA')}%|"></small></span></div>
+                <div class="staff-status-track" aria-hidden="true"><span th:style="|width:${status.percentage}%;background:var(--staff-chart-${status.tone})|"></span></div>
+            </li>
+        </ul>
+    </article>
+    <article class="ute-panel staff-chart-card" aria-labelledby="newOrdersChartTitle">
+        <div class="staff-chart-heading">
+            <div><h2 id="newOrdersChartTitle">Đơn mới trong 14 ngày</h2>
+                <p th:text="|${#temporals.format(data.fromDate, 'dd/MM/yyyy')} – ${#temporals.format(data.toDate, 'dd/MM/yyyy')}|"></p></div>
+            <span class="staff-chart-total"><strong th:text="${#numbers.formatInteger(data.totalNewOrders, 1, 'POINT')}">0</strong> đơn mới</span>
+        </div>
+        <p th:if="${data.totalNewOrders == 0}" class="staff-chart-empty">Không có đơn mới trong 14 ngày gần đây.</p>
+        <div th:if="${data.totalNewOrders > 0}" class="staff-daily-scroll" tabindex="0" aria-label="Biểu đồ cột đơn mới; có thể cuộn ngang trên màn hình nhỏ">
+            <ol class="staff-daily-chart" aria-label="Số đơn được tạo theo từng ngày">
+                <li th:each="day, state : ${data.days}" th:classappend="${day.date == data.toDate} ? 'staff-chart-today'"
+                    th:title="|${#temporals.format(day.date, 'dd/MM/yyyy')}: ${day.count} đơn mới|"
+                    th:attr="aria-label=|${#temporals.format(day.date, 'dd/MM/yyyy')}: ${day.count} đơn mới|">
+                    <div class="staff-daily-slot"><span class="staff-daily-bar" th:style="|height:${day.heightPercentage}%|" aria-hidden="true">
+                        <strong th:text="${day.displayCount}">0</strong></span></div>
+                    <span class="staff-daily-date" th:classappend="${state.index % 2 != 0 and !state.last} ? 'staff-chart-skip-label'"
+                        th:text="${#temporals.format(day.date, 'dd/MM')}"></span>
+                </li>
+            </ol>
+        </div>
+        <div class="staff-chart-meta"><span><i class="staff-chart-key" aria-hidden="true"></i> Đơn tạo mới</span>
+            <span th:text="|Cao nhất: ${#numbers.formatInteger(data.peakDailyOrders, 1, 'POINT')} đơn/ngày|"></span></div>
+        <p class="staff-chart-note">Theo ngày tạo đơn (k = nghìn, tr = triệu).</p>
+    </article>
+    <p class="staff-charts-snapshot" th:text="|Cập nhật lúc ${#temporals.format(data.generatedAt, 'HH:mm dd/MM/yyyy')}|"></p>
+</div>
+</body></html>

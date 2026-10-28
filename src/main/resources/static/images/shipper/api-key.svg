@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Khóa truy cập API chỉ đọc">
+  <ellipse cx="180" cy="226" rx="124" ry="7" fill="#000" opacity=".16"/>
+  <!-- cửa sổ mã -->
+  <rect x="64" y="40" width="200" height="146" rx="14" fill="#1E293B"/>
+  <rect x="64" y="40" width="200" height="28" rx="14" fill="#334155"/>
+  <rect x="64" y="56" width="200" height="12" fill="#334155"/>
+  <circle cx="84" cy="54" r="5" fill="#FB7185"/><circle cx="100" cy="54" r="5" fill="#FCD34D"/><circle cx="116" cy="54" r="5" fill="#2DD4BF"/>
+  <text x="96" y="124" font-family="Consolas, monospace" font-size="40" font-weight="700" fill="#38BDF8">&lt;/&gt;</text>
+  <rect x="86" y="146" width="70" height="7" rx="3.5" fill="#64748B"/><rect x="164" y="146" width="40" height="7" rx="3.5" fill="#A78BFA"/>
+  <rect x="86" y="162" width="44" height="7" rx="3.5" fill="#2DD4BF"/><rect x="138" y="162" width="82" height="7" rx="3.5" fill="#64748B"/>
+  <!-- chìa khóa -->
+  <g transform="translate(262 156) rotate(-35)">
+    <rect x="-6" y="-9" width="88" height="18" rx="9" fill="#F59E0B"/>
+    <rect x="56" y="5" width="12" height="22" rx="3" fill="#F59E0B"/><rect x="38" y="5" width="10" height="16" rx="3" fill="#F59E0B"/>
+    <circle r="34" fill="#FCD34D" stroke="#FFFFFF" stroke-width="6"/>
+    <circle r="11" fill="#FFFFFF"/>
+  </g>
+  <g fill="#FCD34D"><path d="M310 36 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+  <circle cx="44" cy="190" r="6" fill="#0072BC" opacity=".6"/>
+</svg>

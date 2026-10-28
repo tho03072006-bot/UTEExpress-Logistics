@@ -1,0 +1,117 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Khiếu nại vận đơn - UTEExpress</title></head><body><section th:classappend="${viewer == 'shipper'} ? 'shipper-workspace'">
+<th:block th:if="${viewer == 'staff'}"><nav th:replace="~{admin/navigation :: navigation}"></nav></th:block>
+<div class="ute-page-head sx-art-support" th:classappend="${viewer == 'shipper'} ? 'shipper-hero'"><div><h2 th:text="|Khiếu nại ${order.trackingCode}|"></h2>
+        <p class="mb-0 text-muted" th:text="${complaint == null} ? 'Mô tả vấn đề, Manager sẽ kiểm tra và trả lời ngay trong hồ sơ này.' : 'Trao đổi với UTEExpress cho đến khi vấn đề được giải quyết.'"></p></div>
+    <a class="btn btn-outline-secondary" th:classappend="${viewer == 'shipper'} ? 'sx-btn-glass'" th:href="${viewer == 'staff'} ? @{/manager/khieu-nai} : @{${prefix + order.id}}"><i class="bi bi-arrow-left"></i> Quay lại</a></div>
+<div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
+<div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+
+<!-- Chưa có hồ sơ: form gửi khiếu nại -->
+<form th:if="${complaint == null and viewer == 'customer'}" class="ute-panel sx-cx-new" method="post" enctype="multipart/form-data"
+      th:action="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}">
+    <div class="sx-cx-new-head"><span class="sx-cx-icon"><i class="bi bi-chat-square-text"></i></span>
+        <div><h3 class="h5 mb-1">Gửi khiếu nại cho vận đơn này</h3></div></div>
+    <div class="mb-3"><label for="subject" class="form-label">Tiêu đề</label>
+        <input id="subject" name="subject" th:value="${subject}" class="form-control" maxlength="100" required placeholder="Ví dụ: Giao chậm, hàng bị móp…"></div>
+    <div class="mb-3"><label for="description" class="form-label">Nội dung vấn đề</label>
+        <textarea id="description" name="description" th:text="${description}" class="form-control" maxlength="2000" rows="5" required placeholder="Chuyện gì đã xảy ra, bạn mong muốn UTEExpress xử lý thế nào?"></textarea></div>
+    <div class="mb-4"><label for="image" class="form-label">Ảnh minh chứng <span class="text-muted">(không bắt buộc)</span></label>
+        <input id="image" name="image" type="file" accept="image/jpeg,image/png" class="form-control"><div class="form-text">Ảnh JPG hoặc PNG, tối đa 5 MB.</div></div>
+    <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi khiếu nại</button>
+</form>
+<div class="ute-panel sx-cx-empty" th:if="${complaint == null and viewer != 'customer'}"><i class="bi bi-inbox"></i><p class="mb-0">Người gửi chưa có khiếu nại cho vận đơn này.</p></div>
+
+<div th:if="${complaint != null}" class="sx-cx-grid"
+     th:with="statusTone=${complaint.status.closed} ? 'sx-tone-slate' : 'sx-tone-blue'">
+    <!-- Cột trái: hội thoại -->
+    <article class="ute-panel sx-cx-chat" id="tin-nhan">
+        <header class="sx-cx-chat-head"><div><span class="text-muted small">Chủ đề</span><h3 class="h5 mb-0" th:text="${complaint.subject}"></h3></div>
+            <span class="sx-pill sx-dot" th:classappend="${statusTone}" th:text="${complaint.status.label}"></span></header>
+        <div class="sx-cx-thread">
+            <!-- Tin đầu tiên luôn là nội dung khiếu nại gốc -->
+            <div class="sx-cx-msg" th:classappend="${viewer == 'customer'} ? 'is-mine' : 'is-customer'">
+                <div class="sx-cx-meta"><strong th:text="${viewer == 'customer'} ? 'Bạn' : 'Khách hàng'"></strong>
+                    <span th:text="${#temporals.format(complaint.createdAt, 'dd/MM/yyyy HH:mm')}"></span></div>
+                <div class="sx-cx-bubble"><p th:text="${complaint.description}"></p>
+                    <a th:if="${complaint.hasImage}" class="sx-cx-attach" th:href="@{${imagePrefix + complaint.id + '/anh'}}" target="_blank" rel="noopener">
+                        <img th:src="@{${imagePrefix + complaint.id + '/anh'}}" alt="Ảnh minh chứng khiếu nại" loading="lazy"></a></div>
+            </div>
+            <th:block th:if="${activities != null}" th:each="entry : ${activities}">
+                <div th:if="${entry.action == 'CLAIM'}" class="sx-cx-system"><i class="bi bi-person-check"></i>
+                    <span th:text="|${viewer == 'staff' ? entry.actor : 'Manager'} đã nhận xử lý hồ sơ · ${#temporals.format(entry.createdAt,'dd/MM HH:mm')}|"></span></div>
+                <div th:if="${entry.action != 'CLAIM' and entry.action != 'CREATE'}" class="sx-cx-msg"
+                     th:with="byCustomer=${entry.action == 'CUSTOMER_MESSAGE'}, byShipper=${entry.action == 'SUPPLEMENT'}"
+                     th:classappend="${(viewer == 'customer' and byCustomer) or (viewer == 'shipper' and byShipper) or (viewer == 'staff' and !byCustomer and !byShipper)} ? 'is-mine' : (${byCustomer} ? 'is-customer' : (${byShipper} ? 'is-shipper' : 'is-staff'))">
+                    <div class="sx-cx-meta"><strong th:text="${byCustomer} ? (${viewer == 'customer'} ? 'Bạn' : 'Khách hàng') : (${byShipper} ? (${viewer == 'shipper'} ? 'Bạn' : 'Shipper') : (${viewer == 'staff'} ? |Manager · ${entry.actor}| : 'UTEExpress'))"></strong>
+                        <span th:text="${#temporals.format(entry.createdAt, 'dd/MM/yyyy HH:mm')}"></span></div>
+                    <div class="sx-cx-bubble"><p th:text="${entry.message}"></p></div>
+                </div>
+            </th:block>
+        </div>
+        <div th:if="${activities != null and (activities.hasPrevious() or activities.hasNext())}" class="sx-cx-pager">
+            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasPrevious()}" th:href="@{${complaintPath + '/lich-su'}(page=${activities.number-1})}"><i class="bi bi-chevron-left"></i> Cũ hơn</a>
+            <a class="btn btn-sm btn-outline-secondary" th:if="${activities.hasNext()}" th:href="@{${complaintPath + '/lich-su'}(page=${activities.number+1})}">Mới hơn <i class="bi bi-chevron-right"></i></a></div>
+
+        <!-- Khung soạn tin theo vai trò -->
+        <form th:if="${viewer == 'customer'}" class="sx-cx-compose" method="post" th:action="@{/nguoi-dung/khieu-nai/{id}/nhan-tin(id=${complaint.id})}">
+            <label for="cxMessage" class="visually-hidden">Tin nhắn</label>
+            <textarea id="cxMessage" name="message" class="form-control" rows="2" maxlength="2000" required th:text="${draft}"
+                      placeholder="Nhắn thêm cho UTEExpress…"></textarea>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi</button>
+            <p class="sx-cx-hint" th:if="${complaint.status.closed}"><i class="bi bi-info-circle"></i> Hồ sơ đã kết thúc. Nhắn thêm sẽ mở lại hồ sơ để Manager xem tiếp.</p>
+        </form>
+        <form th:if="${viewer == 'staff' and canRespond}" class="sx-cx-compose is-staff" method="post" th:action="@{/manager/khieu-nai/{id}/phan-hoi(id=${complaint.id})}">
+            <input type="hidden" name="revision" th:value="${complaint.revision}">
+            <label for="reply" class="visually-hidden">Phản hồi</label>
+            <textarea id="reply" name="reply" class="form-control" rows="2" maxlength="2000" required placeholder="Trả lời khách hàng…"></textarea>
+            <div class="sx-cx-compose-actions"><label for="resolution" class="visually-hidden">Trạng thái sau khi gửi</label>
+                <select id="resolution" name="status" class="form-select form-select-sm" required>
+                    <option th:each="s : ${statuses}" th:if="${s.name() != 'OPEN'}" th:value="${s}" th:selected="${s == complaint.status or (complaint.status.name() == 'OPEN' and s.name() == 'IN_PROGRESS')}" th:text="|Trạng thái: ${s.label}|"></option></select>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi phản hồi</button></div>
+        </form>
+        <p th:if="${viewer == 'staff' and complaint.status.closed}" class="sx-cx-hint"><i class="bi bi-lock"></i> Hồ sơ đã kết thúc. Nếu khách nhắn thêm, hồ sơ sẽ tự mở lại.</p>
+        <p th:if="${viewer == 'staff' and !complaint.status.closed and !canRespond}" class="sx-cx-hint"><i class="bi bi-person-lock"></i> Hồ sơ đang do Manager khác phụ trách. Bạn được xem; chỉ người phụ trách hoặc Admin được phản hồi/tiếp quản.</p>
+        <form th:if="${viewer == 'shipper' and !complaint.status.closed}" class="sx-cx-compose" method="post" th:action="@{/shipper/khieu-nai/{id}/bo-sung(id=${complaint.id})}">
+            <input type="hidden" name="revision" th:value="${complaint.revision}">
+            <label for="shipperNote" class="visually-hidden">Thông tin gửi Manager</label>
+            <textarea id="shipperNote" name="note" class="form-control" maxlength="1000" rows="2" required placeholder="Bổ sung thông tin giao hàng cho Manager…"></textarea>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Gửi</button>
+        </form>
+    </article>
+
+    <!-- Cột phải: thông tin hồ sơ -->
+    <aside class="sx-cx-side">
+        <div class="ute-panel">
+            <h3 class="h6 text-uppercase text-muted mb-3">Thông tin hồ sơ</h3>
+            <dl class="sx-cx-facts">
+                <dt>Vận đơn</dt><dd th:text="${order.trackingCode}"></dd>
+                <dt>Trạng thái</dt><dd><span class="sx-pill sx-dot" th:classappend="${statusTone}" th:text="${complaint.status.label}"></span></dd>
+                <dt>Gửi lúc</dt><dd th:text="${#temporals.format(complaint.createdAt, 'dd/MM/yyyy HH:mm')}"></dd>
+                <dt>Cập nhật</dt><dd th:text="${#temporals.format(complaint.updatedAt, 'dd/MM/yyyy HH:mm')}"></dd>
+                <dt>Phụ trách</dt><dd th:text="${complaint.handledBy == null} ? 'Chưa có' : (${viewer == 'staff'} ? ${complaint.handledBy.username} : 'Manager UTEExpress')"></dd>
+            </dl>
+        </div>
+        <!-- Ảnh và chữ ký lúc giao để đối chiếu với nội dung khiếu nại -->
+        <th:block th:if="${deliveryProof != null}"><div th:replace="~{fragments/components :: deliveryProof(${deliveryProof}, ${proofBase})}"></div></th:block>
+        <div th:if="${viewer == 'staff'}" class="ute-panel">
+            <h3 class="h6 text-uppercase text-muted mb-3">Thao tác</h3>
+            <form th:if="${canClaim}" method="post" class="mb-2" th:action="@{/manager/khieu-nai/{id}/nhan-xu-ly(id=${complaint.id})}">
+                <input type="hidden" name="revision" th:value="${complaint.revision}">
+                <button class="btn btn-outline-primary w-100"><i class="bi bi-person-check"></i> Nhận xử lý</button></form>
+            <!-- B8: Admin là người duyệt chi tiền nên không lập phiếu tiền; server cũng chặn. -->
+            <a class="btn btn-outline-secondary w-100" th:if="${canRequestCompensation}"
+               th:href="@{/manager/ho-so-van-hanh/tao(kind='COMPENSATION',targetId=${complaint.id})}"><i class="bi bi-cash-stack"></i> Đề xuất bồi thường</a>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and !refundOnly}">Bồi thường tối đa
+                <strong><span th:replace="~{fragments/components :: money(${compensationLimit})}"></span></strong>: 4 lần cước nếu đã thu cước, 3 lần nếu đơn trả cước khi giao chưa thu (Nghị định 47/2011/NĐ-CP, hàng không khai giá).</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and refundOnly}">Hoàn tối đa
+                <strong><span th:replace="~{fragments/components :: money(${compensationLimit})}"></span></strong>: hàng chưa được lấy (đơn chờ lấy hoặc đã hủy) nên chỉ hoàn lại cước đã thu, không bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${complaint.status.name() != 'REJECTED' and compensable}" sec:authorize="hasRole('ADMIN')">Phiếu tiền do Manager lập, Admin duyệt.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!compensable and refundOnly}">Hàng chưa được lấy và chưa thu cước: không có khoản nào để hoàn hoặc bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${!compensable and !refundOnly}">Đơn chưa có thanh toán hợp lệ (thiếu thông tin, cước bằng 0 hoặc chứng từ lệch). Cần tra soát thanh toán trước khi bồi thường.</p>
+            <p class="small text-muted mb-0 mt-2" th:if="${compensable and complaint.status.name() != 'REJECTED' and !canRequestCompensation}" sec:authorize="!hasRole('ADMIN')">Đã có đề xuất bồi thường đang chờ, đã duyệt hoặc hoàn tất. Kiểm tra trong Hồ sơ vận hành.</p>
+        </div>
+    </aside>
+</div>
+<script th:if="${viewer == 'shipper'}" th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

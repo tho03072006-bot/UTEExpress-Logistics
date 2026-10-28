@@ -1,0 +1,14 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="vi"><body>
+<div th:fragment="errors" th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert">
+<ul class="mb-0"><li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li></ul></div>
+<div th:fragment="action">
+<input th:field="*{revision}" type="hidden">
+<div class="mb-3"><label for="reason" class="form-label">Lý do thay đổi</label><input th:field="*{reason}" class="form-control" required minlength="5" maxlength="200"></div>
+<div class="mb-3"><label for="currentPassword" class="form-label">Mật khẩu của Admin đang đăng nhập</label>
+<input id="currentPassword" name="currentPassword" type="password" class="form-control" required maxlength="64" autocomplete="current-password">
+</div></div>
+<div th:fragment="credentials">
+<div class="mb-3"><label for="newPassword" class="form-label">Mật khẩu cấp mới</label><input id="newPassword" name="credentials.password" type="password" class="form-control" required minlength="12" maxlength="64" autocomplete="new-password"></div>
+<div class="mb-3"><label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới</label><input id="confirmPassword" name="credentials.confirmPassword" type="password" class="form-control" required minlength="12" maxlength="64" autocomplete="new-password"></div>
+<p class="small text-muted">12–64 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p></div>
+</body></html>

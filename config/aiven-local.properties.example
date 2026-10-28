@@ -1,0 +1,15 @@
+# FILE MAU DUOC COMMIT: chi giu placeholder, KHONG dien mat khau that o day.
+# Copy thanh config/aiven-local.properties (da gitignore), dien thong tin tu Aiven Console.
+# Neu file private da ton tai, KHONG copy de len (tranh mat cau hinh da dien).
+# Tat ca thanh vien dung cung HOST/PORT/DATABASE cua nhom, khong dung MySQL local.
+# Chu "local" chi noi file cau hinh tren may, khong phai database local.
+# Dung dau / trong duong dan Windows trong file .properties.
+# Mat khau co dau backslash can viet thanh \\; khong them dau nhay quanh gia tri.
+AIVEN_HOST=CHANGE_ME.aivencloud.com
+AIVEN_PORT=CHANGE_ME
+AIVEN_DATABASE=defaultdb
+AIVEN_USER=avnadmin
+AIVEN_PASSWORD=CHANGE_ME
+# Thay duong dan nay bang truststore PKCS12 thuc te tren may ban; khong phai file PEM.
+AIVEN_TRUSTSTORE_URL=file:/E:/Lap_Trinh_Web/UTEEXPRESS/config/certificates/aiven-truststore.p12
+AIVEN_TRUSTSTORE_PASSWORD=CHANGE_ME

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Chuông thông báo đơn mới">
+  <defs><linearGradient id="bell" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F59E0B"/></linearGradient></defs>
+  <ellipse cx="176" cy="216" rx="104" ry="9" fill="#000" opacity=".2"/>
+  <!-- phong bì phía sau -->
+  <g transform="rotate(-10 100 140)">
+    <rect x="44" y="104" width="110" height="74" rx="10" fill="#FFFFFF" opacity=".95"/>
+    <path d="M44 112 L 99 148 L 154 112" fill="none" stroke="#C7D2FE" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+  <!-- gói hàng nhỏ -->
+  <g transform="translate(250 140)"><rect width="64" height="56" rx="7" fill="#7C3AED"/><rect x="27" width="10" height="56" fill="#A78BFA"/></g>
+  <!-- chuông -->
+  <g transform="translate(176 120)">
+    <path d="M0 -84 a9 9 0 0 1 9 9 v5 c 30 8 44 34 44 64 v28 l 14 18 h -134 l 14 -18 v -28 c 0 -30 14 -56 44 -64 v -5 a9 9 0 0 1 9 -9 z" fill="url(#bell)"/>
+    <path d="M-20 40 a20 20 0 0 0 40 0 z" fill="#B45309"/>
+    <path d="M-30 -24 c 4 -14 14 -24 26 -28" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity=".65"/>
+    <!-- chấm đỏ báo mới -->
+    <circle cx="42" cy="-58" r="20" fill="#EF4444" stroke="#FFFFFF" stroke-width="5"/>
+    <text x="42" y="-51" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="800" fill="#FFFFFF">1</text>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".7" fill="none">
+    <path d="M100 52 q -12 18 0 36"/><path d="M252 52 q 12 18 0 36"/>
+  </g>
+</svg>

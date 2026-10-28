@@ -1,0 +1,60 @@
+package vn.edu.hcmute.uteexpress.service;
+
+import vn.edu.hcmute.uteexpress.entity.Order;
+import vn.edu.hcmute.uteexpress.entity.OrderPayment;
+import vn.edu.hcmute.uteexpress.entity.PromoCode;
+
+import java.math.BigDecimal;
+
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Nghiệp vụ thanh toán cước vận chuyển - TV1 phụ trách (việc 3).
+ *
+ * COD chạy thật theo đúng nghĩa: lưu và hiển thị trạng thái chưa/đã thanh toán trong CSDL.
+ * MoMo là bản MÔ PHỎNG chạy riêng trên Render, đồng bộ database Aiven.
+ * Không thực hiện chuyển tiền thật. VNPay chỉ còn được đọc trong lịch sử cũ.
+ */
+public interface OrderPaymentService {
+
+    /**
+     * Tạo bản ghi thanh toán ngay khi vận đơn được tạo.
+     * Số tiền phải trả = cước của đơn trừ đi phần giảm giá (nếu có áp mã).
+     *
+     * @param promoCode      mã đã áp, null nếu đơn không dùng mã nào
+     * @param discountAmount số tiền được giảm, null hoặc 0 nếu không giảm
+     */
+    OrderPayment createForOrder(Order order, OrderPayment.PaymentMethod method,
+                                PromoCode promoCode, BigDecimal discountAmount);
+
+    Optional<OrderPayment> findByOrder(Order order);
+
+    /** COD được thu lúc giao; ví phải trả trước. Không cho điều phối khi thiếu thông tin cước. */
+    void requireReadyForFulfillment(Order order);
+
+    /** Số đơn còn nợ cước, dùng cho thẻ thống kê ở trang tổng quan. */
+    long countUnpaidOfUser(String username);
+
+    /** Tra thông tin thanh toán theo id đơn, dùng để hiển thị ở danh sách lịch sử đơn. */
+    Map<Long, OrderPayment> findPaymentsOfUser(String username);
+
+    /**
+     * Lấy thông tin thanh toán của một đơn và bảo đảm đơn đó thuộc về người đang đăng nhập.
+     * Ném IllegalStateException nếu đơn không tồn tại hoặc là đơn của người khác.
+     */
+    OrderPayment findOwnedPayment(Long orderId, String username);
+
+    /**
+     * Chuyển trạng thái MoMo trong luồng nội bộ tin cậy; không công khai thành endpoint xác nhận local.
+     * Ném IllegalStateException nếu đơn là COD (COD thu tiền lúc giao, không trả trước)
+     * hoặc đơn đã thanh toán rồi.
+     */
+    OrderPayment confirmWalletPayment(Long orderId, String username);
+
+    /**
+     * Đánh dấu đã thu tiền COD. Dành cho lúc Shipper giao hàng thành công.
+     * TODO (TV2): gọi hàm này khi cập nhật đơn sang trạng thái DELIVERED.
+     */
+    OrderPayment markCodCollected(Long orderId);
+}

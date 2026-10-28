@@ -1,0 +1,237 @@
+package vn.edu.hcmute.uteexpress.entity;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * Entity van don (lenh van chuyen) - trung tam nghiep vu cua UTEExpress.
+ * TV1 (tao don), TV2 (cap nhat trang thai), TV3 (thong ke) deu thao tac tren entity nay,
+ * nen KHONG sua truc tiep field o day khi chua thong bao ca nhom - tranh conflict Git.
+ */
+@Entity
+@Table(name = "shipment_order")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Chặn cập nhật đồng thời giữa phân công, hủy đơn và cập nhật của Shipper.
+    @Version
+    @Column(nullable = false)
+    private long revision;
+
+    public long getRevision() { return revision; }
+
+    @Column(name = "tracking_code", nullable = false, unique = true, length = 20)
+    private String trackingCode;
+
+    @Column(name = "creation_token", unique = true, length = 36)
+    private String creationToken;
+    @Column(name = "creation_hash", length = 64)
+    private String creationHash;
+    public String getCreationToken() { return creationToken; }
+    public void setCreationToken(String value) { creationToken = value; }
+    public String getCreationHash() { return creationHash; }
+    public void setCreationHash(String value) { creationHash = value; }
+
+    @ManyToOne
+    @JoinColumn(name = "sender_id", nullable = false)
+    private AppUser sender; // User tao don
+
+    @ManyToOne
+    @JoinColumn(name = "shipper_id")
+    private AppUser shipper; // Shipper duoc phan cong, co the null khi chua phan cong
+
+    @Column(name = "sender_name", length = 100)
+    private String senderName;
+
+    @Column(name = "sender_address", length = 255)
+    private String senderAddress;
+
+    @Column(name = "receiver_name", length = 100)
+    private String receiverName;
+
+    @Column(name = "receiver_phone", length = 20)
+    private String receiverPhone;
+
+    @Column(name = "receiver_address", length = 255)
+    private String receiverAddress;
+
+    @Column(name = "weight_kg")
+    private Double weightKg;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_type", length = 20)
+    private ServiceType serviceType = ServiceType.STANDARD;
+
+    @Column(name = "shipping_fee", precision = 12, scale = 0)
+    private BigDecimal shippingFee;
+
+    /** Khoảng cách đường chim bay giữa hai địa chỉ lúc tạo đơn (km); null với đơn tạo trước khi tính theo khoảng cách. */
+    @Column(name = "distance_km", precision = 7, scale = 2)
+    private BigDecimal distanceKm;
+
+    /** Phần phụ phí khoảng cách đã cộng trong shippingFee; null với đơn cũ. */
+    @Column(name = "distance_fee", precision = 12, scale = 0)
+    private BigDecimal distanceFee;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OrderStatus status = OrderStatus.PENDING_PICKUP;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    public enum ServiceType {
+        STANDARD("Tiêu chuẩn"), EXPRESS("Giao nhanh"), SUPER_EXPRESS("Hỏa tốc");
+        private final String displayName;
+        ServiceType(String displayName) { this.displayName = displayName; }
+        public String getDisplayName() { return displayName; }
+    }
+
+    public enum OrderStatus {
+        PENDING_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED, CANCELLED, RETURNED
+    }
+
+    public Order() {
+    }
+
+    // ----- Getter / Setter -----
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTrackingCode() {
+        return trackingCode;
+    }
+
+    public void setTrackingCode(String trackingCode) {
+        this.trackingCode = trackingCode;
+    }
+
+    public AppUser getSender() {
+        return sender;
+    }
+
+    public void setSender(AppUser sender) {
+        this.sender = sender;
+    }
+
+    public AppUser getShipper() {
+        return shipper;
+    }
+
+    public void setShipper(AppUser shipper) {
+        this.shipper = shipper;
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
+    }
+
+    public String getSenderAddress() {
+        return senderAddress;
+    }
+
+    public void setSenderAddress(String senderAddress) {
+        this.senderAddress = senderAddress;
+    }
+
+    public String getReceiverName() {
+        return receiverName;
+    }
+
+    public void setReceiverName(String receiverName) {
+        this.receiverName = receiverName;
+    }
+
+    public String getReceiverPhone() {
+        return receiverPhone;
+    }
+
+    public void setReceiverPhone(String receiverPhone) {
+        this.receiverPhone = receiverPhone;
+    }
+
+    public String getReceiverAddress() {
+        return receiverAddress;
+    }
+
+    public void setReceiverAddress(String receiverAddress) {
+        this.receiverAddress = receiverAddress;
+    }
+
+    public Double getWeightKg() {
+        return weightKg;
+    }
+
+    public void setWeightKg(Double weightKg) {
+        this.weightKg = weightKg;
+    }
+
+    public ServiceType getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(ServiceType serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public BigDecimal getShippingFee() {
+        return shippingFee;
+    }
+
+    public void setShippingFee(BigDecimal shippingFee) {
+        this.shippingFee = shippingFee;
+    }
+
+    public BigDecimal getDistanceKm() { return distanceKm; }
+    public void setDistanceKm(BigDecimal distanceKm) { this.distanceKm = distanceKm; }
+    public BigDecimal getDistanceFee() { return distanceFee; }
+    public void setDistanceFee(BigDecimal distanceFee) { this.distanceFee = distanceFee; }
+
+    /** Cước dịch vụ (chưa gồm phụ phí khoảng cách); đơn cũ không có phụ phí thì bằng toàn bộ cước. */
+    public BigDecimal getServiceFee() {
+        if (shippingFee == null) return null;
+        return distanceFee == null ? shippingFee : shippingFee.subtract(distanceFee);
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

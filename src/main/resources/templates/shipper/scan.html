@@ -1,0 +1,33 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Quét QR vận đơn - UTEExpress</title></head><body><section class="shipper-workspace">
+<a class="shipper-back" th:href="@{/shipper/trang-chu}"><i class="bi bi-arrow-left"></i> Về danh sách đơn</a>
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-qr-code-scan"></i> NHẬN DIỆN VẬN ĐƠN</span><h2>Quét mã, mở chuyến giao</h2><p>Quét QR hoặc chọn ảnh để mở đơn.</p></div>
+    <img class="sx-hero-art" th:src="@{/images/shipper/scan-qr.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
+<div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+<div class="shipper-scan-grid">
+    <article class="ute-panel sx-tone-cyan"><div class="shipper-section-head"><div><span class="shipper-eyebrow">QUÉT TRỰC TIẾP</span><h3>Camera điện thoại hoặc máy tính</h3></div><i class="bi bi-camera"></i></div>
+        <!-- Điều kiện dùng camera: hai mục hệ thống tự kiểm tra, mục cuối người dùng tự tick đồng ý -->
+        <div class="sx-checklist" aria-label="Điều kiện để bật camera">
+            <div class="sx-check-item" data-cam-check="secure"><span class="sx-check-mark" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                <div><strong>Kết nối an toàn</strong><span>Camera chỉ bật trên HTTPS hoặc localhost.</span></div></div>
+            <div class="sx-check-item" data-cam-check="device"><span class="sx-check-mark" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                <div><strong>Trình duyệt hỗ trợ camera</strong><span>Dùng Chrome, Edge, Safari hoặc Firefox bản mới.</span></div></div>
+            <label class="sx-check-item sx-consent" for="qrCameraConsent">
+                <input type="checkbox" id="qrCameraConsent" class="sx-consent-input">
+                <span class="sx-check-mark sx-check-box" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                <div><strong>Tôi đồng ý cho phép dùng camera để quét QR</strong><span>Ảnh chỉ xử lý trên máy, không lưu lại.</span></div>
+            </label>
+        </div>
+        <div class="shipper-camera"><video id="qrVideo" playsinline muted aria-label="Camera quét QR vận đơn"></video><div id="qrCameraPlaceholder" class="shipper-camera-placeholder"><i class="bi bi-qr-code-scan"></i><p>Đặt QR rõ nét, đủ sáng<br>và nằm trọn trong khung hình.</p></div><div id="qrCameraFrame" class="shipper-camera-frame" hidden></div></div>
+        <p id="qrCameraStatus" class="shipper-hint" role="status" aria-live="polite">Tick ô đồng ý để bắt đầu quét.</p>
+        <div class="d-flex flex-wrap gap-2"><button id="qrCameraStart" type="button" class="btn sx-btn-cyan" disabled><i class="bi bi-camera-video"></i> Bắt đầu quét</button><button id="qrCameraStop" type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-stop-circle"></i> Dừng camera</button></div>
+        <form id="qrCodeForm" method="post" th:action="@{/shipper/quet-ma/ma}" hidden><input id="qrDecodedCode" name="code" type="hidden"></form>
+    </article>
+    <aside><form class="ute-panel sx-tone-violet" method="post" enctype="multipart/form-data" th:action="@{/shipper/quet-ma}" data-sx-once>
+        <span class="shipper-eyebrow">TỪ ẢNH CÓ SẴN</span><h3 class="mt-2 mb-3">Chụp hoặc tải ảnh QR</h3>
+        <label for="qrImage" class="form-label">Ảnh QR vận đơn</label><input id="qrImage" name="qrImage" type="file" accept="image/jpeg,image/png" capture="environment" class="form-control" required data-sx-max="5242880">
+        <p class="shipper-hint mt-2">JPG/PNG, tối đa 5 MB.</p><button class="btn sx-btn-violet w-100" type="submit"><i class="bi bi-upload"></i> Đọc QR từ ảnh</button>
+    </form><article class="ute-panel mt-4 sx-tone-teal"><span class="shipper-eyebrow">TÌM NHANH</span><h3 class="mt-2">Không có QR?</h3><a class="btn btn-outline-secondary w-100" th:href="@{/shipper/trang-chu}"><i class="bi bi-search"></i> Tìm trong danh sách</a></article></aside>
+</div>
+<script th:src="@{/js/vendor/zxing/zxing-browser-0.1.5.min.js}"></script><script th:src="@{/js/shipper-qr-camera.js}"></script><script th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

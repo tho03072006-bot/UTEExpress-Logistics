@@ -1,0 +1,16 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Sửa tài khoản - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-panel p-4 mx-auto" style="max-width:760px">
+<div class="sx-panel-head"><div><h1 class="h3">Sửa tài khoản: <span th:text="${account.username}"></span></h1></div><img th:src="@{/images/shipper/profile-card.svg}" alt="" aria-hidden="true" width="180" height="120"></div>
+<p class="alert alert-info">Không đổi được tên đăng nhập. Shipper còn đơn chưa xong thì không khóa được.</p>
+<form th:action="@{/admin/quan-ly-tai-khoan/{id}/sua(id=${account.id})}" th:object="${form}" method="post">
+<div th:replace="~{admin/account-form-fragments :: errors}"></div>
+<div class="mb-3"><label for="profile.fullName" class="form-label">Họ và tên</label><input th:field="*{profile.fullName}" class="form-control" required minlength="2" maxlength="100"></div>
+<div class="mb-3"><label for="profile.email" class="form-label">Email</label><input th:field="*{profile.email}" type="email" class="form-control" required maxlength="100"></div>
+<div class="mb-3"><label for="profile.phone" class="form-label">Số di động Việt Nam</label><input th:field="*{profile.phone}" type="tel" class="form-control" required data-vn-mobile maxlength="20"></div>
+<div class="mb-3"><label for="profile.role" class="form-label">Vai trò</label><select th:field="*{profile.role}" class="form-select" required><option th:each="role : ${allowedRoles}" th:value="${role}" th:text="${role}"></option></select></div>
+<div class="mb-3"><label for="active" class="form-label">Trạng thái</label><select th:field="*{active}" class="form-select" required><option value="true">Hoạt động — Admin xác nhận cấp/mở tài khoản</option><option value="false">Khóa bởi Admin — OTP không mở lại được</option></select></div>
+<div th:replace="~{admin/branch-fields :: fields('profile.assignment', 'profile.role')}"></div>
+<div th:replace="~{admin/account-form-fragments :: action}"></div>
+<button class="btn btn-primary" type="submit">Lưu thay đổi</button> <a class="btn btn-outline-secondary" th:href="@{/admin/quan-ly-tai-khoan}">Hủy</a>
+</form></div></section></body></html>

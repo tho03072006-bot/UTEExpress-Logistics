@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Thông tin khuyến mãi - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-promo"><div><h1 class="h3">Thông tin khuyến mãi</h1></div></div>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<p>Tối đa 366 ngày. Mã đã dùng không đổi được điều kiện giảm.</p>
+<form th:action="${id == null} ? @{/manager/khuyen-mai/tao} : @{/manager/khuyen-mai/{id}(id=${id})}" th:object="${form}" method="post" class="ute-panel p-4">
+<div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger"><ul class="mb-0"><li th:each="err : ${#fields.allErrors()}" th:text="${err}"></li></ul></div>
+<input type="hidden" th:field="*{revision}">
+<div class="row g-3">
+<div class="col-md-4"><label for="code" class="form-label">Mã</label><input class="form-control" th:field="*{code}" th:readonly="${id != null}" minlength="3" maxlength="30" required></div>
+<div class="col-md-8"><label for="description" class="form-label">Mô tả</label><input class="form-control" th:field="*{description}" maxlength="255" required></div>
+<div class="col-md-4"><label for="discountType" class="form-label">Kiểu giảm</label><select class="form-select" th:field="*{discountType}" required><option th:each="type : ${types}" th:value="${type}" th:text="${type.displayName}"></option></select></div>
+<div class="col-md-4"><label for="discountValue" class="form-label">Mức giảm (% hoặc VND)</label><input type="number" class="form-control" th:field="*{discountValue}" min="1" max="100000000" step="1" required></div>
+<div class="col-md-4"><label for="maxDiscountAmount" class="form-label">Trần giảm VND (bắt buộc nếu %)</label><input type="number" class="form-control" th:field="*{maxDiscountAmount}" min="1" max="100000000" step="1"><div class="form-text">Để trống khi giảm số tiền cố định.</div></div>
+<div class="col-md-4"><label for="minOrderAmount" class="form-label">Cước tối thiểu VND</label><input type="number" class="form-control" th:field="*{minOrderAmount}" min="0" max="100000000" step="1" required></div>
+<div class="col-md-4"><label for="usageLimit" class="form-label">Tổng lượt được dùng</label><input type="number" class="form-control" th:field="*{usageLimit}" min="1" max="1000000" step="1" required></div>
+<div class="col-md-4"><label for="active" class="form-label">Trạng thái</label><select class="form-select" th:field="*{active}"><option value="true">Bật</option><option value="false">Tắt</option></select></div>
+<div class="col-md-6"><label for="startAt" class="form-label">Bắt đầu</label><input type="datetime-local" class="form-control" th:field="*{startAt}" min="2000-01-01T00:00" max="2100-12-31T23:59" required></div>
+<div class="col-md-6"><label for="endAt" class="form-label">Kết thúc</label><input type="datetime-local" class="form-control" th:field="*{endAt}" min="2000-01-01T00:00" max="2100-12-31T23:59" required></div>
+</div><div class="mt-4 d-flex gap-2"><button class="btn btn-primary" type="submit">Lưu khuyến mãi</button><a class="btn btn-outline-secondary" th:href="@{/manager/khuyen-mai}">Quay lại</a></div></form>
+</section></body></html>
+

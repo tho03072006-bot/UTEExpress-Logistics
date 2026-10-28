@@ -1,0 +1,1395 @@
+/*
+ * ============================================================================
+ * UTEExpress - bo giao dien dung chung cho toan bo website (template Bootstrap)
+ * ============================================================================
+ * Ke thua Bootstrap 5.3.3, chi ghi de nhung gi can thiet. Toan bo trang di qua
+ * template templates/fragments/base.html va an theo file css nay - khong trang nao
+ * tu viet style rieng.
+ *
+ * Bang mau lay dung theo logo truong HCMUTE: chi xanh duong #0072BC + trang + xam
+ * trung tinh. KHONG dung mau do/vang/luc o bat ky dau, ke ca de bao trang thai.
+ * Doi cac bien --ute-* ben duoi la doi mau toan site, khong phai sua tung template.
+ */
+
+:root {
+    --ute-blue: #0072BC;
+    --ute-blue-dark: #00579A;
+    --ute-blue-darker: #003B68;
+    --ute-blue-mid: #3B93CE;
+    --ute-blue-soft: #E7F2FA;
+    --ute-ink: #0B2540;
+    --ute-gray: #6B7A8F;
+    --ute-gray-soft: #EDF1F5;
+
+    /* Nen va vien dung chung cho ca site */
+    --ute-surface: #F4F7FA;
+    --ute-card: #FFFFFF;
+    --ute-border: #DDE4EC;
+
+    /* Ba bien nay tach rieng vi chung LA MAU NEN, khong phai mau chu.
+       --ute-ink va --ute-gray o tren chu yeu dung lam mau chu nen o che do toi
+       phai doi thanh sang; neu dung chung bien cho ca nen thi footer se thanh
+       trang loa va badge se mat chu. Tach ra de moi ben doi mot huong. */
+    --ute-footer-bg: #0B2540;
+    --ute-badge-neutral: #6B7A8F;
+    --ute-badge-muted: #DCE1E8;
+
+    --ute-radius: .75rem;
+    --ute-shadow: 0 1px 2px rgba(11, 37, 64, .05), 0 4px 16px rgba(11, 37, 64, .06);
+    --ute-sidebar-width: 250px;
+    --ute-content-width: 1180px;
+    --ute-topbar-height: 60px;
+
+    /* Ghi de bien mau cua Bootstrap 5.3 - cascade tu dong vao btn-primary, text-primary,
+       bg-primary, border-primary, link-primary,... nen khong can sua lai tung class. */
+    --bs-primary: var(--ute-blue);
+    --bs-primary-rgb: 0, 114, 188;
+    --bs-link-color: var(--ute-blue);
+    --bs-link-color-rgb: 0, 114, 188;
+    --bs-link-hover-color: var(--ute-blue-dark);
+    --bs-body-color: var(--ute-ink);
+    --bs-border-radius: var(--ute-radius);
+
+    color-scheme: light;
+}
+
+/* ===================== Che do toi =====================
+   Chi doi GIA TRI cua cac bien o tren, khong viet lai mot bo style thu hai -
+   nho vay them trang moi khong phai lam gi them, trang do tu chay ca hai che do.
+
+   Thuoc tinh data-theme duoc gan vao the <html> boi doan script nho trong
+   fragments/base.html. Lua chon cua nguoi dung luu o localStorage; chua chon lan
+   nao thi theo cai dat sang/toi cua he dieu hanh.
+
+   Luu y khi chinh bang mau nay: chu tren nen phai du tuong phan. Vi du
+   --ute-blue van giu dam vua phai vi no la NEN cua nut primary va thanh tren cung
+   (chu mau trang nam tren do), con --ute-blue-dark moi la mau CHU nhan nen doi
+   thanh sang han de noi tren nen toi. */
+:root[data-theme="dark"] {
+    --ute-blue: #1183CE;
+    --ute-blue-dark: #74BFF0;
+    --ute-blue-darker: #0C5F96;
+    --ute-blue-mid: #2A86C4;
+    --ute-blue-soft: #14283A;
+    --ute-ink: #E7EEF6;
+    --ute-gray: #9AA9BC;
+    --ute-gray-soft: #1E2A38;
+
+    --ute-surface: #0E1621;
+    --ute-card: #16212E;
+    --ute-border: #2A3746;
+
+    --ute-footer-bg: #0A111A;
+    --ute-badge-neutral: #445468;
+    --ute-badge-muted: #2A3847;
+
+    /* Nen toi thi bong do khong con nhin thay, thay bang bong dam hon cho tach lop */
+    --ute-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 16px rgba(0, 0, 0, .3);
+
+    --bs-primary: var(--ute-blue);
+    --bs-primary-rgb: 17, 131, 206;
+    --bs-link-color: var(--ute-blue-dark);
+    --bs-link-color-rgb: 116, 191, 240;
+    --bs-link-hover-color: #9BD2F6;
+    --bs-body-color: var(--ute-ink);
+
+    /* Bao cho trinh duyet biet dang o nen toi de thanh cuon, o nhap va menu
+       cua chinh trinh duyet cung doi mau theo */
+    color-scheme: dark;
+}
+
+/* Bootstrap ve o nhap, select va bang bang bien rieng cua no - phai doi them
+   nhung bien nay, neu khong o nhap se van trang toat giua trang toi. */
+:root[data-theme="dark"] {
+    --bs-body-bg: var(--ute-surface);
+    --bs-secondary-color: var(--ute-gray);
+    --bs-border-color: var(--ute-border);
+    --bs-emphasis-color: var(--ute-ink);
+}
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select {
+    background-color: var(--ute-surface);
+    border-color: var(--ute-border);
+    color: var(--ute-ink);
+}
+:root[data-theme="dark"] .form-control::placeholder {
+    color: var(--ute-gray);
+}
+:root[data-theme="dark"] .form-control:focus,
+:root[data-theme="dark"] .form-select:focus {
+    background-color: var(--ute-surface);
+    color: var(--ute-ink);
+}
+/* Mui ten cua select la anh SVG mau den co san cua Bootstrap, nen toi phai doi sang */
+:root[data-theme="dark"] .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239AA9BC' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+:root[data-theme="dark"] .text-muted {
+    color: var(--ute-gray) !important;
+}
+:root[data-theme="dark"] .btn-outline-secondary {
+    color: var(--ute-ink);
+    border-color: var(--ute-border);
+}
+
+/* ===================== Nut chuyen sang/toi ===================== */
+.ute-theme-toggle {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45);
+    background: transparent;
+    font-size: 1rem;
+    line-height: 1;
+    padding: .3rem .55rem;
+    border-radius: .5rem;
+}
+.ute-theme-toggle:hover {
+    background: #fff;
+    color: var(--ute-blue);
+}
+/* Hien dung mot icon: mat trang o che do sang (bam de chuyen sang toi) va nguoc lai */
+.ute-theme-toggle .bi-sun-fill {
+    display: none;
+}
+:root[data-theme="dark"] .ute-theme-toggle .bi-moon-stars {
+    display: none;
+}
+:root[data-theme="dark"] .ute-theme-toggle .bi-sun-fill {
+    display: inline-block;
+}
+
+/* ===================== Nen trang & chu ===================== */
+.ute-body {
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background-color: var(--ute-surface);
+    color: var(--ute-ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+a {
+    color: var(--ute-blue);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--ute-blue-dark);
+    text-decoration: underline;
+}
+
+/* ===================== Thanh tren cung ===================== */
+.ute-topbar {
+    background-color: var(--ute-blue);
+    color: #fff;
+    height: var(--ute-topbar-height);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .08);
+}
+.ute-topbar-inner {
+    width: 100%;
+    max-width: var(--ute-content-width);
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 0 1.25rem;
+}
+.ute-topbar-with-sidebar .ute-topbar-inner {
+    max-width: calc(var(--ute-content-width) + var(--ute-sidebar-width));
+}
+.ute-brand {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: .01em;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.ute-brand:hover {
+    color: #fff;
+    text-decoration: none;
+}
+.ute-brand-dot {
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: #fff;
+}
+.ute-topbar-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.ute-topbar-link {
+    color: rgba(255, 255, 255, .9);
+    font-size: .925rem;
+}
+.ute-topbar-link:hover {
+    color: #fff;
+    text-decoration: none;
+}
+.ute-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .9rem;
+    font-weight: 500;
+    color: #fff;
+    background: rgba(255, 255, 255, .15);
+    padding: .25rem .7rem;
+    border-radius: 999px;
+}
+.ute-btn-ghost {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .55);
+    background: transparent;
+    font-weight: 500;
+}
+.ute-btn-ghost:hover {
+    background: #fff;
+    border-color: #fff;
+    color: var(--ute-blue);
+}
+.ute-menu-toggle {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .45);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: .25rem .55rem;
+}
+.ute-menu-toggle:hover {
+    color: var(--ute-blue);
+    background: #fff;
+}
+
+/* ===================== Khung than trang ===================== */
+.ute-shell {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: stretch;
+}
+.ute-shell-with-sidebar {
+    width: 100%;
+    max-width: calc(var(--ute-content-width) + var(--ute-sidebar-width));
+    margin: 0 auto;
+}
+.ute-main {
+    flex: 1 1 auto;
+    min-width: 0; /* cho phep bang rong co the cuon ngang thay vi day vo bo cuc */
+}
+.ute-main-inner {
+    max-width: var(--ute-content-width);
+    padding: 2rem 1.25rem 3rem;
+}
+/* Trang cong khai (khong sidebar) thi can giua cho de nhin */
+.ute-shell:not(.ute-shell-with-sidebar) .ute-main-inner {
+    margin: 0 auto;
+}
+
+/* ===================== Sidebar ===================== */
+.ute-sidebar {
+    width: var(--ute-sidebar-width);
+    flex: 0 0 var(--ute-sidebar-width);
+    background: var(--ute-card);
+    border-right: 1px solid var(--ute-border);
+    position: sticky;
+    top: var(--ute-topbar-height);
+    align-self: flex-start;
+    height: calc(100vh - var(--ute-topbar-height));
+    overflow-y: auto;
+}
+.ute-sidebar-offcanvas {
+    width: var(--ute-sidebar-width);
+}
+.ute-nav {
+    padding: 1rem .75rem;
+}
+.ute-nav-heading {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ute-gray);
+    margin: 1rem .75rem .35rem;
+}
+.ute-nav > div:first-child .ute-nav-heading {
+    margin-top: .25rem;
+}
+.ute-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .55rem .75rem;
+    margin-bottom: .15rem;
+    border-radius: .5rem;
+    color: var(--ute-ink);
+    font-size: .94rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+.ute-nav-link:hover {
+    background: var(--ute-gray-soft);
+    color: var(--ute-blue-dark);
+    text-decoration: none;
+}
+.ute-nav-link i {
+    color: var(--ute-gray);
+    font-size: 1rem;
+}
+/* Muc dang mo - class "active" do js/main.js gan theo duong dan hien tai */
+.ute-nav-link.active {
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    border-left-color: var(--ute-blue);
+    font-weight: 600;
+}
+.ute-nav-link.active i {
+    color: var(--ute-blue);
+}
+.ute-nav-divider {
+    height: 1px;
+    background: var(--ute-border);
+    margin: 1rem .75rem;
+}
+
+/* ===================== Footer ===================== */
+.ute-footer {
+    flex-shrink: 0;
+    background-color: var(--ute-footer-bg);
+    color: rgba(255, 255, 255, .75);
+    font-size: .85rem;
+}
+.ute-footer-inner {
+    padding: 1.1rem 1.25rem;
+    text-align: center;
+}
+
+/* ===================== The (card) & bang ===================== */
+.card {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+}
+.card-title {
+    font-weight: 600;
+}
+
+/* Bang dat trong the trang co vien bo goc, nhin gon hon bang tran */
+.ute-panel {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.25rem;
+}
+.ute-panel-flush {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    margin-bottom: 0;
+}
+.table > thead th {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ute-gray);
+    border-bottom: 1px solid var(--ute-border);
+    background: var(--ute-gray-soft);
+    white-space: nowrap;
+}
+.table > tbody td {
+    border-bottom: 1px solid var(--ute-border);
+    vertical-align: middle;
+}
+.table > tbody tr:hover > td {
+    background-color: var(--ute-blue-soft);
+}
+.table > tfoot th {
+    border-top: 2px solid var(--ute-border);
+    background: var(--ute-gray-soft);
+}
+
+/* ===================== Tieu de trang ===================== */
+.ute-page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+}
+.ute-page-head h1,
+.ute-page-head h2 {
+    margin-bottom: .25rem;
+    font-size: 1.6rem;
+}
+.ute-page-head p {
+    margin-bottom: 0;
+    color: var(--ute-gray);
+    font-size: .94rem;
+}
+
+/* ===================== Nut ===================== */
+.btn {
+    font-weight: 500;
+    border-radius: .5rem;
+}
+.btn-primary {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--ute-blue-dark);
+    border-color: var(--ute-blue-dark);
+}
+.btn-outline-primary {
+    color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.btn-outline-primary:hover {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.btn-outline-secondary {
+    color: var(--ute-ink);
+    border-color: var(--ute-border);
+}
+.btn-outline-secondary:hover {
+    background-color: var(--ute-gray-soft);
+    border-color: var(--ute-gray);
+    color: var(--ute-ink);
+}
+/* Nut nhan manh tren nen xanh (vd CTA o hero) - trang + chu xanh, khong dung mau do */
+.btn-accent {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--ute-blue);
+    font-weight: 600;
+}
+.btn-accent:hover {
+    background-color: var(--ute-blue-soft);
+    border-color: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+}
+
+/* ===================== Form ===================== */
+.form-label {
+    font-weight: 500;
+    font-size: .9rem;
+    margin-bottom: .3rem;
+}
+.form-control,
+.form-select {
+    border-color: var(--ute-border);
+    border-radius: .5rem;
+    padding: .55rem .75rem;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ute-blue-mid);
+    box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.form-check-input:checked {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+.form-check-input:focus {
+    border-color: var(--ute-blue-mid);
+    box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.form-text {
+    color: var(--ute-gray);
+}
+
+/* ===================== Hero trang chu ===================== */
+.hero-ute {
+    background: linear-gradient(120deg, var(--ute-blue) 0%, var(--ute-blue-darker) 100%);
+    color: #fff;
+    border-radius: var(--ute-radius);
+}
+.hero-ute .text-muted-on-blue {
+    color: rgba(255, 255, 255, .85) !important;
+}
+
+/* ===================== Badge trang thai don hang =====================
+   Cac sac do xanh + xam trung tinh, dam dan theo tien do:
+   xam (cho lay) -> xanh nhat -> xanh vua -> xanh dam (hoan tat).
+   Huy/hoan tra dung xam nhat thay vi do de giu dung bo nhan dien. */
+.badge {
+    font-weight: 600;
+    border-radius: .4rem;
+    padding: .35em .6em;
+}
+.badge-ute { background-color: var(--ute-blue); color: #fff; }
+.badge-status-pending_pickup { background-color: var(--ute-badge-neutral); color: #fff; }
+.badge-status-picked_up { background-color: var(--ute-blue-soft); color: var(--ute-blue-dark); }
+.badge-status-in_transit { background-color: var(--ute-blue-mid); color: #fff; }
+.badge-status-delivered { background-color: var(--ute-blue-darker); color: #fff; }
+.badge-status-failed { background-color: var(--ute-badge-neutral); color: #fff; }
+.badge-status-cancelled,
+.badge-status-returned { background-color: var(--ute-badge-muted); color: var(--ute-ink); }
+
+/* Trang thai thanh toan (TV1 - viec 3) */
+.badge-payment-paid { background-color: var(--ute-blue-darker); color: #fff; }
+.badge-payment-unpaid { background-color: var(--ute-badge-neutral); color: #fff; }
+
+/* ===================== Thong bao ===================== */
+.alert {
+    border-radius: var(--ute-radius);
+}
+.alert-success {
+    background-color: var(--ute-blue-soft);
+    border-color: var(--ute-blue-mid);
+    color: var(--ute-blue-dark);
+}
+.alert-danger {
+    background-color: var(--ute-gray-soft);
+    border-color: var(--ute-gray);
+    color: var(--ute-ink);
+}
+.alert-light {
+    background-color: var(--ute-card);
+    border-color: var(--ute-border);
+    color: var(--ute-ink);
+}
+
+/* ===================== So dia chi da luu (TV1 - viec 1) ===================== */
+.address-card {
+    border-color: var(--ute-border);
+}
+.address-card-default {
+    border-color: var(--ute-blue);
+    background-color: var(--ute-blue-soft);
+}
+
+/* ===================== Thanh toan gia lap (TV1 - viec 3) =====================
+   Dai bang phai noi bat de khong ai nham trang nay voi cong thanh toan that. */
+.payment-simulation-banner {
+    border: 2px dashed var(--ute-blue);
+    background-color: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    border-radius: var(--ute-radius);
+    padding: 1rem;
+}
+
+/* ===================== Nut chep ma van don (TV1) ===================== */
+.ute-copy-btn {
+    font-size: .8rem;
+    font-weight: 500;
+    padding: .15rem .55rem;
+    white-space: nowrap;
+}
+/* Luc vua chep xong: doi sang nen xanh dac cho nguoi dung thay ro la da an duoc,
+   khong chi doi moi chu - de mat nhin luot qua van bat duoc. */
+.ute-copy-btn.ute-copied {
+    background-color: var(--ute-blue);
+    border-color: var(--ute-blue);
+    color: #fff;
+}
+
+/* ===================== In van don (TV1) =====================
+   Khong lam trang in rieng: chi giau bot phan khong can roi sap xep lai trang chi
+   tiet don. Mot to giay dan len kien hang chi can ma van don, nguoi gui, nguoi nhan,
+   dich vu va cuoc phi - khong can menu, nut bam hay mau nen.
+
+   Khoi nay chi co tac dung luc in, mo binh thuong khong anh huong gi. */
+.ute-print-header {
+    display: none;
+}
+/* Nhan dan len kien kho A6 (trang chi tiet don): chi hien khi bam "In nhan A6" */
+.ute-print-label {
+    display: none;
+}
+
+@media print {
+    /* Ep bang mau ve ban in TRUOC MOI THU KHAC.
+       Neu nguoi dung dang o che do toi roi bam In, --ute-ink dang la mau sang:
+       chu sang tren giay trang coi nhu mat chu. Doi thang gia tri bien o day thi
+       moi thanh phan dung bien deu tu dung theo, khong phai sua tung class. */
+    :root,
+    :root[data-theme="dark"],
+    :root[data-theme="light"] {
+        --ute-ink: #000000;
+        --ute-gray: #444444;
+        --ute-gray-soft: #F0F0F0;
+        --ute-blue: #000000;
+        --ute-blue-dark: #000000;
+        --ute-blue-darker: #000000;
+        --ute-blue-mid: #555555;
+        --ute-blue-soft: #FFFFFF;
+        --ute-surface: #FFFFFF;
+        --ute-card: #FFFFFF;
+        --ute-border: #999999;
+        --ute-footer-bg: #FFFFFF;
+        --ute-badge-neutral: #FFFFFF;
+        --ute-badge-muted: #FFFFFF;
+        --ute-shadow: none;
+        --bs-body-color: #000000;
+        --bs-body-bg: #FFFFFF;
+    }
+
+    /* Huy hieu trang thai in ra giay: vien den chu den thay vi nen mau */
+    .badge {
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+    }
+
+    /* Giau moi thu khong thuoc ve to phieu */
+    .ute-topbar,
+    .ute-sidebar,
+    .ute-sidebar-offcanvas,
+    .ute-footer,
+    .ute-page-head .btn,
+    .ute-copy-btn,
+    .alert,
+    form,
+    .btn {
+        display: none !important;
+    }
+
+    /* Bo khung, bo bong, bo nen mau - muc in ra giay khong can nhung thu do */
+    .ute-body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .ute-shell,
+    .ute-main,
+    .ute-main-inner {
+        display: block !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .ute-panel,
+    .card {
+        background: #fff !important;
+        border: 1px solid #999 !important;
+        box-shadow: none !important;
+        padding: .6rem .8rem !important;
+        margin-bottom: .5rem !important;
+        break-inside: avoid;
+    }
+
+    /* Dai dau to phieu: chi hien khi in */
+    .ute-print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 2px solid #000;
+        padding-bottom: .4rem;
+        margin-bottom: .8rem;
+    }
+    .ute-print-brand {
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+    .ute-print-note {
+        font-size: .8rem;
+    }
+
+    /* Ma van don la thu nguoi giao hang doc dau tien, phai to va de doc */
+    .ute-page-head h2 {
+        font-size: 1.5rem !important;
+        margin: 0 0 .3rem !important;
+    }
+
+    /* Hai cot canh nhau cho vua mot to, khong tran sang trang thu hai */
+    .row > [class^="col-lg"] {
+        width: 50% !important;
+        float: left;
+    }
+
+    /* Timeline in ra van giu duoc cham va duong noi, nhung bo hieu ung */
+    .ute-timeline li {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+    .ute-timeline-dot {
+        border-color: #000 !important;
+    }
+    .ute-timeline li.is-done .ute-timeline-dot {
+        background: #000 !important;
+    }
+
+    a[href]::after {
+        /* Khong in duong dan phia sau link - to phieu khong can */
+        content: "" !important;
+    }
+
+    @page {
+        margin: 12mm;
+    }
+
+    /* In nhan A6: chi giu khoi nhan, an phieu day du va tro ly; trang rieng kho A6 (105 x 148 mm) */
+    body.ute-label-print section[data-realtime-region] > :not(.ute-print-label),
+    body.ute-label-print .ute-assistant {
+        display: none !important;
+    }
+    body.ute-label-print .ute-print-label {
+        display: block !important;
+        page: ute-label;
+        width: 93mm;
+        border: 2px solid #000;
+        padding: 3mm;
+        font-size: 10pt;
+        line-height: 1.3;
+        color: #000;
+    }
+    .ute-label-head {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #000;
+        padding-bottom: 1.5mm;
+        margin-bottom: 2mm;
+        font-size: 11pt;
+    }
+    .ute-label-code {
+        display: flex;
+        gap: 3mm;
+        align-items: center;
+        border-bottom: 1px solid #000;
+        padding-bottom: 2mm;
+        margin-bottom: 2mm;
+    }
+    .ute-label-code img {
+        width: 26mm;
+        height: 26mm;
+    }
+    .ute-label-tracking {
+        font-size: 18pt;
+        font-weight: 700;
+        letter-spacing: .03em;
+    }
+    .ute-label-route {
+        font-weight: 600;
+    }
+    .ute-label-to,
+    .ute-label-from {
+        border-bottom: 1px solid #000;
+        padding-bottom: 2mm;
+        margin-bottom: 2mm;
+    }
+    .ute-label-to .ute-label-name {
+        font-size: 12pt;
+        font-weight: 700;
+    }
+    .ute-label-tag {
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .ute-label-foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 2mm;
+        font-size: 9pt;
+    }
+    @page ute-label {
+        size: A6;
+        margin: 6mm;
+    }
+}
+
+/* ===================== O tra cuu tren trang chu (TV1) =====================
+   Dat ngay trong khoi hero mau xanh nen o nhap phai la nen trang de doc duoc. */
+.ute-hero-search {
+    display: flex;
+    gap: .5rem;
+    max-width: 520px;
+}
+.ute-hero-search .form-control {
+    border: none;
+    padding: .65rem 1rem;
+}
+.ute-hero-search .form-control:focus {
+    box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .35);
+}
+.ute-hero-search .btn {
+    white-space: nowrap;
+}
+@media (max-width: 575.98px) {
+    /* Man hinh hep thi xep doc, o nhap chiem het chieu ngang cho de bam */
+    .ute-hero-search {
+        flex-direction: column;
+    }
+}
+
+/* ===================== Timeline hanh trinh don (TV1) =====================
+   Duong doc noi cac moc, moc da di qua to xanh, moc dang dung co vong sang. */
+.ute-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.ute-timeline li {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+}
+/* Doan duong noi xuong moc ke tiep; moc cuoi khong can ve nen bo di */
+.ute-timeline li::before {
+    content: "";
+    position: absolute;
+    left: .3125rem;
+    top: 1rem;
+    bottom: -.25rem;
+    width: 2px;
+    background: var(--ute-border);
+}
+.ute-timeline li:last-child {
+    padding-bottom: 0;
+}
+.ute-timeline li:last-child::before {
+    display: none;
+}
+.ute-timeline li.is-done::before {
+    background: var(--ute-blue);
+}
+
+.ute-timeline-dot {
+    position: absolute;
+    left: 0;
+    top: .3rem;
+    width: .75rem;
+    height: .75rem;
+    border-radius: 50%;
+    background: var(--ute-card);
+    border: 2px solid var(--ute-border);
+}
+.ute-timeline li.is-done .ute-timeline-dot {
+    background: var(--ute-blue);
+    border-color: var(--ute-blue);
+}
+/* Moc dang dung: vong sang nhe toa ra cho de nhan ra dang o dau */
+.ute-timeline li.is-current .ute-timeline-dot {
+    background: var(--ute-blue);
+    border-color: var(--ute-blue);
+    box-shadow: 0 0 0 4px var(--ute-blue-soft);
+}
+
+.ute-timeline-label {
+    font-weight: 600;
+    color: var(--ute-gray);
+}
+.ute-timeline li.is-done .ute-timeline-label {
+    color: var(--ute-ink);
+}
+.ute-timeline li.is-current .ute-timeline-label {
+    color: var(--ute-blue-dark);
+}
+.ute-timeline-desc {
+    font-size: .875rem;
+    color: var(--ute-gray);
+}
+.ute-timeline-time {
+    font-size: .8rem;
+    color: var(--ute-gray);
+    margin-top: .15rem;
+}
+
+/* Sao danh gia o che do chi doc (trang chi tiet don) */
+.ute-review-stars {
+    color: var(--ute-blue);
+}
+
+/* ===================== Ho so tai khoan (TV1) ===================== */
+/* Cap nhan - gia tri cho nhung thong tin chi doc (ten dang nhap, vai tro, ngay tao) */
+.ute-profile-label {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ute-gray);
+    margin-bottom: .15rem;
+}
+.ute-profile-value {
+    font-weight: 600;
+    color: var(--ute-ink);
+}
+.ute-profile-note {
+    margin-top: 1rem;
+    font-size: .85rem;
+    color: var(--ute-gray);
+}
+
+/* O nhap ma OTP: chu to, gian cach rong de doc lai tung so cho khoi nham 0 voi 8 */
+.ute-otp-input {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: .5em;
+    text-align: center;
+    padding-left: .5em;
+}
+
+/* Loi validation duoi o nhap.
+   Dung class rieng thay cho .text-danger cua Bootstrap vi bang mau cua de tai
+   chi cho phep xanh - trang - xam, khong duoc dung do. */
+.ute-field-error {
+    margin-top: .25rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--ute-blue-dark);
+}
+
+/* ===================== Chuyen dong (TV1) =====================
+   Nguyen tac: chuyen dong chi de dan mat nguoi dung, khong de trang tri. Moi hieu ung
+   deu ngan (duoi 0.5s) va chi chay mot lan khi vao trang - khong co gi nhap nhay lien tuc.
+
+   Toan bo khoi nay bi TAT o cuoi file khi may nguoi dung bat "giam chuyen dong"
+   (prefers-reduced-motion). Voi nguoi de bi chong mat hoac say chuyen dong, hieu ung
+   truot va mo dan co the gay kho chiu that su, nen phai ton trong cai dat do. */
+
+/* Noi dung hien len nhe nhang thay vi nhay ra dot ngot */
+@keyframes ute-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.ute-panel,
+.ute-stat,
+.ute-quick,
+.ute-main-inner > section > .card,
+.ute-main-inner > section > .ute-page-head {
+    animation: ute-fade-up .35s ease-out both;
+}
+
+/* Cac the trong cung mot hang hien lan luot chu khong cung luc - mat di theo thu tu
+   tu trai sang phai, de bat duoc bo cuc hon la ca hang bat len mot the. */
+.row > [class^="col"]:nth-child(1) .ute-stat,
+.row > [class^="col"]:nth-child(1) .ute-quick { animation-delay: .04s; }
+.row > [class^="col"]:nth-child(2) .ute-stat,
+.row > [class^="col"]:nth-child(2) .ute-quick { animation-delay: .10s; }
+.row > [class^="col"]:nth-child(3) .ute-stat,
+.row > [class^="col"]:nth-child(3) .ute-quick { animation-delay: .16s; }
+.row > [class^="col"]:nth-child(4) .ute-stat,
+.row > [class^="col"]:nth-child(4) .ute-quick { animation-delay: .22s; }
+
+/* Cac moc tren timeline hien dan tu tren xuong, dung huong nguoi doc di theo hanh trinh */
+.ute-timeline li {
+    animation: ute-fade-up .3s ease-out both;
+}
+.ute-timeline li:nth-child(1) { animation-delay: .05s; }
+.ute-timeline li:nth-child(2) { animation-delay: .13s; }
+.ute-timeline li:nth-child(3) { animation-delay: .21s; }
+.ute-timeline li:nth-child(4) { animation-delay: .29s; }
+
+/* Chuyen mau muot khi bam nut sang/toi. Luc moi tai trang mau da dung ngay tu dau
+   (script trong <head>) nen khong co gi de chuyen - khong lo bi nhap nhay. */
+.ute-body,
+.ute-panel,
+.card,
+.ute-sidebar,
+.ute-footer,
+.form-control,
+.form-select {
+    transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+/* Phan hoi khi ro chuot - cho nguoi dung biet cai gi bam duoc */
+.btn,
+.ute-nav-link,
+.badge {
+    transition: background-color .18s ease, border-color .18s ease,
+                color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.btn:active {
+    transform: translateY(1px);
+}
+.ute-quick {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.ute-quick:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(11, 37, 64, .12);
+    border-color: var(--ute-blue);
+}
+.ute-timeline-dot {
+    transition: box-shadow .25s ease, background-color .25s ease;
+}
+.table > tbody tr {
+    transition: background-color .15s ease;
+}
+
+/* ===================== Man hinh nho ===================== */
+@media (max-width: 991.98px) {
+    .ute-topbar-inner {
+        padding: 0 1rem;
+    }
+    .ute-topbar-with-sidebar .ute-topbar-inner,
+    .ute-shell-with-sidebar {
+        max-width: var(--ute-content-width);
+    }
+    .ute-main-inner {
+        padding: 1.25rem 1rem 2rem;
+    }
+    .ute-page-head h1,
+    .ute-page-head h2 {
+        font-size: 1.35rem;
+    }
+}
+@media (max-width: 575.98px) {
+    .ute-topbar-inner {
+        padding: 0 1rem;
+        gap: .5rem;
+    }
+    .ute-brand {
+        font-size: 1rem;
+    }
+    .ute-topbar-nav {
+        gap: .5rem;
+    }
+}
+
+/* ===================== Lop tien ich ===================== */
+/* Form/trang noi dung hep cho de doc, dat giua khung noi dung */
+.ute-narrow { max-width: 680px; }
+.ute-narrow-sm { max-width: 460px; }
+
+/* ===================== The so lieu & loi tat o trang tong quan ===================== */
+.ute-stat {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+.ute-stat-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: .5rem;
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: .5rem;
+}
+.ute-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ute-ink);
+}
+.ute-stat-label {
+    font-size: .85rem;
+    color: var(--ute-gray);
+}
+
+.ute-quick {
+    background: var(--ute-card);
+    border: 1px solid var(--ute-border);
+    border-radius: var(--ute-radius);
+    box-shadow: var(--ute-shadow);
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    color: var(--ute-ink);
+}
+.ute-quick:hover {
+    border-color: var(--ute-blue);
+    background: var(--ute-blue-soft);
+    color: var(--ute-blue-dark);
+    text-decoration: none;
+}
+.ute-quick > i {
+    font-size: 1.4rem;
+    color: var(--ute-blue);
+    margin-bottom: .25rem;
+}
+.ute-quick-title {
+    font-weight: 600;
+}
+.ute-quick-desc {
+    font-size: .875rem;
+    color: var(--ute-gray);
+}
+.ute-quick:hover .ute-quick-desc {
+    color: var(--ute-blue-dark);
+}
+
+/* ===================== Danh gia dich vu (TV1 - viec 4) ===================== */
+/* Chon sao: xep input theo thu tu 5->1 trong HTML roi dung row-reverse de hien 1->5,
+   nho vay chon tieu chuan "~" lam sang duoc cac sao ben trai khi di chuot. */
+.ute-rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: .2rem;
+    font-size: 1.6rem;
+}
+.ute-rating input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.ute-rating label {
+    color: var(--ute-border);
+    cursor: pointer;
+    line-height: 1;
+}
+.ute-rating label:hover,
+.ute-rating label:hover ~ label,
+.ute-rating input:checked ~ label {
+    color: var(--ute-blue);
+}
+/* Vien focus cho nguoi dung ban phim - khong duoc mat dau hieu dang chon o dau */
+.ute-rating input:focus-visible + label {
+    outline: 2px solid var(--ute-blue-mid);
+    outline-offset: 2px;
+    border-radius: .2rem;
+}
+
+.ute-stars {
+    color: var(--ute-blue);
+    font-size: 1rem;
+    letter-spacing: .1rem;
+}
+
+.ute-review-media {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: .5rem;
+    border: 1px solid var(--ute-border);
+    display: block;
+}
+
+/* ===================== Ma giam gia (TV1 - viec 5) ===================== */
+/* Ma luon luu dang chu hoa nen hien chu hoa luon cho khop voi cai nguoi dung se thay */
+.ute-promo-input {
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 600;
+}
+.ute-promo-input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+}
+
+/* ===================== Phan trang (TV1) ===================== */
+.pagination {
+    --bs-pagination-color: var(--ute-ink);
+    --bs-pagination-border-color: var(--ute-border);
+    --bs-pagination-hover-color: var(--ute-blue-dark);
+    --bs-pagination-hover-bg: var(--ute-blue-soft);
+    --bs-pagination-hover-border-color: var(--ute-border);
+    --bs-pagination-active-bg: var(--ute-blue);
+    --bs-pagination-active-border-color: var(--ute-blue);
+    --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(0, 114, 188, .15);
+}
+.page-link {
+    border-radius: .4rem;
+    margin: 0 .12rem;
+}
+
+/* ===================== Ton trong cai dat "giam chuyen dong" =====================
+   Windows, macOS, Android va iOS deu co cong tac "Giam chuyen dong" cho nguoi de bi
+   chong mat, say chuyen dong hoac dong kinh nhay sang. Khi nguoi dung da bat cong tac
+   do, trinh duyet bao lai qua prefers-reduced-motion va website PHAI tat hieu ung.
+
+   De o cuoi file de chac chan ghi de duoc moi khai bao animation/transition o tren.
+   Khong xoa han animation ma rut ve gan nhu tuc thi: cac hieu ung dung
+   animation-fill-mode: both, neu bo hoan toan thi phan tu se ket o trang thai dau
+   (mo va lech xuong) va noi dung coi nhu bien mat. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .btn:active,
+    .ute-quick:hover {
+        transform: none;
+    }
+}
+
+/* Shipper workspace: shares the project palette in light and dark mode. */
+.shipper-workspace { --shipper-gap: 1.25rem; }
+.shipper-workspace h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; letter-spacing: -.04em; }
+.shipper-workspace h3 { font-size: 1.1rem; font-weight: 700; }
+.shipper-workspace h4 { font-size: 1rem; font-weight: 600; }
+.shipper-workspace p { overflow-wrap: anywhere; }
+.shipper-workspace .btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+.shipper-workspace .ute-panel { padding: 1.4rem; }
+.shipper-workspace :is(article, aside, form, .shipper-detail-main, .shipper-detail-aside) { min-width: 0; }
+.shipper-hero { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; padding: 1.75rem; margin-bottom: 1.5rem; border: 1px solid var(--ute-border); border-radius: 1rem; background: linear-gradient(120deg, var(--ute-card) 25%, var(--ute-blue-soft)); }
+.shipper-hero h2 { margin: .6rem 0; }
+.shipper-hero p { color: var(--ute-gray); margin: 0 0 .75rem; max-width: 38rem; line-height: 1.7; }
+.shipper-eyebrow { display: flex; align-items: center; gap: .5rem; color: var(--ute-blue-dark); font-size: .72rem; font-weight: 700; letter-spacing: .1em; }
+.shipper-hero-date { display: inline-flex; background: var(--ute-card); border: 1px solid var(--ute-border); border-radius: 2rem; padding: .3rem .75rem; font-size: .8rem; color: var(--ute-gray); }
+.shipper-hero-actions { display: flex; flex-wrap: wrap; gap: .65rem; flex-shrink: 0; }
+.shipper-hero-status { font-size: .9rem; padding: .7rem 1rem; }
+.shipper-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.shipper-metric { padding: 1.1rem 1.2rem; border: 1px solid var(--ute-border); border-radius: .9rem; background: var(--ute-card); display: grid; grid-template-columns: 1fr auto; gap: .45rem; color: var(--ute-ink); box-shadow: var(--ute-shadow); }
+a.shipper-metric:hover { border-color: var(--ute-blue); color: var(--ute-ink); text-decoration: none; }
+.shipper-metric > i { color: var(--ute-blue-dark); grid-column: 2; grid-row: 1; align-self: center; font-size: 1.4rem; }
+.shipper-metric > strong { font-size: 1.9rem; line-height: 1.1; grid-column: 1; grid-row: 1; }
+.shipper-metric > span { grid-column: 1 / -1; font-size: .8rem; color: var(--ute-gray); }
+.shipper-work-switch { display: flex; gap: .35rem; flex-wrap: wrap; background: var(--ute-gray-soft); padding: .35rem; border-radius: .8rem; margin-bottom: 1.25rem; width: fit-content; max-width: 100%; }
+.shipper-work-switch a { border-radius: .6rem; padding: .7rem 1rem; color: var(--ute-gray); font-size: .86rem; font-weight: 600; text-decoration: none; }
+.shipper-work-switch a.active { background: var(--ute-card); color: var(--ute-blue-dark); box-shadow: var(--ute-shadow); }
+.shipper-filters { margin-bottom: 1.25rem; }
+.shipper-filters summary, .shipper-failure-form summary, .shipper-data-table summary { cursor: pointer; color: var(--ute-ink); font-weight: 600; padding: .35rem 0; }
+.shipper-filters summary > span { font-size: .8rem; font-weight: 400; margin-left: .75rem; }
+.shipper-workspace .form-label { font-size: .82rem; font-weight: 600; }
+.shipper-status-tabs { display: flex; gap: .6rem; overflow-x: auto; margin: .75rem 0 1.5rem; padding-bottom: .5rem; }
+.shipper-status-tabs a { flex-shrink: 0; color: var(--ute-gray); text-decoration: none; padding: .55rem .85rem; border: 1px solid var(--ute-border); border-radius: 2rem; font-size: .8rem; background: var(--ute-card); }
+.shipper-status-tabs a.active { background: var(--ute-blue); color: #fff; border-color: var(--ute-blue); }
+.shipper-list-heading, .shipper-section-head { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.shipper-list-heading h3, .shipper-section-head h3 { margin: 0; }
+.shipper-list-heading > span { font-size: .8rem; color: var(--ute-gray); }
+.shipper-section-head .shipper-eyebrow { margin-bottom: .45rem; }
+.shipper-section-head > i { font-size: 1.5rem; color: var(--ute-blue-dark); }
+.shipper-order-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--shipper-gap); }
+.shipper-order-card { padding: 1.25rem; background: var(--ute-card); border: 1px solid var(--ute-border); border-radius: 1rem; box-shadow: var(--ute-shadow); display: flex; flex-direction: column; }
+.shipper-card-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.shipper-card-head > strong { color: var(--ute-blue-dark); font-size: .95rem; overflow-wrap: anywhere; }
+.shipper-card-meta { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .72rem; color: var(--ute-gray); padding: .65rem 0 1rem; }
+.shipper-route > div { display: flex; gap: .8rem; padding: .7rem 0; }
+.shipper-route > div > i { border-radius: 50%; flex: 0 0 2rem; height: 2rem; background: var(--ute-blue-soft); color: var(--ute-blue-dark); text-align: center; line-height: 2rem; }
+.shipper-route > div > div { min-width: 0; }
+.shipper-route > div > div > span { display: block; color: var(--ute-gray); font-size: .65rem; letter-spacing: .06em; margin-bottom: .25rem; }
+.shipper-route strong { display: block; font-size: .88rem; }
+.shipper-route p { color: var(--ute-gray); font-size: .82rem; line-height: 1.6; margin: .2rem 0 0; overflow-wrap: anywhere; }
+.shipper-route-detail > div { padding: 1rem 0; }
+.shipper-route-detail strong { font-size: 1rem; }
+.shipper-route-detail p { font-size: .9rem; }
+.shipper-route-detail > div + div { border-top: 1px dashed var(--ute-border); }
+.shipper-card-money { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem; background: var(--ute-surface); border-radius: .6rem; padding: .75rem; margin-top: auto; }
+.shipper-card-money > span { color: var(--ute-gray); font-size: .8rem; }
+.shipper-card-money > strong { color: var(--ute-ink); font-size: 1rem; }
+.shipper-card-money small { width: 100%; color: var(--ute-blue-dark); font-size: .7rem; }
+.shipper-card-actions { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: 1rem; }
+.shipper-card-actions .btn { flex: 1; white-space: nowrap; font-size: .78rem; padding: .5rem; }
+.shipper-retry { display: flex; align-items: flex-start; gap: .75rem; background: var(--ute-blue-soft); border: 1px solid var(--ute-border); border-radius: .75rem; padding: .85rem; margin-bottom: .8rem; color: var(--ute-blue-dark); font-size: .85rem; }
+.shipper-retry > i { font-size: 1.1rem; }
+.shipper-retry strong, .shipper-retry span { display: block; }
+.shipper-notice { border: 1px solid var(--ute-border); border-left: 3px solid var(--ute-blue); border-radius: .6rem; padding: .9rem 1rem; background: var(--ute-blue-soft); color: var(--ute-ink); margin-bottom: 1rem; font-size: .85rem; line-height: 1.7; overflow-wrap: anywhere; }
+.shipper-hint { color: var(--ute-gray); font-size: .8rem; line-height: 1.7; }
+.shipper-empty { text-align: center; padding: 3rem 1rem !important; }
+.shipper-empty > i { display: block; font-size: 2.75rem; color: var(--ute-blue-dark); margin-bottom: 1rem; }
+.shipper-empty p { color: var(--ute-gray); font-size: .85rem; }
+.shipper-pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; font-size: .8rem; }
+.shipper-detail-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr); gap: var(--shipper-gap); align-items: start; }
+.shipper-detail-main > .ute-panel + .ute-panel { margin-top: 1.25rem; }
+.shipper-back { display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1rem; font-size: .85rem; }
+.shipper-inline-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+.shipper-inline-actions .btn { font-size: .8rem; }
+.shipper-inline-actions > a, .shipper-inline-actions > button { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem .75rem; border: 1px solid var(--ute-border); border-radius: .5rem; background: var(--ute-card); color: var(--ute-blue-dark); font-size: .8rem; text-decoration: none; min-height: 42px; }
+.shipper-inline-actions > a:hover, .shipper-inline-actions > button:hover { background: var(--ute-blue-soft); border-color: var(--ute-blue); }
+.shipper-phone { display: inline-flex; margin-top: .35rem; gap: .4rem; font-size: .85rem; }
+.shipper-proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.shipper-field-label { display: block; color: var(--ute-gray); font-size: .8rem; margin-bottom: .5rem; }
+.shipper-proof-image { display: block; width: 100%; max-height: 240px; object-fit: contain; border: 1px solid var(--ute-border); background: #fff; border-radius: .6rem; }
+.shipper-signature { width: 100%; height: auto; background: #fff; border: 1px dashed var(--ute-gray); border-radius: .6rem; touch-action: none; cursor: crosshair; }
+.shipper-payment { background: linear-gradient(145deg, var(--ute-blue-soft), var(--ute-card)); }
+.shipper-due { display: block; font-size: 1.85rem; margin: .5rem 0 1rem; font-weight: 700; color: var(--ute-blue-dark); }
+.shipper-payment-row { display: flex; justify-content: space-between; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid var(--ute-border); font-size: .8rem; }
+.shipper-payment-row > span:first-child { color: var(--ute-gray); }
+.shipper-failure-form { border-top: 1px solid var(--ute-border); padding-top: .65rem; }
+.shipper-failure-form summary { font-size: .85rem; }
+.shipper-qr-card { text-align: center; }
+.shipper-qr-card .shipper-eyebrow { justify-content: center; }
+.shipper-qr-card img { display: block; max-width: 100%; margin: .75rem auto; border: 1px solid var(--ute-border); border-radius: .6rem; }
+.shipper-date-filter { display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.shipper-date-filter > div { flex: 1; min-width: 150px; }
+.shipper-rate { display: block; font-size: 2.25rem; font-weight: 700; color: var(--ute-blue-dark); margin: .5rem 0; }
+.shipper-workspace .progress { height: .6rem; background: var(--ute-gray-soft); }
+.shipper-workspace .progress-bar { background: var(--ute-blue); }
+.shipper-cod-total > strong { display: block; font-size: 1.75rem; margin: 1rem 0; }
+.shipper-cod-total { display: flex; gap: 1rem; align-items: start; }
+.shipper-cod-total > i { display: grid; place-items: center; border-radius: .75rem; width: 2.5rem; height: 2.5rem; background: var(--ute-blue-soft); color: var(--ute-blue-dark); flex-shrink: 0; }
+.shipper-cod-total > div > span { color: var(--ute-gray); font-size: .8rem; }
+.shipper-cod-total > div > strong { display: block; font-size: 1.65rem; font-weight: 700; margin: .45rem 0; color: var(--ute-blue-dark); }
+.shipper-cod-total p { color: var(--ute-gray); font-size: .8rem; margin-bottom: 0; }
+.shipper-chart-legend { display: flex; flex-wrap: wrap; gap: 1rem; color: var(--ute-gray); font-size: .8rem; }
+.shipper-chart-legend span { display: inline-flex; gap: .4rem; align-items: center; }
+.shipper-chart-legend span::before { content: ''; width: .65rem; height: .65rem; border-radius: .2rem; background: var(--ute-blue); }
+.shipper-chart-legend span + span::before { background: var(--ute-badge-neutral); }
+.shipper-chart-scroll { overflow-x: auto; padding: 1rem 0 .5rem; }
+.shipper-chart { display: flex; gap: .65rem; min-width: 100%; }
+.shipper-chart-day { flex: 1 0 42px; max-width: 100px; text-align: center; }
+.shipper-chart-values { display: flex; gap: .25rem; justify-content: center; font-size: .7rem; color: var(--ute-gray); height: 1.5rem; }
+.shipper-chart-bars { height: 180px; display: flex; align-items: end; justify-content: center; gap: .25rem; border-bottom: 1px solid var(--ute-border); }
+.shipper-chart-bars span { display: block; width: 14px; border-radius: .2rem .2rem 0 0; }
+.shipper-chart-bars span:first-child { height: var(--delivered); background: var(--ute-blue); }
+.shipper-chart-bars span + span { height: var(--unsuccessful); background: var(--ute-badge-neutral); }
+.shipper-chart-label { display: block; color: var(--ute-gray); font-size: .7rem; margin-top: .65rem; }
+.shipper-data-table { border-top: 1px solid var(--ute-border); padding-top: .75rem; }
+.shipper-workspace .logistics-timeline { list-style: none; padding: 0 0 0 .25rem; margin: 0; }
+.shipper-workspace .logistics-timeline > li { border-left: 2px solid var(--ute-border) !important; position: relative; padding: .1rem 0 1.25rem 1.5rem !important; }
+.shipper-workspace .logistics-timeline > li::before { content: ''; position: absolute; left: -.4rem; top: .3rem; width: .7rem; height: .7rem; border-radius: 50%; background: var(--ute-blue); box-shadow: 0 0 0 4px var(--ute-blue-soft); }
+.shipper-workspace .logistics-timeline > li:last-child { padding-bottom: 0; }
+.shipper-workspace .logistics-timeline > li > div { margin-bottom: .3rem; }
+.shipper-notification { display: flex; gap: 1rem; margin-bottom: 1rem; }
+.shipper-notification.unread { border-left: 3px solid var(--ute-blue); }
+.shipper-notification-icon { flex: 0 0 2.5rem; height: 2.5rem; display: grid; place-items: center; color: var(--ute-blue-dark); background: var(--ute-blue-soft); border-radius: .75rem; }
+.shipper-notification-content { flex: 1; min-width: 0; }
+.shipper-scan-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(270px, 1fr); gap: var(--shipper-gap); align-items: start; }
+.shipper-camera { background: var(--ute-surface); border: 1px dashed var(--ute-border); border-radius: .75rem; aspect-ratio: 4 / 3; position: relative; display: grid; place-items: center; overflow: hidden; margin: 1rem 0; }
+.shipper-camera video { width: 100%; height: 100%; object-fit: cover; }
+.shipper-camera-placeholder { position: absolute; text-align: center; padding: 1rem; pointer-events: none; }
+.shipper-camera-placeholder > i { font-size: 3rem; color: var(--ute-blue-dark); display: block; margin-bottom: .75rem; }
+.shipper-camera-placeholder p { color: var(--ute-gray); font-size: .85rem; }
+.shipper-camera-frame { position: absolute; width: 60%; aspect-ratio: 1; border: 2px solid #fff; border-radius: 1rem; box-shadow: 0 0 0 120px #0003; pointer-events: none; }
+.shipper-workspace [hidden] { display: none !important; }
+@media (max-width: 1199px) {
+    .shipper-detail-grid { grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); }
+    .shipper-card-actions .btn:last-child { flex-basis: 100%; }
+    .shipper-hero { align-items: start; }
+}
+@media (max-width: 767px) {
+    .shipper-hero { flex-direction: column; padding: 1.25rem; gap: 1rem; }
+    .shipper-hero-actions { width: 100%; }
+    .shipper-hero-actions .btn { flex: 1; }
+    .shipper-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+    .shipper-metric { padding: .9rem; }
+    .shipper-metric > strong { font-size: 1.6rem; }
+    .shipper-order-grid, .shipper-detail-grid, .shipper-scan-grid { grid-template-columns: minmax(0, 1fr); }
+    .shipper-workspace .ute-panel { padding: 1.1rem; }
+    .shipper-filters summary > span { display: none; }
+    .shipper-work-switch { width: 100%; }
+    .shipper-work-switch a { flex: 1 1 auto; text-align: center; font-size: .78rem; padding: .65rem .55rem; }
+    .shipper-proof-grid { grid-template-columns: 1fr; }
+    .shipper-list-heading { align-items: start; flex-direction: column; }
+    .shipper-detail-aside { display: flex; flex-direction: column; }
+    .shipper-notification { gap: .7rem; }
+    .shipper-notification-icon { flex-basis: 2rem; height: 2rem; }
+    .shipper-date-filter .btn { flex: 1 1 100%; }
+}

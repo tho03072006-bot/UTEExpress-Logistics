@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Bản đồ lộ trình nhiều điểm">
+  <ellipse cx="180" cy="216" rx="130" ry="10" fill="#000" opacity=".18"/>
+  <!-- bản đồ gấp ba -->
+  <path d="M52 52 L 132 34 L 212 56 L 300 38 L 300 196 L 212 214 L 132 192 L 52 210 Z" fill="#FFFFFF" opacity=".95"/>
+  <path d="M132 34 L 132 192 L 212 214 L 212 56 Z" fill="#E0F2FE"/>
+  <path d="M52 52 L 132 34 L 132 192 L 52 210 Z" fill="#F0F9FF"/>
+  <!-- đường phố -->
+  <g stroke="#CBD5E1" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M60 120 C 100 112 150 140 210 128 S 280 104 296 112"/>
+    <path d="M100 46 C 104 100 96 150 104 204"/>
+    <path d="M250 46 C 244 100 258 150 250 206"/>
+  </g>
+  <path d="M62 168 C 110 150 120 96 170 92 S 236 150 286 72" fill="none" stroke="#4F46E5" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 11"/>
+  <!-- khu cây xanh, hồ -->
+  <circle cx="186" cy="176" r="16" fill="#99F6E4"/><circle cx="198" cy="182" r="10" fill="#5EEAD4"/>
+  <ellipse cx="82" cy="82" rx="18" ry="11" fill="#BAE6FD"/>
+  <!-- điểm dừng -->
+  <g transform="translate(62 168)"><path d="M0 0 C -11 -14 -14 -20 -14 -27 A14 14 0 0 1 14 -27 C 14 -20 11 -14 0 0 Z" fill="#F59E0B"/><text x="0" y="-22" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1</text></g>
+  <g transform="translate(170 92)"><path d="M0 0 C -11 -14 -14 -20 -14 -27 A14 14 0 0 1 14 -27 C 14 -20 11 -14 0 0 Z" fill="#7C3AED"/><text x="0" y="-22" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2</text></g>
+  <g transform="translate(286 72)"><path d="M0 0 C -13 -16 -17 -24 -17 -32 A17 17 0 0 1 17 -32 C 17 -24 13 -16 0 0 Z" fill="#16A34A"/><path d="M-7 -32 l5 5 9 -10" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <g fill="#FFFFFF">
+    <path d="M318 150 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".8"/>
+    <path d="M30 100 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>

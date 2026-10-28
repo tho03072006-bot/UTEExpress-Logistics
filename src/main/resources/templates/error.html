@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<!--/*
+  Trang lỗi chung thay cho "Whitelabel Error Page".
+  Dùng cho cả GlobalExceptionHandler và BasicErrorController của Spring Boot (lỗi xảy ra
+  ngoài controller, vd. trong filter). Cố ý KHÔNG dùng fragments/base: nếu lỗi nằm ngay
+  trong layout chung thì trang lỗi vẫn hiển thị được.
+*/-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Lỗi ${status != null ? status : ''} - UTEExpress|">Lỗi - UTEExpress</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/shipper.css}">
+    <link rel="stylesheet" th:href="@{/css/ute-app.css}">
+    <script th:inline="none">
+        (function () {
+            try {
+                var saved = localStorage.getItem('ute-theme');
+                var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', saved || (dark ? 'dark' : 'light'));
+            } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+        })();
+    </script>
+</head>
+<body class="ute-body sx-app">
+<header class="ute-topbar"><div class="ute-topbar-inner"><a class="ute-brand" th:href="@{/}"><span class="ute-brand-dot"></span> UTEExpress</a></div></header>
+<main class="ute-main"><div class="ute-main-inner"><section class="shipper-workspace" th:with="code=${status != null ? status : 500}">
+    <div class="ute-panel sx-error-panel" role="alert">
+        <span class="sx-error-icon" aria-hidden="true"><i class="bi" th:classappend="${code == 404} ? 'bi-signpost-split' : (${code == 403} ? 'bi-shield-lock' : (${code >= 500} ? 'bi-tools' : 'bi-exclamation-triangle'))"></i></span>
+        <img class="sx-error-art" th:src="@{${code == 404 ? '/images/shipper/not-found.svg' : (code == 403 ? '/images/shipper/secure-lock.svg' : '/images/shipper/empty-box.svg')}}"
+             alt="" aria-hidden="true" width="200" height="142">
+        <div>
+            <span class="shipper-eyebrow" th:text="|MÃ LỖI ${code}|">MÃ LỖI</span>
+            <h2 th:switch="${code}">
+                <th:block th:case="404">Không tìm thấy trang</th:block>
+                <th:block th:case="403">Bạn không có quyền truy cập</th:block>
+                <th:block th:case="405">Thao tác không được hỗ trợ</th:block>
+                <th:block th:case="413">Tệp tải lên quá lớn</th:block>
+                <th:block th:case="400">Yêu cầu không hợp lệ</th:block>
+                <th:block th:case="429">Bạn thao tác quá nhanh</th:block>
+                <th:block th:case="*" th:text="${code >= 500} ? 'Hệ thống đang gặp sự cố' : 'Không thể xử lý yêu cầu'">Không thể xử lý yêu cầu</th:block>
+            </h2>
+            <p th:text="${!#strings.isEmpty(message) and message != 'No message available'} ? ${message}
+                    : (${code == 404} ? 'Đường dẫn không tồn tại hoặc đã được thay đổi.'
+                    : (${code == 403} ? 'Tài khoản của bạn không được mở trang này. Hãy đăng nhập đúng vai trò.'
+                    : (${code == 400} ? 'Dữ liệu gửi lên không hợp lệ. Hãy kiểm tra lại rồi thử lại.'
+                    : (${code == 413} ? 'Tệp quá lớn, hãy chọn tệp nhỏ hơn.'
+                    : (${code == 429} ? 'Bạn thử quá nhiều lần. Hãy chờ khoảng 10 phút rồi thử lại.' : 'Vui lòng thử lại sau ít phút.')))))">Vui lòng thử lại sau.</p>
+            <p class="shipper-hint" th:if="${path != null}" th:text="|Đường dẫn: ${path}|"></p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" th:href="@{/}"><i class="bi bi-house"></i> Về trang chủ</a>
+                <a class="btn btn-outline-secondary" th:if="${code == 403}" th:href="@{/dang-nhap}"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập</a>
+                <button type="button" class="btn btn-outline-secondary" onclick="history.back()"><i class="bi bi-arrow-left"></i> Quay lại</button>
+            </div>
+        </div>
+    </div>
+</section></div></main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>An toàn truy cập - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-lock"><div><h1>An toàn truy cập</h1><p>Kiểm tra và thu hồi truy cập của tài khoản nội bộ.</p></div></div>
+<div class="alert alert-danger" th:if="${error}" th:text="${error}" role="alert"></div>
+<div class="alert alert-success" th:if="${message}" th:text="${message}" role="status"></div>
+<div class="ute-panel p-3 mb-3"><h2 class="h6">Kiểm soát tài khoản nội bộ được cấp</h2>
+<p class="small text-muted mb-0">Thu hồi sẽ đăng xuất mọi phiên và vô hiệu hóa token cũ; muốn chặn đăng nhập, hãy khóa tài khoản.</p></div>
+<div class="ute-panel p-3"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+<tr th:each="account : ${accounts.content}"><td th:text="${account.username}"></td><td th:text="${account.role}"></td>
+<td><span th:text="${account.active ? 'Đang hoạt động' : 'Đã khóa'}"></span><small class="d-block text-muted" th:if="${account.passwordChangeRequired}">Chờ đổi mật khẩu bàn giao</small></td>
+<td><details><summary class="small">Đăng xuất trên mọi thiết bị</summary>
+<form class="mt-2" method="post" th:action="@{/admin/an-toan-truy-cap/{id}/thu-hoi(id=${account.id})}" th:attr="data-ute-confirm=|Thu hồi toàn bộ phiên truy cập của ${account.username}? Người này sẽ phải đăng nhập lại.|">
+<input type="hidden" name="revision" th:value="${account.revision}">
+<label class="form-label small">Lý do<input type="text" name="reason" required minlength="5" maxlength="300" class="form-control form-control-sm" placeholder="Ví dụ: nghi ngờ lộ token"></label>
+<label class="form-label small">Mật khẩu Admin hiện tại<input type="password" name="password" required maxlength="72" autocomplete="current-password" class="form-control form-control-sm"></label>
+<label th:if="${account.username == #authentication.name}" class="small d-block mb-2"><input type="checkbox" name="confirmSelf" value="true" required> Tôi hiểu tài khoản của tôi sẽ đăng xuất trên mọi máy.</label>
+<button class="btn btn-outline-danger btn-sm d-block" type="submit">Xác nhận thu hồi toàn bộ</button></form></details></td></tr>
+<tr th:if="${accounts.empty}"><td colspan="4">Chưa có tài khoản nội bộ.</td></tr></tbody></table></div>
+<div class="d-flex gap-3 align-items-center"><a th:if="${accounts.hasPrevious()}" th:href="@{/admin/an-toan-truy-cap(page=${accounts.number - 1})}">Trang trước</a><span class="small" th:text="|Trang ${accounts.number + 1}|"></span><a th:if="${accounts.hasNext()}" th:href="@{/admin/an-toan-truy-cap(page=${accounts.number + 1})}">Trang sau</a></div></div>
+<details class="staff-disclosure"><summary>Tích hợp kỹ thuật · nâng cao, không cần cho thao tác thường ngày</summary><div>
+
+<p class="small" th:text="${jwtEnabled} ? |API đã bật · token ${tokenLifetimeMinutes} phút · chỉ đọc| : 'API JWT đang tắt; nghiệp vụ trên website vẫn sử dụng bình thường.'"></p>
+<a th:if="${jwtEnabled}" class="btn btn-outline-secondary btn-sm" th:href="@{/noi-bo/truy-cap-api}">Mở công cụ cấp token API</a>
+</div></details>
+</section></body></html>

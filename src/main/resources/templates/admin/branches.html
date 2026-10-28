@@ -1,0 +1,16 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Chi nhánh - UTEExpress</title></head><body><section>
+<div class="ute-page-head sx-art-branch"><div><h1 class="h3">Chi nhánh và kho</h1>
+<p>Mạng lưới SGN · HAN · DAD. Ngừng nhận đơn mới vẫn giữ thông tin và lịch sử vận hành.</p></div></div>
+<p th:if="${success}" class="alert alert-info" role="status" th:text="${success}"></p>
+<div class="sx-branch-grid">
+<article class="sx-branch-card" th:each="b : ${branches}" th:classappend="${!b.active} ? 'is-paused'">
+    <div class="sx-branch-photo" th:classappend="${'sx-photo-' + #strings.toLowerCase(b.code)}">
+        <span class="sx-branch-code" th:text="${b.code}">SGN</span>
+        <span class="sx-branch-state" th:text="${b.active ? 'Đang nhận' : 'Tạm ngừng'}">Đang nhận</span></div>
+    <div class="sx-branch-body">
+        <h2 class="h6" th:text="${b.name}">Chi nhánh</h2>
+        <p><i class="bi bi-geo-alt"></i> <span th:text="${b.hubAddress}"></span></p>
+        <p class="small text-muted"><i class="bi bi-pin-map"></i> Khu vực kho: <span th:text="${b.hubAreaCode}"></span></p>
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/chi-nhanh/{id}/sua(id=${b.id})}">Sửa thông tin</a></div>
+</article></div></section></body></html>

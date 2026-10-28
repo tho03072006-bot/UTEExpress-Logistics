@@ -1,0 +1,35 @@
+package vn.edu.hcmute.uteexpress.dto.tracking;
+
+import java.time.LocalDateTime;
+
+/**
+ * Dữ liệu chụp trong transaction để gửi email cho người gửi sau khi commit.
+ * location: vị trí hiện tại theo chi nhánh/kho (ví dụ "Tại kho Chi nhánh TP.HCM, chờ xếp chuyến"); null với đơn chưa có tuyến.
+ */
+public record SenderOrderUpdateEvent(String email, String recipientName, String trackingCode, Kind kind,
+        String reason, LocalDateTime nextAttemptAt, String location) {
+    public SenderOrderUpdateEvent(String email, String recipientName, String trackingCode, Kind kind,
+            String reason, LocalDateTime nextAttemptAt) {
+        this(email, recipientName, trackingCode, kind, reason, nextAttemptAt, null);
+    }
+    public enum Kind {
+        PICKUP_FAILED("chưa lấy được hàng", "Shipper chưa lấy được hàng tại địa chỉ của bạn."),
+        DELIVERED("đã giao thành công", "Người nhận đã nhận hàng."),
+        DELIVERY_FAILED("giao chưa thành công", "Shipper chưa giao được hàng cho người nhận."),
+        RETRY_APPROVED("đã có lịch giao lại", "Manager/Admin đã phê duyệt lịch giao lại cho vận đơn."),
+        RETURN_STARTED("đang chuyển hoàn", "Vận đơn đang được bàn giao hoàn về người gửi."),
+        RETURNED("đã hoàn trả", "Hàng đã được hoàn trả về người gửi."),
+        AT_ORIGIN_HUB("đã nhập kho gửi", "Vận đơn đã được nhập kho chi nhánh gửi, chờ chuyến trung chuyển."),
+        IN_LINEHAUL("đang trung chuyển", "Vận đơn đang trên chuyến trung chuyển tới chi nhánh nhận."),
+        AT_DEST_HUB("đã tới kho nhận", "Vận đơn đã tới kho chi nhánh nhận, chờ shipper giao."),
+        RECEIVED_AT_COUNTER("đã nhận tại quầy", "Chi nhánh đã nhận hàng bạn mang tới quầy."),
+        RETURN_IN_LINEHAUL("hàng hoàn đang trung chuyển", "Hàng hoàn đang trên chuyến trung chuyển về chi nhánh gửi."),
+        RETURN_AT_ORIGIN_HUB("hàng hoàn đã về chi nhánh gửi", "Hàng hoàn đã về kho chi nhánh gửi, chi nhánh sẽ liên hệ trả hàng cho bạn."),
+        CANCELLED_BY_BRANCH("đã bị chi nhánh hủy", "Chi nhánh đã hủy vận đơn trước khi lấy hàng. Nếu đã thanh toán ví, chi nhánh sẽ hoàn lại cước.");
+        private final String subject;
+        private final String headline;
+        Kind(String subject, String headline) { this.subject = subject; this.headline = headline; }
+        public String subject() { return subject; }
+        public String headline() { return headline; }
+    }
+}

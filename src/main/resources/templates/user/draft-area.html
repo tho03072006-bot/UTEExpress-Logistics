@@ -1,0 +1,10 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Khu vực đơn nháp - UTEExpress</title></head><body><section class="ute-narrow">
+<h1 class="h3">Chọn khu vực cho đơn nháp</h1><p>Đơn nháp cũ cần chọn lại địa bàn trước khi xác nhận. Hệ thống tính lại cước theo tuyến.</p>
+<form method="post" th:action="@{/nguoi-dung/gio-don/{id}/khu-vuc(id=${draftId})}" th:object="${form}">
+<input type="hidden" th:field="*{expectedUpdatedAt}">
+<div th:if="${#fields.hasAnyErrors()}" class="ute-field-error" role="alert"><p th:each="e : ${#fields.allErrors()}" th:text="${e}"></p></div>
+<h2 class="h5">Gửi từ</h2><div th:replace="~{fragments/area-fields :: fields('pickupProvinceCode', 'pickupAreaCode')}"></div>
+<h2 class="h5">Giao đến</h2><div th:replace="~{fragments/area-fields :: fields('deliveryProvinceCode', 'deliveryAreaCode')}"></div>
+<button class="btn btn-primary">Lưu khu vực</button> <a class="btn btn-outline-secondary" th:href="@{/nguoi-dung/gio-don}">Quay lại giỏ</a>
+</form></section></body></html>

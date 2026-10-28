@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head>
+    <title>Đăng nhập - UTEExpress</title>
+</head>
+<body>
+
+<section class="shipper-workspace sx-public sx-auth">
+<div class="sx-auth-card">
+    <aside class="sx-auth-side" aria-hidden="true">
+        <span class="shipper-eyebrow"><i class="bi bi-truck"></i> UTEEXPRESS</span>
+        <h2>Chào mừng bạn quay lại</h2>
+        <p>Một tài khoản để gửi hàng, theo dõi hành trình và nhận đơn giao.</p>
+        <img th:src="@{/images/shipper/login-phone.svg}" alt="" width="320" height="213">
+        <ul>
+            <li><i class="bi bi-check-circle-fill"></i> Tạo đơn và ước tính cước nhanh</li>
+            <li><i class="bi bi-check-circle-fill"></i> Theo dõi vận đơn theo từng mốc</li>
+            <li><i class="bi bi-check-circle-fill"></i> Shipper nhận đơn và lộ trình trong ngày</li>
+        </ul>
+    </aside>
+
+    <div class="sx-auth-form">
+        <h1>Đăng nhập</h1>
+        <p class="shipper-hint">Dành cho khách hàng và Shipper.</p>
+
+        <div th:if="${activated}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Kích hoạt tài khoản thành công, đăng nhập ngay.</span></div>
+        <div th:if="${passwordReset}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</span></div>
+        <div th:if="${param.changed}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-check-circle-fill"></i><span>Đã đổi mật khẩu và thu hồi phiên cũ. Hãy đăng nhập bằng mật khẩu mới.</span></div>
+        <div th:if="${param.locked}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-lock-fill"></i><span>Tài khoản đang tạm khóa 15 phút vì nhập sai nhiều lần. Hãy thử lại sau.</span></div>
+        <div th:if="${param.error != null and param.locked == null}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span>Tên đăng nhập, email hoặc mật khẩu không đúng, hoặc tài khoản chưa kích hoạt OTP.<th:block th:if="${session.loginFailures != null and session.loginFailureLimit != null and session.loginFailures > 0}"
+                th:text="| (lần ${session.loginFailures}/${session.loginFailureLimit}; còn ${session.loginFailureLimit - session.loginFailures} lần trước khi bị khóa 15 phút)|"></th:block></span></div>
+        <div th:if="${param.logout}" class="shipper-notice sx-notice-info" role="status"><i class="bi bi-box-arrow-right"></i><span>Bạn đã đăng xuất.</span></div>
+
+        <!-- Form này do Spring Security formLogin xử lý (action /dang-nhap, POST) -->
+        <form method="post" th:action="@{/dang-nhap}">
+            <div class="mb-3">
+                <label class="form-label" for="loginUsername">Tên đăng nhập hoặc email</label>
+                <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
+                    <input type="text" id="loginUsername" name="username" class="form-control" maxlength="100"
+                           th:value="${param.error != null ? session.loginLastUsername : null}"
+                           autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tên đăng nhập hoặc email đã đăng ký" required autofocus></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="loginPassword">Mật khẩu</label>
+                <div class="sx-input-icon"><i class="bi bi-lock" aria-hidden="true"></i>
+                    <input type="password" id="loginPassword" name="password" class="form-control"
+                           autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+                    <button type="button" class="sx-eye" data-toggle-password="loginPassword" aria-label="Hiện mật khẩu" title="Hiện / ẩn mật khẩu"><i class="bi bi-eye"></i></button></div>
+                <div class="sx-caps" data-caps-warning hidden><i class="bi bi-capslock-fill"></i> Caps Lock đang bật</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập</button>
+        </form>
+
+        <div class="sx-auth-links">
+            <a th:href="@{/quen-mat-khau}"><i class="bi bi-key"></i> Quên mật khẩu?</a>
+            <span>Chưa có tài khoản? <a th:href="@{/dang-ky}">Đăng ký</a></span>
+        </div>
+        <p class="sx-auth-staff"><i class="bi bi-building-lock"></i> Nhân viên quản lý? <a th:href="@{/noi-bo/dang-nhap}">Đăng nhập nội bộ</a></p>
+    </div>
+</div>
+<div th:replace="~{fragments/auth :: scripts}"></div>
+</section>
+
+</body>
+</html>

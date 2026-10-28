@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Lộ trình hôm nay - UTEExpress</title></head><body>
+<section class="shipper-workspace">
+<a class="shipper-back" th:href="@{/shipper/trang-chu(work='TODAY')}"><i class="bi bi-arrow-left"></i> Về công việc hôm nay</a>
+<header class="shipper-hero sx-hero-compact"><div class="sx-hero-main"><h2>Lộ trình hôm nay</h2>
+        <p class="small mb-2" th:if="${route.startHub != null}"><i class="bi bi-house-door"></i> <span th:text="|Xuất phát từ kho ${route.startHub}|">Xuất phát từ kho</span></p>
+        <div class="sx-hero-row" th:with="pickups=${#lists.size(route.stops.?[hasPickup()])},deliveries=${#lists.size(route.stops.?[hasDelivery()])},due=${#lists.size(route.stops.?[isDue()])}">
+            <span class="sx-hero-chip"><i class="bi bi-calendar3"></i> <span th:text="${#temporals.format(today, 'dd/MM/yyyy')}"></span></span>
+            <span class="sx-hero-chip" th:if="${pickups > 0}"><i class="bi bi-box-seam"></i> <span th:text="|${pickups} điểm lấy|"></span></span>
+            <span class="sx-hero-chip" th:if="${deliveries > 0}"><i class="bi bi-geo-alt-fill"></i> <span th:text="|${deliveries} điểm giao|"></span></span>
+            <span class="sx-hero-chip sx-chip-alert" th:if="${due > 0}"><i class="bi bi-alarm"></i> <span th:text="|${due} đến hẹn|"></span></span>
+            <!-- Máy tính: chặng tối đa 10 điểm; điện thoại: chặng tối đa 4 điểm (giới hạn của Google Maps trên trình duyệt điện thoại). -->
+            <span class="shipper-hero-actions" th:unless="${route.empty}"><a class="btn btn-light btn-sm d-none d-md-inline-flex" th:href="${route.legs[0].url}" target="_blank" rel="noopener noreferrer"><i class="bi bi-sign-turn-right"></i> <span th:text="${#lists.size(route.legs) == 1} ? 'Bắt đầu chỉ đường' : 'Chỉ đường chặng 1'">Bắt đầu chỉ đường</span></a><a class="btn btn-light btn-sm d-md-none" th:href="${route.mobileLegs[0].url}" target="_blank" rel="noopener noreferrer"><i class="bi bi-sign-turn-right"></i> <span th:text="${#lists.size(route.mobileLegs) == 1} ? 'Bắt đầu chỉ đường' : 'Chỉ đường chặng 1'">Bắt đầu chỉ đường</span></a></span></div></div>
+    <img class="sx-hero-art" th:src="@{/images/shipper/route-map.svg}" alt="" aria-hidden="true" width="150" height="100"></header>
+
+<div class="shipper-empty ute-panel" th:if="${route.empty}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-route.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Hôm nay chưa có điểm cần đi</h3><p>Không có đơn cần lấy hoặc giao hôm nay.</p><a class="btn btn-outline-primary" th:href="@{/shipper/trang-chu}">Xem tất cả đơn</a></div>
+
+<th:block th:unless="${route.empty}">
+<div class="shipper-notice sx-notice-warning" th:if="${route.truncated}"><i class="bi bi-exclamation-triangle"></i><span>Chỉ hiện 60 đơn ưu tiên đầu tiên.</span></div>
+<div class="shipper-notice sx-notice-warning" th:if="${route.missingAddress > 0}"><i class="bi bi-geo"></i><span th:text="|${route.missingAddress} đơn thiếu địa chỉ nên không đưa vào lộ trình. Hãy mở chi tiết đơn để liên hệ.|"></span></div>
+<!-- Lộ trình dài mới cần chia chặng; lộ trình ngắn dùng nút "Bắt đầu chỉ đường" ở trên. -->
+<article class="ute-panel mb-4 d-none d-md-block" th:if="${#lists.size(route.legs) > 1}"><div class="shipper-section-head"><div><span class="shipper-eyebrow">LỘ TRÌNH DÀI</span><h3 th:text="|Chia ${#lists.size(route.legs)} chặng|">Chia chặng</h3></div><i class="bi bi-map"></i></div>
+    <p class="shipper-hint">Đi xong chặng này thì mở chặng tiếp theo.</p>
+    <div class="sx-legs"><a class="sx-leg" th:each="leg : ${route.legs}" th:href="${leg.url}" target="_blank" rel="noopener noreferrer"><i class="bi bi-sign-turn-right"></i><span th:text="|Chặng ${leg.index}|">Chặng</span><small th:text="${leg.fromStop == leg.toStop} ? |Điểm ${leg.fromStop}| : |Điểm ${leg.fromStop} → ${leg.toStop}|"></small></a></div>
+</article>
+<article class="ute-panel mb-4 d-md-none" th:if="${#lists.size(route.mobileLegs) > 1}"><div class="shipper-section-head"><div><span class="shipper-eyebrow">LỘ TRÌNH DÀI</span><h3 th:text="|Chia ${#lists.size(route.mobileLegs)} chặng|">Chia chặng</h3></div><i class="bi bi-map"></i></div>
+    <p class="shipper-hint">Đi xong chặng này thì mở chặng tiếp theo.</p>
+    <div class="sx-legs"><a class="sx-leg" th:each="leg : ${route.mobileLegs}" th:href="${leg.url}" target="_blank" rel="noopener noreferrer"><i class="bi bi-sign-turn-right"></i><span th:text="|Chặng ${leg.index}|">Chặng</span><small th:text="${leg.fromStop == leg.toStop} ? |Điểm ${leg.fromStop}| : |Điểm ${leg.fromStop} → ${leg.toStop}|"></small></a></div>
+</article>
+<!-- Bản đồ trong trang: chỉ tải khi bấm vì địa chỉ phải gửi tới dịch vụ bản đồ bên ngoài để tìm toạ độ (js/route-map.js). -->
+<article class="ute-panel mb-4 sx-tone-blue sx-route-map-panel" data-route-map>
+    <div class="shipper-section-head"><div><span class="shipper-eyebrow">BẢN ĐỒ</span><h3>Các điểm trên bản đồ</h3></div><i class="bi bi-map"></i></div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-primary btn-sm" data-route-map-load><i class="bi bi-map"></i> Hiện bản đồ</button>
+        <small class="shipper-hint mb-0" data-route-map-status>Địa chỉ sẽ được gửi tới dịch vụ bản đồ (ArcGIS, OpenStreetMap) để tìm vị trí.</small>
+    </div>
+    <div class="sx-route-map mt-3" id="routeMap" hidden></div>
+</article>
+<ol class="sx-stops">
+    <li class="sx-stop" th:each="stop : ${route.stops}" th:attr="data-stop-number=${stop.number},data-stop-address=${stop.address},data-stop-kind=${(stop.hasPickup() and stop.hasDelivery()) ? 'mixed' : (stop.hasPickup() ? 'pickup' : 'drop')}" th:classappend="${(stop.hasPickup() and stop.hasDelivery()) ? 'sx-mixed' : (stop.hasPickup() ? 'sx-tone-amber' : 'sx-tone-green')} + ${stop.isDue() ? ' sx-due' : ''}">
+        <span class="sx-stop-num" th:text="${stop.number}">1</span>
+        <div class="sx-stop-body"><p th:text="${stop.address}"></p>
+            <div class="d-flex flex-wrap gap-2 mb-1"><span class="sx-pill sx-dot sx-tone-amber" th:if="${stop.hasPickup()}">Lấy hàng</span><span class="sx-pill sx-dot sx-tone-green" th:if="${stop.hasDelivery()}">Giao hàng</span><span class="sx-pill sx-dot sx-tone-rose" th:if="${stop.isDue()}">Đến hẹn</span></div>
+            <div class="sx-task" th:each="task : ${stop.tasks}" th:classappend="${task.pickup} ? 'sx-tone-amber' : 'sx-tone-green'">
+                <i class="bi" th:classappend="${task.pickup} ? 'bi-box-seam' : 'bi-geo-alt-fill'"></i>
+                <a class="sx-task-code" th:href="@{/shipper/don/{id}(id=${task.orderId})}" th:text="${task.trackingCode}"></a>
+                <span th:text="${task.pickup ? 'Lấy từ ' : 'Giao cho '} + ${task.contactName}"></span>
+                <span class="sx-task-actions"><a class="btn btn-sm btn-outline-secondary sx-btn-map" th:href="${@maps.to(stop.address)}" target="_blank" rel="noopener noreferrer"><i class="bi bi-signpost"></i> Đi tới</a></span>
+            </div>
+        </div>
+    </li>
+</ol>
+</th:block>
+<script th:src="@{/js/shipper-workspace.js}"></script>
+<script th:src="@{/js/route-map.js}" defer></script>
+</section></body></html>

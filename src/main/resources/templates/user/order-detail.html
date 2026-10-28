@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Chi tiết đơn hàng - UTEExpress</title>
+</head>
+<body>
+
+<section data-realtime-region="user-order-detail" th:attr="data-tracking-code=${order.trackingCode},data-updated-at=${order.updatedAt}">
+<div class="ute-page-head sx-art-receipt">
+    <div>
+        <h2 class="mb-1 d-flex align-items-center flex-wrap gap-2">
+            Đơn <span th:text="${order.trackingCode}">UTE00000000</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary ute-copy-btn"
+                    th:data-ute-copy="${order.trackingCode}" title="Chép mã vận đơn">
+                <i class="bi bi-clipboard"></i> Chép mã
+            </button>
+        </h2>
+        <p class="mb-0">
+            Tạo ngày <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">-</span>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- Bo cuc khi in do khoi @media print trong style.css lo, khong can trang rieng -->
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer"></i> In vận đơn
+        </button>
+        <!-- Nhan dan len kien (kho A6): chi in khoi .ute-print-label, xem @media print trong style.css -->
+        <button type="button" class="btn btn-outline-secondary"
+                onclick="document.body.classList.add('ute-label-print');window.print();document.body.classList.remove('ute-label-print')">
+            <i class="bi bi-upc-scan"></i> In nhãn A6
+        </button>
+        <a th:href="@{/nguoi-dung/don-hang}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Về danh sách đơn
+        </a>
+    </div>
+</div>
+
+<!-- Chi hien khi in: to giay in ra khong co thanh dieu huong nen phai tu ghi ten
+     don vi va thoi diem in, neu khong to phieu khong biet cua ai va in luc nao. -->
+<div class="ute-print-header">
+    <div class="ute-print-brand">UTEExpress</div>
+    <div class="ute-print-note">
+        Phiếu gửi hàng &middot; In lúc
+        <span data-realtime-volatile th:text="${#temporals.format(#temporals.createNow(), 'HH:mm dd/MM/yyyy')}">--</span>
+    </div>
+</div>
+
+<!-- Nhan dan len kien kho A6: an tren man hinh, chi hien khi bam "In nhan A6". Den trang de may in nhiet doc ro. -->
+<div class="ute-print-label" aria-hidden="true">
+    <div class="ute-label-head"><strong>UTEExpress</strong><span th:text="${order.serviceType.displayName}">Tiêu chuẩn</span></div>
+    <div class="ute-label-code">
+        <img th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="" width="96" height="96">
+        <div><div class="ute-label-tracking" th:text="${order.trackingCode}">UTE00000000</div>
+            <div class="ute-label-route" th:if="${route != null}"
+                 th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh · ${route.originName}|">-</div></div>
+    </div>
+    <div class="ute-label-to"><span class="ute-label-tag">Người nhận</span>
+        <div class="ute-label-name" th:text="|${order.receiverName} · ${order.receiverPhone}|">-</div>
+        <div th:text="${order.receiverAddress}">-</div></div>
+    <div class="ute-label-from"><span class="ute-label-tag">Người gửi</span>
+        <div th:text="${order.sender != null and order.sender.phone != null} ? |${order.senderName} · ${order.sender.phone}| : ${order.senderName}">-</div>
+        <div th:text="${order.senderAddress}">-</div></div>
+    <div class="ute-label-foot">
+        <span th:text="|${order.weightKg} kg · Tạo ${#temporals.format(order.createdAt, 'dd/MM/yyyy')}|">-</span>
+        <strong th:if="${collection.state.name() == 'COD_DUE'}"
+                th:text="|Thu cước người nhận: ${#numbers.formatInteger(collection.amount, 1, 'POINT')} đ|">-</strong>
+        <strong th:unless="${collection.state.name() == 'COD_DUE'}" th:text="${collection.message}">-</strong>
+    </div>
+</div>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<div class="row g-3">
+
+    <!-- ===================== Cột trái: hành trình ===================== -->
+    <div class="col-lg-5">
+        <div class="ute-panel h-100">
+            <h5 class="mb-1">Hành trình đơn hàng</h5>
+            <p class="ute-profile-note mt-0 mb-4">
+                Trạng thái hiện tại:
+                <strong data-order-status th:attr="data-order-status=${order.status}"><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></strong>
+            </p>
+            <dl class="small mb-4" th:if="${route != null}">
+                <dt>Tuyến</dt><dd th:text="${route.interprovincial} ? |${route.originName} → ${route.destName}| : |Nội tỉnh, ${route.originName}|">-</dd>
+                <th:block th:if="${route.location != null}"><dt>Vị trí hiện tại</dt><dd th:text="${route.location}">-</dd></th:block>
+                <th:block th:if="${route.leadTime != null}"><dt>Thời gian dự kiến</dt><dd th:text="${route.leadTime}">-</dd></th:block>
+                <th:block th:if="${route.dropOff and order.status.name() == 'PENDING_PICKUP'}"><dt>Quầy nhận hàng</dt><dd th:text="|${route.originName}: ${route.counterAddress}|">-</dd></th:block>
+            </dl>
+
+            <ol class="ute-timeline">
+                <li th:each="step : ${timeline}"
+                    th:classappend="${step.done ? 'is-done' : ''} + ${step.current ? ' is-current' : ''}">
+                    <div class="ute-timeline-dot"></div>
+                    <div class="ute-timeline-body">
+                        <div class="ute-timeline-label" th:text="${step.label}">Mốc</div>
+                        <div class="ute-timeline-desc" th:text="${step.description}">Mô tả</div>
+                        <!-- Chỉ mốc tạo đơn và mốc đang đứng mới có giờ thật, xem OrderTimelineStep -->
+                        <div class="ute-timeline-time" th:if="${step.at != null}"
+                             th:text="${#temporals.format(step.at, 'HH:mm · dd/MM/yyyy')}">-</div>
+                    </div>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- ===================== Cột phải: thông tin đơn ===================== -->
+    <div class="col-lg-7">
+
+        <div class="ute-panel mb-3">
+            <h5 class="mb-3">Thông tin giao nhận</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Người gửi</div>
+                    <div class="ute-profile-value" th:text="${order.senderName} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.senderAddress} ?: '—'">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Người nhận</div>
+                    <div class="ute-profile-value" th:text="${order.receiverName} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.receiverPhone} ?: '—'">-</div>
+                    <div class="text-muted small" th:text="${order.receiverAddress} ?: '—'">-</div>
+                </div>
+            </div>
+            <!-- Shipper đã giao (đơn đã giao) hoặc đang phụ trách đơn -->
+            <div class="sx-shipper-card mt-3" th:with="s=${order.shipper}">
+                <span class="sx-avatar sx-avatar-sm" aria-hidden="true" th:if="${s != null}"
+                      th:text="${#strings.toUpperCase(#strings.substring(s.fullName ?: s.username, 0, 1))}">S</span>
+                <span class="sx-avatar sx-avatar-sm is-empty" aria-hidden="true" th:if="${s == null}"><i class="bi bi-person-dash"></i></span>
+                <div>
+                    <div class="ute-profile-label" th:text="${order.status.name() == 'DELIVERED'} ? 'Shipper đã giao đơn' : 'Shipper phụ trách'">Shipper</div>
+                    <th:block th:if="${s != null}">
+                        <div class="ute-profile-value" th:text="${s.fullName ?: s.username}">Tên shipper</div>
+                        <a class="text-muted small text-decoration-none" th:if="${s.phone != null}" th:href="|tel:${s.phone}|"><i class="bi bi-telephone"></i> <span th:text="${s.phone}"></span></a>
+                    </th:block>
+                    <div class="text-muted small" th:if="${s == null}">Chưa phân công Shipper.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ute-panel mb-3">
+            <h5 class="mb-3">Dịch vụ và cước phí</h5>
+            <div class="row g-3">
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Loại dịch vụ</div>
+                    <div class="ute-profile-value">
+                        <th:block th:replace="~{fragments/components :: serviceTypeText(${order.serviceType})}"></th:block>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Khối lượng</div>
+                    <div class="ute-profile-value"
+                         th:text="${order.weightKg != null} ? ${order.weightKg} + ' kg' : '—'">-</div>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <div class="ute-profile-label">Cước phí</div>
+                    <div class="ute-profile-value">
+                        <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
+                    </div>
+                </div>
+                <div class="col-12" th:if="${order.distanceKm != null}">
+                    <div class="ute-profile-label">Gồm</div>
+                    <div class="ute-profile-value small">
+                        Cước dịch vụ <span th:replace="~{fragments/components :: money(${order.serviceFee})}">0 đ</span>
+                        + phụ phí khoảng cách <span th:replace="~{fragments/components :: money(${order.distanceFee})}">0 đ</span>
+                        <span class="text-muted" th:text="|(≈ ${#numbers.formatDecimal(order.distanceKm,1,'POINT',1,'COMMA')} km đường chim bay)|"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-warning" role="alert" th:if="${collection.state.name() == 'REVIEW'}">Thông tin cước hoặc biên nhận chưa đầy đủ. Liên hệ Manager để tra soát trước khi thanh toán hoặc thu tiền.</div>
+        <div class="ute-panel mb-3" th:if="${payment != null}">
+            <h5 class="mb-3">Thanh toán</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Hình thức</div>
+                    <div class="ute-profile-value" th:text="${payment.method == null ? 'Chưa xác định' : payment.method.displayName}">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ute-profile-label">Tình trạng</div>
+                    <div>
+                        <span class="badge" th:if="${collection.state.name() != 'REVIEW'}"
+                              th:classappend="${'badge-payment-' + #strings.toLowerCase(payment.status.name())}"
+                              th:text="${payment.status.displayName}">-</span>
+                        <span class="badge bg-warning text-dark" th:if="${collection.state.name() == 'REVIEW'}">Cần tra soát</span>
+                    </div>
+                </div>
+                <div class="col-12" th:if="${payment.hasDiscount()}">
+                    <div class="ute-profile-label">Sau giảm giá</div>
+                    <div class="ute-profile-value">
+                        <span th:replace="~{fragments/components :: money(${payment.amount})}">0 đ</span>
+                        <span class="text-muted small" th:if="${payment.promoCode != null}"
+                              th:text="'(đã áp mã ' + ${payment.promoCode.code} + ')'">(mã)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <th:block th:if="${deliveryProof != null}">
+            <div th:replace="~{fragments/components :: deliveryProof(${deliveryProof}, ${'/nguoi-dung/don-hang/' + order.id})}"></div>
+        </th:block>
+
+        <div class="ute-panel mb-3" th:if="${review != null}">
+            <h5 class="mb-2">Đánh giá của bạn</h5>
+            <div class="ute-review-stars mb-2">
+                <i th:each="i : ${#numbers.sequence(1, 5)}"
+                   th:class="${i <= review.rating} ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                <span class="text-muted small ms-1" th:text="${review.rating} + '/5'">5/5</span>
+            </div>
+            <p class="mb-0" th:text="${review.content}">Nội dung đánh giá</p>
+        </div>
+
+        <!-- Các nút hành động, chỉ hiện đúng nút dùng được với trạng thái hiện tại -->
+        <div class="d-flex flex-wrap gap-2">
+            <a th:if="${collection.state.name() == 'WALLET_PENDING' or collection.state.name() == 'LEGACY_WALLET'}"
+               th:href="@{'/nguoi-dung/thanh-toan/' + ${order.id}}" class="btn btn-primary">
+                <i class="bi bi-credit-card"></i> Thanh toán
+            </a>
+
+            <a th:if="${order.status.name() == 'DELIVERED' and review == null}"
+               th:href="@{'/nguoi-dung/danh-gia/' + ${order.id}}" class="btn btn-primary">
+                <i class="bi bi-star"></i> Đánh giá dịch vụ
+            </a>
+
+            <form th:if="${order.status.name() == 'PENDING_PICKUP'}" method="post"
+                  th:action="@{'/nguoi-dung/don-hang/' + ${order.id} + '/huy'}"
+                  th:data-ute-confirm="'Huỷ đơn ' + ${order.trackingCode}
+                      + '? Đơn đã huỷ không khôi phục lại được.'"
+                  data-ute-confirm-nut="Huỷ đơn">
+                <button type="submit" class="btn btn-outline-secondary">Huỷ đơn</button>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="ute-panel mt-4 sx-support">
+    <div>
+        <h4>Hỗ trợ</h4>
+        <div class="sx-support-actions">
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/hanh-trinh(id=${order.id})}"><i class="bi bi-clock-history"></i> Lịch sử hành trình</a>
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/khieu-nai(id=${order.id})}"><i class="bi bi-chat-left-text"></i> Khiếu nại</a>
+            <a class="btn btn-outline-primary" th:href="@{/nguoi-dung/don-hang/{id}/xu-ly(id=${order.id})}"><i class="bi bi-arrow-repeat"></i> Xử lý sự cố</a>
+            <a class="btn btn-outline-secondary" download="van-don.png" th:href="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}"><i class="bi bi-download"></i> Tải QR</a>
+        </div>
+    </div>
+    <img class="sx-support-qr" width="128" height="128" th:src="@{/nguoi-dung/don-hang/{id}/qr.png(id=${order.id})}" alt="QR mã vận đơn">
+</div>
+</section>
+
+</body>
+</html>

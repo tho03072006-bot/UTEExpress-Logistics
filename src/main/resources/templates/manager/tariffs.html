@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Bảng cước dùng chung - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-feecalc"><div><h1 class="h3">Bảng cước dùng chung</h1><p>Bảng giá áp dụng cho mọi chi nhánh.</p></div></div>
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<p>Chỉ xem. Cước = cơ bản + phụ phí/kg × khối lượng.</p><div class="table-responsive ute-panel p-3"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cước cơ bản (VND)</th><th>Phụ phí mỗi kg (VND)</th><th>Cập nhật</th><th></th></tr></thead>
+<tbody><tr th:each="tariff : ${tariffs}"><td th:text="${tariff.serviceType.displayName}"></td>
+<td th:text="${#numbers.formatDecimal(tariff.baseFee, 1, 'POINT', 0, 'COMMA')}"></td>
+<td th:text="${#numbers.formatDecimal(tariff.feePerKg, 1, 'POINT', 0, 'COMMA')}"></td>
+<td th:text="${#temporals.format(tariff.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+<td>Chỉ xem</td></tr></tbody></table></div>
+</section></body></html>
+

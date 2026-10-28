@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Điều phối đơn từ kho tới các shipper">
+  <ellipse cx="180" cy="226" rx="128" ry="7" fill="#000" opacity=".16"/>
+  <!-- đường phân công -->
+  <g stroke="#FFFFFF" stroke-width="4" stroke-dasharray="3 9" stroke-linecap="round" opacity=".8" fill="none">
+    <path d="M180 124 L 70 60"/><path d="M180 124 L 292 58"/><path d="M180 124 L 70 190"/><path d="M180 124 L 292 190"/>
+  </g>
+  <!-- kho trung tâm -->
+  <g transform="translate(180 124)">
+    <circle r="52" fill="#FFFFFF"/>
+    <circle r="42" fill="#E0E7FF"/>
+    <path d="M-28 -2 L 0 -24 L 28 -2 V 26 H -28 Z" fill="#4F46E5"/>
+    <rect x="-13" y="5" width="26" height="21" fill="#C7D2FE"/>
+    <path d="M-13 12 h26 M-13 19 h26" stroke="#4F46E5" stroke-width="2"/>
+  </g>
+  <!-- shipper 1 -->
+  <g transform="translate(70 60)">
+    <circle r="27" fill="#2DD4BF" stroke="#FFFFFF" stroke-width="5"/>
+    <circle cy="-5" r="8" fill="#FDE2C4"/><path d="M-9 -8 a9 8 0 0 1 18 0 z" fill="#F59E0B"/>
+    <path d="M-13 15 a13 10 0 0 1 26 0 z" fill="#FFFFFF"/>
+  </g>
+  <!-- shipper 2 -->
+  <g transform="translate(292 58)">
+    <circle r="27" fill="#FB7185" stroke="#FFFFFF" stroke-width="5"/>
+    <circle cy="-5" r="8" fill="#FDE2C4"/><path d="M-9 -8 a9 8 0 0 1 18 0 z" fill="#FFFFFF"/>
+    <path d="M-13 15 a13 10 0 0 1 26 0 z" fill="#FFFFFF"/>
+  </g>
+  <!-- shipper 3 -->
+  <g transform="translate(70 190)">
+    <circle r="27" fill="#A78BFA" stroke="#FFFFFF" stroke-width="5"/>
+    <circle cy="-5" r="8" fill="#FDE2C4"/><path d="M-9 -8 a9 8 0 0 1 18 0 z" fill="#FCD34D"/>
+    <path d="M-13 15 a13 10 0 0 1 26 0 z" fill="#FFFFFF"/>
+  </g>
+  <!-- kiện chờ giao -->
+  <g transform="translate(292 190)">
+    <circle r="27" fill="#FCD34D" stroke="#FFFFFF" stroke-width="5"/>
+    <path d="M-14 -4 L 0 -11 L 14 -4 L 0 3 Z" fill="#FEF3C7"/><path d="M-14 -4 L 0 3 L 0 17 L -14 10 Z" fill="#F59E0B"/><path d="M14 -4 L 0 3 L 0 17 L 14 10 Z" fill="#D97706"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M180 22 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M24 124 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>

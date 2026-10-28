@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Tạo đơn gửi hàng - UTEExpress</title>
+</head>
+<body>
+
+<section class="ute-narrow sx-order-wide">
+<div class="ute-page-head sx-art-create"><div><h2>Tạo đơn gửi hàng</h2>
+</div></div>
+
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="ute-field-error" th:text="${error}"></div>
+
+<form method="post" th:action="@{/nguoi-dung/tao-don}" th:object="${form}" data-order-form>
+    <input type="hidden" name="submissionToken" th:value="${form.submissionToken}">
+    <div class="alert alert-warning" th:if="${#fields.hasErrors('submissionToken')}" th:errors="*{submissionToken}"></div>
+    <div class="sx-order-parties">
+    <div class="sx-order-party">
+    <h5>Người gửi</h5>
+
+    <!-- Chọn nhanh từ sổ địa chỉ: JS trong address-picker.js sẽ điền vào 2 ô bên dưới -->
+    <div class="mb-3" th:if="${!#lists.isEmpty(senderAddresses)}">
+        <label class="form-label" for="senderAddressId">Chọn từ sổ địa chỉ</label>
+        <select th:field="*{senderAddressId}" class="form-select"
+                data-address-picker="sender"
+                data-fill-province="pickupProvinceCode" data-fill-area="pickupAreaCode"
+                data-fill-name="senderName"
+                data-fill-address="senderAddress">
+            <option value="">-- Nhập địa chỉ mới --</option>
+            <option th:each="address : ${senderAddresses}"
+                    th:value="${address.id}"
+                    th:attr="data-contact-name=${address.contactName},
+                             data-contact-phone=${address.contactPhone},
+                             data-address-line=${address.addressLine}, data-province-code=${savedAreas[address.id]?.provinceCode}, data-area-code=${savedAreas[address.id]?.areaCode}"
+                    th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
+        </select>
+    </div>
+    <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(senderAddresses)}">
+        Chưa có địa chỉ gửi. <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu địa chỉ</a>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="senderName">Tên người gửi</label>
+        <input type="text" th:field="*{senderName}" class="form-control" required minlength="2" maxlength="100">
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('senderName')}" th:errors="*{senderName}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="senderAddress">Số nhà, đường lấy hàng</label>
+        <input type="text" th:field="*{senderAddress}" class="form-control" required minlength="5" maxlength="255">
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('senderAddress')}" th:errors="*{senderAddress}"></div>
+    </div>
+
+    <div th:replace="~{fragments/area-fields :: fields('pickupProvinceCode', 'pickupAreaCode')}"></div>
+    <fieldset class="mb-3" data-pickup-mode>
+        <legend class="form-label fs-6 mb-1">Hình thức gửi hàng</legend>
+        <div class="form-check">
+            <input type="radio" th:field="*{pickupMode}" value="COURIER" class="form-check-input">
+            <label class="form-check-label" th:for="${#ids.prev('pickupMode')}">Shipper đến lấy tại địa chỉ trên</label>
+        </div>
+        <div class="form-check">
+            <input type="radio" th:field="*{pickupMode}" value="DROP_OFF" class="form-check-input">
+            <label class="form-check-label" th:for="${#ids.prev('pickupMode')}">Tự mang ra chi nhánh
+                <span class="text-muted small" th:if="${dropOffDiscount != null and dropOffDiscount > 0}"
+                      th:text="|— giảm ${#numbers.formatDecimal(dropOffDiscount,0,'POINT',0,'COMMA')} đ|"></span></label>
+        </div>
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('pickupMode')}" th:errors="*{pickupMode}"></div>
+        <div class="alert alert-light border small mt-2 mb-0" data-drop-off-hubs hidden>
+            <p class="mb-0" th:each="b : ${branches}" th:if="${b.active}" th:attr="data-province-code=${b.provinceCode}" hidden>
+                Mang hàng tới quầy <strong th:text="${b.name}">chi nhánh</strong>: <span th:text="${b.hubAddress}">địa chỉ kho</span>.
+                Shipper không đến lấy; địa chỉ người gửi vẫn dùng để liên hệ và hoàn hàng.</p>
+            <p class="mb-0" data-drop-off-empty>Chọn tỉnh/thành gửi để xem địa chỉ quầy nhận hàng.</p>
+        </div>
+    </fieldset>
+    </div>
+    <div class="sx-order-party">
+    <h5>Người nhận</h5>
+
+    <!-- Cố ý KHÔNG điền sẵn người nhận: mỗi đơn thường gửi cho một người khác nhau -->
+    <div class="mb-3" th:if="${!#lists.isEmpty(receiverAddresses)}">
+        <label class="form-label" for="receiverAddressId">Chọn từ sổ địa chỉ</label>
+        <select th:field="*{receiverAddressId}" class="form-select"
+                data-address-picker="receiver"
+                data-fill-province="deliveryProvinceCode" data-fill-area="deliveryAreaCode"
+                data-fill-name="receiverName"
+                data-fill-phone="receiverPhone"
+                data-fill-address="receiverAddress">
+            <option value="">-- Nhập địa chỉ mới --</option>
+            <option th:each="address : ${receiverAddresses}"
+                    th:value="${address.id}"
+                    th:attr="data-contact-name=${address.contactName},
+                             data-contact-phone=${address.contactPhone},
+                             data-address-line=${address.addressLine}, data-province-code=${savedAreas[address.id]?.provinceCode}, data-area-code=${savedAreas[address.id]?.areaCode}"
+                    th:text="|${address.label} — ${address.contactName} · ${address.addressLine}|"></option>
+        </select>
+    </div>
+    <div class="alert alert-light border mb-3" th:if="${#lists.isEmpty(receiverAddresses)}">
+        Chưa có địa chỉ người nhận. <a th:href="@{/nguoi-dung/dia-chi/them}">Lưu địa chỉ</a>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="receiverName">Tên người nhận</label>
+        <input type="text" th:field="*{receiverName}" class="form-control" required minlength="2" maxlength="100">
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('receiverName')}" th:errors="*{receiverName}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="receiverPhone">Số điện thoại người nhận</label>
+        <input type="tel" th:field="*{receiverPhone}" class="form-control" required data-vn-mobile maxlength="20" inputmode="tel" autocomplete="tel" placeholder="0901234567">
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('receiverPhone')}" th:errors="*{receiverPhone}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="receiverAddress">Số nhà, đường giao hàng</label>
+        <input type="text" th:field="*{receiverAddress}" class="form-control" required minlength="5" maxlength="255">
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('receiverAddress')}" th:errors="*{receiverAddress}"></div>
+    </div>
+
+    <div th:replace="~{fragments/area-fields :: fields('deliveryProvinceCode', 'deliveryAreaCode')}"></div>
+    </div>
+    </div>
+    <h5 class="mt-4">Gói hàng</h5>
+    <div class="row">
+        <div class="col-sm-4 mb-3">
+            <label class="form-label" for="weightKg">Khối lượng (kg)</label>
+            <input type="number" step="0.01" min="0.01" max="100" required th:field="*{weightKg}" class="form-control">
+            <div class="ute-field-error small" th:if="${#fields.hasErrors('weightKg')}" th:errors="*{weightKg}"></div>
+        </div>
+        <div class="col-sm-8 mb-3">
+            <label class="form-label" for="serviceType">Dịch vụ</label>
+            <select th:field="*{serviceType}" class="form-select">
+                <option th:each="tariff : ${currentTariffs}" th:value="${tariff.serviceType}"
+                    th:text="|${tariff.serviceType.displayName} · ${#numbers.formatDecimal(tariff.baseFee,0,'POINT',0,'COMMA')}đ + ${#numbers.formatDecimal(tariff.feePerKg,0,'POINT',0,'COMMA')}đ/kg|"></option>
+            </select>
+        </div>
+    </div>
+
+    <h5 class="mt-4">Mã giảm giá</h5>
+    <p data-route-quote-output class="ute-panel p-3" role="status" aria-live="polite">Chọn đủ địa bàn và khối lượng để xem cước trước mã giảm giá.</p>
+    <div class="mb-4">
+        <label class="form-label" for="promoCode">Mã giảm cước (không bắt buộc)</label>
+        <input type="text" th:field="*{promoCode}" maxlength="30" class="form-control ute-promo-input"
+               placeholder="Ví dụ: UTE10" autocomplete="off">
+    </div>
+
+    <h5 class="mt-4">Thanh toán cước</h5>
+    <div class="mb-2">
+        <!-- Radio thay vi dropdown: 3 lua chon, hien het ra cho nguoi dung thay ngay -->
+        <div class="form-check" th:each="method : ${paymentMethods}">
+            <input type="radio" th:field="*{paymentMethod}" th:value="${method}" class="form-check-input">
+            <label class="form-check-label" th:for="${#ids.prev('paymentMethod')}">
+                <span th:text="${method.displayName}">-</span>
+                <span class="text-muted small" th:if="${method.onlineWallet}">— trả trước qua ví</span>
+                <span class="text-muted small" th:unless="${method.onlineWallet}">— tiền mặt, Shipper thu lúc giao</span>
+            </label>
+        </div>
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}"></div>
+        <div class="ute-field-error small" th:if="${#fields.hasErrors('paymentMethodSupported')}" th:errors="*{paymentMethodSupported}"></div>
+        <p class="form-text mb-0">COD ở UTEExpress là thu <strong>cước vận chuyển</strong> khi giao (người nhận trả). Hệ thống chưa nhận thu hộ tiền hàng.</p>
+    </div>
+    <div class="mb-4"></div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Gửi đơn ngay</button>
+        <!-- Cung mot form, chi doi dich submit: gom vao gio thay vi sinh van don ngay -->
+        <button type="submit" class="btn btn-outline-primary" data-cart-button
+                th:formaction="@{/nguoi-dung/tao-don/them-vao-gio}">Thêm vào giỏ đơn</button>
+        <a th:href="@{/nguoi-dung/dia-chi}" class="btn btn-outline-secondary">Quản lý sổ địa chỉ</a>
+    </div>
+</form>
+<p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Cước tính theo bảng giá tại lúc tạo đơn. Giỏ đơn chỉ nhận đơn Shipper đến lấy.</p>
+<script defer th:src="@{/js/order-form.js}"></script>
+<script defer th:src="@{/js/route-quote.js}"></script>
+</section>
+
+</body>
+</html>

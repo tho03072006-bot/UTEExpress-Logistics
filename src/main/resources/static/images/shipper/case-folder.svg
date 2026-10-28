@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Hồ sơ vận hành đã được duyệt">
+  <ellipse cx="180" cy="226" rx="128" ry="7" fill="#000" opacity=".16"/>
+  <!-- tập hồ sơ -->
+  <path d="M60 64 H 140 L 156 80 H 288 a10 10 0 0 1 10 10 V 206 a10 10 0 0 1 -10 10 H 70 a10 10 0 0 1 -10 -10 Z" fill="#4F46E5"/>
+  <!-- giấy -->
+  <g transform="rotate(-6 170 110)"><rect x="96" y="44" width="132" height="150" rx="8" fill="#E0E7FF"/></g>
+  <rect x="112" y="40" width="132" height="150" rx="8" fill="#FFFFFF"/>
+  <rect x="128" y="60" width="78" height="9" rx="4.5" fill="#0072BC"/>
+  <rect x="128" y="82" width="100" height="7" rx="3.5" fill="#CBD5E1"/>
+  <rect x="128" y="98" width="88" height="7" rx="3.5" fill="#CBD5E1"/>
+  <rect x="128" y="114" width="96" height="7" rx="3.5" fill="#CBD5E1"/>
+  <rect x="128" y="130" width="60" height="7" rx="3.5" fill="#CBD5E1"/>
+  <!-- mặt trước tập -->
+  <path d="M60 120 H 298 V 206 a10 10 0 0 1 -10 10 H 70 a10 10 0 0 1 -10 -10 Z" fill="#6366F1"/>
+  <rect x="84" y="140" width="64" height="10" rx="5" fill="#C7D2FE"/>
+  <!-- dấu duyệt -->
+  <g transform="translate(262 166)">
+    <circle r="32" fill="#FFFFFF"/>
+    <circle r="25" fill="#2DD4BF"/>
+    <path d="M-11 0 L -3 9 L 13 -9" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#FCD34D">
+    <path d="M300 36 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/>
+    <path d="M40 104 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".8"/>
+  </g>
+</svg>

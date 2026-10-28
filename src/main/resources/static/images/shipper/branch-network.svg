@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Mạng lưới chi nhánh và kho">
+  <ellipse cx="180" cy="226" rx="132" ry="7" fill="#000" opacity=".16"/>
+  <!-- bản đồ -->
+  <rect x="40" y="34" width="280" height="178" rx="18" fill="#FFFFFF"/>
+  <rect x="52" y="46" width="256" height="154" rx="12" fill="#E0F2FE"/>
+  <path d="M120 46 C 150 90 110 120 150 160 S 210 190 200 200" fill="none" stroke="#BAE6FD" stroke-width="14" stroke-linecap="round"/>
+  <!-- tuyến nối chi nhánh -->
+  <g fill="none" stroke="#0072BC" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round">
+    <path d="M110 86 Q 180 70 252 98"/><path d="M252 98 Q 250 150 186 168"/><path d="M110 86 Q 120 150 186 168"/>
+  </g>
+  <!-- kho HAN -->
+  <g transform="translate(110 86)">
+    <path d="M-24 2 L 0 -16 L 24 2 V 24 H -24 Z" fill="#4F46E5"/><rect x="-10" y="8" width="20" height="16" fill="#C7D2FE"/>
+    <path d="M-10 14 h20 M-10 19 h20" stroke="#4F46E5" stroke-width="2"/>
+    <g transform="translate(0 -34)"><path d="M0 16 C -12 2 -12 -10 0 -10 C 12 -10 12 2 0 16 Z" fill="#FB7185"/><circle cy="-2" r="4.5" fill="#FFFFFF"/></g>
+  </g>
+  <!-- kho DAD -->
+  <g transform="translate(252 98)">
+    <path d="M-24 2 L 0 -16 L 24 2 V 24 H -24 Z" fill="#14B8A6"/><rect x="-10" y="8" width="20" height="16" fill="#CCFBF1"/>
+    <path d="M-10 14 h20 M-10 19 h20" stroke="#14B8A6" stroke-width="2"/>
+    <g transform="translate(0 -34)"><path d="M0 16 C -12 2 -12 -10 0 -10 C 12 -10 12 2 0 16 Z" fill="#F59E0B"/><circle cy="-2" r="4.5" fill="#FFFFFF"/></g>
+  </g>
+  <!-- kho SGN -->
+  <g transform="translate(186 168)">
+    <path d="M-28 2 L 0 -18 L 28 2 V 26 H -28 Z" fill="#0072BC"/><rect x="-12" y="8" width="24" height="18" fill="#BFDBFE"/>
+    <path d="M-12 14 h24 M-12 20 h24" stroke="#0072BC" stroke-width="2"/>
+    <g transform="translate(0 -38)"><path d="M0 18 C -13 3 -13 -11 0 -11 C 13 -11 13 3 0 18 Z" fill="#8B5CF6"/><circle cy="-2" r="5" fill="#FFFFFF"/></g>
+  </g>
+  <g fill="#FCD34D">
+    <path d="M320 26 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/>
+    <path d="M34 186 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".8"/>
+  </g>
+</svg>

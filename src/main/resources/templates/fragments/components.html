@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<!--/*
+  CÁC MẢNH GIAO DIỆN DÙNG LẠI của template UTEExpress.
+
+  File này KHÔNG BAO GIỜ được trả về như một trang - nó chỉ chứa fragment cho
+  fragments/base.html và các trang khác gọi tới. Sở dĩ phải tách riêng khỏi base.html:
+  mọi thứ nằm trong <body> của base.html đều được in ra trang, nên nếu để fragment
+  ở đó thì menu sẽ bị in lặp thêm một lần nữa ở cuối mỗi trang.
+*/-->
+<head>
+    <meta charset="UTF-8">
+    <title>Fragment dùng chung - UTEExpress</title>
+</head>
+<body>
+
+<!--
+  Menu bên trái. Viết một lần rồi dùng cho cả sidebar cố định lẫn menu trượt trên điện thoại,
+  để thêm/bớt mục chỉ phải sửa đúng một chỗ. Mục của Shipper / Manager / Admin chỉ hiện
+  với đúng vai trò tương ứng.
+-->
+<nav th:fragment="sidebarNav" class="ute-nav">
+    <div sec:authorize="hasRole('USER')">
+        <a class="sx-profile" th:href="@{/nguoi-dung/tai-khoan}" title="Tài khoản của tôi">
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">K</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/nguoi-dung/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
+            <div><strong th:text="${displayName ?: #authentication.name}">user</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Khách hàng</span></div>
+        </a>
+        <p class="ute-nav-heading">Người gửi hàng</p>
+        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/nguoi-dung/trang-chu}">
+            <i class="bi bi-speedometer2"></i> Trang tổng quan
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-green" th:href="@{/nguoi-dung/tao-don}">
+            <i class="bi bi-plus-square"></i> Tạo đơn gửi hàng
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-amber" th:href="@{/nguoi-dung/gio-don}">
+            <i class="bi bi-basket"></i> Giỏ đơn
+            <span class="badge sx-count-red ms-auto" th:if="${cartCount != null and cartCount > 0}"
+                  th:text="${cartCount}">0</span>
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-teal" th:href="@{/nguoi-dung/dia-chi}">
+            <i class="bi bi-geo-alt"></i> Sổ địa chỉ
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/nguoi-dung/don-hang}">
+            <i class="bi bi-box-seam"></i> Đơn hàng của tôi
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/nguoi-dung/tai-khoan}">
+            <i class="bi bi-person-gear"></i> Tài khoản của tôi
+        </a>
+    </div>
+
+    <div sec:authorize="hasRole('SHIPPER')">
+        <a class="sx-profile" th:href="@{/shipper/tai-khoan}" title="Tài khoản của tôi">
+            <span class="sx-avatar" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{/shipper/tai-khoan/anh-dai-dien(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
+            <div><strong th:text="${displayName ?: #authentication.name}">shipper</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span>Đang nhận đơn</span></div>
+        </a>
+        <!-- Nhóm theo việc của tài xế giao hàng: làm việc trong ngày, rồi tiền và hiệu suất -->
+        <p class="ute-nav-heading">Công việc</p>
+        <a class="ute-nav-link sx-nav sx-tone-blue" th:href="@{/shipper/trang-chu}">
+            <i class="bi bi-truck"></i> Đơn được phân công
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-teal" th:href="@{/shipper/lo-trinh}">
+            <i class="bi bi-signpost-split"></i> Lộ trình hôm nay
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Quét QR vận đơn</a>
+        <a class="ute-nav-link sx-nav sx-tone-rose" th:href="@{/shipper/thong-bao}"><i class="bi bi-bell"></i> Thông báo
+            <span class="badge sx-count-red ms-auto" data-notification-count hidden>0</span></a>
+        <p class="ute-nav-heading">Tiền &amp; hiệu suất</p>
+        <a class="ute-nav-link sx-nav sx-tone-gold" th:href="@{/shipper/doi-soat}">
+            <i class="bi bi-cash-coin"></i> Nộp cước COD
+        </a>
+        <a class="ute-nav-link sx-nav sx-tone-violet" th:href="@{/shipper/thong-ke}">
+            <i class="bi bi-graph-up-arrow"></i> Thống kê giao hàng
+        </a>
+        <p class="ute-nav-heading">Cá nhân</p>
+        <a class="ute-nav-link sx-nav sx-tone-slate" th:href="@{/shipper/tai-khoan}">
+            <i class="bi bi-person-gear"></i> Tài khoản của tôi
+        </a>
+    </div>
+
+    <!-- Manager và Admin dùng chung nhóm vận hành (Admin được vào mọi trang /manager);
+         nhóm "Quản trị hệ thống" chỉ hiện với Admin. Cùng các mục với thanh nội bộ admin/navigation.html. -->
+    <div sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
+        <div class="sx-profile sx-profile-staff">
+            <span class="sx-avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">M</span>
+            <div><strong th:text="${displayName ?: #authentication.name}">manager</strong><span class="sx-profile-status"><span class="sx-online" aria-hidden="true"></span><th:block sec:authorize="hasRole('ADMIN')">Quản trị hệ thống</th:block><th:block sec:authorize="!hasRole('ADMIN')">Quản lý vận hành</th:block></span></div>
+        </div>
+        <p class="ute-nav-heading">Vận hành</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/trang-chu}"><i class="bi bi-speedometer2"></i> Tổng quan vận hành</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/don-hang}"><i class="bi bi-search"></i> Tra soát đơn hàng</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công Shipper</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/canh-bao}"><i class="bi bi-exclamation-triangle"></i> Cảnh báo cần xử lý</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/ho-so-van-hanh}"><i class="bi bi-folder2-open"></i> Hồ sơ vận hành</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/khieu-nai}"><i class="bi bi-chat-square-text"></i> Khiếu nại</a>
+        <p class="ute-nav-heading">Tài chính &amp; báo cáo</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/doi-soat-cod}"><i class="bi bi-cash-coin"></i> Đối soát cước COD</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/khuyen-mai}"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/bang-cuoc}"><i class="bi bi-table"></i> Bảng cước</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/lich-cuoc}"><i class="bi bi-calendar-week"></i> Lịch cước</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/bao-cao}"><i class="bi bi-bar-chart-line"></i> Báo cáo</a>
+        <a class="ute-nav-link sx-nav" th:href="@{/manager/hieu-suat-shipper}"><i class="bi bi-graph-up-arrow"></i> Hiệu suất Shipper</a>
+        <th:block sec:authorize="hasRole('ADMIN')">
+            <p class="ute-nav-heading">Quản trị hệ thống</p>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/trang-chu}"><i class="bi bi-shield-lock"></i> Trang quản trị</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/quan-ly-tai-khoan}"><i class="bi bi-people"></i> Quản lý tài khoản</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/tai-khoan}"><i class="bi bi-person-badge"></i> Tài khoản nội bộ</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/chinh-sach-van-hanh}"><i class="bi bi-sliders"></i> Chính sách vận hành</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/bang-cuoc}"><i class="bi bi-gear"></i> Cấu hình cước</a>
+            <a class="ute-nav-link sx-nav" th:href="@{/admin/nhat-ky}"><i class="bi bi-journal-text"></i> Nhật ký</a>
+        </th:block>
+        <p class="ute-nav-heading">Tài khoản nội bộ</p>
+        <a class="ute-nav-link sx-nav" th:href="@{/noi-bo/doi-mat-khau}"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+        <form th:action="@{/noi-bo/dang-xuat}" method="post"><button type="submit" class="ute-nav-link sx-nav sx-nav-button"><i class="bi bi-box-arrow-right"></i> Đăng xuất nội bộ</button></form>
+    </div>
+
+    <div class="ute-nav-divider"></div>
+    <a class="ute-nav-link sx-nav sx-tone-cyan" th:href="@{/tra-cuu}">
+        <i class="bi bi-search"></i> Tra cứu vận đơn
+    </a>
+    <a class="ute-nav-link sx-nav sx-tone-amber" th:href="@{/uoc-tinh-cuoc}">
+        <i class="bi bi-calculator"></i> Ước tính cước phí
+    </a>
+
+    <!-- Thẻ gợi ý có hình ở cuối menu (kiểu template Sneat/Materio): việc hay làm nhất của từng vai trò -->
+    <div class="sx-side-promo" sec:authorize="hasRole('USER')">
+        <img th:src="@{/images/shipper/create-order.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Gửi hàng nhanh</strong><span>Tạo đơn trong 1 phút, theo dõi hành trình từng mốc.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/nguoi-dung/tao-don}"><i class="bi bi-plus-lg"></i> Tạo đơn mới</a>
+    </div>
+    <div class="sx-side-promo" sec:authorize="hasRole('SHIPPER')">
+        <img th:src="@{/images/shipper/scan-qr.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Quét mã nhận đơn</strong><span>Đưa QR vận đơn vào camera để mở đơn ngay.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i> Mở máy quét</a>
+    </div>
+    <div class="sx-side-promo" sec:authorize="hasAnyRole('MANAGER', 'ADMIN')">
+        <img th:src="@{/images/shipper/dispatch-hub.svg}" alt="" aria-hidden="true" width="120" height="80">
+        <strong>Đơn chờ phân công</strong><span>Giao việc cho Shipper đang hoạt động.</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/manager/phan-cong}"><i class="bi bi-person-check"></i> Phân công ngay</a>
+    </div>
+</nav>
+
+<!--
+  Hiện số tiền theo định dạng Việt Nam: 32500 -> "32.500 đ".
+  Dùng: <span th:replace="~{fragments/components :: money(${order.shippingFee})}">0 đ</span>
+  Trong <td> thì bọc bằng <span> rồi thay cái <span> đó, đừng thay thẳng <td>.
+-->
+<span th:fragment="money(amount)"
+      th:text="${amount == null ? '—' : #numbers.formatInteger(amount, 1, 'POINT') + ' đ'}">0 đ</span>
+
+<!--
+  Đổi tên hằng của enum sang chữ tiếng Việt cho người dùng đọc.
+
+  Vì sao không thêm displayName thẳng vào enum như OrderPayment đã làm: hai enum
+  OrderStatus và ServiceType nằm trong Order.java - entity dùng chung của cả nhóm,
+  quy ước là không ai tự sửa. Nên phần dịch để ở đây, sửa một chỗ là cả site đổi theo.
+
+  Dùng th:block nên không sinh thêm thẻ nào, nhét được vào cả <td>, <span> lẫn <option>:
+      <td><th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block></td>
+-->
+<th:block th:fragment="orderStatusText(status)"
+          th:switch="${status == null} ? '' : ${status.name()}">
+    <th:block th:case="'PENDING_PICKUP'">Chờ lấy hàng</th:block>
+    <th:block th:case="'PICKED_UP'">Đã lấy hàng</th:block>
+    <th:block th:case="'IN_TRANSIT'">Đang giao</th:block>
+    <th:block th:case="'DELIVERED'">Giao thành công</th:block>
+    <th:block th:case="'FAILED'">Giao thất bại</th:block>
+    <th:block th:case="'CANCELLED'">Đã hủy</th:block>
+    <th:block th:case="'RETURNED'">Đã hoàn trả</th:block>
+    <!-- Có trạng thái mới mà quên bổ sung ở trên thì in tạm tên hằng, không để trống -->
+    <th:block th:case="*" th:text="${status}">—</th:block>
+</th:block>
+
+<!--
+  HỘP HỎI LẠI TRƯỚC KHI LÀM VIỆC KHÔNG QUAY LẠI ĐƯỢC.
+
+  Dùng chung cho cả site, đặt một lần trong fragments/base.html nên trang nào cũng có.
+  Cách dùng: đánh dấu form cần hỏi lại bằng data-ute-confirm, nội dung thuộc tính chính
+  là câu hỏi hiện ra:
+
+      <form method="post" th:action="..."
+            data-ute-confirm="Huỷ đơn UTE123? Việc này không hoàn tác được."
+            data-ute-confirm-nut="Huỷ đơn">
+          <button type="submit">Huỷ đơn</button>
+      </form>
+
+  Làm chung một cơ chế thay vì viết riêng cho từng nút: sau này ai thêm nút xoá hay
+  huỷ chỉ cần gắn thêm thuộc tính, không phải chép lại đoạn hộp thoại.
+
+  Nếu trình duyệt chặn JavaScript thì form submit thẳng như cũ - mất bước hỏi lại
+  nhưng chức năng vẫn chạy, không kẹt người dùng.
+-->
+<div th:fragment="confirmDialog" class="modal fade" id="uteConfirmDialog" tabindex="-1"
+     aria-labelledby="uteConfirmTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uteConfirmTitle">Xác nhận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="uteConfirmMessage">Bạn có chắc không?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Quay lại
+                </button>
+                <button type="button" class="btn btn-primary" id="uteConfirmAccept">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--
+  ẢNH BẰNG CHỨNG GIAO HÀNG: ảnh chụp và chữ ký người nhận do Shipper lưu khi giao.
+
+  Dùng cho người gửi và Manager xem lại. basePath là đường dẫn đơn theo vai trò, ví dụ
+  '/nguoi-dung/don-hang/12' hoặc '/manager/don-hang/12'. Ảnh không nằm ở thư mục công khai,
+  phải đi qua route .../bang-chung/{anh|chu-ky} để server kiểm tra quyền xem đơn.
+  Trang Shipper có khối riêng kèm form tải ảnh nên không dùng fragment này.
+
+  Bọc chỗ gọi bằng th:block th:if="${proof != null}": th:replace chạy trước th:if.
+-->
+<div th:fragment="deliveryProof(proof, basePath)" class="ute-panel mb-3" id="delivery-proof">
+    <h5 class="mb-3">Bằng chứng giao hàng</h5>
+    <div class="shipper-proof-grid">
+        <div>
+            <span class="shipper-field-label">Ảnh lúc giao hàng</span>
+            <a th:href="@{${basePath + '/bang-chung/anh'}}" target="_blank" rel="noopener">
+                <img class="shipper-proof-image" loading="lazy" decoding="async"
+                     th:src="@{${basePath + '/bang-chung/anh'}}" alt="Ảnh bằng chứng giao hàng">
+            </a>
+        </div>
+        <div>
+            <span class="shipper-field-label">Chữ ký người nhận</span>
+            <a th:href="@{${basePath + '/bang-chung/chu-ky'}}" target="_blank" rel="noopener">
+                <img class="shipper-proof-image" loading="lazy" decoding="async"
+                     th:src="@{${basePath + '/bang-chung/chu-ky'}}" alt="Chữ ký người nhận">
+            </a>
+        </div>
+    </div>
+    <p class="ute-profile-note mt-2 mb-0"
+       th:text="|Shipper lưu lúc ${#temporals.format(proof.updatedAt, 'HH:mm · dd/MM/yyyy')}. Bấm vào ảnh để xem cỡ lớn.|"></p>
+</div>
+
+<th:block th:fragment="serviceTypeText(serviceType)"
+          th:switch="${serviceType == null} ? '' : ${serviceType.name()}">
+    <th:block th:case="'STANDARD'">Tiêu chuẩn</th:block>
+    <th:block th:case="'EXPRESS'">Nhanh</th:block>
+    <th:block th:case="'SUPER_EXPRESS'">Hỏa tốc</th:block>
+    <th:block th:case="*" th:text="${serviceType}">—</th:block>
+</th:block>
+
+<!-- Chênh lệch tiền COD của Shipper sau khi Manager xác nhận phiếu nộp (balance: CashBalanceResponse) -->
+<th:block th:fragment="cashGap(balance)">
+    <div class="sx-gap-head"><h3 class="h5 mb-1">Chênh lệch sau khi Manager xác nhận</h3>
+        <p class="shipper-hint mb-0">Nếu tiền mặt bạn nộp khác tổng cước COD của phiếu, phần lệch được ghi ở đây cho tới khi xử lý xong.</p></div>
+    <div class="sx-gap-grid">
+        <div class="sx-gap-item" th:classappend="${balance.outstanding.signum() > 0} ? 'is-due'">
+            <span class="sx-gap-label"><i class="bi bi-arrow-up-circle"></i> Bạn còn nộp thiếu</span>
+            <strong th:text="|${#numbers.formatInteger(balance.outstanding, 1, 'POINT')} đ|">0 đ</strong>
+            <small>Số tiền bạn cần nộp thêm cho Manager. Manager ghi nhận khoản nộp thêm, Admin duyệt.</small>
+        </div>
+        <div class="sx-gap-item" th:classappend="${balance.refundDue.signum() > 0} ? 'is-refund'">
+            <span class="sx-gap-label"><i class="bi bi-arrow-down-circle"></i> Bạn đã nộp thừa</span>
+            <strong th:text="|${#numbers.formatInteger(balance.refundDue, 1, 'POINT')} đ|">0 đ</strong>
+            <small>Khoản UTEExpress sẽ trả lại bạn sau khi Admin duyệt phiếu hoàn.</small>
+        </div>
+    </div>
+    <p class="sx-gap-ok mb-0" th:if="${balance.outstanding.signum() == 0 and balance.refundDue.signum() == 0}"><i class="bi bi-check-circle-fill"></i> Các phiếu đã xác nhận đều khớp tiền, không có chênh lệch.</p>
+</th:block>
+
+</body>
+</html>

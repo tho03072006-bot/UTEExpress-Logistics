@@ -1,0 +1,431 @@
+/*
+ * JS dung chung cua UTEExpress - nap tren moi trang qua template fragments/base.html.
+ *
+ * Hien tai lo dung mot viec: danh dau muc dang mo tren sidebar. Lam bang JS o phia trinh duyet
+ * thay vi so sanh duong dan trong Thymeleaf, vi tu Thymeleaf 3.1 khong con truy cap
+ * duoc #httpServletRequest - lam kieu nay khoi phai them code o phia server.
+ *
+ * TODO (TV2): them ket noi WebSocket "/ws-tracking" o day de nhan cap nhat trang thai don realtime.
+ */
+(function () {
+    'use strict';
+
+    /**
+     * Gan class "active" cho muc sidebar khop voi trang dang mo.
+     * Chon muc co duong dan TRUNG KHOP DAI NHAT de "/nguoi-dung/don-hang" khong lam sang
+     * ca muc "/nguoi-dung" neu sau nay co them muc cha nhu vay.
+     */
+    function highlightCurrentNavItem() {
+        var currentPath = window.location.pathname;
+        var links = document.querySelectorAll('.ute-nav-link, .sx-tabbar-link');
+        var best = null;
+        var bestLength = 0;
+
+        Array.prototype.forEach.call(links, function (link) {
+            var href = link.getAttribute('href');
+            if (!href || href === '#') {
+                return;
+            }
+            var isMatch = currentPath === href || currentPath.indexOf(href + '/') === 0;
+            if (isMatch && href.length > bestLength) {
+                best = link;
+                bestLength = href.length;
+            }
+        });
+
+        if (best) {
+            // Cung mot menu duoc ve 2 lan (sidebar co dinh + menu truot tren dien thoai),
+            // nen danh dau tat ca link co cung href chu khong chi cai tim duoc.
+            var href = best.getAttribute('href');
+            Array.prototype.forEach.call(links, function (link) {
+                if (link.getAttribute('href') === href) {
+                    link.classList.add('active');
+                }
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', highlightCurrentNavItem);
+})();
+
+/*
+ * Nut chuyen che do sang / toi.
+ *
+ * Viec GAN che do khong nam o day ma o doan script nho trong <head> cua
+ * fragments/base.html - phai chay truoc khi trang duoc ve, neu khong nguoi dung se
+ * thay mot nhay trang toat. File nay chi lo phan bam nut va ghi nho lua chon.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var button = document.getElementById('uteThemeToggle');
+        if (!button) {
+            return;
+        }
+
+        button.addEventListener('click', function () {
+            var root = document.documentElement;
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try {
+                localStorage.setItem('ute-theme', next);
+            } catch (e) {
+                // Trinh duyet chan localStorage (che do rieng tu): van doi duoc che do
+                // cho lan xem nay, chi la sang trang khac thi tro ve mac dinh.
+            }
+        });
+    });
+})();
+
+/*
+ * Dem so ky tu o o nhan xet cua form danh gia dich vu (TV1 - viec 4).
+ * Chi la tro giup nhin thay ngay cho nguoi dung; rang buoc toi thieu 50 ky tu van duoc
+ * kiem tra that o phia may chu (ServiceReviewRequest) - khong tin vao kiem tra phia trinh duyet.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var textarea = document.getElementById('reviewContent');
+        var counter = document.getElementById('reviewCharCount');
+        if (!textarea || !counter) {
+            return;
+        }
+
+        var minLength = parseInt(textarea.getAttribute('data-min-length'), 10) || 0;
+
+        function update() {
+            var length = textarea.value.trim().length;
+            counter.textContent = length;
+            counter.classList.toggle('text-danger', length > 0 && length < minLength);
+        }
+
+        textarea.addEventListener('input', update);
+        update();
+    });
+})();
+
+/*
+ * Dem tang dan cho cac the so lieu o trang tong quan.
+ *
+ * So that DA NAM SAN trong HTML do Thymeleaf render; doan nay chi doc so do ra roi
+ * dem tu 0 len. Neu JS loi hoac bi chan thi so van hien binh thuong, chi la khong
+ * co hieu ung - khong bao gio de trang trong.
+ *
+ * Ton trong cai dat "giam chuyen dong" cua he dieu hanh giong nhu ben CSS: nguoi da
+ * bat cong tac do se thay so dung luon, khong nhay lien tuc.
+ */
+(function () {
+    'use strict';
+
+    var DURATION_MS = 600;
+
+    function animateCount(element) {
+        var noiDung = element.textContent.trim();
+        // Tach phan so va phan duoi (vd "95%" -> 95 va "%") de dem xong van giu
+        // nguyen ky tu duoi, khong bien "95%" thanh "95".
+        var khop = noiDung.match(/^(\d+)(\D*)$/);
+        if (!khop) {
+            return;
+        }
+        var target = parseInt(khop[1], 10);
+        var duoi = khop[2] || '';
+        if (isNaN(target) || target <= 0) {
+            return;
+        }
+
+        var start = null;
+        element.textContent = '0' + duoi;
+
+        function step(timestamp) {
+            if (start === null) {
+                start = timestamp;
+            }
+            var progress = Math.min((timestamp - start) / DURATION_MS, 1);
+            // Cham dan ve cuoi cho cam giac dung lai nhe nhang thay vi phanh gap.
+            var eased = 1 - Math.pow(1 - progress, 3);
+            element.textContent = Math.round(target * eased) + duoi;
+
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                element.textContent = target + duoi; // chot lai dung so that
+            }
+        }
+
+        window.requestAnimationFrame(step);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var reduceMotion = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion) {
+            return;
+        }
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.ute-stat-value, .sx-kpi-value, .staff-task > strong, .staff-chart-total > strong'), animateCount);
+    });
+})();
+
+/*
+ * Hoi lai truoc khi lam viec khong quay lai duoc (huy don, xoa...).
+ *
+ * Bat su kien submit cua moi form co thuoc tinh data-ute-confirm, chan lai roi mo hop
+ * thoai Bootstrap. Bam dong y thi moi submit that.
+ *
+ * Vi sao dung hop thoai Bootstrap thay vi ham confirm() co san cua trinh duyet:
+ * confirm() hien hop mac dinh cua he dieu hanh, khong theo bang mau va khong doi theo
+ * che do sang/toi cua site; nhin lac long va khong ro dang hoi ve cai gi.
+ *
+ * Gan bang su kien submit chu khong phai click vao nut: nhu vay bam Enter trong form
+ * cung duoc hoi lai, khong lot luoi.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var dialogElement = document.getElementById('uteConfirmDialog');
+        var messageElement = document.getElementById('uteConfirmMessage');
+        var acceptButton = document.getElementById('uteConfirmAccept');
+
+        // Thieu hop thoai (trang khong di qua template chung) thi thoi, de form chay nhu cu.
+        if (!dialogElement || !messageElement || !acceptButton || !window.bootstrap) {
+            return;
+        }
+
+        var dialog = new window.bootstrap.Modal(dialogElement);
+        var formDangCho = null;
+        var nutDangCho = null;
+        var formDangXacNhan = null;
+
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (!form || !form.getAttribute || event.defaultPrevented) {
+                return;
+            }
+            var cauHoi = form.getAttribute('data-ute-confirm');
+            if (!cauHoi) {
+                return;
+            }
+            // Da xac nhan roi thi cho di tiep, khong hoi vong lap.
+            if (form.dataset.uteConfirmed === 'true') {
+                if (form.dataset.sxSubmitting === 'true' && formDangXacNhan !== form) event.preventDefault();
+                return;
+            }
+
+            event.preventDefault();
+            formDangCho = form;
+            nutDangCho = event.submitter || null;
+            messageElement.textContent = cauHoi;
+            acceptButton.textContent = form.getAttribute('data-ute-confirm-nut') || 'Đồng ý';
+            dialog.show();
+        });
+
+        acceptButton.addEventListener('click', function () {
+            if (!formDangCho) {
+                return;
+            }
+            var form = formDangCho;
+            var submitter = nutDangCho;
+            formDangCho = null;
+            nutDangCho = null;
+            form.dataset.uteConfirmed = 'true';
+            dialog.hide();
+            // requestSubmit chạy lại native validation, submit handlers và giữ name/value của nút đã bấm.
+            // Không gọi submit() vì nó bỏ qua cả ba bước đó.
+            var actualEvent = null;
+            function observe(event) { if (event.target === form) actualEvent = event; }
+            document.addEventListener('submit', observe);
+            formDangXacNhan = form;
+            try {
+                if (submitter && submitter.form === form && !submitter.disabled) form.requestSubmit(submitter);
+                else form.requestSubmit();
+            } finally {
+                formDangXacNhan = null;
+                document.removeEventListener('submit', observe);
+                if (!actualEvent || actualEvent.defaultPrevented) delete form.dataset.uteConfirmed;
+            }
+            if (!actualEvent || actualEvent.defaultPrevented) return;
+            form.dataset.sxSubmitting = 'true';
+            // Chờ trình duyệt thu thập dữ liệu của nút trước khi vô hiệu hóa nút.
+            window.setTimeout(function () {
+                form.querySelectorAll('button[type=submit], button:not([type])').forEach(function (button) {
+                    button.disabled = true;
+                    button.classList.add('sx-busy');
+                });
+            }, 0);
+        });
+
+        // Dong hop thoai ma khong dong y thi quen form di, tranh lan sang lan bam sau.
+        dialogElement.addEventListener('hidden.bs.modal', function () {
+            formDangCho = null;
+            nutDangCho = null;
+        });
+    });
+})();
+
+/*
+ * Nut chep ma van don.
+ *
+ * Ma dang UTE250001 go tay rat de sai mot so, ma nguoi dung thuong phai gui lai cho
+ * nguoi nhan hoac dan vao o tra cuu. Mot nut chep tiet kiem duoc buoc do.
+ *
+ * Danh dau bang data-ute-copy, gia tri chinh la chuoi can chep:
+ *     <button data-ute-copy="UTE250001">Chep ma</button>
+ *
+ * navigator.clipboard chi chay tren HTTPS hoac localhost. Khi khong dung duoc
+ * (vi du mo qua dia chi IP trong mang LAN) thi lui ve cach cu: tao mot o nhap tam,
+ * chon het roi goi lenh sao chep cua trinh duyet.
+ */
+(function () {
+    'use strict';
+
+    var THOI_GIAN_BAO = 1500;
+
+    function chepBangCachCu(chuoi) {
+        var oTam = document.createElement('textarea');
+        oTam.value = chuoi;
+        // Dat ngoai man hinh de nguoi dung khong thay o nhap nhay ra
+        oTam.style.position = 'fixed';
+        oTam.style.top = '-1000px';
+        document.body.appendChild(oTam);
+        oTam.select();
+        var thanhCong = false;
+        try {
+            thanhCong = document.execCommand('copy');
+        } catch (e) {
+            thanhCong = false;
+        }
+        document.body.removeChild(oTam);
+        return thanhCong;
+    }
+
+    function baoDaChep(nut) {
+        // Giu lai noi dung cu de tra ve sau khi bao xong
+        if (!nut.dataset.noiDungGoc) {
+            nut.dataset.noiDungGoc = nut.innerHTML;
+        }
+        nut.innerHTML = '<i class="bi bi-check2"></i> Đã chép';
+        nut.classList.add('ute-copied');
+        window.setTimeout(function () {
+            nut.innerHTML = nut.dataset.noiDungGoc;
+            nut.classList.remove('ute-copied');
+        }, THOI_GIAN_BAO);
+    }
+
+    document.addEventListener('click', function (event) {
+        var nut = event.target.closest('[data-ute-copy]');
+        if (!nut) {
+            return;
+        }
+        event.preventDefault();
+
+        var chuoi = nut.getAttribute('data-ute-copy');
+        if (!chuoi) {
+            return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(chuoi).then(function () {
+                baoDaChep(nut);
+            }, function () {
+                if (chepBangCachCu(chuoi)) {
+                    baoDaChep(nut);
+                }
+            });
+        } else if (chepBangCachCu(chuoi)) {
+            baoDaChep(nut);
+        }
+    });
+})();
+
+/*
+ * Quay lai trang bang nut Back (trinh duyet lay trang tu bo nho dem): mo khoa cac nut
+ * dang o trang thai "dang xu ly" va hoi lai xac nhan o lan gui sau.
+ */
+window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) {
+        return;
+    }
+    document.querySelectorAll('form[data-sx-submitting]').forEach(function (form) {
+        delete form.dataset.sxSubmitting;
+        delete form.dataset.uteConfirmed;
+        form.querySelectorAll('.sx-busy').forEach(function (button) {
+            button.disabled = false;
+            button.classList.remove('sx-busy');
+        });
+    });
+});
+
+/*
+ * Trang tài khoản (người gửi / Shipper):
+ * - Ảnh đại diện chưa có hoặc tải lỗi thì bỏ thẻ <img>, để lộ chữ cái đầu phía sau.
+ * - Chọn ảnh xong là gửi lên ngay, khỏi phải bấm thêm nút.
+ * - Form có data-auto-submit (công tắc email) tự lưu khi đổi.
+ * - Shipper: công tắc "thông báo nổi khi có đơn mới" lưu trên chính thiết bị (localStorage).
+ */
+(function () {
+    'use strict';
+
+    function dropBrokenAvatar(img) {
+        if (img.complete && img.naturalWidth === 0) { img.remove(); return; }
+        img.addEventListener('error', function () { img.remove(); }, { once: true });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('img[data-avatar-img]').forEach(dropBrokenAvatar);
+
+        document.querySelectorAll('[data-avatar-input]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                if (!input.files || !input.files.length) return;
+                var file = input.files[0];
+                if (file.size > 2 * 1024 * 1024) {
+                    window.alert('Ảnh tối đa 2 MB. Hãy chọn ảnh nhỏ hơn.');
+                    input.value = '';
+                    return;
+                }
+                var form = input.closest('form');
+                form.classList.add('is-uploading');
+                form.submit();
+            });
+        });
+
+        document.querySelectorAll('form[data-auto-submit]').forEach(function (form) {
+            form.addEventListener('change', function () { form.submit(); });
+        });
+
+        var popupToggle = document.querySelector('[data-shipper-popup-toggle]');
+        if (popupToggle) {
+            try { popupToggle.checked = localStorage.getItem('ute-shipper-popup') !== 'off'; } catch (e) { /* giữ mặc định */ }
+            popupToggle.addEventListener('change', function () {
+                try { localStorage.setItem('ute-shipper-popup', popupToggle.checked ? 'on' : 'off'); } catch (e) { /* trình duyệt chặn */ }
+            });
+        }
+
+        // Thông báo của trình duyệt khi đang ở tab khác: chỉ bật khi người dùng tự gạt và cho phép.
+        var desktopToggle = document.querySelector('[data-shipper-desktop-toggle]');
+        if (desktopToggle) {
+            var hint = document.querySelector('[data-desktop-hint]');
+            var supported = 'Notification' in window;
+            function syncDesktop() {
+                var on = false;
+                try { on = localStorage.getItem('ute-shipper-desktop') === 'on'; } catch (e) { /* mặc định tắt */ }
+                desktopToggle.checked = supported && on && Notification.permission === 'granted';
+                if (!supported) { desktopToggle.disabled = true; if (hint) hint.textContent = 'Trình duyệt này không hỗ trợ.'; }
+                else if (Notification.permission === 'denied') { desktopToggle.disabled = true; if (hint) hint.textContent = 'Bạn đã chặn thông báo; mở lại trong cài đặt trang của trình duyệt.'; }
+            }
+            syncDesktop();
+            desktopToggle.addEventListener('change', function () {
+                if (!desktopToggle.checked) {
+                    try { localStorage.setItem('ute-shipper-desktop', 'off'); } catch (e) { /* bỏ qua */ }
+                    return;
+                }
+                Notification.requestPermission().then(function (result) {
+                    try { localStorage.setItem('ute-shipper-desktop', result === 'granted' ? 'on' : 'off'); } catch (e) { /* bỏ qua */ }
+                    syncDesktop();
+                });
+            });
+        }
+    });
+})();

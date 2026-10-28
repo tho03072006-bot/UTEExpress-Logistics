@@ -1,0 +1,5 @@
+ZXing browser v0.1.5, Copyright (c) 2018 ZXing for JS, MIT License.
+Unmodified UMD distribution from https://www.npmjs.com/package/@zxing/browser/v/0.1.5
+Includes ZXing for JS library and ZXing authors' code under Apache License 2.0.
+Source: https://github.com/zxing-js/library and https://github.com/zxing/zxing
+See LICENSE-browser.txt and LICENSE-library.txt in this directory.

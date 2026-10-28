@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="doc(pageTitle, content, withSidebar)"
+      th:with="isShipper=${#authorization.expression('hasRole(''SHIPPER'')')}, isStaff=${#authorization.expression('hasAnyRole(''MANAGER'',''ADMIN'')')}, isAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, isUser=${#authorization.expression('hasRole(''USER'')')}, useSidebar=${withSidebar or isShipper or isStaff}, homeUrl=${isShipper ? '/shipper/trang-chu' : (isAdmin ? '/admin/trang-chu' : (isStaff ? '/manager/trang-chu' : (isUser ? '/nguoi-dung/trang-chu' : '/')))}, roleName=${isShipper ? 'Shipper' : (isAdmin ? 'Admin' : (isStaff ? 'Manager' : 'Khách hàng'))}, accountUrl=${isShipper ? '/shipper/tai-khoan' : (isUser ? '/nguoi-dung/tai-khoan' : null)}, avatarV=${session == null ? null : session.avatarVersion}"
+      lang="vi">
+<!--/*
+  TEMPLATE DÙNG CHUNG CHO TOÀN BỘ WEBSITE UTEExpress.
+
+  Mọi trang đều đi qua đúng file này - đó là "01 template Bootstrap" của đồ án.
+  Trang con chỉ viết phần nội dung riêng, không tự dựng lại <head>, navbar hay footer:
+
+      <!DOCTYPE html>
+      <html xmlns:th="http://www.thymeleaf.org"
+            th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+      <head><title>Tên trang - UTEExpress</title></head>
+      <body>
+      <section> ...nội dung riêng của trang... </section>
+      </body>
+      </html>
+
+  Tham số thứ ba (withSidebar):
+    true  - trang trong khu vực đã đăng nhập, có thanh điều hướng bên trái
+    false - trang công khai (trang chủ, tra cứu, đăng nhập/đăng ký), chỉ có thanh trên
+  Shipper đã đăng nhập vẫn giữ menu công việc khi mở các trang công khai.
+*/-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:replace="${pageTitle}">UTEExpress</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Be Vietnam Pro: font Google thiết kế riêng cho tiếng Việt, dấu hiển thị cân đối hơn font mặc định -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css(v=${assetVersion ?: '1'})}">
+    <!-- Bảng màu mở rộng của khu vực Shipper; chỉ tác động lớp shipper-workspace / sx-* -->
+    <link rel="stylesheet" th:href="@{/css/shipper.css(v=${assetVersion ?: '1'})}">
+    <!-- Giao diện trang chủ, tra cứu, ước tính cước, đăng nhập (lớp sx-*) -->
+    <link rel="stylesheet" th:href="@{/css/pages.css(v=${assetVersion ?: '1'})}">
+    <!-- Lớp giao diện đồng bộ cho mọi trang còn lại (tiêu đề, thẻ, bảng, thông báo, nút) -->
+    <link rel="stylesheet" th:href="@{/css/theme.css(v=${assetVersion ?: '1'})}">
+    <!-- Lớp giao diện cuối cùng theo template quản trị Tabler: menu trái tối, thanh trên trắng, thẻ phẳng -->
+    <link rel="stylesheet" th:href="@{/css/ute-app.css(v=${assetVersion ?: '1'})}">
+    <link th:if="${isStaff}" rel="stylesheet" th:href="@{/css/staff.css(v=${assetVersion ?: '1'})}">
+    <link th:if="${isUser or isShipper}" rel="stylesheet" th:href="@{/css/assistant-chat.css(v=${assetVersion ?: '1'})}">
+
+    <!--/*
+      Gan che do sang/toi NGAY o <head>, truoc khi trinh duyet ve than trang.
+      Neu de xuong cuoi trang moi chay thi nguoi dung se thay mot nhay trang toat
+      roi moi doi sang nen toi - kho chiu va nhin nhu loi.
+
+      Chua tung chon lan nao thi theo cai dat cua he dieu hanh (prefers-color-scheme).
+      Bao try/catch vi trinh duyet o che do rieng tu co the chan localStorage.
+    */-->
+    <script th:inline="none">
+        (function () {
+            try {
+                var saved = localStorage.getItem('ute-theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+                // Ảnh nền tiêu đề người gửi tự chọn (user-photo.js); đặt sớm để không nháy ảnh mặc định
+                var photo = localStorage.getItem('ute-user-photo');
+                if (photo && /^[a-z-]{1,20}$/.test(photo)) document.documentElement.setAttribute('data-user-photo', photo);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+</head>
+
+<body class="ute-body sx-app" th:classappend="${(useSidebar ? 'sx-side ' : '') + (isStaff ? 'staff-workspace' : '') + (isUser ? ' user-workspace' : '') + (isShipper ? ' shipper-role' : '') + (staffBranchPhoto != null ? ' sx-photo-' + staffBranchPhoto : '')}">
+
+<!-- ===================== Thanh trên cùng ===================== -->
+<header class="ute-topbar" th:classappend="${useSidebar} ? 'ute-topbar-with-sidebar' : ''">
+    <div class="ute-topbar-inner">
+        <!-- Nút mở menu, chỉ hiện trên màn hình nhỏ và chỉ ở khu vực có sidebar -->
+        <button th:if="${useSidebar}" class="btn btn-sm ute-menu-toggle d-lg-none" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#uteSidebarMobile"
+                aria-controls="uteSidebarMobile" aria-label="Mở menu">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <a class="ute-brand" th:href="@{${homeUrl}}">
+            <span class="ute-brand-dot"></span>
+            UTEExpress
+        </a>
+
+        <!-- Ô tìm nhanh: Shipper tìm trong đơn được phân công, các vai trò khác tra cứu mã vận đơn -->
+        <form th:if="${isShipper}" class="sx-top-search d-none d-lg-flex" th:action="@{/shipper/trang-chu}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="keyword" maxlength="100" placeholder="Tìm mã đơn, tên, SĐT…" aria-label="Tìm đơn được phân công" autocomplete="off">
+        </form>
+        <form th:if="${isStaff}" class="sx-top-search d-none d-lg-flex" th:action="@{/manager/don-hang}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="tracking" maxlength="20" pattern="[A-Za-z0-9-]{1,20}" placeholder="Tìm mã vận đơn trong 30 ngày…" aria-label="Tra soát mã vận đơn trong phạm vi được cấp, 30 ngày gần nhất" autocomplete="off">
+        </form>
+        <form th:if="${!isShipper and !isStaff}" class="sx-top-search d-none d-lg-flex" th:action="@{/tra-cuu}" method="get" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="trackingCode" maxlength="40" placeholder="Tra cứu mã vận đơn…" aria-label="Tra cứu mã vận đơn" autocomplete="off">
+        </form>
+
+        <nav class="ute-topbar-nav">
+            <span th:if="${isStaff}" class="staff-topbar-scope"><i class="bi bi-building" aria-hidden="true"></i><span th:text="${isAdmin ? 'Toàn hệ thống' : 'Vận hành chi nhánh'}"></span></span>
+            <a class="ute-topbar-link d-none d-md-inline" th:href="@{${homeUrl}}">Trang chủ</a>
+            <a class="ute-topbar-link d-none d-md-inline" th:href="@{/tra-cuu}">Tra cứu vận đơn</a>
+            <a class="ute-topbar-link d-none d-lg-inline" th:href="@{/uoc-tinh-cuoc}">Ước tính cước</a>
+
+            <!-- Chi mot nut, doi qua lai giua hai che do. Icon nao hien do CSS quyet dinh. -->
+            <button type="button" class="btn btn-sm ute-theme-toggle" id="uteThemeToggle"
+                    aria-label="Chuyển chế độ sáng / tối" title="Chuyển chế độ sáng / tối">
+                <i class="bi bi-moon-stars"></i>
+                <i class="bi bi-sun-fill"></i>
+            </button>
+
+            <!-- Chuông Shipper: chấm đỏ có số khi có thông báo chưa đọc (js/shipper-notifications.js cập nhật) -->
+            <a sec:authorize="hasRole('SHIPPER')" class="ute-topbar-link sx-bell" th:href="@{/shipper/thong-bao}" aria-label="Thông báo nhận đơn" data-notification-bell>
+                <i class="bi bi-bell-fill"></i><span class="sx-bell-dot" data-notification-count hidden>0</span>
+            </a>
+            <a th:if="${isStaff}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{/noi-bo/tai-khoan}" aria-label="Xem thông tin tài khoản của tôi">
+                <span class="sx-avatar sx-avatar-xs" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">S</span><span class="staff-topbar-account"><span th:text="${displayName ?: #authentication.name}">staff</span><small th:text="${roleName}"></small></span>
+            </a>
+            <!-- Người gửi / Shipper: ảnh đại diện + tên, bấm để mở trang tài khoản. Phiên đã biết là chưa có ảnh (-1) thì khỏi tải. -->
+            <a th:if="${accountUrl != null}" class="ute-user-chip d-none d-sm-inline-flex text-decoration-none" th:href="@{${accountUrl}}" aria-label="Tài khoản của tôi">
+                <span class="sx-avatar sx-avatar-xs" aria-hidden="true"><th:block th:text="${#strings.toUpperCase(#strings.substring(displayName ?: #authentication.name, 0, 1))}">U</th:block><img th:if="${avatarV == null or avatarV >= 0}" th:src="@{${accountUrl} + '/anh-dai-dien'(v=${avatarV ?: 0})}" alt="" data-avatar-img></span>
+                <span th:text="${displayName ?: #authentication.name}">user</span>
+            </a>
+            <span sec:authorize="isAuthenticated()" th:if="${!isStaff and accountUrl == null}" class="ute-user-chip d-none d-sm-inline-flex">
+                <i class="bi bi-person-circle"></i>
+                <span sec:authentication="name">user</span>
+            </span>
+            <form sec:authorize="isAuthenticated()" th:action="@{${isStaff ? '/noi-bo/dang-xuat' : '/logout'}}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm ute-btn-ghost ute-logout" aria-label="Đăng xuất" title="Đăng xuất"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span class="d-none d-sm-inline">Đăng xuất</span></button>
+            </form>
+
+            <a sec:authorize="isAnonymous()" class="ute-topbar-link" th:href="@{/dang-ky}">Đăng ký</a>
+            <a sec:authorize="isAnonymous()" class="btn btn-sm ute-btn-ghost" th:href="@{/dang-nhap}">Đăng nhập</a>
+        </nav>
+    </div>
+</header>
+<div sec:authorize="hasRole('SHIPPER')" id="shipperNotificationBanner" class="container py-2" hidden>
+    <div class="alert alert-light border mb-0" role="status"><span data-notification-message></span>
+        <a class="ms-2" th:href="@{/shipper/thong-bao}">Xem thông báo</a></div>
+</div>
+
+<!-- ===================== Thân trang ===================== -->
+<div th:class="${useSidebar} ? 'ute-shell ute-shell-with-sidebar' : 'ute-shell'">
+
+    <!-- Sidebar cố định cho màn hình lớn -->
+    <aside th:if="${useSidebar}" class="ute-sidebar d-none d-lg-block">
+        <a class="sx-side-brand" th:href="@{${homeUrl}}"><span class="sx-side-logo" aria-hidden="true"><i class="bi bi-truck"></i></span> UTEExpress <small th:text="${roleName}">Shipper</small></a>
+        <th:block th:if="${isStaff}"><nav th:replace="~{admin/navigation :: sidebar}"></nav></th:block>
+        <th:block th:unless="${isStaff}"><nav th:replace="~{fragments/components :: sidebarNav}"></nav></th:block>
+    </aside>
+
+    <!-- Cùng menu đó nhưng dạng trượt ra, dùng cho điện thoại / máy tính bảng -->
+    <div th:if="${useSidebar}" class="offcanvas offcanvas-start ute-sidebar-offcanvas" tabindex="-1"
+         id="uteSidebarMobile" aria-labelledby="uteSidebarMobileLabel">
+        <div class="offcanvas-header">
+            <h6 class="offcanvas-title mb-0" id="uteSidebarMobileLabel">Điều hướng</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Đóng"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <th:block th:if="${isStaff}"><nav th:replace="~{admin/navigation :: sidebar}"></nav></th:block>
+            <th:block th:unless="${isStaff}"><nav th:replace="~{fragments/components :: sidebarNav}"></nav></th:block>
+        </div>
+    </div>
+
+    <main class="ute-main">
+        <div class="ute-main-inner">
+            <div th:replace="${content}">Nội dung của từng trang được chèn vào đây.</div>
+        </div>
+    </main>
+</div>
+
+<!-- Thanh điều hướng dưới cùng cho Shipper trên điện thoại (kiểu ứng dụng tài xế giao hàng) -->
+<nav sec:authorize="hasRole('SHIPPER')" class="sx-tabbar d-lg-none" aria-label="Điều hướng nhanh Shipper">
+    <a class="sx-tabbar-link" th:href="@{/shipper/trang-chu}"><i class="bi bi-list-check"></i><span>Đơn</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/lo-trinh}"><i class="bi bi-signpost-split"></i><span>Lộ trình</span></a>
+    <a class="sx-tabbar-link sx-tabbar-scan" th:href="@{/shipper/quet-ma}"><i class="bi bi-qr-code-scan"></i><span>Quét mã</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/doi-soat}"><i class="bi bi-wallet2"></i><span>Cước COD</span></a>
+    <a class="sx-tabbar-link" th:href="@{/shipper/thong-ke}"><i class="bi bi-graph-up"></i><span>Thống kê</span></a>
+</nav>
+
+<footer class="ute-footer">
+    <div class="ute-footer-inner">
+        <span>UTEExpress - Đồ án Lập trình Web Nhóm 8 WEPR330479_11 - HCMUTE</span>
+    </div>
+</footer>
+
+<!-- Hộp hỏi lại dùng chung cho mọi trang, xem fragments/components.html -->
+<div th:replace="~{fragments/components :: confirmDialog}"></div>
+<th:block th:if="${isUser or isShipper}"><div th:replace="~{fragments/assistant :: widget}"></div></th:block>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/form-messages-vi.js(v=${assetVersion ?: '1'})}"></script>
+<script th:src="@{/js/main.js(v=${assetVersion ?: '1'})}"></script>
+<script defer th:src="@{/js/account-validation.js(v=${assetVersion ?: '1'})}"></script>
+<script th:src="@{/js/address-picker.js(v=${assetVersion ?: '1'})}"></script>
+<script th:if="${isStaff}" th:src="@{/js/staff-navigation.js(v=${assetVersion ?: '1'})}"></script>
+<script th:if="${isUser or isShipper}" th:src="@{/js/assistant-chat.js(v=${assetVersion ?: '1'})}"></script>
+<script th:if="${isUser}" th:src="@{/js/user-photo.js(v=${assetVersion ?: '1'})}"></script>
+
+<th:block sec:authorize="hasAnyRole('USER', 'SHIPPER', 'MANAGER', 'ADMIN')">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:src="@{/js/tracking-realtime.js(v=${assetVersion ?: '1'})}"></script>
+    <script sec:authorize="hasRole('SHIPPER')" th:src="@{/js/shipper-notifications.js(v=${assetVersion ?: '1'})}"></script>
+</th:block>
+</body>
+</html>

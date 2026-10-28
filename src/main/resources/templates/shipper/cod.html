@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Nộp cước COD - UTEExpress</title></head><body>
+<section class="shipper-workspace">
+<header class="shipper-hero"><div class="sx-hero-main"><span class="shipper-eyebrow"><i class="bi bi-cash-coin"></i> ĐỐI SOÁT CƯỚC COD</span><h2>Cước COD đang giữ</h2>
+        <strong class="sx-cod-hero-amount"><th:block th:replace="~{fragments/components :: money(${held.amount})}"></th:block></strong>
+        <div class="sx-hero-stats"><span class="sx-hero-chip"><i class="bi bi-receipt"></i> <span th:text="|${held.count} đơn chưa nộp|"></span></span>
+            <span class="sx-hero-chip" th:if="${held.hasPending()}"><i class="bi bi-hourglass-split"></i> <span th:text="|Chờ xác nhận ${#numbers.formatInteger(held.pendingAmount, 1, 'POINT')} đ|"></span></span></div>
+    <div class="shipper-hero-actions"><a class="btn btn-light" th:href="@{/shipper/thong-ke}"><i class="bi bi-bar-chart"></i> Thống kê</a></div></div>
+    <img class="sx-hero-art" th:src="@{/images/shipper/cod-wallet.svg}" alt="" aria-hidden="true" width="320" height="213"></header>
+<div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
+<div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+<div class="shipper-notice sx-notice-warning" th:if="${pending != null}"><i class="bi bi-hourglass-split"></i><span>Bạn có phiếu <a th:href="@{/shipper/doi-soat/{id}(id=${pending.id})}" th:text="|#${pending.id}|"></a> đang chờ Manager xác nhận.</span></div>
+
+<div class="ute-panel mb-3 sx-gap-panel" data-realtime-region="shipper-cash-balance">
+    <th:block th:replace="~{fragments/components :: cashGap(${balance})}"></th:block>
+</div>
+<div class="sx-cod-grid">
+<article class="ute-panel sx-tone-gold"><div class="shipper-section-head"><div><span class="shipper-eyebrow">ĐƠN ĐÃ THU TIỀN</span><h3>Chọn đơn để nộp</h3></div><i class="bi bi-list-check"></i></div>
+    <div class="shipper-empty" th:if="${#lists.isEmpty(unsettled)}"><img class="sx-empty-art" th:src="@{/images/shipper/empty-wallet.svg}" alt="" aria-hidden="true" width="200" height="142"><h3>Không có đơn COD chờ lập phiếu mới</h3></div>
+    <p class="shipper-hint" th:if="${held.count > #lists.size(unsettled)}" th:text="|Hiển thị ${#lists.size(unsettled)} đơn cũ nhất (tối đa ${maxOrders} đơn mỗi phiếu).|"></p>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(unsettled)}"><table class="table align-middle sx-cod-table mb-0">
+        <thead><tr><th scope="col"><input type="checkbox" data-cod-all checked aria-label="Chọn tất cả đơn" th:disabled="${pending != null}"></th><th scope="col">Vận đơn</th><th scope="col">Người nhận</th><th scope="col">Thu lúc</th><th scope="col" class="text-end">Cước COD</th></tr></thead>
+        <tbody><tr th:each="payment : ${unsettled}" class="sx-selected">
+            <td><input type="checkbox" class="sx-cod-check" name="orderIds" form="codForm" checked th:value="${payment.order.id}" th:attr="data-amount=${payment.amount.toPlainString()},aria-label=|Chọn ${payment.order.trackingCode}|" th:disabled="${pending != null}"></td>
+            <td><a th:href="@{/shipper/don/{id}(id=${payment.order.id})}" th:text="${payment.order.trackingCode}"></a></td>
+            <td th:text="${payment.order.receiverName}"></td>
+            <td th:text="${payment.paidAt == null ? '—' : #temporals.format(payment.paidAt, 'dd/MM HH:mm')}"></td>
+            <td class="text-end fw-semibold"><span th:replace="~{fragments/components :: money(${payment.amount})}"></span></td></tr></tbody>
+    </table></div>
+</article>
+<aside>
+    <form id="codForm" class="ute-panel sx-tone-gold" method="post" th:action="@{/shipper/doi-soat}" th:if="${!#lists.isEmpty(unsettled) and pending == null}" data-sx-cod-form data-sx-once
+          data-ute-confirm="Gửi phiếu nộp tiền cho Manager? Sau khi gửi bạn không sửa được phiếu." data-ute-confirm-nut="Gửi phiếu">
+        <span class="shipper-eyebrow"><i class="bi bi-send"></i> LẬP PHIẾU NỘP TIỀN</span><h3 class="mt-2">Xác nhận số tiền</h3>
+        <div class="sx-total-box my-3"><span class="shipper-hint">Tổng cước COD của <b data-cod-count>0</b> đơn đã chọn</span><strong data-cod-total>0 đ</strong></div>
+        <div class="mb-3"><label for="declaredAmount" class="form-label">Số tiền mặt bạn nộp (đ)</label>
+            <input id="declaredAmount" name="declaredAmount" class="form-control form-control-lg" inputmode="numeric" maxlength="30" required autocomplete="off" th:value="${formAmount}" data-cod-amount>
+            <div class="form-text"><span class="sx-diff" data-cod-diff></span></div></div>
+        <div class="mb-3"><label for="codNote" class="form-label">Ghi chú cho Manager</label><textarea id="codNote" name="note" class="form-control" rows="3" maxlength="500" data-sx-count data-cod-note th:text="${formNote}" placeholder="Bắt buộc ít nhất 10 ký tự khi số tiền khác tổng cước."></textarea></div>
+        <button class="btn sx-btn-gold w-100" type="submit"><i class="bi bi-send-check"></i> Gửi phiếu cho Manager</button>    </form>
+    <article class="ute-panel sx-tone-indigo" th:classappend="${!#lists.isEmpty(unsettled) and pending == null} ? 'mt-4'"><div class="shipper-section-head"><div><span class="shipper-eyebrow">LỊCH SỬ</span><h3>Phiếu đã gửi</h3></div><i class="bi bi-clock-history"></i></div>
+        <p class="shipper-hint mb-0" th:if="${history.empty}">Bạn chưa gửi phiếu nộp tiền nào.</p>
+        <div class="sx-history-item" th:each="s : ${history.content}"><div><a class="fw-bold" th:href="@{/shipper/doi-soat/{id}(id=${s.id})}" th:text="|Phiếu #${s.id}|"></a><div class="shipper-hint" th:text="|${#temporals.format(s.submittedAt, 'dd/MM/yyyy HH:mm')} · ${s.orderCount} đơn|"></div></div>
+            <strong th:text="|${#numbers.formatInteger(s.declaredAmount, 1, 'POINT')} đ|"></strong>
+            <span class="sx-pill sx-dot" th:classappend="${'sx-cod-status-' + #strings.toLowerCase(s.status.name())}" th:text="${s.status.label}"></span></div>
+        <nav class="shipper-pagination" th:if="${history.totalPages > 1}" aria-label="Phân trang phiếu nộp tiền"><a th:if="${history.hasPrevious()}" class="btn btn-sm btn-outline-secondary" th:href="@{/shipper/doi-soat(page=${history.number - 1})}">Trước</a><span th:text="|${history.number + 1}/${history.totalPages}|"></span><a th:if="${history.hasNext()}" class="btn btn-sm btn-outline-secondary" th:href="@{/shipper/doi-soat(page=${history.number + 1})}">Sau</a></nav>
+    </article>
+</aside>
+</div>
+<script th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

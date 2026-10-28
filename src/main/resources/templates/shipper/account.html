@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head><title>Tài khoản của tôi - UTEExpress</title></head><body>
+<section class="shipper-workspace sx-account">
+    <div class="shipper-notice sx-notice-success" role="status" th:if="${message}"><i class="bi bi-check-circle-fill"></i><span th:text="${message}"></span></div>
+    <div class="shipper-notice sx-notice-danger" role="alert" th:if="${error}"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+
+    <div th:replace="~{fragments/account :: hero(${profile}, '/shipper/tai-khoan')}"></div>
+    <div th:replace="~{fragments/account :: stats(${profile})}"></div>
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="ute-panel mb-4">
+                <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-blue"><i class="bi bi-person-lines-fill"></i></span> Thông tin liên hệ</h5>
+                <form method="post" th:object="${form}" th:action="@{/shipper/tai-khoan/cap-nhat}" class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label" for="fullName">Họ và tên</label>
+                        <input type="text" id="fullName" th:field="*{fullName}" class="form-control" maxlength="100">
+                        <div class="ute-field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" id="email" th:field="*{email}" class="form-control" readonly>
+                        <div class="form-text">Liên hệ Manager để đổi.</div>
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label" for="phone">Số điện thoại</label>
+                        <input type="tel" id="phone" th:field="*{phone}" class="form-control" required data-vn-mobile inputmode="tel" maxlength="20" autocomplete="tel" placeholder="0901234567">
+                        <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                    </div>
+                    <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin liên hệ</button></div>
+                </form>
+            </div>
+
+            <div th:replace="~{fragments/account :: details('/shipper/tai-khoan')}"></div>
+        </div>
+
+        <div class="col-xl-5">
+            <div th:replace="~{fragments/account :: completeness(${profile})}"></div>
+
+            <!-- Khách chấm sao: lấy từ "Đánh giá dịch vụ" của các đơn Shipper đã giao -->
+            <div class="ute-panel mb-4 sx-rating-panel" th:with="r=${profile.rating}">
+                <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-amber"><i class="bi bi-star"></i></span> Khách đánh giá</h5>
+                <div class="sx-rating-summary" th:if="${r.count > 0}">
+                    <strong th:text="${r.average}">4.8</strong>
+                    <span class="sx-stars" th:attr="aria-label=|${r.average} trên 5 sao|"><i class="bi" th:each="i : ${#numbers.sequence(1, 5)}"
+                            th:classappend="${i <= r.fullStars()} ? 'bi-star-fill' : 'bi-star'"></i></span>
+                    <small th:text="|${r.count} lượt đánh giá|">12 lượt đánh giá</small>
+                </div>
+                <ul class="sx-rating-list" th:if="${r.count > 0}">
+                    <li th:each="item : ${r.latest}">
+                        <span class="sx-stars sx-stars-sm"><i class="bi" th:each="i : ${#numbers.sequence(1, 5)}"
+                                th:classappend="${i <= item.stars} ? 'bi-star-fill' : 'bi-star'"></i></span>
+                        <p th:text="${#strings.abbreviate(item.content, 140)}">Giao nhanh, thân thiện.</p>
+                        <small th:text="|${item.trackingCode} · ${#temporals.format(item.createdAt, 'dd/MM/yyyy')}|">UTE · 01/10/2026</small>
+                    </li>
+                </ul>
+                <div class="sx-empty-mini mb-0" th:if="${r.count == 0}">
+                    <img th:src="@{/images/shipper/review-stars.svg}" alt="" aria-hidden="true" width="96" height="64">
+                    <span>Chưa có lượt đánh giá nào.</span>
+                </div>
+            </div>
+            <div class="ute-panel mb-4">
+                <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-amber"><i class="bi bi-bell"></i></span> Thông báo trên thiết bị này</h5>
+                <label class="sx-switch-row">
+                    <span><strong>Hiện thông báo nổi khi có đơn mới</strong>
+                        <small>Chuông vẫn đếm số chưa đọc.</small></span>
+                    <span class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" checked data-shipper-popup-toggle>
+                    </span>
+                </label>
+                <label class="sx-switch-row mt-2" data-desktop-row>
+                    <span><strong>Báo cả khi đang ở tab khác</strong>
+                        <small data-desktop-hint>Trình duyệt sẽ hỏi quyền hiển thị thông báo.</small></span>
+                    <span class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" data-shipper-desktop-toggle>
+                    </span>
+                </label>
+            </div>
+
+            <div class="ute-panel mb-4">
+                <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-rose"><i class="bi bi-shield-lock"></i></span> Bảo mật &amp; tài khoản</h5>
+                <dl class="sx-info-list">
+                    <div><dt>Tên đăng nhập</dt><dd th:text="${profile.account.username}">shipper</dd></div>
+                    <div><dt>Vai trò</dt><dd>Shipper</dd></div>
+                    <div><dt>Ngày tạo</dt><dd th:text="${profile.account.createdAt != null ? #temporals.format(profile.account.createdAt, 'dd/MM/yyyy') : '—'}">01/01/2026</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <script th:src="@{/js/shipper-workspace.js}"></script>
+</section></body></html>

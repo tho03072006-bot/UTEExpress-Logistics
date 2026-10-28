@@ -1,0 +1,18 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="vi"><body>
+<fieldset th:fragment="fields(path, rolePath)" data-branch-fields th:attr="data-role-name=${rolePath}" class="mb-3">
+<legend class="h6">Chi nhánh và khu vực phụ trách</legend>
+<p class="small text-muted">Bắt buộc chọn chi nhánh cho Manager/Shipper. Shipper có một khu vực chính và có thể có nhiều khu vực phụ cùng chi nhánh.</p>
+<label class="form-label" th:for="${path + '.branchId'}">Chi nhánh</label>
+<select class="form-select mb-3" th:field="*{__${path}__.branchId}" data-branch-select>
+<option value="">Chọn chi nhánh</option><option th:each="b : ${branches}" th:value="${b.id}" th:text="|${b.code} · ${b.name}${b.active ? '' : ' (ngừng nhận đơn mới)'}|"></option></select>
+<div data-shipper-zones>
+<label class="form-label" th:for="${path + '.primaryAreaCode'}">Khu vực chính</label>
+<select class="form-select mb-3" th:field="*{__${path}__.primaryAreaCode}" data-primary-area>
+<option value="">Chọn khu vực chính</option><option th:each="a : ${areas}" th:value="${a.code}" th:attr="data-branch-id=${a.branchId}" th:text="|${a.branchCode} · ${a.name}|"></option></select>
+<label class="form-label" th:for="${path + '.secondaryAreaCodes'}">Khu vực phụ</label>
+<select class="form-select" th:field="*{__${path}__.secondaryAreaCodes}" multiple size="6" data-secondary-areas>
+<option th:each="a : ${areas}" th:value="${a.code}" th:attr="data-branch-id=${a.branchId}" th:text="|${a.branchCode} · ${a.name}|"></option></select>
+<p class="form-text">Giữ Ctrl để chọn nhiều khu vực.</p>
+</div>
+<script th:src="@{/js/staff-branches.js}" defer></script>
+</fieldset></body></html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Lịch áp dụng cước - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav><div class="ute-page-head sx-art-calendar"><div><h1 class="h3">Phiên bản cước theo thời điểm</h1>
+<p>Bảng cước áp dụng theo từng khoảng thời gian.</p></div></div>
+<div class="alert alert-success" th:if="${message}" th:text="${message}"></div><div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+<form sec:authorize="hasRole('ADMIN')" method="post" th:action="@{/admin/lich-cuoc}" class="ute-panel p-3 mb-4"><div class="row g-3">
+<div class="col-md-4"><label for="serviceType">Dịch vụ</label><select id="serviceType" class="form-select" name="serviceType" required><option th:each="s : ${services}" th:value="${s}" th:text="${s.displayName}" th:selected="${submitted != null and submitted.serviceType == s}"></option></select></div>
+<div class="col-md-4"><label for="baseFee">Cước cơ bản (VND)</label><input id="baseFee" class="form-control" type="number" name="baseFee" min="0" max="100000000" step="1" th:value="${submitted != null ? submitted.baseFee : ''}" required></div>
+<div class="col-md-4"><label for="feePerKg">Phí mỗi kg (VND)</label><input id="feePerKg" class="form-control" type="number" name="feePerKg" min="0" max="5000000" step="1" th:value="${submitted != null ? submitted.feePerKg : ''}" required></div>
+<div class="col-md-6"><label for="startsAt">Bắt đầu (sau ít nhất 1 phút)</label><input id="startsAt" class="form-control" type="datetime-local" name="startsAt" th:value="${submitted != null ? submitted.startsAt : ''}" required></div>
+<div class="col-md-6"><label for="endsAt">Kết thúc (trong 2 năm)</label><input id="endsAt" class="form-control" type="datetime-local" name="endsAt" th:value="${submitted != null ? submitted.endsAt : ''}" required></div>
+<div class="col-12"><label for="reason">Lý do</label><textarea id="reason" class="form-control" name="reason" minlength="5" maxlength="500" th:text="${submitted != null ? submitted.reason : ''}" required></textarea></div></div><button class="btn btn-primary mt-3">Lập lịch cước</button></form>
+<div class="table-responsive"><table class="table"><thead><tr><th>Dịch vụ</th><th>Cơ bản + mỗi kg</th><th>Từ</th><th>Đến</th><th>Trạng thái</th><th sec:authorize="hasRole('ADMIN')">Hủy lịch chưa bắt đầu</th></tr></thead><tbody>
+<tr th:each="v : ${versions}">
+<td th:text="${v.serviceType.displayName}"></td><td th:text="|${v.baseFee} + ${v.feePerKg}/kg|"></td>
+<td th:text="${#temporals.format(v.startsAt,'dd/MM/yyyy HH:mm')}"></td><td th:text="${#temporals.format(v.endsAt,'dd/MM/yyyy HH:mm')}"></td>
+<td th:text="${v.cancelled ? 'Đã hủy' : (v.startsAt.isAfter(now) ? 'Sắp áp dụng' : (v.endsAt.isAfter(now) ? 'Đang áp dụng' : 'Đã kết thúc'))}"></td>
+<td sec:authorize="hasRole('ADMIN')"><form th:if="${!v.cancelled and v.startsAt.isAfter(now)}" method="post" th:action="@{/admin/lich-cuoc/{id}/huy(id=${v.id})}">
+<input type="hidden" name="revision" th:value="${v.revision}"><input class="form-control" name="reason" placeholder="Lý do hủy (5–500 ký tự)" aria-label="Lý do hủy lịch" minlength="5" maxlength="500" required><button class="btn btn-outline-danger btn-sm">Hủy</button></form></td></tr>
+</tbody></table></div><a th:if="${versions.hasPrevious()}" th:href="@{/manager/lich-cuoc(page=${versions.number-1})}">Trang trước</a> <a th:if="${versions.hasNext()}" th:href="@{/manager/lich-cuoc(page=${versions.number+1})}">Trang sau</a></section></body></html>

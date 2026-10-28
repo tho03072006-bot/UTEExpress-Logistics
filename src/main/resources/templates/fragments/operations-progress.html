@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="progress(items, path)" class="ute-panel my-3">
+    <h3 class="h5">Tiến độ xử lý từ Manager/Admin</h3>
+    
+    <p th:if="${items.empty}">Chưa có hồ sơ xử lý.</p>
+    <div class="table-responsive" th:unless="${items.empty}">
+        <table class="table align-middle"><thead><tr><th>Nghiệp vụ</th><th>Trạng thái</th><th>Số tiền đề xuất</th><th>Lịch giao lại được đề xuất/duyệt</th><th>Cập nhật</th></tr></thead>
+        <tbody><tr th:each="item : ${items.content}">
+            <td th:text="${item.kind.label}"></td><td th:text="${item.status.label}"></td>
+            <td><span th:if="${item.amount != null}" th:replace="~{fragments/components :: money(${item.amount})}"></span></td>
+            <td th:text="${item.nextAttemptAt != null ? #temporals.format(item.nextAttemptAt, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+            <td th:text="${#temporals.format(item.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+        </tr></tbody></table>
+    </div>
+    <nav class="d-flex gap-3" aria-label="Phân trang tiến độ xử lý">
+        <a th:if="${items.hasPrevious()}" th:href="@{${path}(page=${items.number - 1})}">Trước</a>
+        <span th:if="${!items.empty}" th:text="|Trang ${items.number + 1}/${items.totalPages}|"></span>
+        <a th:if="${items.hasNext()}" th:href="@{${path}(page=${items.number + 1})}">Sau</a>
+    </nav>
+</div>
+</body></html>

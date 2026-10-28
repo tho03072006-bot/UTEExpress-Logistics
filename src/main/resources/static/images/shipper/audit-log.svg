@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Nhật ký thao tác và kính lúp tra soát">
+  <ellipse cx="180" cy="226" rx="124" ry="7" fill="#000" opacity=".16"/>
+  <!-- sổ nhật ký -->
+  <rect x="78" y="36" width="160" height="182" rx="12" fill="#0072BC"/>
+  <rect x="92" y="36" width="146" height="182" rx="10" fill="#FFFFFF"/>
+  <rect x="78" y="36" width="20" height="182" rx="8" fill="#005A96"/>
+  <g fill="#94A3B8"><circle cx="88" cy="64" r="3"/><circle cx="88" cy="104" r="3"/><circle cx="88" cy="144" r="3"/><circle cx="88" cy="184" r="3"/></g>
+  <!-- dòng nhật ký -->
+  <g>
+    <circle cx="114" cy="68" r="6" fill="#2DD4BF"/><rect x="128" y="64" width="90" height="8" rx="4" fill="#CBD5E1"/>
+    <circle cx="114" cy="96" r="6" fill="#A78BFA"/><rect x="128" y="92" width="74" height="8" rx="4" fill="#CBD5E1"/>
+    <circle cx="114" cy="124" r="6" fill="#FB7185"/><rect x="128" y="120" width="84" height="8" rx="4" fill="#CBD5E1"/>
+    <circle cx="114" cy="152" r="6" fill="#F59E0B"/><rect x="128" y="148" width="64" height="8" rx="4" fill="#CBD5E1"/>
+    <circle cx="114" cy="180" r="6" fill="#0072BC"/><rect x="128" y="176" width="80" height="8" rx="4" fill="#CBD5E1"/>
+  </g>
+  <!-- kính lúp -->
+  <g transform="translate(250 132)">
+    <path d="M26 26 L 58 58" stroke="#4F46E5" stroke-width="16" stroke-linecap="round"/>
+    <circle r="40" fill="#FFFFFF"/>
+    <circle r="31" fill="#E0F2FE" stroke="#4F46E5" stroke-width="7"/>
+    <path d="M-14 -10 a18 18 0 0 1 16 -10" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <rect x="-14" y="2" width="28" height="6" rx="3" fill="#0072BC" opacity=".6"/>
+  </g>
+  <g fill="#FCD34D"><path d="M300 38 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/></g>
+</svg>

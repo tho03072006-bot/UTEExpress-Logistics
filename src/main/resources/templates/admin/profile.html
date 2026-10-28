@@ -1,0 +1,18 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Thông tin tài khoản - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-profile"><div><h1>Thông tin tài khoản của tôi</h1><p>Thông tin tài khoản nội bộ của bạn.</p></div></div>
+<div class="row g-3"><div class="col-xl-8"><div class="ute-panel p-4">
+<h2 class="h6 mb-3">Hồ sơ nhân viên · chỉ xem</h2>
+<dl class="row mb-0">
+<dt class="col-sm-4">Tên đăng nhập</dt><dd class="col-sm-8" th:text="${profile.username}"></dd>
+<dt class="col-sm-4">Họ tên</dt><dd class="col-sm-8" th:text="${#strings.isEmpty(profile.fullName) ? 'Chưa cập nhật' : profile.fullName}"></dd>
+<dt class="col-sm-4">Email công việc</dt><dd class="col-sm-8 text-break" th:text="${#strings.isEmpty(profile.email) ? 'Chưa cập nhật' : profile.email}"></dd>
+<dt class="col-sm-4">Điện thoại</dt><dd class="col-sm-8" th:text="${#strings.isEmpty(profile.phone) ? 'Chưa cập nhật' : profile.phone}"></dd>
+<dt class="col-sm-4">Vai trò được cấp</dt><dd class="col-sm-8" th:text="${profile.role.name() == 'ADMIN' ? 'Admin · Quản trị hệ thống' : 'Manager · Quản lý vận hành'}"></dd>
+<dt class="col-sm-4">Ngày cấp tài khoản</dt><dd class="col-sm-8" th:text="${profile.issuedAt == null ? 'Chưa có thông tin' : #temporals.format(profile.issuedAt, 'dd/MM/yyyy HH:mm')}"></dd>
+</dl></div></div><div class="col-xl-4"><div class="ute-panel p-4 h-100"><h2 class="h6">Bảo vệ tài khoản</h2>
+
+<a class="btn btn-primary btn-sm" th:href="@{/noi-bo/doi-mat-khau}">Đổi mật khẩu của tôi</a>
+</div></div></div>
+</section></body></html>

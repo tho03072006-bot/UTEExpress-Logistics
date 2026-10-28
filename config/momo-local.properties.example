@@ -1,0 +1,8 @@
+# Điền URL thực tế sau khi deploy Render. Không dùng localhost cho QR trên điện thoại.
+app.momo.simulator-url=https://TEN-SERVICE.onrender.com
+# Cùng một khóa Base64 ngẫu nhiên 32 byte cho local và biến MOMO_SIM_SECRET trên Render.
+# Không dùng mật khẩu tài khoản/database làm khóa. Không điền bí mật vào file .example.
+app.momo.sim-secret=CHANGE_ME
+# Mặc định bật: kiểm tra/đánh thức Render ở tác vụ nền khi Run UteexpressApplication.
+# Không deploy lại mỗi lần Run, không chạy simulator local, không giữ Render luôn thức.
+app.momo.startup-check.enabled=true

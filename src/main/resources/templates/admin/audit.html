@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Nhật ký quản trị - UTEExpress</title></head><body><section>
+<nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-audit"><div><h1>Nhật ký quản trị</h1><p>Tra soát ai đã thay đổi gì và khi nào.</p></div></div>
+<form method="get" th:action="@{/admin/nhat-ky}" th:object="${filter}" class="ute-panel p-3 mb-3">
+<div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert"><ul class="mb-0"><li th:each="message : ${#fields.allErrors()}" th:text="${message}"></li></ul></div>
+<div class="row g-3 align-items-end">
+<div class="col-md-6 col-xl-3"><label for="auditOperator" class="form-label">Người thực hiện</label><input id="auditOperator" th:field="*{operator}" class="form-control" maxlength="50" placeholder="Nhập đúng tên đăng nhập"></div>
+<div class="col-md-6 col-xl-3"><label for="auditCategory" class="form-label">Nhóm thao tác</label><select id="auditCategory" th:field="*{category}" class="form-select"><option th:each="category : ${categories}" th:value="${category}" th:text="${category.displayName}"></option></select></div>
+<div class="col-md-6 col-xl-3"><label for="auditFrom" class="form-label">Từ ngày</label><input id="auditFrom" type="date" th:field="*{from}" class="form-control" min="2000-01-01" th:max="${today}"></div>
+<div class="col-md-6 col-xl-3"><label for="auditTo" class="form-label">Đến ngày</label><input id="auditTo" type="date" th:field="*{to}" class="form-control" min="2000-01-01" th:max="${today}"></div>
+</div>
+<p class="form-text">Để trống để xem toàn bộ; khoảng lọc tối đa 366 ngày.</p>
+<button class="btn btn-primary btn-sm" type="submit">Lọc nhật ký</button><a class="btn btn-outline-secondary btn-sm ms-2" th:href="@{/admin/nhat-ky}">Xóa bộ lọc</a>
+</form>
+<div class="ute-panel p-3"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Đối tượng</th><th>Chi tiết</th></tr></thead>
+<tbody><tr th:each="event : ${events}"><td th:text="${#temporals.format(event.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></td>
+<td th:text="${event.actor}"></td><td th:text="${event.actionLabel}"></td><td th:text="${event.target}"></td><td class="text-break" th:text="${event.detail}"></td></tr>
+<tr th:if="${events.empty}"><td colspan="5" th:text="${invalidFilter} ? 'Hãy kiểm tra lại bộ lọc phía trên.' : 'Không có nhật ký phù hợp.'"></td></tr></tbody></table></div>
+<div class="d-flex gap-3 align-items-center mt-3">
+<a class="btn btn-outline-secondary btn-sm" th:if="${events.hasPrevious()}" th:href="@{/admin/nhat-ky(page=${events.number - 1},operator=${filter.operator},category=${filter.category},from=${filter.from},to=${filter.to})}">Trang trước</a>
+<span th:text="|Trang ${events.number + 1} / ${events.totalPages == 0 ? 1 : events.totalPages}|"></span>
+<a class="btn btn-outline-secondary btn-sm" th:if="${events.hasNext()}" th:href="@{/admin/nhat-ky(page=${events.number + 1},operator=${filter.operator},category=${filter.category},from=${filter.from},to=${filter.to})}">Trang sau</a>
+</div></div>
+</section></body></html>
+

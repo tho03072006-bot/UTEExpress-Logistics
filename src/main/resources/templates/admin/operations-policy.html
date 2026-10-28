@@ -1,0 +1,24 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Chính sách vận hành - UTEExpress</title></head><body><section><nav th:replace="~{admin/navigation :: navigation}"></nav>
+<div class="ute-page-head sx-art-policy"><div><h1 class="h3">Admin · Chính sách vận hành</h1><p>Ngưỡng cảnh báo, số lần giao lại và mức giảm khi khách tự mang hàng ra chi nhánh.</p></div></div>
+<div class="alert alert-light border" th:if="${message}" th:text="${message}"></div>
+<form method="post" th:action="@{/admin/chinh-sach-van-hanh}" th:object="${form}" class="ute-panel p-3">
+<div class="ute-field-error" th:if="${#fields.hasAnyErrors()}">Kiểm tra giá trị bắt buộc, giới hạn mỗi ô; Hỏa tốc ≤ Nhanh ≤ Tiêu chuẩn, hạn phản hồi ≤ hạn giải quyết.</div>
+<input type="hidden" th:field="*{revision}"><div class="row g-3">
+<div class="col-md-4"><label for="maxActiveOrders">Số đơn tối đa mỗi Shipper đang giữ (1–100)</label><input id="maxActiveOrders" class="form-control" type="number" th:field="*{maxActiveOrders}" min="1" max="100" required><div class="ute-field-error" th:errors="*{maxActiveOrders}"></div></div>
+<div class="col-md-4"><label for="dropOffDiscount">Giảm khi tự mang ra chi nhánh (đồng, 0–20.000)</label><input id="dropOffDiscount" class="form-control" type="number" th:field="*{dropOffDiscount}" min="0" max="20000" step="1000" required><div class="ute-field-error" th:errors="*{dropOffDiscount}"></div></div>
+<div class="col-md-4"><label for="pickupHours">Hạn lấy hàng (giờ, 1–168)</label><input id="pickupHours" class="form-control" type="number" th:field="*{pickupHours}" min="1" max="168" required aria-describedby="pickupHoursHelp">
+<p class="form-text mb-0" id="pickupHoursHelp">Đơn Hỏa tốc phải lấy trong thời gian hứa giao của tuyến Hỏa tốc (hiện "Trong 4 giờ") nếu ngắn hơn hạn này.</p></div>
+<details class="col-12" th:open="${#fields.hasErrors('standardHours') or #fields.hasErrors('expressHours') or #fields.hasErrors('superExpressHours')}">
+<summary>Hạn giao cho đơn cũ chưa có tuyến chi nhánh</summary>
+<p class="form-text mt-1">Ba hạn này chỉ áp cho đơn tạo trước khi có chi nhánh. Đơn có tuyến lấy hạn theo thời gian dự kiến ở trang <a th:href="@{/admin/cuoc-tuyen}">Cước tuyến</a>, tính từ lúc lấy hàng, đúng như đã báo khách.</p>
+<div class="row g-3">
+<div class="col-md-4"><label for="standardHours">Hạn giao Tiêu chuẩn (giờ, 1–720)</label><input id="standardHours" class="form-control" type="number" th:field="*{standardHours}" min="1" max="720" required></div>
+<div class="col-md-4"><label for="expressHours">Hạn giao Nhanh (giờ, 1–720)</label><input id="expressHours" class="form-control" type="number" th:field="*{expressHours}" min="1" max="720" required></div>
+<div class="col-md-4"><label for="superExpressHours">Hạn giao Hỏa tốc (giờ, 1–720)</label><input id="superExpressHours" class="form-control" type="number" th:field="*{superExpressHours}" min="1" max="720" required></div>
+</div></details>
+<div class="col-md-4"><label for="maxDeliveryAttempts">Số lần giao tối đa (1–10)</label><input id="maxDeliveryAttempts" class="form-control" type="number" th:field="*{maxDeliveryAttempts}" min="1" max="10" required></div>
+<div class="col-md-4"><label for="complaintResponseHours">Hạn phản hồi khiếu nại (giờ, 1–168)</label><input id="complaintResponseHours" class="form-control" type="number" th:field="*{complaintResponseHours}" min="1" max="168" required></div>
+<div class="col-md-4"><label for="complaintResolveHours">Hạn giải quyết khiếu nại (giờ, 1–2160)</label><input id="complaintResolveHours" class="form-control" type="number" th:field="*{complaintResolveHours}" min="1" max="2160" required></div>
+<div class="col-12"><label for="reason">Lý do thay đổi (5–500 ký tự)</label><textarea id="reason" class="form-control" th:field="*{reason}" minlength="5" maxlength="500" required></textarea></div>
+</div><button class="btn btn-primary mt-3">Lưu chính sách</button></form></section></body></html>

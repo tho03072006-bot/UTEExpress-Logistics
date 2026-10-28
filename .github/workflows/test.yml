@@ -1,0 +1,61 @@
+# Chay test tu dong khi mo/cap nhat PR vao develop, main va khi push len develop.
+# Muc dich: phat hien som PR merge thieu file lam ca nhom khong build duoc.
+# CI KHONG co file bi mat trong config/ (bi gitignore) va KHONG ket noi Aiven:
+# test dung H2 trong bo nho, cac test Aiven*IntegrationTest bi bo qua.
+# Khong bao gio dat khoa/mat khau that vao file nay.
+name: Test
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+# Push moi len cung PR/nhanh thi huy lan chay cu cho do ton thoi gian.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maven:
+    name: Maven test (Java 21)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # UteexpressApplicationTests cung chay tren Aiven that (can AIVEN_HOST...) nen bo qua o CI.
+      - name: Chay test (bo qua test can Aiven that)
+        run: mvn -B test "-Dtest=!Aiven*IntegrationTest,!UteexpressApplicationTests" "-Dsurefire.failIfNoSpecifiedTests=false"
+
+      - name: Luu bao cao test khi loi
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  js:
+    name: JS test (Node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Test JS chi dung node:test co san, khong can npm install.
+      - name: Chay test JS
+        run: node --test src/test/js/*.test.cjs

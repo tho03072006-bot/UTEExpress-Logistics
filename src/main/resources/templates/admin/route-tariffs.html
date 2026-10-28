@@ -1,0 +1,12 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head><title>Cước tuyến - UTEExpress</title></head><body><section>
+<div class="ute-page-head sx-art-routetruck"><div><h1 class="h3">Phụ phí tuyến và thời gian dự kiến</h1>
+<p>Nội tỉnh tính phụ phí theo khoảng cách. Liên tỉnh chỉ cộng phụ phí tuyến dưới đây. Mỗi chiều có một biểu giá riêng.</p></div></div>
+<p th:if="${success}" class="alert alert-info" role="status" th:text="${success}"></p>
+<a class="btn btn-outline-secondary mb-3" th:href="@{/admin/bang-cuoc}">Cước cơ bản và cân nặng</a>
+<div class="ute-panel p-3 table-responsive"><table class="table align-middle"><thead><tr>
+<th>Tuyến</th><th>Dịch vụ</th><th>Phụ phí (đ)</th><th>Dự kiến</th><th>Thao tác</th></tr></thead>
+<tbody><tr th:each="t : ${tariffs}"><td th:text="|${t.originBranch.code} → ${t.destBranch.code}|"></td>
+<td th:text="${t.serviceType.displayName}"></td><td th:text="${#numbers.formatDecimal(t.surcharge,1,'POINT',0,'COMMA')}"></td>
+<td th:text="${t.leadTimeText}"></td><td><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/cuoc-tuyen/{id}/sua(id=${t.id})}">Sửa</a></td>
+</tr></tbody></table></div></section></body></html>

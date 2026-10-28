@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, false)}">
+<head>
+    <title>Xác thực OTP - UTEExpress</title>
+</head>
+<body>
+
+<section class="shipper-workspace sx-public sx-auth">
+<div class="sx-auth-card">
+    <aside class="sx-auth-side" aria-hidden="true">
+        <span class="shipper-eyebrow"><i class="bi bi-shield-check"></i> KÍCH HOẠT TÀI KHOẢN</span>
+        <h2>Chỉ còn một bước nữa</h2>
+        <p>Nhập mã OTP vừa gửi tới email để kích hoạt tài khoản UTEExpress.</p>
+        <img th:src="@{/images/shipper/otp-phone.svg}" alt="" width="320" height="213">
+        <ul>
+            <li><i class="bi bi-clock-history"></i> Mã có hiệu lực trong 10 phút</li>
+            <li><i class="bi bi-inbox"></i> Không thấy thư? Kiểm tra mục Spam</li>
+        </ul>
+    </aside>
+
+    <div class="sx-auth-form">
+        <h1>Xác thực OTP</h1>
+        <p class="shipper-hint">Mã OTP đã gửi tới email, hiệu lực 10 phút.</p>
+
+        <div th:if="${error}" class="shipper-notice sx-notice-danger" role="alert"><i class="bi bi-exclamation-octagon-fill"></i><span th:text="${error}"></span></div>
+        <div th:if="${notice}" class="shipper-notice sx-notice-success" role="status"><i class="bi bi-envelope-check-fill"></i><span th:text="${notice}"></span></div>
+
+        <form method="post" th:action="@{/xac-thuc-otp}">
+            <div class="mb-3">
+                <label class="form-label" for="activationUsername">Tên đăng nhập</label>
+                <div class="sx-input-icon"><i class="bi bi-person" aria-hidden="true"></i>
+                    <input type="text" class="form-control" id="activationUsername" name="username" th:value="${username}" required minlength="3" maxlength="50"
+                           autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tên đã đăng ký"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="otp">Mã OTP (6 số)</label>
+                <input type="text" id="otp" name="otp" class="form-control ute-otp-input sx-otp" maxlength="6" required autofocus
+                       inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" placeholder="000000" data-otp
+                       title="Nhập đủ 6 chữ số">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-check2-circle"></i> Xác thực</button>
+            <button type="submit" class="btn btn-outline-secondary w-100 mt-2" th:formaction="@{/xac-thuc-otp/gui-lai}" formnovalidate><i class="bi bi-arrow-clockwise"></i> Gửi lại mã</button>
+            <p class="form-text text-center mt-2 mb-0">Gửi lại sau 60 giây, tối đa 5 mã mỗi giờ.</p>
+        </form>
+        <div class="sx-auth-links">
+            <span>Nhập nhầm email? <a th:href="@{/dang-ky}">Đăng ký lại</a></span>
+            <a th:href="@{/dang-nhap}">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/auth :: scripts}"></div>
+</section>
+
+</body>
+</html>

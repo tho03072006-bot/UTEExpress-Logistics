@@ -1,0 +1,21 @@
+package vn.edu.hcmute.uteexpress.repository;
+
+import java.util.Optional;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
+import vn.edu.hcmute.uteexpress.entity.*;
+import vn.edu.hcmute.uteexpress.dto.tracking.ComplaintSummary;
+
+public interface OrderComplaintRepository extends JpaRepository<OrderComplaint, Long> {
+    Optional<OrderComplaint> findByOrder(Order order);
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from OrderComplaint c where c.id = :id")
+    Optional<OrderComplaint> lockById(@Param("id") Long id);
+    @Query("""
+            select new vn.edu.hcmute.uteexpress.dto.tracking.ComplaintSummary(
+                c.id, c.order.trackingCode, c.subject, c.status, c.createdAt)
+            from OrderComplaint c join c.order o where (:status is null or c.status = :status) and
+            """ + vn.edu.hcmute.uteexpress.repository.routing.OrderRouteRepository.BRANCH_SCOPE)
+    Page<ComplaintSummary> search(@Param("status") OrderComplaint.Status status, @Param("branchId") Long branchId, Pageable pageable);
+}

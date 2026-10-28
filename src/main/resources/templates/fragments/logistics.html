@@ -1,0 +1,19 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="history(history)">
+    <p class="text-muted" th:if="${history.empty}">Chưa có lịch sử.</p>
+    <ol class="list-unstyled mb-0 logistics-timeline" th:unless="${history.empty}">
+        <li class="border-start border-3 ps-3 py-3" th:each="entry : ${history.content}"
+            th:classappend="${entry.pickupFailure} ? 'sx-tone-amber' : ${'sx-status-' + #strings.toLowerCase(entry.status.name())}">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <strong class="sx-tl-title" th:if="${entry.pickupFailure}">Lấy hàng không thành công</strong>
+                <strong class="sx-tl-title" th:unless="${entry.pickupFailure}"><th:block th:replace="~{fragments/components :: orderStatusText(${entry.status})}"></th:block></strong>
+                <time class="text-muted small" th:text="${#temporals.format(entry.occurredAt, 'dd/MM/yyyy HH:mm')}"></time>
+            </div>
+            <div class="small text-muted" th:text="|Người cập nhật: ${entry.actorName}|"></div>
+            <div th:if="${entry.failureReason != null}"><span class="sx-tl-reason" th:text="|Lý do: ${entry.reasonLabel}|"></span></div>
+            <p class="mb-0" style="white-space: pre-wrap" th:if="${!#strings.isEmpty(entry.note)}" th:text="${entry.note}"></p>
+            <div th:if="${entry.nextAttemptAt != null}" th:text="|${entry.pickupFailure ? 'Hẹn lấy hàng lại' : 'Hẹn giao lại'}: ${#temporals.format(entry.nextAttemptAt, 'dd/MM/yyyy HH:mm')}|"></div>
+        </li>
+    </ol>
+</div>
+</body></html>

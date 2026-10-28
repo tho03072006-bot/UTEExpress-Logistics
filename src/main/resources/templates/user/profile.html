@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Tài khoản của tôi - UTEExpress</title>
+</head>
+<body>
+
+<section class="sx-account">
+<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+<!-- Dải nhắc khi người dùng đã yêu cầu đổi email nhưng chưa nhập mã: không có nó thì
+     họ đóng tab giữa chừng rồi quay lại sẽ tưởng là email đã đổi xong. -->
+<div th:if="${pendingEmail}" class="alert alert-light d-flex flex-wrap align-items-center gap-2">
+    <i class="bi bi-envelope-check"></i>
+    <span>
+        Đang chờ xác thực email mới:
+        <strong th:text="${pendingEmail}">email@example.com</strong>
+    </span>
+    <a th:href="@{/nguoi-dung/tai-khoan/xac-thuc-email}" class="btn btn-sm btn-primary ms-auto">
+        Nhập mã xác thực
+    </a>
+</div>
+
+<div th:replace="~{fragments/account :: hero(${profile}, '/nguoi-dung/tai-khoan')}"></div>
+<div th:replace="~{fragments/account :: stats(${profile})}"></div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-blue"><i class="bi bi-person-lines-fill"></i></span> Thông tin liên hệ</h5>
+            <form method="post" th:object="${form}" th:action="@{/nguoi-dung/tai-khoan/cap-nhat}" class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="fullName">Họ và tên</label>
+                    <input type="text" id="fullName" th:field="*{fullName}" class="form-control"
+                           placeholder="Ví dụ: Nguyễn Văn Thọ">
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                </div>
+                <div class="col-sm-7">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" th:field="*{email}" class="form-control"
+                           placeholder="ten@example.com">
+                    <div class="form-text">Đổi email cần xác thực lại.</div>
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+                <div class="col-sm-5">
+                    <label class="form-label" for="phone">Số điện thoại</label>
+                    <input type="tel" id="phone" th:field="*{phone}" class="form-control" required data-vn-mobile inputmode="tel" maxlength="20" autocomplete="tel" placeholder="0901234567">
+                    <div class="ute-field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                </div>
+                <div class="col-12"><button type="submit" class="btn btn-primary">Lưu thông tin liên hệ</button></div>
+            </form>
+        </div>
+
+        <div th:replace="~{fragments/account :: details('/nguoi-dung/tai-khoan')}"></div>
+    </div>
+
+    <div class="col-xl-5">
+        <div th:replace="~{fragments/account :: completeness(${profile})}"></div>
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-amber"><i class="bi bi-bell"></i></span> Thông báo</h5>
+            <form method="post" th:action="@{/nguoi-dung/tai-khoan/thong-bao}" data-auto-submit>
+                <label class="sx-switch-row">
+                    <span><strong>Email cập nhật vận đơn</strong>
+                        <small>Khi giao xong, thất bại hoặc hoàn trả.</small></span>
+                    <span class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" name="notifyOrderEmail" value="true"
+                               th:checked="${profile.notifyOrderEmail()}">
+                    </span>
+                </label>
+                <noscript><button type="submit" class="btn btn-sm btn-primary mt-2">Lưu</button></noscript>
+            </form>
+        </div>
+
+        <div class="ute-panel mb-4">
+            <h5 class="mb-3 sx-head"><span class="sx-head-icon sx-tone-rose"><i class="bi bi-shield-lock"></i></span> Bảo mật &amp; tài khoản</h5>
+            <dl class="sx-info-list">
+                <div><dt>Tên đăng nhập</dt><dd th:text="${account.username}">user</dd></div>
+                <div><dt>Vai trò</dt><dd>Người gửi hàng</dd></div>
+                <div><dt>Ngày tạo</dt><dd th:text="${account.createdAt != null ? #temporals.format(account.createdAt, 'dd/MM/yyyy') : '—'}">01/01/2026</dd></div>
+            </dl>
+        </div>
+    </div>
+</div>
+</section>
+
+</body>
+</html>

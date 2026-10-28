@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/base :: doc(~{::title}, ~{::section}, true)}">
+<head>
+    <title>Trang tổng quan - UTEExpress</title>
+</head>
+<body>
+
+<section>
+<div class="ute-page-head sx-art-mascot">
+    <div>
+        <h2>Xin chào, <span th:text="${displayName ?: username}">user</span></h2>
+        <p>Tổng quan đơn gửi của bạn.</p>
+    </div>
+    <a th:href="@{/nguoi-dung/tao-don}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Tạo đơn gửi hàng
+    </a>
+</div>
+
+<!-- Thẻ số liệu: nhìn phát biết ngay tình hình, khỏi phải mở từng trang để đếm -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-box-seam"></i></span>
+            <span class="ute-stat-value" th:text="${orderCount}">0</span>
+            <span class="ute-stat-label">Đơn đã gửi</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-basket"></i></span>
+            <span class="ute-stat-value" th:text="${cartCount != null ? cartCount : 0}">0</span>
+            <span class="ute-stat-label">Đơn chờ xác nhận</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-wallet2"></i></span>
+            <span class="ute-stat-value" th:text="${unpaidCount}">0</span>
+            <span class="ute-stat-label">Đơn chưa thanh toán</span>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ute-stat">
+            <span class="ute-stat-icon"><i class="bi bi-geo-alt"></i></span>
+            <span class="ute-stat-value" th:text="${addressCount}">0</span>
+            <span class="ute-stat-label">Địa chỉ đã lưu</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <a class="ute-quick" th:href="@{/nguoi-dung/don-hang}">
+            <i class="bi bi-list-check"></i>
+            <span class="ute-quick-title">Đơn hàng của tôi</span>
+            <span class="ute-quick-desc">Theo dõi và quản lý đơn.</span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a class="ute-quick" th:href="@{/nguoi-dung/gio-don}">
+            <i class="bi bi-basket"></i>
+            <span class="ute-quick-title">Giỏ đơn chờ xác nhận</span>
+            <span class="ute-quick-desc">Xác nhận nhiều đơn một lần.</span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a class="ute-quick" th:href="@{/nguoi-dung/dia-chi}">
+            <i class="bi bi-geo-alt"></i>
+            <span class="ute-quick-title">Sổ địa chỉ</span>
+            <span class="ute-quick-desc">Địa chỉ gửi và nhận.</span>
+        </a>
+    </div>
+</div>
+
+<div class="ute-panel mt-4 sx-recent-orders">
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+        <h3 class="h6 mb-0">Đơn gần đây</h3>
+        <a class="small" th:href="@{/nguoi-dung/don-hang}">Xem tất cả →</a>
+    </div>
+    <p class="text-muted mb-0" th:if="${recentOrders.empty}">Chưa có đơn nào. <a th:href="@{/nguoi-dung/tao-don}">Tạo đơn đầu tiên</a>.</p>
+    <a class="sx-recent-row" th:each="order : ${recentOrders}" th:href="@{'/nguoi-dung/don-hang/' + ${order.id}}">
+        <span class="sx-recent-code" th:text="${order.trackingCode}">-</span>
+        <span class="sx-recent-receiver" th:text="${order.receiverName}">-</span>
+        <span class="badge" th:classappend="${'badge-status-' + #strings.toLowerCase(order.status.name())}">
+            <th:block th:replace="~{fragments/components :: orderStatusText(${order.status})}"></th:block>
+        </span>
+        <span class="sx-recent-date" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy')}">-</span>
+    </a>
+</div>
+</section>
+
+</body>
+</html>

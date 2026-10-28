@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#A50064">
+<title>MoMo · Thanh toán mô phỏng</title><link rel="stylesheet" th:href="@{/css/momo-simulator.css}"><script defer th:src="@{/js/momo-simulator.js}"></script></head>
+<body class="wallet">
+<header class="wallet-bar">
+    <a th:href="@{/}" class="wallet-back" aria-label="Về trang chính"><span aria-hidden="true">‹</span></a>
+    <div class="wallet-bar-title"><strong>MoMo</strong><span th:text="${receipt.paid ? 'Kết quả giao dịch mô phỏng' : 'Xác nhận thanh toán mô phỏng'}">Xác nhận thanh toán mô phỏng</span></div>
+    <span class="wallet-demo" title="Không thu tiền thật">DEMO</span>
+</header>
+
+<main class="wallet-shell wallet-checkout">
+    <!-- ĐÃ THANH TOÁN TRÊN THIẾT BỊ KHÁC: chặn, không hiện nút thanh toán -->
+    <section th:if="${receipt.paid and paidHere != true}" class="wallet-card wallet-result is-blocked" role="alert">
+        <div class="result-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+        <h1>Đơn đã được thanh toán</h1>
+        <p class="result-note">Mã QR này đã được thanh toán trên một thiết bị khác. Bạn không cần và không thể thanh toán lại.</p>
+        <dl class="wallet-rows">
+            <div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
+            <div><dt>Đã thanh toán lúc</dt><dd th:text="${receipt.paidAt}">—</dd></div>
+        </dl>
+        <p class="wallet-fine">Không có khoản tiền nào bị trừ thêm. Kiểm tra trạng thái đơn tại UTEExpress.</p>
+    </section>
+
+    <!-- ĐÃ THANH TOÁN (chính trình duyệt này bấm): màn hình kết quả -->
+    <section th:if="${receipt.paid and paidHere == true}" class="wallet-card wallet-result" role="status">
+        <div class="result-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h1>Thanh toán thành công</h1>
+        <p class="result-amount" data-money th:text="${receipt.amount}">0</p>
+        <p class="result-note">Giao dịch đã được ghi nhận. UTEExpress trên máy tính sẽ tự cập nhật.</p>
+        <dl class="wallet-rows">
+            <div><dt>Dịch vụ</dt><dd>UTEExpress · Cước vận chuyển</dd></div>
+            <div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
+            <div><dt>Mã giao dịch</dt><dd class="mono" th:text="${receipt.transactionRef}">—</dd></div>
+            <div><dt>Thời gian</dt><dd th:text="${receipt.paidAt}">—</dd></div>
+            <div><dt>Nguồn tiền</dt><dd>Ví mô phỏng</dd></div>
+        </dl>
+        <p class="wallet-fine">Bạn có thể đóng trang này.</p>
+    </section>
+
+    <!-- CHƯA THANH TOÁN: màn hình xác nhận -->
+    <th:block th:unless="${receipt.paid}">
+    <section class="wallet-card wallet-merchant">
+        <div class="merchant-logo" aria-hidden="true">mo<br>mo</div>
+        <div class="merchant-name"><h1>Thanh toán cước vận chuyển</h1><span>Đơn vị nhận: UTEExpress</span></div>
+        <p class="pay-label">Số tiền thanh toán</p>
+        <p class="pay-amount" data-money th:text="${receipt.amount}">0</p>
+        <p class="pay-timer" data-checkout-timer>Giao dịch hết hạn sau <strong data-countdown>10:00</strong></p>
+    </section>
+
+    <section class="wallet-card wallet-details">
+        <h2>Chi tiết giao dịch</h2>
+        <dl class="wallet-rows">
+            <div><dt>Mã vận đơn</dt><dd class="tracking" th:text="${receipt.trackingCode}">UTE123</dd></div>
+            <div><dt>Người nhận</dt><dd><span th:text="${receipt.receiverName ?: '—'}">—</span><small th:text="${receipt.receiverPhone}"></small></dd></div>
+            <div><dt>Cước vận chuyển</dt><dd data-money th:text="${receipt.originalAmount}">0</dd></div>
+            <div><dt>Giảm giá</dt><dd class="discount"><span>−</span><span data-money th:text="${receipt.discount}">0</span></dd></div>
+            <div class="row-total"><dt>Tổng tiền</dt><dd data-money th:text="${receipt.amount}">0</dd></div>
+        </dl>
+        <details class="wallet-shipping-details">
+            <summary>Thông tin giao nhận</summary>
+            <dl class="wallet-rows">
+                <div><dt>Người gửi</dt><dd th:text="${receipt.senderName ?: '—'}">—</dd></div>
+                <div><dt>Dịch vụ</dt><dd th:text="${receipt.service}">—</dd></div>
+                <div><dt>Khối lượng</dt><dd th:text="${receipt.weightKg == null ? '—' : receipt.weightKg + ' kg'}">—</dd></div>
+            </dl>
+        </details>
+    </section>
+
+    <section class="wallet-card wallet-source">
+        <h2>Nguồn tiền</h2>
+        <div class="source-row"><span class="source-icon" aria-hidden="true">₫</span>
+            <div><strong>Ví mô phỏng</strong><span>Số dư demo, không trừ tiền thật</span></div><span class="source-check" aria-hidden="true">✓</span></div>
+    </section>
+
+    <div class="wallet-actions" data-checkout th:attr="data-expires=${receipt.expiresAt},data-status-url=@{/momo/phien/{id}/trang-thai(id=${checkoutId})}">
+        <form method="post" th:action="@{/momo/phien/{id}/xac-nhan(id=${checkoutId})}" data-confirm-form>
+            <label class="consent"><input type="checkbox" name="simulationAcknowledged" value="true" required>
+                <span>Tôi hiểu đây là giao dịch mô phỏng, không chuyển tiền thật.</span></label>
+            <button class="button primary" type="submit" data-confirm-button data-label="Xác nhận thanh toán">Xác nhận thanh toán</button>
+        </form>
+        <p class="feedback" data-feedback role="status" aria-live="polite"></p>
+        <form method="post" th:action="@{/momo/phien/{id}/huy(id=${checkoutId})}"><button class="button ghost" type="submit">Đóng phiên thanh toán</button></form>
+    </div>
+    </th:block>
+
+    <p class="legal">Bản demo học tập, không liên kết với MoMo. Không yêu cầu mật khẩu ví, OTP hay thông tin ngân hàng.</p>
+</main>
+<footer>Bản quyền thuộc Nhóm 8 · Lập trình Web · HCMUTE</footer></body></html>

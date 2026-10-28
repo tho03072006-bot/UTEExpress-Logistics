@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" role="img" aria-label="Cân gói hàng, thẻ giá và thước đo quãng đường">
+  <ellipse cx="172" cy="222" rx="122" ry="8" fill="#000" opacity=".2"/>
+  <!-- cân -->
+  <rect x="80" y="168" width="168" height="46" rx="12" fill="#FFFFFF"/>
+  <rect x="134" y="180" width="60" height="24" rx="5" fill="#0B2540"/>
+  <g fill="#4ADE80"><rect x="141" y="186" width="10" height="12" rx="2"/><rect x="156" y="186" width="10" height="12" rx="2"/><rect x="171" y="194" width="4" height="4" rx="1"/><rect x="178" y="186" width="10" height="12" rx="2"/></g>
+  <rect x="70" y="156" width="188" height="14" rx="7" fill="#E0E7FF"/>
+  <!-- gói hàng trên cân -->
+  <g transform="translate(112 60)">
+    <path d="M0 22 L 52 0 L 104 22 L 52 44 Z" fill="#FCD34D"/>
+    <path d="M0 22 L 52 44 L 52 98 L 0 76 Z" fill="#F59E0B"/>
+    <path d="M104 22 L 52 44 L 52 98 L 104 76 Z" fill="#D97706"/>
+    <path d="M26 11 L 78 33 L 78 50 L 70 46 L 70 37 L 18 15 Z" fill="#FEF3C7" opacity=".9"/>
+  </g>
+  <!-- thẻ giá -->
+  <path d="M262 34 Q 270 64 278 96" fill="none" stroke="#FFFFFF" stroke-width="2" opacity=".85"/>
+  <g transform="translate(272 70) rotate(18)">
+    <path d="M14 0 h52 a6 6 0 0 1 6 6 v36 a6 6 0 0 1 -6 6 h-52 l-14 -24 z" fill="#FB7185"/>
+    <circle cx="14" cy="24" r="5" fill="#FFFFFF"/>
+    <rect x="28" y="16" width="32" height="6" rx="3" fill="#FFFFFF" opacity=".9"/>
+    <rect x="28" y="28" width="22" height="5" rx="2.5" fill="#FFFFFF" opacity=".7"/>
+  </g>
+  <!-- thước đo quãng đường -->
+  <g transform="translate(256 182) rotate(-8)">
+    <rect width="90" height="20" rx="4" fill="#FCD34D"/>
+    <g stroke="#B45309" stroke-width="2"><line x1="10" y1="0" x2="10" y2="10"/><line x1="20" y1="0" x2="20" y2="6"/><line x1="30" y1="0" x2="30" y2="10"/><line x1="40" y1="0" x2="40" y2="6"/><line x1="50" y1="0" x2="50" y2="10"/><line x1="60" y1="0" x2="60" y2="6"/><line x1="70" y1="0" x2="70" y2="10"/><line x1="80" y1="0" x2="80" y2="6"/></g>
+  </g>
+  <!-- đồng xu -->
+  <g transform="translate(52 138)"><circle r="16" fill="#FCD34D"/><circle r="10" fill="none" stroke="#F59E0B" stroke-width="3"/></g>
+  <g transform="translate(40 178)"><circle r="11" fill="#FDE68A"/><circle r="6" fill="none" stroke="#F59E0B" stroke-width="2.5"/></g>
+  <g fill="#FFFFFF">
+    <path d="M70 44 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".85"/>
+    <path d="M200 30 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" opacity=".6"/>
+  </g>
+</svg>
